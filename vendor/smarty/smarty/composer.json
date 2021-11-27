@@ -1,0 +1,46 @@
+{
+    "name": "smarty/smarty",
+    "type": "library",
+    "description": "Smarty - the compiling PHP template engine",
+    "keywords": [
+        "templating"
+    ],
+    "homepage": "http://www.smarty.net",
+    "license": "LGPL-3.0",
+    "authors": [
+        {
+            "name": "Monte Ohrt",
+            "email": "monte@ohrt.com"
+        },
+        {
+            "name": "Uwe Tews",
+            "email": "uwe.tews@googlemail.com"
+        },
+        {
+            "name": "Rodney Rehm",
+            "email": "rodney.rehm@medialize.de"
+        }
+    ],
+    "support": {
+        "irc": "irc://irc.freenode.org/smarty",
+        "issues": "https://github.com/smarty-php/smarty/issues",
+        "forum": "http://www.smarty.net/forums/"
+    },
+    "require": {
+        "php": ">=5.2"
+    },
+    "autoload": {
+        "classmap": [
+            "libs/"
+        ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "3.1.x-dev"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.5 || ^6.5 || ^5.7 || ^4.8",
+        "smarty/smarty-lexer": "^3.1"
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "name": "mrgoon/aliyun-sms",
+	"description": "阿里云短信服务php调用代码",
+	"keywords": ["sdk", "aliyun", "aliyun-sms"],
+	"version": "2.0.2",
+    "require": {
+		"php": ">5.3",
+        "mrgoon/aliyun-sms-sdk": "1.1.*"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {"Mrgoon\\AliSms\\": "src/"}
+    },
+    "authors": [
+        {
+            "name": "mrgoon",
+            "email": "mrgoon@foxmail.com"
+        }
+    ],
+    "minimum-stability": "dev"
+}

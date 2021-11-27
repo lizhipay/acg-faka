@@ -1,0 +1,53 @@
+{
+    "name": "illuminate/support",
+    "description": "The Illuminate Support package.",
+    "license": "MIT",
+    "homepage": "https://laravel.com",
+    "support": {
+        "issues": "https://github.com/laravel/framework/issues",
+        "source": "https://github.com/laravel/framework"
+    },
+    "authors": [
+        {
+            "name": "Taylor Otwell",
+            "email": "taylor@laravel.com"
+        }
+    ],
+    "require": {
+        "php": "^7.2.5|^8.0",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "doctrine/inflector": "^1.4|^2.0",
+        "illuminate/contracts": "^7.0",
+        "nesbot/carbon": "^2.31",
+        "voku/portable-ascii": "^1.4.8"
+    },
+    "conflict": {
+        "tightenco/collect": "<5.5.33"
+    },
+    "autoload": {
+        "psr-4": {
+            "Illuminate\\Support\\": ""
+        },
+        "files": [
+            "helpers.php"
+        ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "7.x-dev"
+        }
+    },
+    "suggest": {
+        "illuminate/filesystem": "Required to use the composer class (^7.0).",
+        "moontoast/math": "Required to use ordered UUIDs (^1.1).",
+        "ramsey/uuid": "Required to use Str::uuid() (^3.7|^4.0).",
+        "symfony/process": "Required to use the composer class (^5.0).",
+        "symfony/var-dumper": "Required to use the dd function (^5.0).",
+        "vlucas/phpdotenv": "Required to use the Env class and env helper (^4.0)."
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev"
+}

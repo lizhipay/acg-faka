@@ -1,0 +1,22 @@
+{
+    "name": "mrgoon/aliyun-sms-sdk",
+	"description": "阿里云短信服务核心代码",
+    "keywords": ["sdk", "aliyun", "aliyun-sms"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "mrgoon",
+            "email": "mrgoon@foxmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Mrgoon\\AliyunSmsSdk\\": "aliyun-php-sdk-core/",
+            "Mrgoon\\Dysmsapi\\Request\\V20170525\\": "Dysmsapi/Request/V20170525"
+        }
+    },
+    "minimum-stability": "dev",
+    "require": {
+		"php": ">5.3"
+	}
+}
