@@ -1,0 +1,281 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-xxl">
+            <!--begin::Basic info-->
+            <div class="card mb-5 mb-xl-10">
+                <!--begin::Card header-->
+                <div class="card-header border-0 cursor-pointer">
+                    <!--begin::Card title-->
+                    <div class="card-title m-0">
+                        <h3 class="fw-bolder m-0">其他设置</h3>
+                    </div>
+                    <!--end::Card title-->
+                </div>
+                <!--begin::Card header-->
+                <!--begin::Content-->
+                <div id="kt_account_profile_details" class="collapse show">
+                    <!--begin::Form-->
+                    <form id="data-form" class="form">
+                        <!--begin::Card body-->
+                        <div class="card-body border-top p-9">
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6 required">主站域名配置(支持多域名,使用逗号分割)</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <textarea name="domain"
+                                              class="form-control form-control-lg form-control-solid"
+                                              placeholder="多个域名使用逗号分割">#{$config.domain}</textarea>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">DNS-CNAME(域名解析)</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="cname"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="CNAME域名" value="#{$config.cname}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6 required">主站显示其他商家商品</label>
+                                <!--begin::Label-->
+                                <!--begin::Label-->
+                                <div class="col-lg-8 d-flex align-items-center">
+                                    <div class="form-check form-check-solid form-switch fv-row">
+                                        <input class="form-check-input w-45px h-30px" type="checkbox" name="substation_display" value="1" #{if $config.substation_display == 1} checked #{/if}/>
+                                        <label class="form-check-label"></label>
+                                    </div>
+                                </div>
+                                <!--begin::Label-->
+                            </div>
+                            <!--end::Input group-->
+
+
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">推广1级返佣</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="promote_rebate_v1"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="推广1级返佣" value="#{$config.promote_rebate_v1}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">推广2级返佣</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="promote_rebate_v2"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="推广2级返佣" value="#{$config.promote_rebate_v2}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">推广3级返佣</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="promote_rebate_v3"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="推广3级返佣" value="#{$config.promote_rebate_v3}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">充值赠送</label>
+                                <!--begin::Label-->
+                                <!--begin::Label-->
+                                <div class="col-lg-8 d-flex align-items-center">
+                                    <div class="form-check form-check-solid form-switch fv-row">
+                                        <input class="form-check-input w-45px h-30px" type="checkbox"
+                                               name="recharge_welfare" value="1" #{if $config.recharge_welfare== 1}
+                                               checked #{/if}/>
+                                        <label class="form-check-label"></label>
+                                    </div>
+                                </div>
+                                <!--begin::Label-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6">充值赠送配置</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <textarea name="recharge_welfare_config" style="height: 100px;"
+                                              class="form-control form-control-lg form-control-solid"
+                                              placeholder="配置规则：假如充值100元赠送5元的情况下：
+100-5
+一行一个规则。">#{$config.recharge_welfare_config}</textarea>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6">客服QQ(主站)</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="service_qq"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="客服QQ" value="#{$config.service_qq}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6">网页客服地址(主站)</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="service_url"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="网页客服地址" value="#{$config.service_url}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">提现方式</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <!--begin::Options-->
+                                    <div class="d-flex align-items-center mt-3">
+                                        <!--begin::Option-->
+                                        <label class="form-check form-check-inline form-check-solid me-5">
+                                            <input class="form-check-input" name="cash_type_alipay" type="checkbox" value="1"  #{if $config.cash_type_alipay == 1} checked #{/if}>
+                                            <span class="fw-bold ps-2 fs-6">支付宝</span>
+                                        </label>
+                                        <!--end::Option-->
+                                        <!--begin::Option-->
+                                        <label class="form-check form-check-inline form-check-solid me-5">
+                                            <input class="form-check-input" name="cash_type_wechat" type="checkbox" value="1"  #{if $config.cash_type_wechat == 1} checked #{/if}>
+                                            <span class="fw-bold ps-2 fs-6">微信</span>
+                                        </label>
+                                        <!--end::Option-->
+                                    </div>
+                                    <!--end::Options-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">提现手续费(单笔固定)</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="cash_cost"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="提现手续费" value="#{$config.cash_cost}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required  fw-bold fs-6">最低提现金额</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="cash_min"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="最低提现金额" value="#{$config.cash_min}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                        </div>
+                        <!--end::Card body-->
+                        <!--begin::Actions-->
+                        <div class="card-footer d-flex justify-content-center py-6 px-9">
+                            <button type="button" class="btn btn-primary save-data">保存设置 (Save Config)</button>
+                        </div>
+                        <!--end::Actions-->
+                    </form>
+                    <!--end::Form-->
+                </div>
+                <!--end::Content-->
+            </div>
+            <!--end::Basic info-->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+
+
+<script>
+    $(function () {
+        layui.use(['layer', 'form', 'hex'], function () {
+            let hex = layui.hex;
+            //data-form
+            $('.save-data').click(function () {
+                let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
+                $.post("/admin/api/config/other", $("#data-form").serialize(), res => {
+                    layer.close(loaderIndex);
+                    layer.msg(res.msg);
+                });
+            });
+        });
+    });
+</script>
+
+#{include file="../Footer.html"}

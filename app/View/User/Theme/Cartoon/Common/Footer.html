@@ -1,0 +1,30 @@
+<script>
+    layui.define(['layer', 'element'], function (exports) {
+        var $ = layui.jquery, element = layui.element;
+        //手机设备的简单适配
+        var treeMobile = $('.site-tree-mobile')
+            , shadeMobile = $('.site-mobile-shade')
+
+        treeMobile.on('click', function () {
+            $('body').addClass('site-mobile');
+        });
+        shadeMobile.on('click', function () {
+            $('body').removeClass('site-mobile');
+        });
+
+        $('.logout').click(function () {
+
+            layer.confirm('您是否要注销登录？', {
+                btn: ['确认', '取消'],
+                title: "安全注销"
+            }, function () {
+                window.location.href = "/user/authentication/logout";
+            });
+        });
+    });
+</script>
+
+<script src="/assets/static/jquery.qrcode.min.js"></script>
+<script src="/assets/static/wangEditor.min.js"></script>
+</body>
+</html>

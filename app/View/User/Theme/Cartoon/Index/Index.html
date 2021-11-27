@@ -1,0 +1,474 @@
+#{include file="./Header.html"}
+
+<div class="content-wrapper">
+    <div class="container">
+
+        <!--            公告部分-->
+        <div class="card">
+            <div class="card-header">
+                <p class="card-title">公告</p>
+            </div>
+            <div class="card-block">
+                #{$config.notice}
+            </div>
+        </div>
+
+
+        <!--            选择商品部分-->
+        <div class="card">
+            <div class="card-header">
+                <p class="card-title">购买</p>
+            </div>
+            <div class="card-block">
+                <fieldset class="form-group">
+                    <label for="type" style="font-size: 14px;">请选择商品分类</label>
+                    <div id="type" class="category">
+
+                    </div>
+                </fieldset>
+
+                <fieldset class="form-group product" style="display: none;">
+                    <label for="product" style="font-size: 14px;">请选择商品</label>
+                    <div id="product">
+
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+
+
+        <!--            商品简介部分-->
+        <div class="card animated shopInfoHtml" style="display: none;">
+            <div class="card-header">
+                <p class="card-title">商品信息</p>
+            </div>
+            <form class="commodity"></form>
+
+            <div class="sliderbar-container">
+                <div class="title"><i></i> 联系客服</div>
+                <div class="body">
+                    <div style="margin-bottom: 10px;"><img src="/favicon.ico" alt=""
+                                                           style="border-radius: 100%;height: 28px;"
+                                                           class="service-avatar"> <span
+                            style="color: #e093ff;position: relative;top: 1px;" class="service-nickname">自营商品</span>
+                    </div>
+                    <a class="button-click service-url" style="line-height: 22px;margin-right: 0;color: #ff8888;"
+                       target="_blank"><i
+                            class="fa fa-user-plus"></i> 网页客服</a>
+                    <a class="button-click service-qq" style="line-height: 22px;margin-right: 0;color: #7599b1;"
+                       target="_blank"><i
+                            class="fa fa-qq"></i> ＱＱ客服</a>
+                </div>
+            </div>
+        </div>
+
+        <!--            指定购买部分-->
+        <div class="card animated specified" style="display: none;">
+            <div class="card-header">
+                <p class="card-title"></p>
+            </div>
+            <div class="card-block anticipation">
+            </div>
+        </div>
+
+
+        <!--            付款部分-->
+        <div class="card animated fadeInLeft" style="display: none;">
+            <div class="card-header">
+                <p class="card-title">付款方式</p>
+            </div>
+            <div class="card-block">
+                <div class="row pay_type" style="margin-left: 0px;"></div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+</div>
+
+<script>
+
+    let commodityHtml = '<div class="card-block">\n' +
+        '                    <div class="row">\n' +
+        '                        <div class="col-md-5 description"></div>\n' +
+        '                        <div class="col-md-7">\n' +
+        '                            <h4 class="productName" style="margin-bottom: 10px;"></h4>\n' +
+        '                            <p><span style="color: #0C84D1;font-size: 14px;cursor: pointer;" class="clipboard" data-clipboard-text=""><i class="fa fa-share"></i> 将宝贝分享给好友</span></p>\n' +
+        '                            <p style="display: none;" class="seckill_status">限时秒杀： <span class="text-danger seckill"></span></p>\n' +
+        '                            <p>商品单价： <span class="text-success price"></span></p>\n' +
+        '                            <p>发货方式： <span class="badge badge-pill text-white cardType"></span></p>\n' +
+        '                            <fieldset class="form-group">\n' +
+        '                                <label style="display: inline-block;">联系方式：</label>\n' +
+        '                                <input class="form-control round contact" name="contact" placeholder="">\n' +
+        '                            </fieldset>\n' +
+        '                            <fieldset class="form-group fieldset-password" style="display: none;">\n' +
+        '                                <label style="display: inline-block;">查询密码：</label>\n' +
+        '                                <input class="form-control round password" name="password" type="password"\n' +
+        '                                       placeholder="请设置您的订单查询密码(6位以上)">\n' +
+        '                            </fieldset>\n' +
+        '                            <fieldset class="form-group voucher-view" style="display: none;">\n' +
+        '                                <label style="display: inline-block;">优惠代卷：</label>\n' +
+        '                                <input class="form-control round voucher" onchange="getTradeAmount()" name="coupon"\n' +
+        '                                       placeholder="如果您有优惠卷可以填写优惠卷，没有可不填写">\n' +
+        '                            </fieldset>\n' +
+        '                            <fieldset class="form-group">\n' +
+        '                                <label>购买数量：</label>\n' +
+        '                                <input class="form-control round buyNum" onchange="getTradeAmount()" name="num"\n' +
+        '                                       type="number" style="width: 10%;" value="1">\n' +
+        '                                <span style="margin-left: 10px;display: none;" class="kucunView"> 剩余库存: <span\n' +
+        '                                        class="badge badge-pill badge-success text-white card_count">0</span></span>\n' +
+        '                            </fieldset>\n' +
+        '                            #{if $config.trade_verification==1}\n' +
+        '                            <fieldset class="form-group">\n' +
+        '                                <label>人机验证：</label>\n' +
+        '                                <input class="form-control round captcha" name="captcha" type="text" style="width: 15%;"\n' +
+        '                                       value="">\n' +
+        '                                <span style="margin-left: 10px;"><img\n' +
+        '                                        onclick="this.src=\'/user/captcha/image?action=trade\'" class="captchaImage"\n' +
+        '                                        style="margin-top: -3px;" src="/user/captcha/image?action=trade"\n' +
+        '                                        alt="验证码"></span>\n' +
+        '                            </fieldset>\n' +
+        '                            #{/if}\n' +
+        '                            <p style="" class="payAmountView">订单金额： <span><b style="font-size:16px;color: #f757b7;font-weight: bold;" class="payAmount"></b></span></p>\n' +
+        '                            <fieldset class="form-group wholesale" style="display: none;">\n' +
+        '                                <div style="font-size: 12px;color: #ff5aa6;font-weight: bold;"\n' +
+        '                                     class="wholesaleHtml"></div>\n' +
+        '                            </fieldset>\n' +
+        '                        </div>\n' +
+        '                    </div>\n' +
+        '                </div>';
+    let switchElement = function (obj) {
+        $('.checked').removeClass('checked');
+        $(obj).addClass('checked');
+    };
+
+    let productInstance = $('#product');
+    let globalCommodityId = 0;
+    let seckillPid = 0;
+
+    //-----------------------------------获取分类------------------------------------------
+    Pay.getCategory(list => {
+        list.forEach(category => {
+            $(".category").append('<span class="category-' + category.id + ' button-click category-button ' + (category.commodity_count == 0 ? 'empty-commodity' : '') + '" ' + (category.commodity_count == 0 ? '' : 'onclick="getCommodity(this,' + category.id + ')"') + '>' + (category.icon ? '<img class="commodity-icon" src="' + category.icon + '">' : '') + ' ' + category.name + '</span>');
+        });
+        let a = "#{$categoryId}";
+        if (a) {
+            $('.category-' + a).click(); //自动点击分类
+        }
+    });
+
+    //-----------------------------------获取商品------------------------------------------
+    function getCommodity(obj, categoryId) {
+        switchElement(obj);
+        $('.shopInfoHtml').hide(150);
+        $('.fadeInLeft').hide(150);
+        $('.specified').hide(150);
+
+        Pay.getCommodityAll(categoryId, list => {
+            $('.product').hide(150);
+            productInstance.html("");
+            if (list.length === 0) {
+                layer.msg("该分类下没有商品");
+                return;
+            }
+            $('.product').show(150);
+            list.forEach(item => {
+                productInstance.append('<span class="button-click commodity-' + item.id + '" onclick="getCommodityInfo(this,' + item.id + ')" ' + ((item.card_count == 0 && item.delivery_way == 0 && !item.shared) ? 'style="background-color: #ced4dadb;opacity: 0.6;"' : '') + '>' + (item.cover ? '<img class="commodity-icon" src="' + item.cover + '">' : '') + ' ' + item.name + '</span>');
+            });
+
+            let b = "#{$commodityId}"
+            if (b) {
+                $('.commodity-' + b).click(); //自动点击商品
+            }
+        })
+    }
+
+
+    //-----------------------------------获取预选卡密--------------------------------------
+    function checkbox(obj) {
+        let state = $(obj).prop("checked");
+        $('input[name=card_id]:checked').prop("checked", false);
+        if (state === true) {
+            $(obj).prop("checked", true);
+        } else {
+            $(obj).prop("checked", false);
+        }
+    }
+
+    function getDraftCard(commodityId, page) {
+        Pay.getDraftCard(commodityId, page, res => {
+            let next = res.current_page + 1;
+            let prev = res.current_page - 1;
+            if (next >= res.last_page) {
+                next = res.last_page;
+            }
+            if (prev <= 1) {
+                prev = 1;
+            }
+            $('.anticipation').show(150);
+            $('.anticipation').html('<table><thead><tr><th><button ' + (res.current_page <= 1 ? 'disabled' : '') + ' type="button" onclick="getDraftCard(' + commodityId + ',' + prev + ')">上一页</button> <button ' + (res.current_page >= res.last_page ? 'disabled' : '') + ' type="button" onclick="getDraftCard(' + commodityId + ',' + next + ')">下一页</button></th></tr></thead><tbody class="draftCard"></tbody></table>');
+
+            if (res.data.length == 0) {
+                $('.draftCard').append('<tr><td style="text-align: center;">暂无数据</td></tr>');
+                return;
+            }
+
+            res.data.forEach(item => {
+                $('.draftCard').append('<tr><td><label><input type="checkbox" onclick="getTradeAmount()" onchange="checkbox(this)" name="card_id" value="' + item.id + '"> ' + item.draft + '</label></td></tr>');
+            });
+        });
+    }
+
+    //-----------------------------------获取商品详情--------------------------------------
+    function getCommodityInfo(obj, commodityId) {
+        $('.shopInfoHtml').hide(150);
+        $('.fadeInLeft').hide(150);
+        $('.specified').hide(150);
+
+        $('.commodity').html("");
+
+
+        globalCommodityId = commodityId;
+        switchElement(obj);
+        Pay.getCommodityDetail(commodityId, commodity => {
+            $('.service-qq').attr("href", "https://wpa.qq.com/msgrd?v=1&uin=" + commodity.service_qq);
+            $('.service-url').attr("href", commodity.service_url);
+
+            if (commodity.owner) {
+                $('.service-avatar').attr("src", commodity.owner.avatar);
+                $('.service-nickname').css({"color": "#ff00e0a1"}).html(commodity.owner.username);
+            } else {
+                $('.service-avatar').attr("src", "/favicon.ico");
+                $('.service-nickname').css({"color": "#e093ff"}).html("自营商品");
+            }
+
+
+            $('.commodity').html(commodityHtml);
+            $('.shopInfoHtml').show(150);
+            $('.fadeInLeft').show(150);
+
+            $('.productName').html(commodity.name);
+            $('.description').html(commodity.description);
+
+
+            //限时秒杀
+            clearInterval(seckillPid);
+            if (commodity.seckill_status == 1) {
+                $('.seckill_status').show();
+                let seckillStartTime = new Date(commodity.seckill_start_time).getTime();
+                let seckillEndTime = new Date(commodity.seckill_end_time).getTime();
+                var nowTime = new Date().getTime();
+
+                let fnEnd = () => {
+                    let langTime = Pay.getLangTime(new Date().getTime(), seckillEndTime);
+                    $('.seckill').html("<b style='color: #0fb183;'>还剩" + langTime.days + "天" + langTime.hours + "时" + langTime.minutes + "分" + langTime.seconds + "秒结束</b>");
+                    if (langTime.days <= 0 && langTime.hours <= 0 && langTime.minutes <= 0 && langTime.seconds <= 0) {
+                        $('.seckill').html("<b style='color: #9d9d9d;'>已结束</b>");
+                        $('.fadeInLeft').hide();
+                        clearInterval(seckillPid);
+                    }
+                };
+                let fnStart = () => {
+                    let langTime = Pay.getLangTime(new Date().getTime(), seckillStartTime);
+                    $('.seckill').html("<b style='color: #e22727;'>" + langTime.days + "天" + langTime.hours + "时" + langTime.minutes + "分" + langTime.seconds + "秒后开始抢购</b>");
+                    if (langTime.days <= 0 && langTime.hours <= 0 && langTime.minutes <= 0 && langTime.seconds <= 0) {
+                        clearInterval(seckillPid);
+                        $('.fadeInLeft').show();
+                        fnEnd();
+                        seckillPid = setInterval(fnEnd, 1000);
+                    }
+                };
+
+                if (nowTime >= seckillStartTime && nowTime <= seckillEndTime) {
+                    $('.fadeInLeft').show();
+                    fnEnd();
+                    //秒杀正在进行当中
+                    seckillPid = setInterval(fnEnd, 1000);
+                } else if (nowTime < seckillStartTime) {
+                    $('.fadeInLeft').hide();
+                    fnStart();
+                    seckillPid = setInterval(fnStart, 1000);
+                } else if (nowTime > seckillEndTime) {
+                    $('.fadeInLeft').hide();
+                    $('.seckill').html("<b style='color: #9d9d9d;'>已结束</b>");
+                }
+
+            }
+
+            #{if $user}
+            $('.price').html("¥" + commodity.user_price);
+            $('.payAmount').html("¥" + commodity.user_price);
+            #{else}
+            let user = "";
+            if (commodity.user_price < commodity.price) {
+                user = '<span class="price_tips">(会员价:¥' + commodity.user_price + ') <a style="color: #6d97d5;" href="/user/authentication/login" target="_blank">现在就去登录!</a></span>';
+            }
+            $('.price').html('¥' + commodity.price + ' ' + user);
+            $('.payAmount').html("¥" + commodity.price);
+            #{/if}
+
+            if (commodity.delivery_way === 0) {
+                $('.cardType').html("自动发货").addClass("badge-success");
+                $('.kucunView').show();
+                if (commodity.inventory_hidden == 1) {
+                    if (commodity.card <= 0) {
+                        $('.card_count').removeClass("badge-success").addClass("badge-dark").html("无");
+                    } else if (commodity.card <= 5) {
+                        $('.card_count').removeClass("badge-success").addClass("badge-danger").html("马上卖完!");
+                    } else if (commodity.card <= 20) {
+                        $('.card_count').removeClass("badge-success").addClass("badge-warning").html("一般");
+                    } else if (commodity.card > 20) {
+                        $('.card_count').html("充足");
+                    }
+                } else {
+                    $('.card_count').html(commodity.card);
+                }
+
+            } else {
+                $('.cardType').html("手动发货").addClass("badge-danger");
+            }
+
+            let contactType = ["任意联系方式", "手机号", "邮箱", "QQ号"];
+
+            $('.contact').attr("placeholder", "请输入您的" + contactType[commodity.contact_type] + "，方便订单查询");
+
+            //
+            if (commodity.password_status === 1) {
+                $('.fieldset-password').show();
+            }
+
+            if (commodity.lot_status === 1) {
+                let list = commodity.lot_config.trim().split("\n");
+
+                let ws = [];
+                list.forEach(item => {
+                    let s = item.split('-');
+                    if (s.length === 2) {
+                        ws[s[0]] = s[1].trim("\r");
+                    }
+                });
+
+                let x = '';
+                ws.forEach((money, num) => {
+                    x += '<div class="lot_string">一次性购买' + num + '张，单价自动调整为：<b>¥' + money + '</b></div>';
+                });
+                if (ws.length > 0) {
+                    $('.wholesale').show();
+                    $('.wholesaleHtml').html(x);
+                }
+            }
+
+            if (commodity.coupon === 1) {
+                $('.voucher-view').show();
+            }
+
+            if (commodity.draft_status === 1) {
+                $('.specified').show(150);
+                $('.specified .card-title').html('自选加价:<b style="color: #eba0a0;font-weight: bold;">' + commodity.draft_premium + "元</b>");
+                getDraftCard(commodity.id, 1);
+            }
+
+            $('.clipboard').attr("data-clipboard-text", commodity.share_url);
+
+            $('.clipboard').click(function () {
+                var clipboard = new ClipboardJS(".clipboard");
+                clipboard.on('success', function (e) {
+                    layer.msg("分享链接已经复制成功了，赶快发给好友吧！")
+                });
+            });
+        });
+    }
+
+    function getTradeAmount() {
+        let num = $('input[name=num]').val();
+
+        if (num <= 0) {
+            $('input[name=num]').val(1);
+            num = 1;
+        }
+        let cardId = $('input[name=card_id]:checked').val();
+        let coupon = $('input[name=coupon]').val();
+        if (cardId === undefined) {
+            cardId = 0;
+        }
+        Pay.getTradeAmount(globalCommodityId, coupon, cardId, num, res => {
+            console.log(res);
+            $('.payAmount').html("¥" + res.amount);
+        });
+    }
+
+    function captchaImage() {
+        #{if $config.trade_verification==1}
+        $('.captchaImage').attr("src", "/user/captcha/image?action=trade");
+        #{/if}
+    }
+
+    function Trade(payId) {
+        let cardId = $('input[name=card_id]:checked').val();
+        if (cardId === undefined) {
+            cardId = 0;
+        }
+        Pay.trade({
+            captcha: $('input[name=captcha]').val(),
+            commodity_id: globalCommodityId,
+            contact: $('input[name=contact]').val(),
+            num: $('input[name=num]').val(),
+            password: $('input[name=password]').val(),
+            coupon: $('input[name=coupon]').val(),
+            card_id: cardId,
+            pay_id: payId,
+            device: Pay.device(),
+            from: localStorage.getItem("from_id")
+        }, res => {
+            captchaImage();
+            if (res.secret == null) {
+                window.location.href = res.url;
+            } else {
+                layer.open({
+                    type: 1,
+                    title: "您购买的卡密如下：",
+                    area: ['420px', '420px'],
+                    content: '<textarea class="layui-input" style="padding: 15px;height: 98%;width: 100%;border: none;overflow-x: hidden;">' + res.secret + '</textarea>'
+                });
+            }
+        }, () => {
+            captchaImage();
+        });
+    }
+
+
+    Pay.getPay(res => {
+        res.forEach(item => {
+            if (item.handle === "#system") {
+                #{if $user}
+                $('.pay_type').append(' <a class="button-click" onclick="Trade(' + item.id + ')" style="line-height: 22px;color: #f5a6d9;font-weight: bold;"> <img src="' + item.icon + '" class="commodity-icon"> ' + item.name + '(#{sprintf("%.2f", $user.balance)})</a>');
+                #{/if}
+            } else {
+                $('.pay_type').append(' <a class="button-click" onclick="Trade(' + item.id + ')" style="line-height: 22px;"> <img src="' + item.icon + '" class="commodity-icon"> ' + item.name + '</a>');
+            }
+        })
+    });
+
+    let from = parseInt("#{$from}");
+    if (from !== 0) {
+        localStorage.setItem("from_id", from);
+    }
+
+
+    $(function () {
+        if (Pay.isPc()) {
+            $('.sliderbar-container').sliderBar({
+                open: false,           // 默认是否打开，true打开，false关闭
+                width: 105,           // body内容宽度
+                height: 180,          // body内容高度
+                theme: '#f1a3b0',       // 主题颜色
+                position: 'left'      // 显示位置，有left和right两种
+            });
+        } else {
+            $('.sliderbar-container').hide();
+        }
+    });
+</script>
+</body>
+</html>

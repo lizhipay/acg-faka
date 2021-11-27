@@ -1,0 +1,164 @@
+#{include file="../Common/Header.html"}
+<style>
+    .layui-layer-page .layui-layer-content {
+        overflow-wrap: break-word;
+    }
+
+    .more-table td {
+        border-width: 1px !important;
+        border-color: rgba(241, 195, 195, 0.27) !important;
+        font-size: 14px;
+        color: #fbaea7;
+    }
+
+    .card-data {
+        padding: 10px;
+    }
+
+    .card-data .layui-card {
+        border-radius: 10px;
+        background-color: #ebb9b926;
+    }
+
+    .card-data .layui-card-header {
+        color: #997cf3;
+    }
+
+    .card-data .layui-card-body {
+        color: #ff90f6;
+        font-weight: bold;
+    }
+
+</style>
+
+<div class="layui-container fly-marginTop fly-user-main">
+    #{include file="../Common/Nav.html"}
+    <div class="fly-panel fly-panel-user" pad20>
+        <div class="layui-tab layui-tab-brief" lay-filter="user">
+            <div class="content-header">
+                <i class="layui-icon">&#xe638;</i> 我的主页
+            </div>
+
+            <div class="content-body">
+                <blockquote class="elem-quote">
+                    欢迎回来，#{$user.username}
+                </blockquote>
+                <div style="padding: 10px;" class="more-table">
+                    <table class="layui-table">
+                        <tbody>
+                        <tr>
+                            <td class="layui-col-md2">登录IP地址：</td>
+                            <td class="layui-col-md10" style="color: #00A3FF">#{$user.login_ip}</td>
+                        </tr>
+                        <tr>
+                            <td class="layui-col-md2">登录时间：</td>
+                            <td class="layui-col-md10">#{$user.login_time}</td>
+                        </tr>
+                        <tr>
+                            <td class="layui-col-md2">上次登录IP：</td>
+                            <td class="layui-col-md10" style="color: #00A3FF;">#{$user.last_login_ip} #{if $user.login_ip != $user.last_login_ip} <span style="color: red;">(异地登录)</span>#{/if}</td>
+                        </tr>
+                        <tr>
+                            <td class="layui-col-md2">上次登录时间：</td>
+                            <td class="layui-col-md10">#{$user.last_login_time}</td>
+                        </tr>
+                        <tr>
+                            <td class="layui-col-md2">推广链接：</td>
+                            <td class="layui-col-md10"><a style="cursor: pointer;color: #0C84D1;" class="clipboard" data-clipboard-text="#{$share_url}">#{$share_url}</a> (<span style="color: #0f6674;">通过该链接消费的人会给您丰厚的佣金</span>)</td>
+                        </tr>
+                        <tr>
+                            <td class="layui-col-md2">推广人数：</td>
+                            <td class="layui-col-md10">#{$children}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+
+                <div class="layui-row">
+
+                    <div class="layui-col-md3 card-data">
+                        <div class="layui-card">
+                            <div class="layui-card-header"><i class="layui-icon">&#xe65e;</i> 余额</div>
+                            <div class="layui-card-body">
+                                ￥#{$user.balance}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="layui-col-md3 card-data">
+                        <div class="layui-card">
+                            <div class="layui-card-header"><i class="layui-icon">&#xe735;</i> 硬币</div>
+                            <div class="layui-card-body">
+                                ￥#{$user.coin}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="layui-col-md3 card-data">
+                        <div class="layui-card">
+                            <div class="layui-card-header"><i class="layui-icon">&#xe65e;</i> 总充值</div>
+                            <div class="layui-card-body">
+                                ￥#{$user.recharge}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="layui-col-md3 card-data">
+                        <div class="layui-card">
+                            <div class="layui-card-header"><i class="layui-icon">&#xe735;</i> 总收入(硬币)</div>
+                            <div class="layui-card-body">
+                                ￥#{$user.total_coin}
+                            </div>
+                        </div>
+                    </div>
+                    #{if $user.businessLevel}
+                    <div class="layui-col-md3 card-data">
+                        <div class="layui-card">
+                            <div class="layui-card-header"><i class="layui-icon">&#xe748;</i> 今日收入</div>
+                            <div class="layui-card-body">
+                                ￥#{$today_income}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md3 card-data">
+                        <div class="layui-card">
+                            <div class="layui-card-header"><i class="layui-icon">&#xe6b1;</i> 昨日收入</div>
+                            <div class="layui-card-body">
+                                ￥#{$yesterday_income}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md3 card-data">
+                        <div class="layui-card">
+                            <div class="layui-card-header"><i class="layui-icon">&#xe67b;</i> 本周收入</div>
+                            <div class="layui-card-body">
+                                ￥#{$week_income}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md3 card-data">
+                        <div class="layui-card">
+                            <div class="layui-card-header"><i class="layui-icon">&#xe659;</i> 总交易</div>
+                            <div class="layui-card-body">
+                                ￥#{$trade}
+                            </div>
+                        </div>
+                    </div>
+
+                    #{/if}
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $('.clipboard').click(function () {
+            var clipboard = new ClipboardJS(".clipboard");
+            clipboard.on('success', function (e) {
+                layer.msg("推广链接已经复制成功了，赶快发给好友吧！")
+            });
+        });
+    </script>
+    #{include file="../Common/Footer.html"}

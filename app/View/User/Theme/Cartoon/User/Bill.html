@@ -1,0 +1,99 @@
+#{include file="../Common/Header.html"}
+<div class="layui-container fly-marginTop fly-user-main">
+    #{include file="../Common/Nav.html"}
+    <div class="fly-panel fly-panel-user" pad20>
+        <div class="layui-tab layui-tab-brief" lay-filter="user">
+            <div class="content-header">
+                <i class="layui-icon">&#xe638;</i> 我的账单
+            </div>
+
+            <div class="content-body">
+                <form class="search-query"></form>
+                <table id="bill" lay-filter="bill"></table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        layui.use(['table', 'hex', 'form'], function () {
+            let table = layui.table;
+            let cao = layui.hex;
+            let status = ['<span style="color: red;">支出</span>', '<span style="color: green;">收入</span>'];
+            let currency = ['<span style="color: #0C84D1;">余额</span>', '<span style="color: #13b413;">硬币</span>'];
+
+            var tableInstance = table.render({
+                elem: '#bill'
+                , skin: 'nob'
+                , size: 'lg'
+                , url: '/user/api/bill/data'
+                , page: true
+                , limit: 7
+                , limits: [7, 15, 20]
+                , method: "post"
+                , response: {
+                    statusCode: 200
+                }
+                , cols: [[
+
+                    {
+                        field: 'amount', title: '数量', templet: function (item) {
+                            if (item.type == 0) {
+                                return '<b style="color: red;">‐' + item.amount + '</b>';
+                            }
+                            return '<b style="color: green;">+' + item.amount + '</b>';
+                        }
+                    }
+
+                    , {
+                        field: 'balance', title: '余额', templet: function (item) {
+                            return '<span style="color: #0C84D1;">' + item.balance + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'currency', title: '货币', templet: function (item) {
+                            return currency[item.currency];
+                        }
+                    }
+                    , {
+                        field: 'type', title: '支出/收入', templet: function (item) {
+                            return status[item.type];
+                        }
+                    }
+                    , {
+                        field: 'log', title: '交易内容', templet: function (item) {
+                            return '<span class="badge badge-light">' + item.log + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'create_time', title: '交易时间', templet: function (item) {
+                            return '<span class="badge badge-light">' + item.create_time + '</span>';
+                        }, width: 160
+                    }
+
+                ]],
+                done: res => {
+                    cao.setIdMap(res.data);
+                }
+            });
+
+            cao.query('.search-query', tableInstance, [
+                {
+                    title: "支出/收入", name: "equal-type", type: "select", dict: [
+                        {id: 0, name: "支出"},
+                        {id: 1, name: "收入"},
+                    ]
+                }, {
+                    title: "钱包类型", name: "equal-currency", type: "select", dict: [
+                        {id: 0, name: "余额"},
+                        {id: 1, name: "硬币"},
+                    ]
+                },
+                {title: "开始时间", name: "betweenStart-create_time", type: "date"},
+                {title: "结束时间", name: "betweenEnd-create_time", type: "date"},
+            ], true, false);
+        });
+    });
+</script>
+#{include file="../Common/Footer.html"}

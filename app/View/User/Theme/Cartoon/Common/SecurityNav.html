@@ -1,0 +1,10 @@
+<ul class="layui-tab-title">
+    <li #{if $title=="个人资料"} class="layui-this" #{/if}><a href="/user/security/personal"><i class="layui-icon">&#xe66f;</i> 个人资料</a></li>
+    <li #{if $title=="密码设置"} class="layui-this" #{/if}><a href="/user/security/password"><i class="layui-icon">&#xe673;</i> 密码设置</a></li>
+    #{if $config.registered_type == 2}
+    <li #{if $title=="邮箱设置"} class="layui-this" #{/if}><a href="/user/security/email"><i class="layui-icon">&#xe618;</i> 邮箱设置</a></li>
+    #{/if}
+    #{if $config.registered_type == 1}
+    <li #{if $title=="手机设置"} class="layui-this" #{/if}><a href="/user/security/phone"><i class="layui-icon">&#xe678;</i> 手机设置</a></li>
+    #{/if}
+</ul>

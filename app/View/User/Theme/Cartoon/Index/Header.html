@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="keywords" content="#{$config.keywords}"/>
+    <meta name="description" content="#{$config.description}"/>
+    <link href="/favicon.ico" rel="icon">
+    <link rel="stylesheet" href="/assets/static/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/static/font/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/assets/static/css/i.css?v=#{mt_rand(1000000,999999999)}">
+
+    <script src="/assets/static/jquery.min.js"></script>
+    <script src="/assets/static/jquery.sliderBar.js"></script>
+    <script src="/assets/static/layer/layer.js"></script>
+    <script src="/assets/static/pay.js?v=2"></script>
+    <script src="/assets/static/clipboard.js"></script>
+    <title>#{$config.title}</title>
+</head>
+<body style="background: url('/assets/admin/images/login/bg.jpg') fixed no-repeat;background-size: cover;">
+<div id="app">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light"
+         style="background-color: rgba(255,255,255,0.85) !important;">
+        <div class="container">
+           <div class="navbar-brand">
+               <a href="#{if $user}/user/dashboard/index#{else}/#{/if}">
+                   <img src="#{if $user.avatar}#{$user.avatar}#{else}/favicon.ico#{/if}" height="30px" style="border-radius: 50%;box-shadow: #f0d1d4 1px 1px 1px;">
+                   #{if $user}<span style="position: relative;top: 4px;left: 3px;font-weight: bold;color: #ff9085c7;"> #{$user.username}  #{else} <span style="position: relative;top: 4px;left: 3px;font-weight: bold;color: #ff9085c7;">  #{$config.shop_name}  #{/if}
+               </span></a>
+                #{if $user}
+               <a href="/user/dashboard/index"><span style="position: relative;top: 4px;left: 10px;font-size: 14px;font-weight: bold;color: #7be7bfd9;"><i class="fa fa-yen"></i>#{$user.balance}</span></a>
+               #{else}  <a href="/user/authentication/login?goto=/"><span style="position: relative;top: 4px;left: 10px;font-size: 18px;color: #79b9fbbd;font-weight: bold;"><i class="fa fa-sign-in"></i> 登录</span></a> #{/if}
+           </div>
+            <div class="row">
+                <a class="nav-link" href="/"><i class="fa fa-shopping-bag"></i> 购买商品</a>
+                <a class="nav-link" href="/user/index/query"><i class="fa fa-window-maximize"></i> 查询订单</a>
+            #{if $config.service_url}<a class="nav-link" href="#{$config.service_url}" target="_blank"><i class="fa fa-user-plus"></i> 联系客服</a>#{/if}
+            </div>
+            <!--<div class="navbar-collapse">
+                <ul class="navbar-nav mr-auto"></ul>
+            </div>-->
+        </div>
+    </nav>

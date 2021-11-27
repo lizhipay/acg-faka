@@ -1,0 +1,408 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-fluid">
+            <!--begin::Tables Widget 9-->
+            <div class="card mb-5 mb-xl-8">
+                <!--begin::Header-->
+                <div class="card-header border-0 pt-5">
+                    <div class="card-toolbar">
+                        <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fas fa-trash"></i> 移除选中用户
+                        </button>
+                    </div>
+                </div>
+                <!--end::Header-->
+
+                <div class="card-body py-3">
+                    <form class="search-query"></form>
+                    <table id="user" lay-filter="user"></table>
+                </div>
+            </div>
+
+            <!--end::Tables Widget 9-->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+
+<div style="display: none" class="business-modal">
+    <div style="padding: 10px;" class="more-table">
+        <table class="layui-table">
+            <tbody>
+            <tr>
+                <td colspan="2" style="text-align: center;"><img src="[avatar]"
+                                                                 style="height: 80px;width:80px;border-radius: 100%;box-shadow: 1px 1px 10px 1px #ed9b9bb3;">
+                </td>
+            </tr>
+
+            <tr>
+                <td>店铺名称</td>
+                <td>[shop_name]</td>
+            </tr>
+            <tr>
+                <td>浏览器标题</td>
+                <td>[title]</td>
+            </tr>
+            <tr>
+                <td>店铺公告</td>
+                <td>[notice]</td>
+            </tr>
+            <tr>
+                <td>客服QQ</td>
+                <td>[service_qq]</td>
+            </tr>
+            <tr>
+                <td>客服链接</td>
+                <td><a href="[service_url]" target="_blank">[service_url]</a></td>
+            </tr>
+            <tr>
+                <td>子域名</td>
+                <td><a href="[subdomain]" target="_blank">[subdomain]</a></td>
+            </tr>
+            <tr>
+                <td>绑定域名</td>
+                <td><a href="[topdomain]" target="_blank">[topdomain]</a></td>
+            </tr>
+            <tr>
+                <td>主站商品</td>
+                <td>[master_display]</td>
+            </tr>
+            <tr>
+                <td>创建时间</td>
+                <td>[create_time]</td>
+            </tr>
+
+            <tr>
+                <td>今日交易</td>
+                <td>[today_order_amount]</td>
+            </tr>
+            <tr>
+                <td>昨日交易</td>
+                <td>[yesterday_order_amount]</td>
+            </tr>
+            <tr>
+                <td>本周交易</td>
+                <td>[week_order_amount]</td>
+            </tr>
+            <tr>
+                <td>本月交易</td>
+                <td>[month_order_amount]</td>
+            </tr>
+            <tr>
+                <td>总交易</td>
+                <td>[total_order_amount]</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+
+    $(function () {
+        layui.use(['table', 'hex'], function () {
+            let table = layui.table;
+            var cao = layui.hex;
+
+            var tableInstance = table.render({
+                elem: '#user'
+                , skin: 'nob'
+                , size: 'lg'
+                , height: document.documentElement.clientHeight - 375
+                , url: '/admin/api/user/data'
+                , page: true
+                , limit: 16
+                , limits: [16, 20, 30]
+                , method: "post"
+                , response: {
+                    statusCode: 200
+                }
+                , cols: [[
+                    {
+                        type: 'checkbox', fixed: 'left'
+                    }
+                    , {field: 'id', title: 'ID', width: 80}
+                    , {
+                        field: 'avatar', title: '用户名', templet: function (item) {
+                            if (!item.avatar) {
+                                item.avatar = "/favicon.ico";
+                            }
+                            return '<span class="badge badge-light-dark"><img src="' + item.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.username + '</span> '
+                        }
+                    }
+                    , {
+                        field: 'business_level', title: '他的店铺', templet: function (item) {
+                            if (!item.business_level) {
+                                return '-';
+                            }
+                            return '<span data-id="' + item.id + '" class="badge badge-light business" style="cursor: pointer;"><img src="' + item.business_level.icon + '"  style="width: 16px;padding-bottom: 3px;"/> ' + item.business_level.name + '</span> '
+                        }
+                    }
+                    , {
+                        field: 'group', title: '会员等级', templet: function (item) {
+                            return '<img style="height: 32px;" src="' + item.group.icon + '" title="' + item.group.name + ' (减免:' + (item.group.discount * 100) + '%)">'
+                        }
+                    }
+                    , {
+                        field: 'email', title: '邮箱', templet: function (item) {
+                            if (!item.email) {
+                                return "-";
+                            }
+                            return item.email;
+                        }
+                    }
+                    , {
+                        field: 'phone', title: '手机号', templet: function (item) {
+                            if (!item.phone) {
+                                return "-";
+                            }
+                            return item.phone;
+                        }
+                    }
+                    , {
+                        field: 'qq', title: 'QQ', templet: function (item) {
+                            if (!item.qq) {
+                                return "-";
+                            }
+                            return item.qq;
+                        }
+                    }
+                    , {
+                        field: 'balance', title: '余额', templet: function (item) {
+                            return '<span class="badge badge-light-primary recharge" style="cursor: pointer;" data-id="' + item.id + '"><i class="fas fa-yen-sign text-primary fs-10"></i> ' + item.balance + '</span>'
+                        }
+                    }
+
+                    , {
+                        field: 'recharge', title: '总充值', templet: function (item) {
+                            return '<span class="badge badge-light-primary">' + item.recharge + '</span>'
+                        }
+                    }
+                    , {
+                        field: 'coin', title: '硬币', templet: function (item) {
+                            return '<span class="badge badge-light-success"><i class="fas fa-yen-sign text-success fs-10"></i> ' + item.coin + '</span>'
+                        }
+                    }
+                    , {
+                        field: 'total_coin', title: '总硬币', templet: function (item) {
+                            return '<span class="badge badge-light-success">' + item.total_coin + '</span>'
+                        }
+                    }
+
+                    , {
+                        field: 'avatar', title: '上级', templet: function (item) {
+                            if (!item.parent) {
+                                return '-';
+                            }
+
+                            if (!item.parent.avatar) {
+                                item.parent.avatar = "/favicon.ico";
+                            }
+                            return '<span class="badge badge-light-dark parent" style="cursor: pointer;" data-id="' + item.parent.id + '"><img src="' + item.parent.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.parent.username + '(' + item.parent.id + ')</span>'
+                        }
+                    }
+                    , {
+                        field: 'status', title: '状态', templet: function (item) {
+                            if (item.status == 1) {
+                                return '<span class="badge badge-light-success">正常</span>';
+                            }
+                            return '<span class="badge badge-light-danger" >封禁</span>';
+                        }
+                    }
+
+                    , {
+                        templet: function (item) {
+                            let html = '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fas fa-user-edit"></i></button> ';
+                            if (item.status == 0) {
+                                html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 start"><i class="far fa-dot-circle" style="color: #17d917;"></i></button> ';
+                            } else {
+                                html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 stop"><i style="color: #ff6c6c;" class="fas fa-ban"></i></button> ';
+                            }
+                            html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+                            return html;
+                        }
+                    }
+                ]],
+                done: res => {
+                    cao.setIdMap(res.data);
+
+                    $('.edit').click(function () {
+                        let mapItem = cao.getMapItem(this);
+                        modal(mapItem);
+                    });
+
+                    $('.recharge').click(function () {
+                        let mapItem = cao.getMapItem(this);
+                        recharge(mapItem);
+                    });
+
+                    $('.del').click(function () {
+                        let id = cao.getObjectId(this);
+                        console.log(id)
+                        layer.confirm('您正在删除会员，该操作极度危险，是否还要继续？', {
+                            btn: ['确认删除', '取消']
+                        }, function () {
+                            $.post('/admin/api/user/del', {list: [id]}, res => {
+                                layer.msg(res.msg);
+                                tableInstance.reload();
+                            });
+                        });
+                    });
+
+                    $('.start').click(function () {
+                        let id = cao.getObjectId(this);
+                        $.post('/admin/api/user/save', {id: id, status: 1}, res => {
+                            layer.msg(res.msg);
+                            tableInstance.reload();
+                        });
+                    });
+
+                    $('.stop').click(function () {
+                        let id = cao.getObjectId(this);
+                        $.post('/admin/api/user/save', {id: id, status: 0}, res => {
+                            layer.msg(res.msg);
+                            tableInstance.reload();
+                        });
+                    });
+
+                    $('.parent').click(function () {
+                        let id = cao.getObjectId(this);
+                        $("input[name='equal-pid']").val(id);
+                        tableInstance.reload({
+                            where: {"equal-pid": id},
+                            page: {
+                                curr: 1
+                            }
+                        });
+                    });
+                    $('.business').click(function () {
+                        let map = cao.getMapItem(this);
+                        let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+                        $.get("/admin/api/user/statistics?id=" + map.id, res => {
+                            layer.close(loaderIndex);
+                            if (res.code != 200) {
+                                return;
+                            }
+                            layer.open({
+                                type: 1,
+                                shadeClose: true,
+                                title: '<i class="layui-icon">&#xe600;</i> 店铺信息',
+                                content: $('.business-modal').html()
+                                    .replace("[avatar]", map.avatar ? map.avatar : '/favicon.ico')
+                                    .replace("[shop_name]", map.business.shop_name ? map.business.shop_name : "-")
+                                    .replace("[title]", map.business.title ? map.business.title : "-")
+                                    .replace("[notice]", map.business.notice ? map.business.notice : "-")
+                                    .replace("[service_qq]", map.business.service_qq ? map.business.service_qq : "-")
+                                    .replaceAll("[service_url]", map.business.service_url ? map.business.service_url : "-")
+                                    .replaceAll("[subdomain]", map.business.subdomain ? map.business.subdomain : "-")
+                                    .replaceAll("[topdomain]", map.business.topdomain ? map.business.topdomain : "-")
+                                    .replace("[create_time]", map.business.create_time)
+                                    .replace("[master_display]", map.business.master_display == 1 ? "<span style='color: green;'>显示</span>" : "<span style='color: green;'>隐藏</span>")
+                                    .replace("[today_order_amount]", res.data.today_order_amount)
+                                    .replace("[yesterday_order_amount]", res.data.yesterday_order_amount)
+                                    .replace("[week_order_amount]", res.data.week_order_amount)
+                                    .replace("[month_order_amount]", res.data.month_order_amount)
+                                    .replace("[total_order_amount]", res.data.total_order_amount)
+                                , area: cao.isPc() ? "420px" : "100%"
+                            });
+                        });
+
+
+                    });
+                }
+            });
+
+            let modal = (values = {}) => {
+                delete values.password;
+
+                if (typeof values.business_level == "object" && values.business_level != null) {
+                    values.business_level = values.business_level.id;
+                }
+                cao.popup('/admin/api/user/save', [
+                    {title: "头像", name: "avatar", type: "image", placeholder: "请选择图片", width: 100},
+                    {title: "用户名", name: "username", type: "input", placeholder: "请输入用户名"},
+                    {title: "邮箱", name: "email", type: "input", placeholder: "请输入邮箱"},
+                    {title: "手机", name: "phone", type: "input", placeholder: "请输入手机号"},
+                    {title: "QQ", name: "qq", type: "input", placeholder: "请输入QQ号"},
+                    {title: "登录密码", name: "password", type: "input", placeholder: "不修改请留空"},
+                    {title: "上级ID", name: "pid", type: "input", placeholder: "请输入上级ID"},
+                    {
+                        title: "商户等级",
+                        name: "business_level",
+                        type: "select",
+                        dict: "business_level,id,name",
+                        placeholder: "暂未开通"
+                    },
+                    {title: "状态", name: "status", type: "switch", text: "正常"},
+                ], res => {
+                    tableInstance.reload();
+                }, values);
+            }
+
+            let recharge = (values = {}) => {
+                cao.popup('/admin/api/user/recharge', [
+                    {
+                        title: "类型", name: "action", type: "radio", placeholder: "请选择", default: 1, dict: [
+                            {id: 1, name: "<b style='color: green;'>充值</b>"},
+                            {id: 0, name: "<b style='color: red;'>扣费</b>"},
+                        ]
+                    },
+                    {title: "金额", name: "amount", type: "input", placeholder: "请输入金额"},
+                    {title: "原因", name: "log", type: "input", placeholder: "请输入原因"},
+                    {title: "充值累计", name: "total", type: "switch", text: "是", default: 1},
+
+                ], res => {
+                    tableInstance.reload();
+                }, values, "460px", false, "充值/扣费");
+            }
+
+            $('.btn-app-create').click(function () {
+                modal();
+            });
+
+            $('.btn-app-del').click(() => {
+                var data = cao.listObjectToArray(table.checkStatus('user').data);
+                if (data.length == 0) {
+                    layer.msg("请至少勾选1个用户进行操作！");
+                    return;
+                }
+
+                layer.confirm('您确定要删除已经选中的用户吗？这是不可恢复的操作！', {
+                    btn: ['确定', '取消']
+                }, function () {
+                    $.post("/admin/api/user/del", {list: data}, res => {
+                        layer.msg(res.msg);
+                        tableInstance.reload();
+                    });
+                });
+            });
+
+            cao.query('.search-query', tableInstance, [
+                {title: "用户名", name: "search-username", type: "input"},
+                {title: "邮箱", name: "equal-email", type: "input"},
+                {title: "手机号", name: "equal-phone", type: "input"},
+                {title: "QQ号", name: "equal-qq", type: "input"},
+                {title: "IP地址", name: "equal-login_ip", type: "input"},
+                {
+                    title: "状态", name: "equal-status", type: "select", dict: [
+                        {id: 0, name: "封禁"},
+                        {id: 1, name: "正常"}
+                    ]
+                },
+                {title: "上级ID", name: "equal-pid", type: "input"}
+            ], true, false);
+        });
+    });
+</script>
+
+#{include file="../Footer.html"}

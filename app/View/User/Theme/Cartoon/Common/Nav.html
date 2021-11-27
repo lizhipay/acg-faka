@@ -1,0 +1,80 @@
+<ul class="layui-nav layui-nav-tree layui-inline">
+    <li class="layui-nav-item #{if $title=='个人主页'} layui-this #{/if}">
+        <a href="/user/dashboard/index">
+            <i class="layui-icon">&#xe68e;</i>
+            我的主页
+        </a>
+    </li>
+    <li class="layui-nav-item #{if $title=='我的店铺'} layui-this #{/if}">
+        <a href="/user/business/index">
+            <i class="layui-icon">&#xe653;</i>
+            我的店铺#{if $user.businessLevel}<span class="layui-badge layui-bg-pro">#{$user.businessLevel.name}</span>#{/if}
+        </a>
+    </li>
+    #{if $user.businessLevel}
+    <li class="layui-nav-item #{if $title=='商品分类'} layui-this #{/if}">
+        <a href="/user/category/index">
+            <i class="layui-icon">&#xe66e;</i>
+            商品分类
+        </a>
+    </li>
+    <li class="layui-nav-item #{if $title=='我的商品'} layui-this #{/if}">
+        <a href="/user/commodity/index">
+            <i class="layui-icon">&#xe656;</i>
+            我的商品
+        </a>
+    </li>
+    <li class="layui-nav-item #{if $title=='卡密管理'} layui-this #{/if}">
+        <a href="/user/card/index">
+            <i class="layui-icon">&#xe674;</i>
+            卡密管理
+        </a>
+    </li>
+    <li class="layui-nav-item #{if $title=='代卷管理'} layui-this #{/if}">
+        <a href="/user/coupon/index">
+            <i class="layui-icon">&#xe627;</i>
+            代卷管理
+        </a>
+    </li>
+    <li class="layui-nav-item #{if $title=='商品订单'} layui-this #{/if}">
+        <a href="/user/order/index">
+            <i class="layui-icon">&#xe6fc;</i>
+            商品订单
+        </a>
+    </li>
+    #{/if}
+    <li class="layui-nav-item #{if $title=='充值中心'} layui-this #{/if}">
+        <a href="/user/recharge/index">
+            <i class="layui-icon">&#xe65e;</i>
+            充值中心
+        </a>
+    </li>
+    <li class="layui-nav-item #{if $title=='硬币兑现' or $title=='兑现记录'} layui-this #{/if}">
+        <a href="/user/cash/index">
+            <i class="layui-icon">&#xe735;</i>
+            硬币兑现
+        </a>
+    </li>
+    <li class="layui-nav-item #{if $title=='我的账单'} layui-this #{/if}">
+        <a href="/user/bill/index">
+            <i class="layui-icon">&#xe63c;</i>
+            我的账单
+        </a>
+    </li>
+    <li class="layui-nav-item #{if in_array($title,['个人资料','邮箱设置','手机设置','密码设置'])} layui-this #{/if}">
+        <a href="/user/security/personal">
+            <i class="layui-icon">&#xe672;</i>
+            安全中心
+        </a>
+    </li>
+</ul>
+
+<div class="site-tree-mobile layui-hide">
+    <i class="layui-icon">&#xe602;</i>
+</div>
+<div class="site-mobile-shade"></div>
+
+<div class="site-tree-mobile layui-hide">
+    <i class="layui-icon">&#xe602;</i>
+</div>
+<div class="site-mobile-shade"></div>

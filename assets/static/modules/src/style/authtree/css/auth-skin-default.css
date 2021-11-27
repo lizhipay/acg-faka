@@ -1,0 +1,108 @@
+/**
+Author: Jeffrey Wang
+Email: admin@wj2015.com
+Name: auth-skin-default
+Comment: 默认主题，感谢lipengfei886@qq.com提供的基础样式
+Version: v1.0.0
+*/
+
+/*请在js中的.auth-status前的div加一个class属性auth-skin*/
+.auth-skin-default .auth-status {
+    margin-top: -12px;
+}
+.auth-skin-default .auth-status > i.layui-icon {
+    width: 18px;
+    font-size: 18px;
+    text-align: center;
+}
+.auth-skin-default .auth-status > div {
+    position: relative;
+    top: 6px;
+    padding-left: 17px;
+}
+.auth-skin-default .auth-status > div.layui-form-radio {
+    padding-left: 5px;
+}
+/*美化的多选框/单选框DOM*/
+.auth-skin-default .auth-status > div > span {
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+    display: inline-block;
+    padding: 3px 8px;
+    text-decoration: none;
+
+    position: relative;
+    top: -3px;
+}
+
+.auth-skin-default .auth-skin {
+    list-style-type: none;
+    margin: 0;
+    padding: 13px 5px 0 5px;
+    position: relative;
+    color: #009688;
+}
+
+.auth-skin-default .auth-skin::before, .auth-skin-default .auth-skin::after {
+    content: '';
+    left: -10px;
+    position: absolute;
+    right: auto
+}
+
+.auth-skin-default .auth-skin::before {
+    border-left: 1px dashed #009688;
+    bottom: 50px;
+    height: 100%;
+    top: 0;
+    width: 1px
+}
+
+.auth-skin-default .auth-skin::after {
+    border-top: 1px dashed #009688;
+    height: 20px;
+    top: 25px;
+    width: 25px
+}
+/*解决多层数据中，auth-child缩进长度的问题*/
+.auth-skin-default > .auth-single .auth-single {
+    margin-left: 36px;
+}
+.auth-skin-default > .auth-single > .auth-skin > .auth-child .auth-child {
+    margin-left: 18px;
+}
+.auth-skin-default > .auth-single > .auth-skin {
+}
+
+.auth-skin-default > .auth-single > .auth-skin::before, .auth-skin-default > .auth-single > .auth-skin::after {
+    border: 0
+}
+
+.auth-skin-default > .auth-single > .auth-skin:last-child::before {
+    height: 30px
+}
+/*隐藏左侧操作的特殊样式*/
+.auth-skin-default.auth-tree-hidechoose .auth-status > span {
+    display: none;
+}
+.auth-skin-default.auth-tree-hidechoose .auth-status > div > span {
+    padding-left: 3px;
+}
+.auth-skin-default.auth-tree-hidechoose .auth-status  > i {
+    position: relative;
+    top: 4px;
+}
+
+/*放于同一行的样式*/
+.auth-skin-default .auth-row {
+    display: inline-block;
+    margin-left: 5px;
+}
+.auth-skin-default > .auth-single .auth-child .auth-row {
+    margin-left: -22px;
+}
+.auth-skin-default .auth-row.auth-skin::before, .auth-skin-default .auth-row.auth-skin::after {
+    content: '';
+    border: 0;
+}

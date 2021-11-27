@@ -1,0 +1,142 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-fluid">
+            <!--begin::Tables Widget 9-->
+            <div class="card mb-5 mb-xl-8">
+                <!--begin::Header-->
+                <div class="card-header border-0 pt-5">
+                    <div class="card-toolbar">
+                            <div class="col-md-12 mt-5">
+                                <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i
+                                        class="fas fa-plus"></i>
+                                    新增等级
+                                </button>
+                            </div>
+                    </div>
+                </div>
+
+
+                <!--end::Header-->
+
+                <div class="card-body py-3">
+                    <table id="user-group" lay-filter="user-group"></table>
+                </div>
+            </div>
+
+            <!--end::Tables Widget 9-->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+
+<script>
+
+    $(function () {
+        layui.use(['table', 'hex'], function () {
+            let table = layui.table;
+            var cao = layui.hex;
+
+            var tableInstance = table.render({
+                elem: '#user-group'
+                , skin: 'nob'
+                , size: 'lg'
+                , url: '/admin/api/group/data'
+                , height: document.documentElement.clientHeight - 330
+                , page: false
+                , limit: 16
+                , method: "post"
+                , response: {
+                    statusCode: 200
+                }
+                , cols: [[
+                    {
+                        type: 'checkbox', fixed: 'left'
+                    }, {
+                        field: 'icon', title: '图标', templet: function (item) {
+                            if (!item.icon) {
+                                return "-";
+                            }
+                            return '<img src="' + item.icon + '"  style="height: 32px;"/>'
+                        }
+                    }
+                    , {
+                        field: 'name', title: '等级名称', templet: function (item) {
+                            return '<span class="badge badge-light">' + item.name + '</span>'
+                        }
+                    }
+                    , {
+                        field: 'recharge', title: '累计充值', templet: function (item) {
+                            return '<span class="badge badge-light-success">' + item.recharge + '</span>'
+                        }
+                    }
+                    , {
+                        field: 'discount', title: '会员折扣', templet: function (item) {
+                            return '<span class="badge badge-light-primary">' + (item.discount * 100) + '%</span>'
+                        }
+                    }
+                    , {
+                        templet: function (item) {
+                            let html = '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fa fa-edit"></i></button> ';
+                            html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+                            return html;
+                        }
+                    }
+                ]],
+                done: res => {
+                    cao.setIdMap(res.data);
+
+                    $('.edit').click(function () {
+                        let mapItem = cao.getMapItem(this);
+                        modal(mapItem);
+                    });
+
+                    $('.del').click(function () {
+                        let id = cao.getObjectId(this);
+                        console.log(id)
+                        layer.confirm('您正在移除该等级，是否要继续？', {
+                            btn: ['确认移除', '取消']
+                        }, function () {
+                            $.post('/admin/api/group/del', {list: [id]}, res => {
+                                layer.msg(res.msg);
+                                tableInstance.reload();
+                            });
+                        });
+                    });
+                }
+            });
+
+            let modal = (values = {}) => {
+                cao.popup('/admin/api/group/save', [
+                    {title: "等级图标", name: "icon", type: "image", placeholder: "请选择图片", width: 50},
+                    {title: "等级名称", name: "name", type: "input", placeholder: "请输入等级名称"},
+                    {
+                        title: "会员折扣",
+                        name: "discount",
+                        type: "input",
+                        placeholder: "请使用小数表达百分比",
+                        tips: "当会员购买商品时，系统将会通过这个费率计算出给会员的优惠折扣，就和理发店办理VIP一样。"
+                    },
+                    {title: "累计充值", name: "recharge", type: "input", placeholder: "请输入累计充值", tips: "当会员充值累计达到这个金额时，将会自动升级为该会员等级。"},
+                ], res => {
+                    tableInstance.reload();
+                }, values);
+            }
+
+            $('.btn-app-create').click(function () {
+                modal();
+            });
+        });
+    });
+</script>
+
+#{include file="../Footer.html"}

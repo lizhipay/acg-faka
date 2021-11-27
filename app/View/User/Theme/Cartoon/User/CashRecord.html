@@ -1,0 +1,109 @@
+#{include file="../Common/Header.html"}
+<div class="layui-container fly-marginTop fly-user-main">
+    #{include file="../Common/Nav.html"}
+    <div class="fly-panel fly-panel-user" pad20>
+        <div class="layui-tab layui-tab-brief" lay-filter="user">
+            <ul class="layui-tab-title">
+                <li><a href="/user/cash/index"><i class="layui-icon">&#xe659;</i> 硬币兑现</a></li>
+                <li class="layui-this"><a href="/user/cash/record"><i class="layui-icon">&#xe63c;</i> 兑现记录</a></li>
+            </ul>
+
+
+            <div class="content-body">
+                <form class="search-query"></form>
+                <table id="bill" lay-filter="bill"></table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        layui.use(['table', 'hex', 'form'], function () {
+            let table = layui.table;
+            let cao = layui.hex;
+            let card = ['<img src="/assets/user/images/cash/alipay.png" style="height: 32px;">', '<img src="/assets/user/images/cash/wechat.png" style="height: 32px;">'];
+            let type = ['<span style="color: #0C84D1;">自动结算</span>', '<span style="color: #e8a430;">手动兑现</span>'];
+            let status = ['<span class="layui-badge layui-bg-red">处理中</span>', '<span  class="layui-badge layui-bg-green">已到账</span>', '<span  class="layui-badge layui-bg-gray">失败：[msg]</span>'];
+
+            var tableInstance = table.render({
+                elem: '#bill'
+                , skin: 'nob'
+                , size: 'lg'
+                , url: '/user/api/cash/record'
+                , page: true
+                , limit: 7
+                , height: 450
+                , limits: [7, 15, 20]
+                , method: "post"
+                , response: {
+                    statusCode: 200
+                }
+                , cols: [[
+
+                    {
+                        field: 'amount', title: '硬币', templet: function (item) {
+
+                            return '<b style="color: green;">￥' + item.amount + '</b>';
+                        }
+                    }
+                    , {
+                        field: 'type', title: '类型', templet: function (item) {
+                            return type[item.type];
+                        }
+                    }
+                    , {
+                        field: 'card', title: '到账方式', templet: function (item) {
+                            return card[item.card];
+                        }
+                    }
+                    , {
+                        field: 'status', title: '状态', templet: function (item) {
+                            return status[item.status].replace("[msg]", item.message);
+                        }
+                    }
+                    ,
+                    {
+                        field: 'cost', title: '手续费', templet: function (item) {
+
+                            return '<span style="color: #13c2b3;">' + item.cost + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'create_time', title: '提交时间'
+                    }
+                    , {
+                        field: 'arrive_time', title: '到账时间', templet: function (item) {
+                            if (!item.arrive_time) {
+                                return "-";
+                            }
+                            return item.arrive_time;
+                        }
+                    }
+
+                ]],
+                done: res => {
+                    cao.setIdMap(res.data);
+                }
+            });
+
+            cao.query('.search-query', tableInstance, [
+                {
+                    title: "到账方式", name: "equal-card", type: "select", dict: [
+                        {id: 0, name: "支付宝"},
+                        {id: 1, name: "微信"},
+                    ]
+                }, {
+                    title: "状态", name: "equal-status", type: "select", dict: [
+                        {id: 0, name: "处理中"},
+                        {id: 1, name: "成功"},
+                        {id: 2, name: "失败"},
+                    ]
+                },
+                {title: "开始时间", name: "betweenStart-create_time", type: "date"},
+                {title: "结束时间", name: "betweenEnd-create_time", type: "date"},
+            ], true, false);
+        });
+    });
+</script>
+#{include file="../Common/Footer.html"}

@@ -1,0 +1,176 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-fluid">
+            <!--begin::Tables Widget 9-->
+            <div class="card mb-5 mb-xl-8">
+                <!--begin::Header-->
+                <div class="card-header border-0 pt-5">
+                    <div class="card-toolbar">
+                            <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i
+                                    class="fas fa-plus"></i>
+                                新增等级
+                            </button>
+                    </div>
+                </div>
+
+
+                <!--end::Header-->
+
+                <div class="card-body py-3">
+                    <table id="businessLevel" lay-filter="businessLevel"></table>
+                </div>
+            </div>
+
+            <!--end::Tables Widget 9-->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+
+<script>
+
+    $(function () {
+        layui.use(['table', 'hex'], function () {
+            let table = layui.table;
+            var cao = layui.hex;
+
+            var tableInstance = table.render({
+                elem: '#businessLevel'
+                , skin: 'nob'
+                , size: 'lg'
+                , url: '/admin/api/businessLevel/data'
+                , height: document.documentElement.clientHeight - 320
+                , page: false
+                , limit: 16
+                , method: "post"
+                , response: {
+                    statusCode: 200
+                }
+                , cols: [[
+                    {
+                        type: 'checkbox', fixed: 'left'
+                    }, {
+                        field: 'icon', title: '图标', templet: function (item) {
+                            if (!item.icon) {
+                                return "-";
+                            }
+                            return '<img src="' + item.icon + '"  style="height: 24px;"/>'
+                        }
+                    }
+                    , {
+                        field: 'name', title: '等级名称', templet: function (item) {
+                            return '<span class="badge badge-light">' + item.name + '</span>'
+                        }
+                    }
+                    , {
+                        field: 'price', title: '购买价格', templet: function (item) {
+                            return '<span class="badge badge-light-success">' + item.price + '</span>'
+                        }
+                    }
+                    , {
+                        field: 'cost', title: '商品抽成', templet: function (item) {
+                            return '<span class="badge badge-light-primary">' + (item.cost * 100) + '%</span>'
+                        }
+                    }
+                    , {
+                        field: 'accrual', title: '分站提成', templet: function (item) {
+                            return '<span class="badge badge-light-primary">' + (item.accrual * 100) + '%</span>'
+                        }
+                    }
+                    , {
+                        field: 'substation', title: '分站权限', templet: function (item) {
+                            if (item.substation == 1) {
+                                return '<span class="badge badge-light-success">开启</span>'
+                            }
+                            return '<span class="badge badge-light-danger">关闭</span>'
+                        }
+                    }
+                    , {
+                        field: 'top_domain', title: '绑定域名', templet: function (item) {
+                            if (item.top_domain == 1) {
+                                return '<span class="badge badge-light-success">开启</span>'
+                            }
+                            return '<span class="badge badge-light-danger">关闭</span>'
+                        }
+                    }
+                    , {
+                        templet: function (item) {
+                            let html = '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fa fa-edit"></i></button> ';
+                            html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+                            return html;
+                        }
+                    }
+                ]],
+                done: res => {
+                    cao.setIdMap(res.data);
+
+                    $('.edit').click(function () {
+                        let mapItem = cao.getMapItem(this);
+                        modal(mapItem);
+                    });
+
+                    $('.del').click(function () {
+                        let id = cao.getObjectId(this);
+                        console.log(id)
+                        layer.confirm('您正在移除该等级，是否要继续？', {
+                            btn: ['确认移除', '取消']
+                        }, function () {
+                            $.post('/admin/api/businessLevel/del', {list: [id]}, res => {
+                                layer.msg(res.msg);
+                                tableInstance.reload();
+                            });
+                        });
+                    });
+                }
+            });
+
+            let modal = (values = {}) => {
+                cao.popup('/admin/api/businessLevel/save', [
+                    {title: "等级图标", name: "icon", type: "image", placeholder: "请选择图片", width: 50},
+                    {title: "等级名称", name: "name", type: "input", placeholder: "请输入等级名称"},
+                    {
+                        title: "商品抽成",
+                        name: "cost",
+                        type: "input",
+                        placeholder: "请使用小数表达百分比",
+                        tips: "商户可以发布自己的商品，那么卖出的商品，就会通过这个费率被系统扣除一定的费用，类似手续费一样。"
+                    },
+                    {title: "分站权限", name: "substation", type: "switch", text: "开启", tips: "开启后，商户则拥有子站权限，可以使用子站功能。"},
+                    {
+                        title: "分站提成",
+                        name: "accrual",
+                        type: "input",
+                        placeholder: "请使用小数表达百分比",
+                        tips: "主站的商品被分站卖出去后，那么就会通过该费率返佣给该商户。"
+                    },
+                    {
+                        title: "绑定域名",
+                        name: "top_domain",
+                        type: "switch",
+                        text: "开启",
+                        tips: "开启后，商户的店铺可以绑定顶级域名，关闭后则只能使用子域名。"
+                    },
+                    {title: "购买价格", name: "price", type: "input", placeholder: "请输入该等级的购买价格"},
+                ], res => {
+                    tableInstance.reload();
+                }, values);
+            }
+
+            $('.btn-app-create').click(function () {
+                modal();
+            });
+        });
+    });
+</script>
+
+#{include file="../Footer.html"}

@@ -1,0 +1,379 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-xxl">
+            <!--begin::Basic info-->
+            <div class="card mb-5 mb-xl-10">
+                <!--begin::Card header-->
+                <div class="card-header border-0 cursor-pointer">
+                    <!--begin::Card title-->
+                    <div class="card-title m-0">
+                        <h3 class="fw-bolder m-0">基本设置</h3>
+                    </div>
+                    <!--end::Card title-->
+                </div>
+                <!--begin::Card header-->
+                <!--begin::Content-->
+                <div id="kt_account_profile_details" class="collapse show">
+                    <!--begin::Form-->
+                    <form id="data-form" class="form">
+                        <!--begin::Card body-->
+                        <div class="card-body border-top p-9">
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">LOGO</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8">
+                                    <!--begin::Image input-->
+                                    <div class="image-input image-input-outline" data-kt-image-input="true"
+                                         style="background-image: url(/assets/admin/images/setting/blank.png)">
+                                        <!--begin::Preview existing logo-->
+                                        <div class="image-input-wrapper w-125px h-125px"
+                                             style="background-image: url(/favicon.ico)"></div>
+                                        <!--end::Preview existing logo-->
+                                        <!--begin::Label-->
+                                        <label class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
+                                               data-kt-image-input-action="change" data-bs-toggle="tooltip"
+                                               title="Change logo">
+                                            <i class="fas fa-pen"></i>
+                                            <!--begin::Inputs-->
+                                            <input type="file" class="upload-logo"
+                                                   accept=".png, .jpg, .jpeg, .ico"/>
+                                            <input type="hidden" name="logo" value="/favicon.ico"/>
+                                            <!--end::Inputs-->
+                                        </label>
+                                        <!--end::Label-->
+                                        <!--begin::Cancel-->
+                                        <span class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
+                                              data-kt-image-input-action="cancel" data-bs-toggle="tooltip"
+                                              title="Cancel logo">
+																<i class="bi bi-x fs-2"></i>
+															</span>
+                                        <!--end::Cancel-->
+                                        <!--begin::Remove-->
+                                        <span class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
+                                              data-kt-image-input-action="remove" data-bs-toggle="tooltip"
+                                              title="Remove logo">
+																<i class="far fa-trash-alt"></i>
+															</span>
+                                        <!--end::Remove-->
+                                    </div>
+                                    <!--end::Image input-->
+                                    <!--begin::Hint-->
+                                    <div class="form-text">支持文件格式: png, jpg, jpeg, ico.</div>
+                                    <!--end::Hint-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">网站模板</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <!--begin::Input-->
+                                    <select name="user_theme" class="form-select form-select-solid form-select-lg" data-control="select2" data-hide-search="true">
+                                        #{foreach $themes as $theme}
+                                        <option value="#{$theme.info.KEY}"  #{if $theme.info.KEY == $config.user_theme} selected #{/if}>#{$theme.info.NAME} (v#{$theme.info.VERSION})</option>
+                                        #{/foreach}
+                                    </select>
+                                    <!--end::Input-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">店铺名称</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="shop_name"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="请输入店铺名称" value="#{$config.shop_name}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">网站标题</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="title"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="请输入网站标题" value="#{$config.title}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6">关键词</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="keywords"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="请输入网站关键词" value="#{$config.keywords}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6">网站描述</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <textarea name="description"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="请输入网站描述">#{$config.description}</textarea>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6">店铺公告</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <textarea style="display: none;" name="notice" class="notice-textarea"></textarea>
+                                    <div class="notice-div">#{$config.notice}</div>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">注册方式</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <!--begin::Input-->
+                                    <select name="registered_type" class="form-select form-select-solid form-select-lg" data-control="select2" data-hide-search="true">
+                                        <option value="0" #{if $config.registered_type == 0} selected #{/if}>用户名</option>
+                                        <option value="1" #{if $config.registered_type == 1} selected #{/if}>用户名+手机</option>
+                                        <option value="2" #{if $config.registered_type == 2} selected #{/if}>用户名+邮箱</option>
+                                    </select>
+                                    <!--end::Input-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">注册验证码</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <!--begin::Options-->
+                                    <div class="d-flex align-items-center mt-3">
+                                        <!--begin::Option-->
+                                        <label class="form-check form-check-inline form-check-solid me-5">
+                                            <input class="form-check-input" name="registered_verification" type="checkbox" value="1"  #{if $config.registered_verification == 1} checked #{/if}>
+                                            <span class="fw-bold ps-2 fs-6">人机验证</span>
+                                        </label>
+                                        <!--end::Option-->
+                                        <!--begin::Option-->
+                                        <label class="form-check form-check-inline form-check-solid">
+                                            <input class="form-check-input" name="registered_phone_verification" type="checkbox" value="1" #{if $config.registered_phone_verification == 1} checked #{/if}>
+                                            <span class="fw-bold ps-2 fs-6">手机验证码</span>
+                                        </label>
+                                        <!--end::Option-->
+                                        <!--begin::Option-->
+                                        <label class="form-check form-check-inline form-check-solid">
+                                            <input class="form-check-input" name="registered_email_verification" type="checkbox" value="1" #{if $config.registered_email_verification == 1} checked #{/if}>
+                                            <span class="fw-bold ps-2 fs-6">邮箱验证码</span>
+                                        </label>
+                                        <!--end::Option-->
+                                    </div>
+                                    <!--end::Options-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">其他验证码</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <!--begin::Options-->
+                                    <div class="d-flex align-items-center mt-3">
+                                        <!--begin::Option-->
+                                        <label class="form-check form-check-inline form-check-solid me-5">
+                                            <input class="form-check-input" name="login_verification" type="checkbox" value="1"  #{if $config.login_verification == 1} checked #{/if}>
+                                            <span class="fw-bold ps-2 fs-6">登录验证码</span>
+                                        </label>
+                                        <!--end::Option-->
+                                        <!--begin::Option-->
+                                        <label class="form-check form-check-inline form-check-solid me-5">
+                                            <input class="form-check-input" name="trade_verification" type="checkbox" value="1"  #{if $config.trade_verification == 1} checked #{/if}>
+                                            <span class="fw-bold ps-2 fs-6">下单验证码</span>
+                                        </label>
+                                        <!--end::Option-->
+                                    </div>
+                                    <!--end::Options-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">注册开关</label>
+                                <!--begin::Label-->
+                                <!--begin::Label-->
+                                <div class="col-lg-8 d-flex align-items-center">
+                                    <div class="form-check form-check-solid form-switch fv-row">
+                                        <input class="form-check-input w-45px h-30px" type="checkbox" name="registered_state" value="1" #{if $config.registered_state == 1} checked #{/if}/>
+                                        <label class="form-check-label"></label>
+                                    </div>
+                                </div>
+                                <!--begin::Label-->
+                            </div>
+                            <!--end::Input group-->
+
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">找回密码方式</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <!--begin::Input-->
+                                    <select name="forget_type" class="form-select form-select-solid form-select-lg" data-control="select2" data-hide-search="true">
+                                        <option value="0" #{if $config.forget_type == 0} selected #{/if}>邮箱验证码</option>
+                                        <option value="1" #{if $config.forget_type == 1} selected #{/if}>手机验证码</option>
+                                    </select>
+                                    <!--end::Input-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                        </div>
+                        <!--end::Card body-->
+                        <!--begin::Actions-->
+                        <div class="card-footer d-flex justify-content-center py-6 px-9">
+                            <button type="button" class="btn btn-primary save-data">保存设置 (Save Config)</button>
+                        </div>
+                        <!--end::Actions-->
+                    </form>
+                    <!--end::Form-->
+                </div>
+                <!--end::Content-->
+            </div>
+            <!--end::Basic info-->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+
+
+<script>
+    $(function () {
+        layui.use(['layer', 'form', 'hex'], function () {
+            let  uploadUrl = "/admin/api/upload/handle";
+            let editorInstance = window.wangEditor;
+            const editor = new editorInstance('.notice-div');
+            const $textarea = $(".notice-textarea");
+            editor.config.onchange = function (html) {
+                console.log(html);
+                $textarea.val(html);
+            }
+            editor.config.uploadFileName = 'file';
+            editor.config.uploadImgServer = uploadUrl;
+            editor.config.uploadImgMaxLength = 1;
+            editor.config.uploadImgHooks = {
+                customInsert: function (insertImgFn, result) {
+                    insertImgFn(result.data.path);
+                }
+            }
+            editor.config.uploadVideoServer = uploadUrl;
+            editor.config.uploadVideoName = 'file'
+            editor.config.uploadVideoHooks = {
+                customInsert: function (insertVideoFn, result) {
+                    insertVideoFn(result.data.path)
+                }
+            }
+
+            editor.create();
+            $textarea.val(editor.txt.html());
+
+            let hex = layui.hex;
+            $('.upload-logo').change(function () {
+                let formdata = new FormData();
+                formdata.append("file", $('.upload-logo')[0].files[0]);
+                let index = layer.load(1, {
+                    shade: [0.3, '#fff']
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "/admin/api/upload/handle",
+                    data: formdata,
+                    contentType: false, // 不设置内容类型
+                    processData: false, // 不处理数据
+                    dataType: "json",
+                    success: function (res) {
+                        layer.close(index);
+                        if (res.code == 200) {
+                            layer.msg('图标上传成功，但需要保存后才会生效哦~');
+                            $('input[name=logo]').val(res.data.path);
+                        } else {
+                            layer.msg(res.msg);
+                        }
+                    },
+                    error: function (data) {
+                        layer.close(index);
+                        layer.msg('上传失败');
+                    }
+                });
+            });
+
+            //data-form
+            $('.save-data').click(function (){
+                let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
+                $.post("/admin/api/config/setting",$("#data-form").serialize() , res => {
+                    layer.close(loaderIndex);
+                    layer.msg(res.msg);
+                });
+            });
+        });
+    });
+</script>
+
+#{include file="../Footer.html"}

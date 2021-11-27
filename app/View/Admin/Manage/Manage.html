@@ -1,0 +1,154 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-fluid">
+            <!--begin::Tables Widget 9-->
+            <div class="card mb-5 mb-xl-8">
+                <!--begin::Header-->
+                <div class="card-header border-0 pt-5">
+                    <div class="card-toolbar">
+                        <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i class="fas fa-plus"></i>
+                            添加管理员
+                        </button>
+                    </div>
+                </div>
+                <!--end::Header-->
+
+                <div class="card-body py-3">
+                    <table id="manage" lay-filter="manage"></table>
+                </div>
+            </div>
+
+            <!--end::Tables Widget 9-->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+
+<script>
+
+    $(function () {
+        layui.use(['table', 'hex'], function () {
+            let table = layui.table;
+            var cao = layui.hex;
+
+            let type = [
+                "",
+                '<span class="badge badge-light-primary">超级管理员</span>',
+                '<span class="badge badge-light">白班</span>',
+                '<span class="badge badge-light">夜班</span>',
+            ];
+
+            var tableInstance = table.render({
+                elem: '#manage'
+                , skin: 'nob'
+                , size: 'lg'
+                , height: document.documentElement.clientHeight - 340
+                , url: '/admin/api/manage/data'
+                , page: true
+                , limit: 10
+                , limits: [16, 20, 30]
+                , method: "post"
+                , response: {
+                    statusCode: 200
+                }
+                , cols: [[
+                    {
+                        type: 'checkbox', fixed: 'left'
+                    }, {
+                        field: 'avatar', title: '管理员', templet: function (item) {
+                            if (!item.avatar) {
+                                item.avatar = "/favicon.ico";
+                            }
+                            return '<span class="badge badge-light-dark"><img src="' + item.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.nickname + '</span> '
+                        }
+                    }
+                    , {field: 'email', title: '邮箱'}
+                    , {
+                        field: 'status', title: '状态', templet: function (item) {
+                            if (item.status == 1) {
+                                return '<span class="badge badge-light-success">正常</span>';
+                            }
+                            return '<span class="badge badge-light-danger">禁用</span>';
+                        }
+                    }
+                    , {
+                        field: 'type', title: '类型', templet: function (item) {
+                           return type[item.type];
+                        }
+                    }
+                    , {field: 'note', title: '备注'}
+                    , {field: 'create_time', title: '创建时间'}
+                    , {field: 'login_time', title: '登录时间'}
+                    , {field: 'login_ip', title: '登录IP'}
+                    , {field: 'last_login_time', title: '上次登录时间'}
+                    , {field: 'last_login_ip', title: '上次登录IP'}
+                    , {
+                        templet: function (item) {
+                            let html = '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fa fa-edit"></i></button> ';
+                            html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+                            return html;
+                        }
+                    }
+                ]],
+                done: res => {
+                    cao.setIdMap(res.data);
+
+                    $('.edit').click(function () {
+                        let mapItem = cao.getMapItem(this);
+                        modal(mapItem);
+                    });
+
+                    $('.del').click(function () {
+                        let id = cao.getObjectId(this);
+                        console.log(id)
+                        layer.confirm('您正在移除该管理员，是否要继续？', {
+                            btn: ['确认移除', '取消']
+                        }, function () {
+                            $.post('/admin/api/manage/del', {list: [id]}, res => {
+                                layer.msg(res.msg);
+                                tableInstance.reload();
+                            });
+                        });
+                    });
+                }
+            });
+
+            let modal = (values = {}) => {
+                delete values.password;
+                cao.popup('/admin/api/manage/save', [
+                    {title: "头像", name: "avatar", type: "image", placeholder: "请选择图片", width: 100},
+                    {title: "Email", name: "email", type: "input", placeholder: "请输入邮箱"},
+                    {title: "呢称", name: "nickname", type: "input", placeholder: "请输入呢称"},
+                    {title: "密码", name: "password", type: "input", placeholder: "请输入密码"},
+                    {
+                        title: "类型", name: "type", type: "radio", dict: [
+                            {id: 1, name: "<b style='color: #d0b728;'>超级管理员</b>"},
+                            {id: 2, name: "<b style='color: #3d84ef;'>白班</b>"},
+                            {id: 3, name: "<b style='color: #3d84ef;'>夜班</b>"},
+                        ], default: 1
+                    },
+                    {title: "备注", name: "note", type: "input", placeholder: "备注信息"},
+                    {title: "状态", name: "status", type: "switch", text: "启用"},
+                ], res => {
+                    tableInstance.reload();
+                }, values);
+            }
+
+            $('.btn-app-create').click(function () {
+                modal();
+            });
+        });
+    });
+</script>
+
+#{include file="../Footer.html"}

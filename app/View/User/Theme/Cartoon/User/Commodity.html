@@ -1,0 +1,314 @@
+#{include file="../Common/Header.html"}
+<style>
+    .layui-layer-page .layui-layer-content {
+        position: relative !important;
+        overflow: auto !important;
+    }
+</style>
+<div class="layui-container fly-marginTop fly-user-main">
+    #{include file="../Common/Nav.html"}
+    <div class="fly-panel fly-panel-user" pad20>
+        <div class="layui-tab layui-tab-brief" lay-filter="user">
+            <div class="content-header">
+                <i class="layui-icon">&#xe638;</i> 我的商品
+            </div>
+
+            <div class="content-body">
+                <div style="margin-bottom: 5px;margin-top: 15px;">
+                    <button type="button" class="layui-btn layui-btn-sm layui-btn-pink button-add"><i class="layui-icon"
+                                                                                                      style="position: relative;top: -2px;">&#xe624;</i>添加商品
+                    </button>
+                </div>
+                <form class="search-query"></form>
+                <table id="commodity" lay-filter="commodity"></table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        layui.use(['table', 'hex'], function () {
+            let table = layui.table;
+            let cao = layui.hex;
+            let contactType = ["任意", "手机", "邮箱", "QQ"];
+            var _category;
+            let category = function () {
+                if (!_category) {
+                    _category = User.$postSync("/user/api/category/data");
+                }
+                let dict = [];
+                _category.forEach(item => {
+                    dict.push({id: item.id, name: item.name});
+                })
+                return dict;
+            }
+
+
+            var tableInstance = table.render({
+                elem: '#commodity'
+                , skin: 'nob'
+                , size: 'lg'
+                , height: 400
+                , url: '/user/api/commodity/data'
+                , page: true
+                , limit: 10
+                , limits: [10, 20, 30]
+                , method: "post"
+                , response: {
+                    statusCode: 200
+                }
+                , cols: [[
+                    {field: 'id', title: '商品ID'}
+                    , {
+                        field: 'category', title: '分类', templet: function (item) {
+                            if (!item.category) {
+                                return '-';
+                            }
+                            return '<span style="color: #0C84D1;">' + item.category.name + '</span>'
+                        }
+                    }
+                    , {field: 'name', title: '商品名称'}
+                    , {
+                        field: 'price', title: '零售价', templet: function (item) {
+                            return '<b style="color: green;">' + item.price + '</b>';
+                        }
+                    }
+                    , {
+                        field: 'user_price', title: '会员价', templet: function (item) {
+                            return '<span style="color: mediumvioletred;">' + item.user_price + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'status', title: '状态', templet: function (item) {
+                            if (item.status == 1) {
+                                return '<span class="layui-badge layui-bg-green">已上架</span>';
+                            }
+                            return '<span class="layui-badge layui-bg-gray">已下架</span>';
+                        }
+                    }
+                    , {
+                        field: 'delivery_way', title: '发货方式', templet: function (item) {
+                            if (item.delivery_way == 1) {
+                                return '<span class="layui-badge">手动发货</span>';
+                            }
+                            return '<span class="layui-badge layui-bg-green">自动发货</span>';
+                        }
+                    }
+                    , {
+                        field: 'share_url', title: '推广链接', templet: function (item) {
+                            return '<span data-id="' + item.id + '" class="layui-badge layui-bg-gray clipboard clipboard-' + item.id + '" data-clipboard-text="' + item.share_url + '" style="cursor: pointer;">复制</span>';
+                        }
+                    }
+                    , {
+                        templet: function (item) {
+                            let html = '<button type="button" data-id="' + item.id + '" class="layui-btn layui-btn-xs layui-btn-pink edit"><i class="layui-icon">&#xe642;</i>修改</button>';
+                            html += '<button type="button" data-id="' + item.id + '" class="layui-btn layui-btn-xs layui-btn-pink del"><i class="layui-icon">&#xe640;</i>删除</button>';
+                            return html;
+                        }, width: 145
+                    }
+                ]],
+                done: res => {
+                    cao.setIdMap(res.data);
+
+                    $('.edit').click(function () {
+                        let mapItem = cao.getMapItem(this);
+                        modal(mapItem);
+                    });
+
+                    $('.del').click(function () {
+                        let id = cao.getObjectId(this);
+                        layer.confirm('您正在移除该商品，是否要继续？', {
+                            btn: ['确认移除', '取消']
+                        }, function () {
+                            $.post('/user/api/commodity/del', {id: id}, res => {
+                                layer.msg(res.msg);
+                                tableInstance.reload();
+                            });
+                        });
+                    });
+
+                    $('.clipboard').click(function () {
+                        let id = cao.getObjectId(this);
+                        var clipboard = new ClipboardJS(".clipboard-" + id);
+                        clipboard.on('success', function (e) {
+                            layer.msg("分享链接已经复制成功了，赶快发给好友吧！");
+                        });
+                    });
+                }
+            });
+
+            let modal = (values = {}) => {
+                cao.popup('/user/api/commodity/save', [
+                    {
+                        title: "商品图标",
+                        name: "cover",
+                        type: "image",
+                        placeholder: "请选择图片(推荐64*64)",
+                        uploadUrl: User.property.uploadUrl
+                    },
+                    {title: "商品名称", name: "name", type: "input", placeholder: "商品名称"},
+                    {
+                        title: "商品说明",
+                        name: "description",
+                        type: "editor",
+                        placeholder: "商品说明",
+                        uploadUrl: User.property.uploadUrl
+                    },
+                    {
+                        title: "商品分类",
+                        name: "category_id",
+                        type: "select",
+                        dict: category(),
+                        placeholder: "请选择分类"
+                    },
+                    {title: "成本价", name: "factory_price", type: "input", default: 0.00},
+                    {title: "商品单价", name: "price", type: "input", placeholder: "商品单价(未登录游客购买价)"},
+                    {title: "会员价", name: "user_price", type: "input", placeholder: "会员价(登录注册后购买的价格)"},
+                    {
+                        title: "发货方式",
+                        name: "delivery_way",
+                        type: "select",
+                        placeholder: "请选择",
+                        dict: [{id: 0, name: "自动发货"}, {id: 1, name: "手动发货/插件"}],
+                        default: 0,
+                        change: function (value) {
+                            let d1 = cao.popupElement("delivery_message", "textarea").parent().parent();
+                            let d2 = cao.popupElement("delivery_auto_mode", "select").parent().parent();
+                            if (value == 1) {
+                                d1.show();
+                                d2.hide();
+                            } else {
+                                d1.hide();
+                                d2.show();
+                            }
+                        }
+                    },
+                    {
+                        title: "卡密排序",
+                        name: "delivery_auto_mode",
+                        type: "select",
+                        placeholder: "请选择",
+                        dict: [{id: 0, name: "优先旧卡(有序)"}, {id: 1, name: "随机发卡(无序)"}, {id: 2, name: "优先新卡(有序)"}],
+                        default: 0,
+                        hide: true
+                    },
+                    {
+                        title: "发货信息",
+                        name: "delivery_message",
+                        type: "textarea",
+                        placeholder: "手动发货信息，可以是一些固定的卡密或者软件下载链接等..",
+                        hide: true
+                    },
+                    {
+                        title: "发货留言",
+                        name: "leave_message",
+                        type: "textarea",
+                        placeholder: "当用户购买商品后，该留言会显示在订单中",
+                        tips: "当用户购买商品后，该留言会显示在订单中"
+                    },
+                    {
+                        title: "联系方式",
+                        name: "contact_type",
+                        type: "select",
+                        placeholder: "请选择",
+                        dict: [{id: 0, name: "任意"}, {id: 1, name: "手机号"}, {id: 2, name: "邮箱"}, {id: 3, name: "QQ号"}],
+                        default: 0
+                    },
+                    {
+                        title: "查询密码",
+                        name: "password_status",
+                        type: "switch",
+                        text: "启用",
+                        tips: "开启后，下单时需要设置查询订单的密码，更强的保护用户隐私"
+                    },
+                    {title: "排序", name: "sort", type: "input", placeholder: "排序(最低1000起)，越小越靠前", default: 1000},
+                    {
+                        title: "批发优惠", name: "lot_status", type: "switch", text: "启用", change: function (value) {
+                            let lotConfigElement = cao.popupElement("lot_config", "textarea").parent().parent();
+                            if (value == 1) {
+                                lotConfigElement.show();
+                            } else {
+                                lotConfigElement.hide();
+                            }
+                        }
+                    },
+                    {
+                        title: "批发配置",
+                        name: "lot_config",
+                        type: "textarea",
+                        placeholder: "数量-单价(如：100-9.99)，一行一个，顺序可随意",
+                        hide: true
+                    },
+                    {title: "优惠卷", name: "coupon", type: "switch", text: "启用"},
+                    {
+                        title: "限时秒杀", name: "seckill_status", type: "switch", text: "启用", change: function (value) {
+                            let d1 = cao.popupElement("seckill_start_time", "date").parent().parent();
+                            let d2 = cao.popupElement("seckill_end_time", "date").parent().parent();
+                            if (value == 1) {
+                                d1.show();
+                                d2.show();
+                            } else {
+                                d1.hide();
+                                d2.hide();
+                            }
+                        }
+                    },
+                    {title: "秒杀开始", name: "seckill_start_time", type: "date", placeholder: "开始时间", hide: true},
+                    {title: "秒杀结束", name: "seckill_end_time", type: "date", placeholder: "结束时间", hide: true},
+                    {
+                        title: "卡密预选", name: "draft_status", type: "switch", text: "启用", change: function (value) {
+                            let d1 = cao.popupElement("draft_premium", "input").parent().parent();
+                            if (value == 1) {
+                                d1.show();
+                            } else {
+                                d1.hide();
+                            }
+                        }, tips: "顾名思义，意思就是顾客在购买时，可以预先选择想要购买的那个卡密，一般针对于出售游戏账号等用途。"
+                    },
+                    {
+                        title: "预选时加价",
+                        name: "draft_premium",
+                        type: "input",
+                        placeholder: "请输入预选时加价的金额",
+                        hide: true
+                    },
+                    {
+                        title: "隐藏库存",
+                        name: "inventory_hidden",
+                        type: "switch",
+                        text: "启用",
+                        tips: "该功能开启后，自动发货的商品将不会再显示具体库存"
+                    },
+                    {title: "状态", name: "status", type: "switch", text: "上架"},
+                ], res => {
+                    tableInstance.reload();
+                }, values, ["720px", "720px"], false, "添加", () => {
+                    //success
+                    let d = cao.popupElement("draft_premium", "input").parent().parent();
+                    cao.popupElement("draft_status", "input").val() == 1 ? d.show() : d.hide();
+
+                    let d1 = cao.popupElement("delivery_auto_mode", "select").parent().parent();
+                    cao.popupElement("delivery_way", "select").val() == 0 ? d1.show() : d1.hide();
+                });
+            }
+
+            $('.button-add').click(function () {
+                modal();
+            });
+
+            cao.query('.search-query', tableInstance, [
+                {title: "商品分类", name: "equal-category_id", type: "select", dict: category(), search: true},
+                {title: "商品名称(模糊搜索)", name: "search-name", type: "input"},
+                {
+                    title: "上架状态", name: "equal-status", type: "select", dict: [
+                        {id: 0, name: "已下架"},
+                        {id: 1, name: "已上架"}
+                    ]
+                }
+            ], true, false);
+
+        });
+    });
+</script>
+#{include file="../Common/Footer.html"}

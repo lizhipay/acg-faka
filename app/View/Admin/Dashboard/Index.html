@@ -1,0 +1,477 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-fluid">
+            <div class="row">
+                <div class="col-4">
+                    <!--begin::Tasks-->
+                    <div class="card card-flush h-lg-100">
+                        <!--begin::Card header-->
+                        <div class="card-header mt-6">
+                            <!--begin::Card title-->
+                            <div class="card-title flex-column">
+                                <h3 class="fw-bolder mb-1" style="color: #e6a0ef;">官方公告</h3>
+                            </div>
+                            <!--end::Card title-->
+                        </div>
+                        <!--end::Card header-->
+                        <!--begin::Card body-->
+                        <div class="card-body d-flex flex-column mb-9 p-9 pt-3 ad-html">
+                        </div>
+                        <!--end::Card body-->
+                    </div>
+                    <!--end::Tasks-->
+                </div>
+
+                <div class="col-8">
+                    <!--begin::Navbar-->
+                    <div class="card mb-6">
+                        <div class="card-body pt-9 pb-0">
+                            <!--begin::Details-->
+                            <div class="d-flex flex-wrap flex-sm-nowrap">
+                                <!--begin: Pic-->
+                                <div class="me-7 mb-4">
+                                    <div class="symbol  symbol-fixed position-relative">
+                                        <img src="#{if $user.avatar}#{$user.avatar}#{else}/favicon.ico#{/if}"
+                                             alt="image"/>
+                                        <div class="position-absolute translate-middle bottom-0 start-100 mb-6 bg-success rounded-circle border border-4 border-white h-20px w-20px"></div>
+                                    </div>
+                                </div>
+                                <!--end::Pic-->
+                                <!--begin::Info-->
+                                <div class="flex-grow-1">
+                                    <!--begin::Title-->
+                                    <div class="d-flex justify-content-between align-items-start flex-wrap mb-2">
+                                        <!--begin::User-->
+                                        <div class="d-flex flex-column">
+                                            <!--begin::Name-->
+                                            <div class="d-flex align-items-center mb-2">
+                                                <span class="text-gray-900 text-hover-primary fs-2 fw-bolder me-1">#{$user.nickname}</span>
+                                            </div>
+                                            <!--end::Name-->
+                                            <!--begin::Info-->
+                                            <div class="d-flex flex-wrap fw-bold fs-6 mb-4 pe-2">
+                                        <span
+                                                class="d-flex align-items-center text-gray-400 text-hover-primary mb-2">
+                                            <span class="svg-icon svg-icon-4 me-1">
+																<svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                     height="24" viewBox="0 0 24 24" fill="none">
+																	<path opacity="0.3"
+                                                                          d="M21 19H3C2.4 19 2 18.6 2 18V6C2 5.4 2.4 5 3 5H21C21.6 5 22 5.4 22 6V18C22 18.6 21.6 19 21 19Z"
+                                                                          fill="black"/>
+																	<path d="M21 5H2.99999C2.69999 5 2.49999 5.10005 2.29999 5.30005L11.2 13.3C11.7 13.7 12.4 13.7 12.8 13.3L21.7 5.30005C21.5 5.10005 21.3 5 21 5Z"
+                                                                          fill="black"/>
+																</svg>
+															</span>
+                                            <!--end::Svg Icon-->#{$user.email}</span>
+                                            </div>
+                                            <!--end::Info-->
+                                        </div>
+                                        <!--end::User-->
+                                        <!--begin::Actions-->
+                                        <div class="d-flex my-4">
+                                            <a href="/admin/manage/set" class="btn btn-sm btn-light-primary me-3"><i
+                                                    class="fas fa-pen-square"></i> 修改资料</a>
+
+                                        </div>
+                                        <!--end::Actions-->
+                                    </div>
+                                    <!--end::Title-->
+
+                                </div>
+                                <!--end::Info-->
+                            </div>
+                            <!--end::Details-->
+                        </div>
+                    </div>
+                    <!--end::Navbar-->
+                    <!--begin::Toolbar-->
+                    <div class="d-flex flex-wrap flex-stack mb-6">
+                        <!--begin::Controls-->
+                        <div class="d-flex align-items-center my-2">
+                            <!--begin::Select wrapper-->
+                            <div class="w-100px me-5">
+                                <!--begin::Select-->
+                                <select name="status" data-control="select2" data-hide-search="true"
+                                        class="form-select form-select-white form-select-sm dashboard-data-type">
+                                    <option value="0" selected="selected">今日数据</option>
+                                    <option value="1">昨日数据</option>
+                                    <option value="2">本周数据</option>
+                                    <option value="3">本月数据</option>
+                                    <option value="4">所有数据</option>
+                                </select>
+                                <!--end::Select-->
+                            </div>
+                        </div>
+                        <!--end::Controls-->
+                    </div>
+                    <!--end::Toolbar-->
+                    <!--begin::Row-->
+                    <div class="row g-6 g-xl-9">
+                        <!--begin::Col-->
+                        <div class="col-sm-6 col-xl-4">
+                            <!--begin::Card-->
+                            <div class="card h-100">
+                                <!--begin::Card header-->
+                                <div class="card-header flex-nowrap border-0 pt-9">
+                                    <!--begin::Card title-->
+                                    <div class="card-title m-0">
+                                        <!--begin::Icon-->
+                                        <div class="symbol symbol-45px w-45px bg-light me-5">
+                                            <i class="fas fa-shopping-bag p-3" style="font-size: 26px;"></i>
+                                        </div>
+                                        <!--end::Icon-->
+                                        <!--begin::Title-->
+                                        <a href="#" class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">交易金额</a>
+                                        <!--end::Title-->
+                                    </div>
+                                    <!--end::Card title-->
+                                </div>
+                                <!--end::Card header-->
+                                <!--begin::Card body-->
+                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
+                                    <!--begin::Heading-->
+                                    <div class="fs-2hx fw-bolder mb-3 turnover" style="color: #f1a6b4;">...</div>
+                                    <!--end::Heading-->
+                                </div>
+                                <!--end::Card body-->
+                            </div>
+                            <!--end::Card-->
+                        </div>
+                        <!--end::Col-->
+                        <!--begin::Col-->
+                        <div class="col-sm-6 col-xl-4">
+                            <!--begin::Card-->
+                            <div class="card h-100">
+                                <!--begin::Card header-->
+                                <div class="card-header flex-nowrap border-0 pt-9">
+                                    <!--begin::Card title-->
+                                    <div class="card-title m-0">
+                                        <!--begin::Icon-->
+                                        <div class="symbol symbol-45px w-45px bg-light me-5">
+                                            <i class="fas fa-chart-pie p-3" style="font-size: 26px;"></i>
+                                        </div>
+                                        <!--end::Icon-->
+                                        <!--begin::Title-->
+                                        <a href="#" class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">交易订单</a>
+                                        <!--end::Title-->
+                                    </div>
+                                    <!--end::Card title-->
+                                </div>
+                                <!--end::Card header-->
+                                <!--begin::Card body-->
+                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
+                                    <!--begin::Heading-->
+                                    <div class="fs-2hx fw-bolder mb-3 order_num" style="color: #f1a6b4;">...</div>
+                                    <!--end::Heading-->
+                                </div>
+                                <!--end::Card body-->
+                            </div>
+                            <!--end::Card-->
+                        </div>
+                        <!--end::Col-->
+                        <!--begin::Col-->
+                        <div class="col-sm-6 col-xl-4">
+                            <!--begin::Card-->
+                            <div class="card h-100">
+                                <!--begin::Card header-->
+                                <div class="card-header flex-nowrap border-0 pt-9">
+                                    <!--begin::Card title-->
+                                    <div class="card-title m-0">
+                                        <!--begin::Icon-->
+                                        <div class="symbol symbol-45px w-45px bg-light me-5">
+                                            <i class="fas fa-donate p-3" style="font-size: 26px;"></i>
+                                        </div>
+                                        <!--end::Icon-->
+                                        <!--begin::Title-->
+                                        <a href="#" class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">全站手续费</a>
+                                        <!--end::Title-->
+                                    </div>
+                                    <!--end::Card title-->
+                                </div>
+                                <!--end::Card header-->
+                                <!--begin::Card body-->
+                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
+                                    <!--begin::Heading-->
+                                    <div class="fs-2hx fw-bolder mb-3 cost" style="color: #f1a6b4;">...</div>
+                                    <!--end::Heading-->
+                                </div>
+                                <!--end::Card body-->
+                            </div>
+                            <!--end::Card-->
+                        </div>
+                        <!--end::Col-->
+                        <!--begin::Col-->
+                        <div class="col-sm-6 col-xl-4">
+                            <!--begin::Card-->
+                            <div class="card h-100">
+                                <!--begin::Card header-->
+                                <div class="card-header flex-nowrap border-0 pt-9">
+                                    <!--begin::Card title-->
+                                    <div class="card-title m-0">
+                                        <!--begin::Icon-->
+                                        <div class="symbol symbol-45px w-45px bg-light me-5">
+                                            <i class="fas fa-laptop-house p-3" style="font-size: 26px;"></i>
+                                        </div>
+                                        <!--end::Icon-->
+                                        <!--begin::Title-->
+                                        <a href="#" class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">新建子站数量</a>
+                                        <!--end::Title-->
+                                    </div>
+                                    <!--end::Card title-->
+                                </div>
+                                <!--end::Card header-->
+                                <!--begin::Card body-->
+                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
+                                    <!--begin::Heading-->
+                                    <div class="fs-2hx fw-bolder mb-3 business" style="color: #f1a6b4;">...</div>
+                                    <!--end::Heading-->
+                                </div>
+                                <!--end::Card body-->
+                            </div>
+                            <!--end::Card-->
+                        </div>
+                        <!--end::Col-->
+                        <!--begin::Col-->
+                        <div class="col-sm-6 col-xl-4">
+                            <!--begin::Card-->
+                            <div class="card h-100">
+                                <!--begin::Card header-->
+                                <div class="card-header flex-nowrap border-0 pt-9">
+                                    <!--begin::Card title-->
+                                    <div class="card-title m-0">
+                                        <!--begin::Icon-->
+                                        <div class="symbol symbol-45px w-45px bg-light me-5">
+                                            <i class="fab fa-sellcast p-3" style="font-size: 26px;"></i>
+                                        </div>
+                                        <!--end::Icon-->
+                                        <!--begin::Title-->
+                                        <a href="#" class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">未处理提现</a>
+                                        <!--end::Title-->
+                                    </div>
+                                    <!--end::Card title-->
+                                </div>
+                                <!--end::Card header-->
+                                <!--begin::Card body-->
+                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
+                                    <!--begin::Heading-->
+                                    <div class="fs-2hx fw-bolder mb-3 cash_status_0" style="color: #f1a6b4;">...</div>
+                                    <!--end::Heading-->
+                                </div>
+                                <!--end::Card body-->
+                            </div>
+                            <!--end::Card-->
+                        </div>
+                        <!--end::Col-->
+                        <!--begin::Col-->
+                        <div class="col-sm-6 col-xl-4">
+                            <!--begin::Card-->
+                            <div class="card h-100">
+                                <!--begin::Card header-->
+                                <div class="card-header flex-nowrap border-0 pt-9">
+                                    <!--begin::Card title-->
+                                    <div class="card-title m-0">
+                                        <!--begin::Icon-->
+                                        <div class="symbol symbol-45px w-45px bg-light me-5">
+                                            <i class="fas fa-funnel-dollar p-3" style="font-size: 26px;"></i>
+                                        </div>
+                                        <!--end::Icon-->
+                                        <!--begin::Title-->
+                                        <a href="#" class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">成功提现金额</a>
+                                        <!--end::Title-->
+                                    </div>
+                                    <!--end::Card title-->
+                                </div>
+                                <!--end::Card header-->
+                                <!--begin::Card body-->
+                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
+                                    <!--begin::Heading-->
+                                    <div class="fs-2hx fw-bolder mb-3 cash_money_status_1" style="color: #f1a6b4;">...
+                                    </div>
+                                    <!--end::Heading-->
+                                </div>
+                                <!--end::Card body-->
+                            </div>
+                            <!--end::Card-->
+                        </div>
+                        <!--end::Col-->
+                        <!--begin::Col-->
+                        <div class="col-sm-6 col-xl-4">
+                            <!--begin::Card-->
+                            <div class="card h-100">
+                                <!--begin::Card header-->
+                                <div class="card-header flex-nowrap border-0 pt-9">
+                                    <!--begin::Card title-->
+                                    <div class="card-title m-0">
+                                        <!--begin::Icon-->
+                                        <div class="symbol symbol-45px w-45px bg-light me-5">
+                                            <i class="fas fa-user-plus p-3" style="font-size: 26px;"></i>
+                                        </div>
+                                        <!--end::Icon-->
+                                        <!--begin::Title-->
+                                        <a href="#" class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">注册用户</a>
+                                        <!--end::Title-->
+                                    </div>
+                                    <!--end::Card title-->
+                                </div>
+                                <!--end::Card header-->
+                                <!--begin::Card body-->
+                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
+                                    <!--begin::Heading-->
+                                    <div class="fs-2hx fw-bolder mb-3 user_register_num" style="color: #f1a6b4;">...
+                                    </div>
+                                    <!--end::Heading-->
+                                </div>
+                                <!--end::Card body-->
+                            </div>
+                            <!--end::Card-->
+                        </div>
+                        <!--end::Col-->
+                        <!--begin::Col-->
+                        <div class="col-sm-6 col-xl-4">
+                            <!--begin::Card-->
+                            <div class="card h-100">
+                                <!--begin::Card header-->
+                                <div class="card-header flex-nowrap border-0 pt-9">
+                                    <!--begin::Card title-->
+                                    <div class="card-title m-0">
+                                        <!--begin::Icon-->
+                                        <div class="symbol symbol-45px w-45px bg-light me-5">
+                                            <i class="fas fa-clock p-3" style="font-size: 26px;"></i>
+                                        </div>
+                                        <!--end::Icon-->
+                                        <!--begin::Title-->
+                                        <a href="#" class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">打卡用户</a>
+                                        <!--end::Title-->
+                                    </div>
+                                    <!--end::Card title-->
+                                </div>
+                                <!--end::Card header-->
+                                <!--begin::Card body-->
+                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
+                                    <!--begin::Heading-->
+                                    <div class="fs-2hx fw-bolder mb-3 user_login_num" style="color: #f1a6b4;">...</div>
+                                    <!--end::Heading-->
+                                </div>
+                                <!--end::Card body-->
+                            </div>
+                            <!--end::Card-->
+                        </div>
+                        <!--end::Col-->
+                        <!--begin::Col-->
+                        <div class="col-sm-6 col-xl-4">
+                            <!--begin::Card-->
+                            <div class="card h-100">
+                                <!--begin::Card header-->
+                                <div class="card-header flex-nowrap border-0 pt-9">
+                                    <!--begin::Card title-->
+                                    <div class="card-title m-0">
+                                        <!--begin::Icon-->
+                                        <div class="symbol symbol-45px w-45px bg-light me-5">
+                                            <i class="fas fa-hand-holding-usd p-3" style="font-size: 26px;"></i>
+                                        </div>
+                                        <!--end::Icon-->
+                                        <!--begin::Title-->
+                                        <a href="#" class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">充值金额</a>
+                                        <!--end::Title-->
+                                    </div>
+                                    <!--end::Card title-->
+                                </div>
+                                <!--end::Card header-->
+                                <!--begin::Card body-->
+                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
+                                    <!--begin::Heading-->
+                                    <div class="fs-2hx fw-bolder mb-3 recharge_amount" style="color: #f1a6b4;">...</div>
+                                    <!--end::Heading-->
+                                </div>
+                                <!--end::Card body-->
+                            </div>
+                            <!--end::Card-->
+                        </div>
+                        <!--end::Col-->
+                    </div>
+                    <!--end::Row-->
+                </div>
+
+            </div>
+
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+
+
+<!--begin::Item -MODEL-->
+<div class="ad-item-model" style="display: none;">
+    <div class="d-flex align-items-center position-relative mb-7">
+        <!--begin::Label-->
+        <div class="position-absolute top-0 start-0 rounded h-100 bg-secondary w-4px"></div>
+        <!--end::Label-->
+        <!--begin::Details-->
+        <div class="fw-bold ms-3">
+            <a href="[url]" [target] class="fs-6 fw-bolder text-hover-primary" style="color: #b593a4;">[title]</a>
+            <!--begin::Info-->
+            <div class="text-gray-400 mt-1">[create_time]</div>
+            <!--end::Info-->
+        </div>
+        <!--end::Details-->
+    </div>
+</div>
+<!--end::Item-->
+
+<script>
+    $.get("/admin/api/app/ad", res => {
+        if (res.code != 200) {
+            return;
+        }
+        let html = "";
+        res.data.forEach(item => {
+            html += $('.ad-item-model').html().replace("[title]", item.title).replace("[create_time]", item.create_date).replace("[url]", item.url ? item.url : "javascript:void(0)").replace("[target]", item.url ? 'target="_blank"' : '');
+        });
+        $('.ad-html').append(html);
+    });
+
+    $(function () {
+        layui.use('layer', function () {
+            function getDashboardData(type) {
+                let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+                $.post("/admin/api/dashboard/data", {type: type}, res => {
+                    layer.close(loaderIndex);
+                    if (res.code == 200) {
+                        $('.turnover').text("￥" + res.data.turnover);
+                        $('.order_num').text(res.data.order_num);
+                        $('.cost').text("￥" + res.data.cost);
+                        $('.business').text(res.data.business);
+                        $('.cash_status_0').text(res.data.cash_status_0);
+                        $('.cash_money_status_1').text("￥" + res.data.cash_money_status_1);
+                        $('.user_register_num').text(res.data.user_register_num);
+                        $('.user_login_num').text(res.data.user_login_num);
+                        $('.recharge_amount').text("￥" + res.data.recharge_amount);
+                    }
+                });
+            }
+
+            getDashboardData(0);
+
+
+            $('.dashboard-data-type').on('select2:select', function (e) {
+                var data = e.params.data;
+                getDashboardData(data.id);
+            });
+        });
+    });
+
+
+</script>
+
+#{include file="../Footer.html"}

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--begin::Head-->
+<head>
+    <title>#{$title} - #{$config.title}</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="shortcut icon" href="/favicon.ico"/>
+    <!--begin::Global Stylesheets Bundle(used by all pages)-->
+    <link href="/assets/admin/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css"/>
+    <link href="/assets/admin/css/style.bundle.css" rel="stylesheet" type="text/css"/>
+    <!--end::Global Stylesheets Bundle-->
+</head>
+<!--end::Head-->
+<!--begin::Body-->
+<body id="kt_body" class="bg-body">
+<!--begin::Main-->
+<div class="d-flex flex-column flex-root">
+    <!--begin::Authentication - Sign-in -->
+    <div class="d-flex flex-column flex-column-fluid bgi-position-y-bottom position-x-center bgi-no-repeat bgi-size-contain bgi-attachment-fixed"
+         style="background: url('/assets/admin/images/login/bg.jpg') fixed no-repeat;background-size: cover;">
+        <!--begin::Content-->
+        <div class="d-flex flex-center flex-column flex-column-fluid p-10 pb-lg-20">
+            <!--begin::Logo-->
+            <!--end::Logo-->
+            <!--begin::Wrapper-->
+            <div class="w-lg-400px bg-body rounded shadow-sm p-10 p-lg-15 mx-auto">
+                <!--begin::Form-->
+                <form class="form w-100 form-data" novalidate="novalidate">
+                    <!--begin::Heading-->
+                    <div class="text-center mb-10">
+                        <!--begin::Title-->
+                        <a href="/"><h1 class="mb-3" style="color: pink;">#{$config.shop_name}</h1></a>
+                        <!--end::Title-->
+                        <div class="text-gray-400 fw-bold fs-5">想起密码? <a href="/user/authentication/login"
+                                                                         class="link-primary fw-bolder">立即登录!</a></div>
+                    </div>
+                    <!--begin::Heading-->
+                    <!--begin::Input group-->
+                    <div class="fv-row mb-10">
+                        <!--begin::Label-->
+                        <label class="form-label fs-6 fw-bolder" style="color: pink;">Email</label>
+                        <!--end::Label-->
+                        <!--begin::Input-->
+                        <input class="form-control form-control-lg form-control-solid" type="email" name="username"
+                               placeholder="请输入你的邮箱"
+                               autocomplete="off"/>
+                        <!--end::Input-->
+                    </div>
+                    <!--end::Input group-->
+
+                    <div class="row fv-row mb-7 fv-plugins-icon-container">
+                        <!--begin::Col-->
+                        <div class="col-8">
+                            <label class="form-label fw-bolder fs-6" style="color: pink;">邮箱验证码</label>
+                            <input class="form-control form-control-lg form-control-solid" type="text" placeholder="验证码"
+                                   name="captcha"
+                                   autocomplete="off"/>
+                            <div class="fv-plugins-message-container invalid-feedback"></div>
+                        </div>
+                        <!--end::Col-->
+                        <!--begin::Col-->
+                        <div class="col-4 pt-8">
+                            <button type="button" class="btn btn-lg btn-light-danger w-100 captcha">
+                                <span class="indicator-label">获取</span>
+                            </button>
+                        </div>
+                        <!--end::Col-->
+                    </div>
+
+
+                    <!--begin::Input group-->
+                    <div class="fv-row mb-10">
+                        <!--begin::Wrapper-->
+                        <div class="d-flex flex-stack mb-2">
+                            <!--begin::Label-->
+                            <label class="form-label fw-bolder fs-6 mb-0" style="color: pink;">新密码</label>
+                            <!--end::Label-->
+                        </div>
+                        <!--end::Wrapper-->
+                        <!--begin::Input-->
+                        <input class="form-control form-control-lg form-control-solid" type="text" name="password"
+                               placeholder="请输入新密码"
+                               autocomplete="off"/>
+                        <!--end::Input-->
+                    </div>
+                    <!--end::Input group-->
+
+                    <!--begin::Actions-->
+                    <div class="text-center">
+                        <!--begin::Submit button-->
+                        <button type="button" class="btn btn-lg btn-light-danger w-100 mb-5 data-submit">
+                            <span class="indicator-label">设置</span>
+                        </button>
+                        <!--end::Submit button-->
+                    </div>
+                    <!--end::Actions-->
+                </form>
+                <!--end::Form-->
+            </div>
+            <!--end::Wrapper-->
+        </div>
+        <!--end::Content-->
+        <!--begin::Footer-->
+        <div class="d-flex flex-center flex-column-auto p-10">
+            <!--begin::Links-->
+            <div class="d-flex align-items-center fw-bold fs-8">
+                <span style="color: pink;">@#{$config.shop_name}</span>
+            </div>
+            <!--end::Links-->
+        </div>
+        <!--end::Footer-->
+    </div>
+    <!--end::Authentication - Sign-in-->
+</div>
+<!--end::Main-->
+<!--begin::Javascript-->
+<!--begin::Global Javascript Bundle(used by all pages)-->
+<script src="/assets/admin/js/util.js"></script>
+<script src="/assets/static/jquery.min.js"></script>
+<script src="/assets/static/layui/layui.js"></script>
+
+<script>
+    $(function () {
+        layui.use(['layer'], function () {
+            $('.data-submit').click(function () {
+                let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
+                let data = $('.form-data').serialize();
+                $.post("/user/api/authentication/password", data, res => {
+                    layer.close(loaderIndex);
+                    if (res.code == 200) {
+                        setTimeout(() => {
+                            window.location.href = "/user/authentication/login";
+                        }, 1000);
+                        layer.msg("设置成功");
+                        return;
+                    }
+                    layer.msg(res.msg);
+                });
+            });
+        });
+
+
+        $('.captcha').click(function () {
+            layer.prompt({
+                title: '请输入验证码：<img src="/user/captcha/image?action=emailForgetCaptcha" style="margin-top: -5px;">',
+                formType: 0
+            }, function (captcha, index) {
+                let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
+                $.post("/user/api/authentication/emailForgetCaptcha", {
+                    captcha: captcha,
+                    email: $('form input[name=username]').val()
+                }, res => {
+                    layer.close(loaderIndex);
+                    if (res.code == 200) {
+                        layer.close(index);
+                        let second = 60;
+                        $('.captcha').attr('disabled', true);
+                        $(".captcha").html((second) + "秒")
+                        let interval = setInterval(function () {
+                            second--
+                            $(".captcha").html((second) + "秒")
+                            if (second === -1) {
+                                $(".captcha").text("获取")
+                                $('.captcha').attr('disabled', false);
+                                clearInterval(interval)
+                            }
+                        }, 1000);
+                    }
+                    layer.msg(res.msg);
+                });
+            });
+        });
+    });
+
+</script>
+<!--end::Javascript-->
+</body>
+<!--end::Body-->
+</html>

@@ -1,0 +1,39 @@
+{
+  "name": "chunxi/acg-faka",
+  "description": "个人发卡源码，发卡系统，二次元发卡系统，二次元发卡源码，发卡程序，动漫发卡，PHP发卡源码",
+  "keywords": [
+    "chunxi",
+    "cx"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "chunxi",
+      "email": "i@acg.sb",
+      "homepage": "https://github.com/lizhipay/acg-faka",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=8.0.0",
+    "smarty/smarty": "~3.1",
+    "illuminate/database": "^7.19",
+    "symfony/var-dumper": "^5.1",
+    "illuminate/pagination": "^7.19",
+    "rah/danpu": "^2.7",
+    "ext-json": "*",
+    "phpmailer/phpmailer": "^6.5",
+    "ext-openssl": "*",
+    "guzzlehttp/guzzle": "^7.4",
+    "mrgoon/aliyun-sms": "^2.0",
+    "ext-gd": "*",
+    "khanamiryan/qrcode-detector-decoder": "1.0.5.2",
+    "ext-zip": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/",
+      "Kernel\\": "kernel/"
+    }
+  }
+}

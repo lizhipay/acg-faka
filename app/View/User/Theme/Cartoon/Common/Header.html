@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>#{$title} - #{$config.title}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="/assets/static/layui/css/layui.css">
+    <link rel="stylesheet" href="/assets/user/css/global.css?v=#{mt_rand(1000,99999999)}">
+
+    <script src="/assets/static/jquery.min.js"></script>
+    <script src="/assets/static/layui/layui.js"></script>
+    <script src="/assets/user/user.js"></script>
+    <script src="/assets/static/clipboard.js"></script>
+
+    <script>
+        layui.config({
+            base: '/assets/static/modules/'
+        });
+    </script>
+</head>
+<body>
+
+<div class="fly-header">
+    <div class="layui-container">
+        <a class="fly-logo" href="/">
+            #{$config.shop_name}
+        </a>
+        <ul class="layui-nav fly-nav layui-hide-xs">
+            <li class="layui-nav-item layui-this">
+                <a href="/user/index/query"><i class="iconfont icon-jiaoliu"></i>我的订单</a>
+            </li>
+        </ul>
+
+        <ul class="layui-nav fly-nav-user">
+            <!-- 登入后的状态 -->
+            <li class="layui-nav-item">
+                <div class="fly-nav-avatar" href="javascript:;">
+                    <span class="user-level"><img src="#{$user.group.icon}" style="transform: scale(.8,.8);margin-left: 0;">#{$user.username}</span>
+                    <span class="user-username"><img src="#{$user.avatar}" class="user-avatar"></span>
+
+                </div>
+                <dl class="layui-nav-child">
+                    <dd><a href="/user/security/personal" style="text-align: center;"><i class="layui-icon" style="font-size: 18px;">&#xe66f;</i>个人资料</a></dd>
+                    <dd><a href="/user/security/password" style="text-align: center;"><i class="layui-icon" style="font-size: 18px;">&#xe673;</i>修改密码</a>
+                    <hr style="margin: 5px 0;">
+                    <dd><a href="javascript:void(0);" class="logout" style="text-align: center;"><i class="layui-icon" style="font-size: 18px;">&#xe682;</i>安全注销</a></dd>
+                </dl>
+            </li>
+        </ul>
+    </div>
+</div>

@@ -1,0 +1,173 @@
+#{include file="../Common/Header.html"}
+<div class="layui-container fly-marginTop fly-user-main">
+    #{include file="../Common/Nav.html"}
+    <div class="fly-panel fly-panel-user" pad20>
+        <div class="layui-tab layui-tab-brief" lay-filter="user">
+            <div class="content-header">
+                <i class="layui-icon">&#xe638;</i> 我的店铺
+            </div>
+
+            <div class="content-body">
+                #{if !$business}
+                <blockquote class="elem-quote">
+                    您还没有开通店铺
+                </blockquote>
+                #{/if}
+                #{if $purchase == 1}
+                <blockquote class="elem-quote">
+                    升级您的店铺，享受更多权益
+                </blockquote>
+                #{/if}
+                #{if !$business || $purchase == 1 && $business}
+                <form class="layui-form" action="">
+                    <div class="form-block">
+                        <div>
+                            <div class="form-header">请选择</div>
+                            <div class="form-body">
+                                #{foreach $level as $le}
+                                <a class="button-click" onclick="openLevel(this,#{$le.id})"
+                                   style="line-height: 22px;color: #db66ac;"> <img
+                                        src="#{$le.icon}" class="pay-icon" style="margin-top: -5px;"> <span
+                                        style="font-weight: bold;">#{$le.name}</span> <span style="font-weight: bold;">¥#{$le.price}</span>
+                                    <hr>
+                                    <div style="font-size: 12px;">
+                                        <p>商品手续费：#{$le.cost*100}%</p>
+                                        <p>分站功能：#{if $le.substation == 1}<i class="layui-icon" style="color: green;">&#xe605;</i>
+                                            #{else}<i class="layui-icon" style="color: red;">&#x1006;</i>#{/if}</p>
+                                        <p>分站返佣：#{$le.accrual*100}%</p>
+                                        <p>独立域名：#{if $le.top_domain == 1}<i class="layui-icon" style="color: green;">&#xe605;</i>
+                                            #{else}<i class="layui-icon" style="color: red;">&#x1006;</i>#{/if}</p>
+                                    </div>
+                                </a>
+                                #{/foreach}
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <blockquote class="elem-tips" style="font-size: 12px;">
+                                <p>• 商品手续费：用作与您自主上架的商品，当成功出售时，系统将收取一定的手续费</p>
+                                <p>• 分站返佣：当您开通分站店铺后，您在分站卖出去的主站商品，将会给您一定的佣金</p>
+                                <p>• 顶级域名：当您开通分站后，可以绑定属于您自己的顶级域名，而不是使用分配的子域名</p>
+                            </blockquote>
+
+                        </div>
+                        <div style="margin-top: 25px;">
+                            <button type="button" class="layui-btn layui-btn-pink payButton">#{if !$business}立即开通
+                                #{/if}#{if $purchase == 1}立即升级#{/if}
+                            </button>
+                            #{if $purchase == 1}<a href="/user/business/index" class="layui-btn layui-btn-pink">返回店铺</a>#{/if}
+                        </div>
+                    </div>
+                </form>
+                #{else}
+                #{if $user.businessLevel.substation == 1}
+                <blockquote class="elem-quote">
+                    当前商户等级：<img src="#{$user.businessLevel.icon}"
+                                style="height: 16px;margin-top: -4px;">#{$user.businessLevel.name}，商品手续费：#{$user.businessLevel.cost*100}%，分站返佣：#{$user.businessLevel.accrual*100}%，绑定独立域名：#{if $user.businessLevel.top_domain == 1}<b style="color: green;">✔</b>#{else}<b style="color: red;">✖</b>#{/if}#{if
+                    count($level) > 0}，<a href="/user/business/index?purchase=1">我要升级</a>#{/if}
+                </blockquote>
+                <form class="layui-form form-data">
+                    <div>
+                        <div class="form-header">店铺名称</div>
+                        <div class="form-body"><input type="text" value="#{$business.shop_name}" name="shop_name"
+                                                      required autocomplete="off" placeholder="请输入店铺名称"
+                                                      class="layui-input" style="color: #ff9191;"></div>
+                    </div>
+                    <div>
+                        <div class="form-header">网站标题</div>
+                        <div class="form-body"><input type="text" value="#{$business.title}" name="title" required
+                                                      autocomplete="off" placeholder="用于显示浏览器标题" class="layui-input"
+                                                      style="color: #ff9191;"></div>
+                    </div>
+                    <div>
+                        <div class="form-header">店铺公告</div>
+                        <div class="form-body"><textarea type="text" name="notice" required autocomplete="off"
+                                                         placeholder="店铺公告" class="layui-textarea"
+                                                         style="color: #ff9191;">#{$business.notice}</textarea></div>
+                    </div>
+                    <div>
+                        <div class="form-header">显示主站商品</div>
+                        <div class="form-body"><input type="checkbox" name="master_display" title="开启" value="1" #{if $business.master_display == 1}checked#{/if}></div>
+                    </div>
+                    <div>
+                        <div class="form-header">客服QQ</div>
+                        <div class="form-body"><input type="text" value="#{$business.service_qq}" name="service_qq"
+                                                      required autocomplete="off" placeholder="售后客服QQ"
+                                                      class="layui-input" style="color: #ff9191;"></div>
+                    </div>
+                    <div>
+                        <div class="form-header">客服地址</div>
+                        <div class="form-body"><input type="text" value="#{$business.service_url}" name="service_url"
+                                                      required autocomplete="off" placeholder="网页客服地址"
+                                                      class="layui-input" style="color: #ff9191;"></div>
+                    </div>
+                    <div>
+                        <div class="form-header">子域名 #{if $business.subdomain} <b style="color: green;">✔</b> #{/if}</div>
+                        <div class="form-body">
+                            <div class="layui-row" style="width: 400px;">
+                                <div class="layui-col-md5">
+                                    <input type="text" value="#{$business.subdomain}" name="subdomain" required
+                                           autocomplete="off" placeholder="前缀" class="layui-input"
+                                           style="color: #ff9191;" #{if $business.subdomain} disabled #{/if}>
+                                </div>
+                                <div class="layui-col-md7">
+                                    <select class="layui-select " name="suffix" #{if $business.subdomain} disabled #{/if}>
+                                        #{foreach $domain as $d}
+                                        <option value="#{$d}">.#{$d}</option>
+                                        #{/foreach}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        #{if $user.businessLevel.top_domain == 1}
+                        <div>
+                            <div class="form-header">独立域名 #{if $business.topdomain} [#{if gethostbyname($config.cname) == gethostbyname($business.topdomain)}<b style="color: green;">正常</b>#{else}<b style="color: mediumvioletred;">未检测到解析</b>#{/if}] #{/if} <span style="color: red;">CNAME解析地址：<b style="color: green;">#{$config.cname}</b></span></div>
+                            <div class="form-body"><input type="text" value="#{$business.topdomain}" name="topdomain"
+                                                          required autocomplete="off" placeholder="绑定独立域名"
+                                                          class="layui-input" style="width:260px;color: #ff9191;" #{if $business.topdomain} disabled #{/if}></div>
+                        </div>
+                        #{/if}
+                        <div style="margin-top: 25px;">
+                            <button type="button" class="layui-btn layui-btn-pink save-config">保存设置</button>
+                        </div>
+                </form>
+                #{else}
+                <blockquote class="elem-quote">
+                    您的商户等级不支持分站功能，<a href="/user/business/index?purchase=1">立即升级</a>
+                </blockquote>
+                #{/if}
+                #{/if}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let levelId = 0;
+
+    function openLevel(obj, id) {
+        User.switchElement(obj);
+        levelId = id;
+    }
+
+    $('.payButton').click(() => {
+        User.$post("/user/api/business/purchase", {
+            levelId: levelId
+        }, res => {
+            layer.msg("开通成功");
+            window.location.href = "/user/business/index";
+        })
+    });
+
+    $('.save-config').click(() => {
+        User.$post("/user/api/business/saveConfig", $('.form-data').serialize(), res => {
+            layer.msg("保存成功");
+        })
+    });
+
+    $(function () {
+        layui.use(['form'], function () {
+            var form = layui.form;
+        });
+    });
+</script>
+#{include file="../Common/Footer.html"}

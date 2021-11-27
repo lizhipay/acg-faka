@@ -1,0 +1,160 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-xxl">
+            <!--begin::Basic info-->
+            <div class="card mb-5 mb-xl-10">
+                <!--begin::Card header-->
+                <div class="card-header border-0 cursor-pointer">
+                    <!--begin::Card title-->
+                    <div class="card-title m-0">
+                        <h3 class="fw-bolder m-0"><a href="https://dysms.console.aliyun.com/dysms.htm"  target="_blank">阿里云</a></h3>
+                    </div>
+                    <!--end::Card title-->
+                </div>
+                <!--begin::Card header-->
+                <!--begin::Content-->
+                <div id="kt_account_profile_details" class="collapse show">
+                    <!--begin::Form-->
+                    <form id="data-form" class="form">
+                        <!--begin::Card body-->
+                        <div class="card-body border-top p-9">
+                            <!--begin::Alert-->
+                            <div class="alert alert-dismissible bg-light-primary d-flex flex-column flex-sm-row p-5 mb-10">
+                                <!--begin::Icon-->
+                                <span class="me-4 mb-5 mb-sm-0"><i class="fas fa-bell"></i></span>
+                                <!--end::Icon-->
+
+                                <!--begin::Wrapper-->
+                                <div class="d-flex flex-column pe-0 pe-sm-10">
+                                    <!--begin::Content-->
+                                    <span>本系统默认内置阿里云短信功能，如果你想使用其他短信平台，请通过安装插件来使用。</span>
+                                    <!--end::Content-->
+                                </div>
+                                <!--end::Wrapper-->
+                            </div>
+                            <!--end::Alert-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">AccessKeyId</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="accessKeyId"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="请输入accessKeyId" value="#{$sms.accessKeyId}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">AccessKeySecret</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="accessKeySecret"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="请输入accessKeySecret" value="#{$sms.accessKeySecret}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">签名名称</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="signName"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="请输入accessKeySecret" value="#{$sms.signName}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">模版CODE</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="templateCode"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="请输入accessKeySecret" value="#{$sms.templateCode}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                        </div>
+                        <!--end::Card body-->
+                        <!--begin::Actions-->
+                        <div class="card-footer d-flex justify-content-center py-6 px-9">
+                            <button type="button" class="btn btn-success send-test-message m-1">发送测试短信 (Send Test
+                                Message)
+                            </button>
+                            <button type="button" class="btn btn-primary save-data m-1">保存设置 (Save Config)</button>
+                        </div>
+                        <!--end::Actions-->
+                    </form>
+                    <!--end::Form-->
+                </div>
+                <!--end::Content-->
+            </div>
+            <!--end::Basic info-->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+
+
+<script>
+    $(function () {
+        layui.use(['layer', 'form'], function () {
+            //data-form
+            $('.save-data').click(function () {
+                let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
+                $.post("/admin/api/config/sms", $("#data-form").serialize(), res => {
+                    layer.close(loaderIndex);
+                    layer.msg("保存成功");
+                });
+            });
+
+            $('.send-test-message').click(function () {
+                layer.prompt({title: '(国内)手机号', formType: 0}, function (phone, index) {
+                    let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
+                    $.post("/admin/api/config/smsTest", {phone: phone}, res => {
+                        layer.close(loaderIndex);
+                        if (res.code == 200) {
+                            layer.close(index);
+                        }
+                        layer.msg(res.msg);
+                    });
+                });
+
+            });
+        });
+    });
+</script>
+
+#{include file="../Footer.html"}

@@ -1,0 +1,275 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-fluid">
+            <!--begin::Tables Widget 9-->
+            <div class="card mb-5 mb-xl-8">
+                <!--begin::Header-->
+                <div class="card-header border-0 pt-5">
+                    <div class="card-toolbar">
+                        <button class="btn btn-sm btn-light-primary settlement me-3"><i class="fa fa-money-bill"></i>
+                            一键自动结算
+                        </button>
+                    </div>
+                </div>
+                <!--end::Header-->
+                <div class="card-body py-3">
+                    <form class="search-query"></form>
+                    <table id="cash" lay-filter="cash"></table>
+                </div>
+            </div>
+
+            <!--end::Tables Widget 9-->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+
+
+<div style="display: none" class="more-modal">
+    <div style="padding: 10px;" class="more-table">
+        <table class="layui-table">
+            <tbody>
+            <tr>
+                <td colspan="2" style="text-align: center;"><img src="[avatar]"
+                                                                 style="height: 80px;width:80px;border-radius: 100%;box-shadow: 1px 1px 10px 1px #ed9b9bb3;">
+                </td>
+            </tr>
+            <tr>
+                <td>提现用户</td>
+                <td>[username]</td>
+            </tr>
+            <tr>
+                <td>提现金额</td>
+                <td>[amount]</td>
+            </tr>
+            <tr>
+                <td>收款方式</td>
+                <td>[card]</td>
+            </tr>
+            <tr>
+                <td>收款人</td>
+                <td>[nicename]</td>
+            </tr>
+            <tr>
+                <td>收款账号</td>
+                <td>[account]</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+
+    $(function () {
+        layui.use(['table', 'hex', 'form'], function () {
+            let table = layui.table;
+            let cao = layui.hex;
+            let status = ['<span class="badge badge-light-danger">等待处理</span>', '<span class="badge badge-light-success">成功</span>', '<span class="badge badge-light">失败:[msg]</span>'];
+            let type = ['<span class="badge badge-light-success">自动结算</span>', '<span class="badge badge-light-primary">手动提交</span>'];
+            let card = ['<span class="badge badge-light">支付宝</span>', '<span class="badge badge-light">微信</span>'];
+
+            var tableInstance = table.render({
+                elem: '#cash'
+                , skin: 'nob'
+                , size: 'lg'
+                , height: document.documentElement.clientHeight - 380
+                , url: '/admin/api/cash/data'
+                , page: true
+                , limit: 16
+                , limits: [16, 30, 40]
+                , method: "post"
+                , response: {
+                    statusCode: 200
+                }
+                , cols: [[
+                    {
+                        type: 'checkbox', fixed: 'left'
+                    }
+                    , {
+                        field: 'user', title: '会员', templet: function (item) {
+                            if (!item.user) {
+                                return '-';
+                            }
+                            return '<span class="badge badge-light-dark user" style="cursor: pointer;" data-id="' + item.user.id + '"><img src="' + item.user.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.user.username + '(' + item.user.id + ')</span>'
+                        }
+                    }
+                    , {
+                        field: 'amount', title: '提现金额', templet: function (item) {
+                            return '<span class="badge badge-light-success">' + item.amount + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'type', title: '提现类型', templet: function (item) {
+                            return type[item.type];
+                        }
+                    }
+                    , {
+                        field: 'card', title: '收款方式', templet: function (item) {
+                            return card[item.card];
+                        }
+                    }
+                    , {
+                        field: 'cost', title: '手续费', templet: function (item) {
+                            return '<span class="badge badge-light">' + item.cost + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'status', title: '状态', templet: function (item) {
+                            return status[item.status].replace("[msg]", item.message);
+                        }
+                    }
+                    , {
+                        field: 'create_time', title: '提现时间', templet: function (item) {
+                            return '<span class="badge badge-light">' + item.create_time + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'arrive_time', title: '处理时间', templet: function (item) {
+                            if (!item.arrive_time) {
+                                return '-';
+                            }
+                            return '<span class="badge badge-light">' + item.arrive_time + '</span>';
+                        }
+                    }
+                    , {
+                        templet: function (item) {
+                            if (item.status != 0) {
+                                return '-';
+                            }
+                            let html = '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-light-success btn-sm me-1 success"><i class="fas fa-check"></i></button> ';
+                            html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-light-danger btn-sm me-1 error"><i class="fas fa-times"></i></button> ';
+                            return html;
+                        }
+                    }
+                ]],
+                done: res => {
+                    cao.setIdMap(res.data);
+                    $('.user').click(function () {
+                        let id = cao.getObjectId(this);
+                        $("input[name='equal-user_id']").val(id);
+                        tableInstance.reload({
+                            where: {"equal-user_id": id},
+                            page: {
+                                curr: 1
+                            }
+                        });
+                    });
+
+                    $('.success').click(function () {
+                        let map = cao.getMapItem(this);
+                        layer.open({
+                            type: 1,
+                            title: '<i class="layui-icon">&#xe600;</i> CASH',
+                            content: $('.more-modal').html()
+                                .replace("[amount]", '<b style="color: green;">¥ ' + map.amount + '</b>')
+                                .replace("[card]", map.card == 0 ? "支付宝" : "微信")
+                                .replace("[create_time]", map.create_time)
+                                .replace("[avatar]", map.user.avatar ? map.user.avatar : '/favicon.ico')
+                                .replace("[username]", map.user.username)
+                                .replace("[nicename]", map.user.nicename)
+                                .replace("[account]", map.card == 0 ? map.user.alipay : "<div class='wx_qrcode'></div>")
+                            ,
+                            area: cao.isPc() ? "420px" : "100%",
+                            btn: ['已打款', '取消'],
+                            success: () => {
+                                if (map.card == 1 && map.user.wechat) {
+                                    $('.wx_qrcode').qrcode({
+                                        render: "canvas",
+                                        width: 100,
+                                        height: 100,
+                                        text: map.user.wechat
+                                    });
+                                }
+                            },
+                            yes: () => {
+                                let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+                                $.post("/admin/api/cash/decide", {
+                                    id: map.id,
+                                    status: 0
+                                }, res => {
+                                    tableInstance.reload();
+                                    layer.closeAll();
+                                });
+                            }
+                        });
+                    });
+
+
+                    $('.error').click(function () {
+                        let map = cao.getMapItem(this);
+                        layer.prompt({
+                            title: '拒绝理由呢？总得需要个理由吧？',
+                            formType: 0
+                        }, function (message, index) {
+                            let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
+                            $.post("/admin/api/cash/decide", {
+                                id: map.id,
+                                status: 1,
+                                message: message
+                            }, res => {
+                                tableInstance.reload();
+                                layer.closeAll();
+                            });
+                        });
+                    });
+                }
+            });
+
+            cao.query('.search-query', tableInstance, [
+                {title: "会员ID", name: "equal-user_id", type: "input"},
+                {
+                    title: "类型", name: "equal-type", type: "select", dict: [
+                        {id: 0, name: "自动结算"},
+                        {id: 1, name: "手动提现"},
+                    ]
+                }, {
+                    title: "收款方式", name: "equal-card", type: "select", dict: [
+                        {id: 0, name: "支付宝"},
+                        {id: 1, name: "微信"},
+                    ]
+                }, {
+                    title: "状态", name: "equal-status", type: "select", dict: [
+                        {id: 0, name: "等待处理"},
+                        {id: 1, name: "成功"},
+                        {id: 2, name: "失败"},
+                    ]
+                },
+                {title: "开始时间", name: "betweenStart-create_time", type: "date"},
+                {title: "结束时间", name: "betweenEnd-create_time", type: "date"},
+            ], true, false);
+
+
+            $('.settlement').click(() => {
+                layer.prompt({
+                    title: '请输入最低结算账户余额',
+                    formType: 0
+                }, function (amount, index) {
+                    let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
+                    $.post("/admin/api/cash/settlement", {
+                        amount: amount
+                    }, res => {
+                        tableInstance.reload();
+                        layer.close(loaderIndex);
+                        layer.close(index);
+                        layer.msg("结算完成");
+                    });
+                });
+            });
+        });
+
+    });
+</script>
+
+#{include file="../Footer.html"}

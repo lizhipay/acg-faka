@@ -1,0 +1,301 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-fluid">
+            <!--begin::Tables Widget 9-->
+            <div class="card mb-5 mb-xl-8">
+                <!--begin::Header-->
+                <div class="card-header border-0 pt-5">
+                    <div class="card-toolbar">
+                        <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i class="fas fa-plus"></i>
+                            生成优惠卷
+                        </button>
+                        <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fas fa-trash"></i>
+                            移除选中优惠卷
+                        </button>
+                        <button class="btn btn-sm btn-light-dark btn-app-lock me-3"><i class="fa fa-lock"></i> 锁定选中优惠卷
+                        </button>
+                        <button class="btn btn-sm btn-light-success btn-app-unlock me-3"><i class="fa fa-lock-open"></i>
+                            解锁选中优惠卷
+                        </button>
+                        <button class="btn btn-sm btn-light-primary btn-app-export me-3"><i
+                                class="fas fa-file-export"></i>
+                            导出筛选优惠卷
+                        </button>
+                    </div>
+                </div>
+                <!--end::Header-->
+
+                <div class="card-body py-3">
+                    <form class="search-query"></form>
+                    <table id="coupon" lay-filter="coupon"></table>
+                </div>
+            </div>
+
+            <!--end::Tables Widget 9-->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+
+<script>
+
+    $(function () {
+        layui.use(['table', 'hex', 'form'], function () {
+            let table = layui.table;
+            let cao = layui.hex;
+            let form = layui.form;
+            let status = ['<span class="badge badge-light-danger">未使用</span>', '<span class="badge badge-light-success">已使用</span>', '<span class="badge badge-light">锁定</span>'];
+
+            var tableInstance = table.render({
+                elem: '#coupon'
+                , skin: 'nob'
+                , size: 'lg'
+                , height: document.documentElement.clientHeight - 375
+                , url: '/admin/api/coupon/data'
+                , page: true
+                , limit: 16
+                , limits: [16, 20, 30]
+                , method: "post"
+                , response: {
+                    statusCode: 200
+                }
+                , cols: [[
+                    {
+                        type: 'checkbox', fixed: 'left'
+                    }
+                    , {
+                        field: 'secret', title: '卷代码', templet: function (item) {
+                            return '<span class="badge badge-light">' + item.code + '</span>';
+                        }, width: 200
+                    }
+                    , {
+                        field: 'money', title: '面值', templet: function (item) {
+                            return '<span class="badge badge-light-success">' + item.money + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'commodity', title: '商品', templet: function (item) {
+                            if (!item.commodity) {
+                                return "-";
+                            }
+                            return '<span class="badge badge-light" style="cursor: pointer;" data-id="0">' + item.commodity.name + '</span>';
+
+                        }
+                    }
+                    , {field: 'create_time', title: '创建时间'}
+                    , {
+                        field: 'expire_time', title: '到期时间', templet: function (item) {
+                            if (!item.expire_time) {
+                                return '<span class="badge badge-light">永久</span>';
+                            }
+                            return item.expire_time;
+                        }
+                    }
+                    , {field: 'note', title: '备注信息'}
+                    , {
+                        field: 'status', title: '状态', templet: function (item) {
+                            return status[item.status];
+                        }
+                    }
+                    , {
+                        field: 'service_time', title: '使用时间', templet: function (item) {
+                            if (!item.service_time) {
+                                return '-';
+                            }
+                            return item.service_time;
+                        }
+                    }
+                    , {
+                        field: 'trade_no', title: '订单号', templet: function (item) {
+                            if (!item.trade_no) {
+                                return "-";
+                            }
+                            return '<span class="badge badge-light" style="cursor: pointer;">' + item.trade_no + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'owner', title: '所属者', templet: function (item) {
+                            if (!item.owner) {
+                                return '<span class="badge badge-light-success owner" style="cursor: pointer;" data-id="0">SYSTEM</span>';
+                            }
+                            return '<span class="badge badge-light-dark owner" style="cursor: pointer;" data-id="' + item.owner.id + '"><img src="' + item.owner.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.owner.username + '(' + item.owner.id + ')</span>'
+                        }
+                    }
+                    , {
+                        templet: function (item) {
+                            let html = '';
+
+                            if (item.status == 0) {
+                                html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 lock"><i class="fa fa-lock" style="color: #ffa361;"></i></button> ';
+                            } else if (item.status == 2) {
+                                html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 unlock"><i class="fa fa-lock-open" style="color: #3f425475;"></i></button> ';
+                            }
+                            html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+                            return html;
+                        }
+                    }
+                ]],
+                done: res => {
+                    cao.setIdMap(res.data);
+
+                    $('.del').click(function () {
+                        let id = cao.getObjectId(this);
+                        console.log(id)
+                        layer.confirm('您是否要移除该优惠卷，这是无法恢复的？', {
+                            btn: ['确认移除', '取消']
+                        }, function () {
+                            $.post('/admin/api/coupon/del', {list: [id]}, res => {
+                                layer.msg(res.msg);
+                                tableInstance.reload();
+                            });
+                        });
+                    });
+
+                    $('.lock').click(function () {
+                        let id = cao.getObjectId(this);
+                        $.post('/admin/api/coupon/edit', {id: id, status: 2}, res => {
+                            layer.msg(res.msg);
+                            tableInstance.reload();
+                        });
+                    });
+
+                    $('.unlock').click(function () {
+                        let id = cao.getObjectId(this);
+                        $.post('/admin/api/coupon/edit', {id: id, status: 0}, res => {
+                            layer.msg(res.msg);
+                            tableInstance.reload();
+                        });
+                    });
+
+                    $('.owner').click(function () {
+                        let id = cao.getObjectId(this);
+                        $("input[name='equal-owner']").val(id);
+                        tableInstance.reload({
+                            where: {"equal-owner": id},
+                            page: {
+                                curr: 1
+                            }
+                        });
+                    });
+                }
+            });
+
+            let modal = (values = {}) => {
+                cao.popup('/admin/api/coupon/save', [
+                    {
+                        title: "选择商品",
+                        name: "commodity_id",
+                        type: "select",
+                        dict: "commodity->owner=0,id,name",
+                        placeholder: "请选择商品",
+                        search: true
+                    },
+                    {
+                        title: "备注信息",
+                        name: "note",
+                        type: "input",
+                        placeholder: "备注信息(可空)，方便查询某次生成的优惠卷"
+                    },
+                    {title: "面值(金额)", name: "money", type: "input", placeholder: "请输入该优惠卷能够抵扣的金额"},
+                    {title: "过期时间", name: "expire_time", type: "date", placeholder: "过了该时间优惠卷自动失效，不填代表永不过期"},
+                    {title: "卷码前缀", name: "prefix", type: "input", placeholder: "请输入优惠卷代码前缀，可留空", default: "ACG"},
+                    {title: "生成数量", name: "num", type: "input", placeholder: "你想生成多少张优惠卷", default: 1}
+                ], res => {
+                    tableInstance.reload();
+                    layer.open({
+                        type: 1,
+                        title: "优惠卷[成功:" + res.data.success + "/失败:" + res.data.error + "]",
+                        area: ['420px', '660px'],
+                        content: '<textarea class="layui-input" style="padding: 15px;height: 100%;">' + res.data.code + '</textarea>'
+                    });
+                }, values);
+            }
+
+            $('.btn-app-create').click(function () {
+                modal();
+            });
+
+            $('.btn-app-del').click(() => {
+                var data = cao.listObjectToArray(table.checkStatus('coupon').data);
+                if (data.length == 0) {
+                    layer.msg("请至少勾选1个优惠卷再进行操作！");
+                    return;
+                }
+
+                layer.confirm('您确定要删除已经选中的优惠卷吗？这是不可恢复的操作！', {
+                    btn: ['确定', '取消']
+                }, function () {
+                    $.post("/admin/api/coupon/del", {list: data}, res => {
+                        layer.msg(res.msg);
+                        tableInstance.reload();
+                    });
+                });
+            });
+
+            $('.btn-app-lock').click(() => {
+                var data = cao.listObjectToArray(table.checkStatus('coupon').data);
+                if (data.length == 0) {
+                    layer.msg("请至少勾选1个优惠卷进行操作！");
+                    return;
+                }
+                layer.confirm('您确定要锁定选中的优惠卷吗？', {
+                    btn: ['确定', '取消']
+                }, function () {
+                    $.post("/admin/api/coupon/lock", {list: data}, res => {
+                        layer.msg(res.msg);
+                        tableInstance.reload();
+                    });
+                });
+            });
+
+            $('.btn-app-unlock').click(() => {
+                var data = cao.listObjectToArray(table.checkStatus('coupon').data);
+                if (data.length == 0) {
+                    layer.msg("请至少勾选1个优惠卷进行操作！");
+                    return;
+                }
+                layer.confirm('您确定要解锁选中的优惠卷吗？', {
+                    btn: ['确定', '取消']
+                }, function () {
+                    $.post("/admin/api/coupon/unlock", {list: data}, res => {
+                        layer.msg(res.msg);
+                        tableInstance.reload();
+                    });
+                });
+            });
+
+            $('.btn-app-export').click(function () {
+                let query = $('.search-query').serialize();
+                window.open('/admin/api/coupon/export?exportStatus=' + query);
+            });
+
+
+            cao.query('.search-query', tableInstance, [
+                {title: "卷代码", name: "equal-code", type: "input"},
+                {title: "备注信息", name: "equal-note", type: "input"},
+                {title: "卷面值", name: "equal-money", type: "input"},
+                {
+                    title: "状态", name: "equal-status", type: "select", dict: [
+                        {id: 0, name: "未使用"},
+                        {id: 1, name: "已使用"},
+                        {id: 2, name: "锁定"},
+                    ]
+                },
+                {title: "商品ID", name: "equal-commodity_id", type: "input"},
+                {title: "会员ID，0=系统", name: "equal-owner", type: "input"},
+            ], true, false);
+        });
+    });
+</script>
+
+#{include file="../Footer.html"}

@@ -1,0 +1,107 @@
+#{include file="../Common/Header.html"}
+<div class="layui-container fly-marginTop fly-user-main">
+    #{include file="../Common/Nav.html"}
+    <div class="fly-panel fly-panel-user" pad20>
+        <div class="layui-tab layui-tab-brief">
+            #{include file="../Common/SecurityNav.html"}
+            <div class="content-body">
+                <form class="layui-form form-data">
+                    <div class="form-block">
+                        <div>
+                            <div class="form-body">
+                                <input type="file" class="avatar-input" style="display: none;">
+                                <input type="text" name="avatar" style="display: none;" value="#{$user.avatar}">
+                                <img class="avatar-img"
+                                     onclick="document.getElementsByClassName('avatar-input')[0].click()"
+                                     src="#{$user.avatar}" alt="点击修改"
+                                     style="height: 100px;width: 100px;border-radius: 100%;border: 1px solid #fba9da8c;box-shadow: 1px 1px 10px 1px #ed9b9bb3;cursor: pointer;">
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-header">QQ号</div>
+                            <div class="form-body"><input type="number" value="#{$user.qq}" name="qq" autocomplete="off"
+                                                          placeholder="请输入QQ号" class="layui-input"
+                                                          style="color: #ff9191;width: 320px;"></div>
+                        </div>
+                        <div>
+                            <div class="form-header">真实姓名(提现)</div>
+                            <div class="form-body"><input type="text" value="#{$user.nicename}" name="nicename"
+                                                          autocomplete="off"
+                                                          placeholder="请输入您的真实姓名" class="layui-input"
+                                                          style="color: #ff9191;width: 320px;"></div>
+                        </div>
+                        <div>
+                            <div class="form-header">自动结算方式</div>
+                            <div class="form-body" style="color: #ff9191;width: 320px;">
+                                <select name="settlement" >
+                                    <option value="0" #{if $user.settlement == 0} selected #{/if}>支付宝</option>
+                                    <option value="1" #{if $user.settlement == 1} selected #{/if}>微信</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-header">支付宝账号(提现)</div>
+                            <div class="form-body"><input type="text" value="#{$user.alipay}" name="alipay"
+                                                          autocomplete="off"
+                                                          placeholder="兑现使用的支付宝账号" class="layui-input"
+                                                          style="color: #ff9191;width: 320px;"></div>
+                        </div>
+                        <div>
+                            <div class="form-header">微信收款二维码(提现)</div>
+                            <div class="form-body">
+                                <input type="file" class="wechat-input" style="display: none;">
+                                <input type="text" name="wechat" style="display: none;" value="">
+                                #{if $user.wechat == ''}
+                                <i class="layui-icon"
+                                   onclick="document.getElementsByClassName('wechat-input')[0].click()"
+                                   style="font-size: 32px;color: #0C84D1;cursor: pointer;">&#xe681;</i>
+                                #{else}
+                                <!--  <img class="wechat-img" src="#{$user.wechat}" style="width: 100px;cursor: pointer;"   onclick="document.getElementsByClassName('wechat-input')[0].click()">-->
+                                <div class="wx_qrcode"
+                                     onclick="document.getElementsByClassName('wechat-input')[0].click()"></div>
+                                #{/if}
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 25px;">
+                            <button type="button" class="layui-btn layui-btn-pink save-data">保存修改</button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        layui.use('form', function () {
+
+            $('.wx_qrcode').qrcode({
+                render: "canvas",
+                width: 150,
+                height: 150,
+                text: "#{$user.wechat}"
+            });
+
+            User.upload(".avatar-input", res => {
+                $('input[name=avatar]').val(res.path);
+                $('.avatar-img').attr("src", res.path);
+            });
+
+            User.upload(".wechat-input", res => {
+                $('input[name=wechat]').val(res.path);
+                $('.wx_qrcode').html('<img class="wechat-img" src="' + res.path + '" style="width: 100px;cursor: pointer;"   onclick="document.getElementsByClassName(\'wechat-input\')[0].click()">');
+            });
+
+            $('.save-data').click(function () {
+                User.$post("/user/api/security/personal", $('.form-data').serialize(), res => {
+                    layer.msg("保存成功");
+                })
+            });
+        });
+    });
+
+</script>
+#{include file="../Common/Footer.html"}

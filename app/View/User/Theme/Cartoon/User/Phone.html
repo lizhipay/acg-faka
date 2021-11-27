@@ -1,0 +1,90 @@
+#{include file="../Common/Header.html"}
+<div class="layui-container fly-marginTop fly-user-main">
+    #{include file="../Common/Nav.html"}
+    <div class="fly-panel fly-panel-user" pad20>
+        <div class="layui-tab layui-tab-brief">
+            #{include file="../Common/SecurityNav.html"}
+            <div class="content-body">
+                <form class="layui-form form-data">
+                    <div class="form-block">
+                        <div>
+                            <div class="form-header">手机</div>
+                            <div class="form-body"><input type="text" value="#{$user.phone}" autocomplete="off"
+                                                          class="layui-input" placeholder="未绑定"
+                                                          style="color: #ff9191;width: 320px;" disabled></div>
+                        </div>
+
+                        <div>
+                            <div class="form-header">新手机</div>
+                            <div class="form-body"><input type="text" name="phone" autocomplete="off"
+                                                          class="layui-input" placeholder="请输入新手机"
+                                                          style="color: #ff9191;width: 320px;"></div>
+                        </div>
+
+                        <div>
+                            <div class="form-header">验证码</div>
+                            <div class="form-body"><input type="text" name="phone_captcha" autocomplete="off"
+                                                          class="layui-input" placeholder="验证码"
+                                                          style="color: #ff9191;width: 160px;display: inline-block;">
+                                <button type="button" class="layui-btn layui-btn-pink send-captcha">获取验证码</button>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 25px;">
+                            <button type="button" class="layui-btn layui-btn-pink save-data">保存修改</button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        layui.use(['layer'], function () {
+            $('.save-data').click(function () {
+                User.$post("/user/api/security/phone", $('.form-data').serialize(), res => {
+                    layer.msg("绑定成功");
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                })
+            });
+
+            $('.send-captcha').click(function () {
+                layer.prompt({
+                    title: '请输入验证码：<img src="/user/captcha/image?action=phoneBindNew" style="margin-top: -5px;">',
+                    formType: 0
+                }, function (captcha, index) {
+                    let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
+                    $.post("/user/api/security/phoneBindNew", {
+                        captcha: captcha,
+                        phone: $('input[name=phone]').val()
+                    }, res => {
+                        layer.close(loaderIndex);
+                        if (res.code == 200) {
+                            layer.close(index);
+                            let second = 60;
+                            $('.send-captcha').attr('disabled', true);
+                            $(".send-captcha").html((second) + "秒")
+                            let interval = setInterval(function () {
+                                second--
+                                $(".send-captcha").html((second) + "秒")
+                                if (second === -1) {
+                                    $(".send-captcha").text("获取验证码")
+                                    $('.send-captcha').attr('disabled', false);
+                                    clearInterval(interval)
+                                }
+                            }, 1000);
+                        }
+                        layer.msg(res.msg);
+                    });
+                });
+            });
+        });
+    });
+
+</script>
+#{include file="../Common/Footer.html"}

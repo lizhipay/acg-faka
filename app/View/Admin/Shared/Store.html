@@ -1,0 +1,231 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-fluid">
+            <!--begin::Tables Widget 9-->
+            <div class="card mb-5 mb-xl-8">
+                <!--begin::Header-->
+                <div class="card-header border-0 pt-5">
+                    <div class="card-toolbar">
+                        <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i class="fas fa-plus"></i>
+                            新增店铺
+                        </button>
+                        <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fas fa-trash"></i>
+                            移除选中的店铺
+                        </button>
+                    </div>
+                </div>
+                <!--end::Header-->
+
+                <div class="card-body py-3">
+                    <form class="search-query"></form>
+                    <table id="store" lay-filter="store"></table>
+                </div>
+            </div>
+
+            <!--end::Tables Widget 9-->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+
+<script>
+
+    $(function () {
+        layui.use(['table', 'hex'], function () {
+            let table = layui.table;
+            var cao = layui.hex;
+
+            var tableInstance = table.render({
+                elem: '#store'
+                , skin: 'nob'
+                , size: 'lg'
+                , height: document.documentElement.clientHeight - 375
+                , url: '/admin/api/store/data'
+                , page: true
+                , limit: 16
+                , limits: [16, 20, 30]
+                , method: "post"
+                , response: {
+                    statusCode: 200
+                }
+                , cols: [[
+                    {
+                        type: 'checkbox', fixed: 'left'
+                    }, {
+                        field: 'logo', title: 'LOGO', templet: function (item) {
+                            return '<span class="badge badge-light-dark"><img src="' + item.domain + '/favicon.ico"  style="width: 30px;border-radius: 100%;"/></span>'
+                        }
+                    }, {
+                        field: 'name', title: '店铺名称', templet: function (item) {
+                            return '<span class="badge badge-light">' + item.name + '</span>'
+                        }
+                    }, {
+                        field: 'domain', title: '店铺地址', templet: function (item) {
+                            return '<a class="badge badge-light" href="' + item.domain + '" target="_blank">' + item.domain + '</a>'
+                        }
+                    }, {
+                        field: 'balance', title: '余额(缓存)', templet: function (item) {
+                            return '<span class="badge badge-light-primary">' + item.balance + '</>'
+                        }
+                    }, {
+                        field: 'status', title: '状态', templet: function (item) {
+                            return '<span class="connect-' + item.id + '"><span class="badge badge-light-primary">连接中..</span></span>'
+                        }
+                    }
+                    , {
+                        templet: function (item) {
+                            let html = '';
+
+                            html += '<button style="display: none;" type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-success btn-sm me-1 items items-' + item.id + '"><i class="fas fa-plug"></i></button> ';
+                            html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fa fa-edit"></i></button> ';
+                            html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+                            return html;
+                        }
+                    }
+                ]],
+                done: res => {
+                    cao.setIdMap(res.data);
+
+                    res.data.forEach(item => {
+                        $.post("/admin/api/store/connect", {id: item.id}, run => {
+                            let ins = $(".connect-" + item.id);
+                            if (run.code == 200) {
+                                //success
+                                ins.html('<span class="badge badge-light-success">正常</span>');
+                                $(".items-" + item.id).show();
+                            } else {
+                                ins.html('<span class="badge badge-light-danger">' + run.msg + '</span>');
+                            }
+                        });
+                    });
+
+                    $('.edit').click(function () {
+                        let mapItem = cao.getMapItem(this);
+                        modal(mapItem);
+                    });
+
+                    $('.items').click(function () {
+                        let mapItem = cao.getMapItem(this);
+                        let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
+
+                        $.post('/admin/api/store/items', {id: mapItem.id}, res => {
+                            layer.close(loaderIndex);
+                            let items = {};
+
+                            res.data.forEach(value => {
+                                value.children.forEach(item => {
+                                    items[item.id] = item;
+                                });
+                            });
+
+                            cao.popup(result => {
+                                if (result.category_id == "") {
+                                    layer.msg("请选择要导入本地的分类");
+                                    return;
+                                }
+                                if (result.auth.length == 0) {
+                                    layer.msg("请选择至少1个该店铺的商品");
+                                    return;
+                                }
+                                result.items = [];
+
+                                result.auth.forEach(itemId => {
+                                    let item = items[itemId];
+                                    result.items.push(item);
+                                });
+
+                                delete result.auth;
+
+                                result.store_id = mapItem.id;
+
+                                let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
+                                $.post('/admin/api/store/addItem', result, run => {
+                                    layer.close(loaderIndex);
+                                    layer.closeAll();
+                                    layer.msg(run.msg);
+                                });
+                            }, [
+                                {
+                                    title: "本地分类",
+                                    name: "category_id",
+                                    type: "select",
+                                    dict: "category,id,name",
+                                    placeholder: "请选择分类"
+                                },
+                                {title: "远程商品", name: "auth", type: "treeCheckbox", dict: res.data},
+                            ], res => {
+                                tableInstance.instance.reload();
+                            }, [], "660px", false, mapItem.name + "-拉取商品到本地分类");
+                        });
+                    });
+
+                    $('.del').click(function () {
+                        let id = cao.getObjectId(this);
+                        console.log(id)
+                        layer.confirm('您正在移除该店铺，是否要继续？', {
+                            btn: ['确认移除', '取消']
+                        }, function () {
+                            $.post('/admin/api/store/del', {list: [id]}, res => {
+                                layer.msg(res.msg);
+                                tableInstance.reload();
+                            });
+                        });
+                    });
+                }
+            });
+
+            let modal = (values = {}) => {
+                cao.popup('/admin/api/store/save', [
+                    {
+                        title: "协议", name: "type", type: "select", placeholder: "请选择协议", dict: [
+                            {id: 0, name: "内置(1.0)"}
+                        ], default: 0
+                    },
+                    {title: "店铺地址", name: "domain", type: "input", placeholder: "需要带http://或者https://(推荐,如果支持)"},
+                    {title: "商户ID", name: "app_id", type: "input", placeholder: "请输入商户ID"},
+                    {title: "商户密钥", name: "app_key", type: "input", placeholder: "请输入商户密钥"},
+                ], res => {
+                    tableInstance.reload();
+                }, values);
+            }
+
+            $('.btn-app-create').click(function () {
+                modal();
+            });
+
+            $('.btn-app-del').click(() => {
+                var data = cao.listObjectToArray(table.checkStatus('store').data);
+                if (data.length == 0) {
+                    layer.msg("请至少勾选1个店铺进行操作！");
+                    return;
+                }
+
+                layer.confirm('您确定要删除已经选中的店铺吗？这是不可恢复的操作！', {
+                    btn: ['确定', '取消']
+                }, function () {
+                    $.post("/admin/api/store/del", {list: data}, res => {
+                        layer.msg(res.msg);
+                        tableInstance.reload();
+                    });
+                });
+            });
+
+            cao.query('.search-query', tableInstance, [
+                {title: "店铺名称", name: "search-name", type: "input"},
+                {title: "店铺地址", name: "equal-domain", type: "input"}
+            ], true, false);
+        });
+    });
+</script>
+
+#{include file="../Footer.html"}

@@ -1,0 +1,81 @@
+#{include file="../Common/Header.html"}
+<div class="layui-container fly-marginTop fly-user-main">
+    #{include file="../Common/Nav.html"}
+    <div class="fly-panel fly-panel-user" pad20>
+        <div class="layui-tab layui-tab-brief">
+
+            <ul class="layui-tab-title">
+                <li class="layui-this"><a href="/user/cash/index"><i class="layui-icon">&#xe659;</i> 硬币兑现</a></li>
+                <li><a href="/user/cash/record"><i class="layui-icon">&#xe63c;</i> 兑现记录<span
+                        class="layui-badge layui-bg-cash">#{$processing}</span></a></li>
+            </ul>
+
+            <div class="content-body">
+                <blockquote class="elem-quote">
+                    最低兑现金额：<b>#{$config.cash_min}元</b>，手动提现费用：<b>#{$config.cash_cost}元</b> (每天12点自动结算免费)
+                </blockquote>
+                <form class="layui-form" action="">
+                    <div class="form-block">
+                        <div>
+                            <div class="form-header">兑现硬币 <span style="color: #63b584;font-size: 14px;">当前拥有硬币:#{$user.coin}</span>
+                            </div>
+                            <div class="form-body"><input type="text" name="amount" required lay-verify="required"
+                                                          value="#{$config.cash_min}" autocomplete="off"
+                                                          class="layui-input"
+                                                          style="width: 150px;color: #ff9191;"></div>
+                        </div>
+                        <div>
+                            <div class="form-header">兑现方式</div>
+                            <div class="form-body pay-list">
+                                #{if $config.cash_type_alipay == 1} <a class="button-click checked"
+                                                                       onclick="payClick(this,0)"
+                                                                       style="line-height: 22px;color: #db66ac;"><img
+                                    src="/assets/user/images/cash/alipay.png" class="pay-icon"> 支付宝</a> #{/if}
+                                #{if $config.cash_type_wechat == 1} <a class="button-click" onclick="payClick(this,1)"
+                                                                       style="line-height: 22px;color: #db66ac;"><img
+                                    src="/assets/user/images/cash/wechat.png" class="pay-icon"> 微信</a> #{/if}
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 25px;">
+                            <button type="button" class="layui-btn layui-btn-pink payButton">立即兑现</button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let payId = 0;
+
+    function payClick(obj, id) {
+        User.switchElement(obj);
+        payId = id;
+    }
+
+    $(function () {
+        layui.use('layer', function () {
+            $('.payButton').click(function () {
+                layer.confirm('兑现' + $('input[name=amount]').val() + "硬币需要#{$config.cash_cost}元手续费，您确定吗？", {
+                    btn: ['确认', '取消']
+                }, function () {
+                    User.$post("/user/api/cash/submit", {
+                        type: payId,
+                        amount: $('input[name=amount]').val()
+                    }, res => {
+                        layer.msg("兑现成功，请耐心等待到账。")
+                        setTimeout(() => {
+                            window.location.href = "/user/cash/record";
+                        }, 1500);
+                    });
+                });
+
+            });
+        });
+    });
+
+</script>
+#{include file="../Common/Footer.html"}

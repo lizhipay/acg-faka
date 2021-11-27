@@ -1,0 +1,150 @@
+/**
+Author: lipengfei886
+Email: lipengfei886@qq.com
+Name: auth-skin-universal
+Comment: lipengfei886@qq.com提供的绿色背景样式
+Version: v1.0.0
+*/
+
+/*请在js中的.auth-status前的div加一个class属性auth-skin*/
+.auth-skin-universal .auth-status {
+    margin-top: -12px;
+}
+
+.auth-skin-universal {
+    position: relative;
+    top: -5px;
+}
+
+.auth-skin-universal .auth-status > div {
+    position: relative;
+    top: 6px;
+    padding-left: 17px;
+}
+
+.auth-skin-universal .auth-status > div.layui-form-radio {
+    padding-left: 5px;
+}
+
+/*美化的多选框/单选框DOM*/
+.auth-skin-universal .auth-status > div > span {
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+    display: inline-block;
+    padding: 3px 8px;
+    text-decoration: none;
+
+    position: relative;
+    top: -3px;
+    left: 5px;
+}
+
+.auth-skin-universal .auth-status > .layui-form-checkbox > span {
+    display: inline-block;
+    padding: 3px 8px;
+    text-decoration: none;
+    color: #FFFFFF;
+    background-color: #ffaaaa !important;
+
+}
+
+.auth-skin-universal .auth-status > .layui-form-radio > div {
+    display: inline-block;
+    border-radius: 5px;
+    padding: 3px 8px;
+    text-decoration: none;
+    color: #FFFFFF;
+    background-color: #009688 !important;
+
+}
+
+.auth-skin-universal .auth-status > .layui-form-radio {
+    line-height: normal !important;
+}
+
+
+.auth-skin-universal .auth-skin {
+    list-style-type: none;
+    margin: 0;
+    padding: 13px 5px 0 5px;
+    position: relative;
+    color: #ffaaaa;
+}
+
+.auth-skin-universal .auth-skin::before, .auth-skin-universal .auth-skin::after {
+    content: '';
+    left: -32.5px;
+    position: absolute;
+    right: auto
+}
+
+.auth-skin-universal .auth-skin::before {
+    border-left: 1px dashed #ffaaaa;
+    bottom: 50px;
+    height: 100%;
+    top: -4px;
+    width: 1px
+}
+
+.auth-skin-universal .auth-skin::after {
+    border-top: 1px dashed #ffaaaa;
+    height: 20px;
+    top: 24px; /*radio时 改为24px checkbox时改为27px*/
+    width: 40px
+}
+
+.auth-status .auth-icon {
+    color: #ffaaaa;
+    padding-bottom: 3px;
+    padding-right: 5px;
+}
+
+/*解决多层数据中，auth-child缩进长度的问题*/
+.auth-skin-universal > .auth-single .auth-single {
+    margin-left: 58px;
+}
+
+.auth-skin-universal > .auth-single > .auth-skin > .auth-child .auth-child {
+    margin-left: 18px;
+}
+
+.auth-skin-universal > .auth-single > .auth-skin {
+}
+
+.auth-skin-universal > .auth-single > .auth-skin::before, .auth-skin-universal > .auth-single > .auth-skin::after {
+    border: 0
+}
+
+.auth-skin-universal > .auth-single > .auth-skin:last-child::before {
+    height: 30px
+}
+
+/*隐藏左侧操作的特殊样式*/
+.auth-skin-universal.auth-tree-hidechoose .auth-status > span {
+    display: none;
+}
+
+.auth-skin-universal.auth-tree-hidechoose .auth-status > div > span {
+    padding-left: 3px;
+}
+
+.auth-skin-universal.auth-tree-hidechoose .auth-status > i {
+    position: relative;
+    top: 4px;
+}
+
+/*放于同一行的样式*/
+.auth-skin-universal .auth-row {
+    display: inline-block;
+    margin-left: 5px;
+}
+
+.auth-skin-universal > .auth-single .auth-child .auth-row {
+    margin-left: 20px;
+}
+
+.auth-skin-universal .auth-row.auth-skin::before, .auth-skin-universal .auth-row.auth-skin::after {
+    content: '';
+    border: 0;
+}

@@ -1,0 +1,212 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-fluid">
+            <!--begin::Tables Widget 9-->
+            <div class="card mb-5 mb-xl-8">
+                <!--begin::Header-->
+                <div class="card-header border-0 pt-5">
+                    <div class="card-toolbar">
+                        <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i class="fas fa-plus"></i>
+                            添加分类
+                        </button>
+                        <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fas fa-trash"></i> 移除选中分类
+                        </button>
+                    </div>
+                </div>
+                <!--end::Header-->
+
+                <div class="card-body py-3">
+                    <form class="search-query"></form>
+                    <table id="category" lay-filter="category"></table>
+                </div>
+            </div>
+
+            <!--end::Tables Widget 9-->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+
+<script>
+
+    $(function () {
+        layui.use(['table', 'hex'], function () {
+            let table = layui.table;
+            var cao = layui.hex;
+
+            var tableInstance = table.render({
+                elem: '#category'
+                , skin: 'nob'
+                , size: 'lg'
+                , height: document.documentElement.clientHeight - 375
+                , url: '/admin/api/category/data'
+                , page: true
+                , limit: 16
+                , limits: [16, 20, 30]
+                , method: "post"
+                , response: {
+                    statusCode: 200
+                }
+                , cols: [[
+                    {
+                        type: 'checkbox', fixed: 'left'
+                    }, {
+                        field: 'icon', title: '图标', templet: function (item) {
+                            if (!item.icon) {
+                                return "-";
+                            }
+                            return '<img src="' + item.icon + '"  style="width: 38px;"/>'
+                        }
+                    }
+                    , {field: 'name', title: '分类名称'}
+                    , {
+                        field: 'status', title: '状态', templet: function (item) {
+                            if (item.status == 1) {
+                                return '<span class="badge badge-light-success"><i class="fas fa-signal" style="color: #43ff43;"></i></span>';
+                            }
+                            return '<span class="badge badge-light-danger"><i class="fas fa-store-alt-slash"></i></span>';
+                        }
+                    }
+                    , {field: 'sort', title: '排序(越小越前)'}
+                    , {
+                        field: 'share_url', title: '推广链接', templet: function (item) {
+                            return '<span data-id="' + item.id + '" class="badge badge-light clipboard clipboard-' + item.id + '" data-clipboard-text="' + item.share_url + '" style="cursor: pointer;">复制</span>';
+                        }
+                    }
+                    , {
+                        field: 'owner', title: '所属者', templet: function (item) {
+                            if (!item.owner) {
+                                return '<span class="badge badge-light-success owner" style="cursor: pointer;" data-id="0">SYSTEM</span>';
+                            }
+                            return '<span class="badge badge-light-dark owner" style="cursor: pointer;" data-id="' + item.owner.id + '"><img src="' + item.owner.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.owner.username + '(' + item.owner.id + ')</span>'
+                        }
+                    }
+
+                    , {
+                        templet: function (item) {
+                            let html = '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fa fa-edit"></i></button> ';
+                            if (item.status == 0) {
+                                html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 start"><i class="fa fa-play" style="color: #61ff61;"></i></button> ';
+                            } else {
+                                html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 stop"><i class="fa fa-pause" style="color: #fdbea7;"></i></button> ';
+                            }
+                            html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+                            return html;
+                        }
+                    }
+                ]],
+                done: res => {
+                    cao.setIdMap(res.data);
+
+                    $('.edit').click(function () {
+                        let mapItem = cao.getMapItem(this);
+                        modal(mapItem);
+                    });
+
+                    $('.del').click(function () {
+                        let id = cao.getObjectId(this);
+                        console.log(id)
+                        layer.confirm('您正在移除该分类，是否要继续？', {
+                            btn: ['确认移除', '取消']
+                        }, function () {
+                            $.post('/admin/api/category/del', {list: [id]}, res => {
+                                layer.msg(res.msg);
+                                tableInstance.reload();
+                            });
+                        });
+                    });
+
+                    $('.start').click(function () {
+                        let id = cao.getObjectId(this);
+                        $.post('/admin/api/category/save', {id: id, status: 1}, res => {
+                            layer.msg(res.msg);
+                            tableInstance.reload();
+                        });
+                    });
+
+                    $('.stop').click(function () {
+                        let id = cao.getObjectId(this);
+                        $.post('/admin/api/category/save', {id: id, status: 0}, res => {
+                            layer.msg(res.msg);
+                            tableInstance.reload();
+                        });
+                    });
+
+                    $('.owner').click(function () {
+                        let id = cao.getObjectId(this);
+                        $("input[name='equal-owner']").val(id);
+                        tableInstance.reload({
+                            where: {"equal-owner": id},
+                            page: {
+                                curr: 1
+                            }
+                        });
+                    });
+
+                    $('.clipboard').click(function () {
+                        let id = cao.getObjectId(this);
+                        var clipboard = new ClipboardJS(".clipboard-" + id);
+                        clipboard.on('success', function (e) {
+                            layer.msg("分享链接已经复制成功了，赶快发给好友吧！");
+                        });
+                    });
+                }
+            });
+
+            let modal = (values = {}) => {
+                cao.popup('/admin/api/category/save', [
+                    {title: "分类图标", name: "icon", type: "image", placeholder: "请选择图片(推荐64*64)"},
+                    {title: "分类名称", name: "name", type: "input", placeholder: "请输入分类名称"},
+                    {title: "分类排序", name: "sort", type: "input", placeholder: "值越小，排名越靠前哦~"},
+                    {title: "状态", name: "status", type: "switch", text: "启用"},
+                ], res => {
+                    tableInstance.reload();
+                }, values);
+            }
+
+            $('.btn-app-create').click(function () {
+                modal();
+            });
+
+            $('.btn-app-del').click(() => {
+                var data = cao.listObjectToArray(table.checkStatus('category').data);
+                if (data.length == 0) {
+                    layer.msg("请至少勾选1个商品分类进行操作！");
+                    return;
+                }
+
+                layer.confirm('您确定要删除已经选中的商品分类吗？这是不可恢复的操作！', {
+                    btn: ['确定', '取消']
+                }, function () {
+                    $.post("/admin/api/category/del", {list: data}, res => {
+                        layer.msg(res.msg);
+                        tableInstance.reload();
+                    });
+                });
+            });
+
+            cao.query('.search-query', tableInstance, [
+                {title: "分类名称", name: "search-name", type: "input"},
+                {
+                    title: "状态", name: "equal-status", type: "select", dict: [
+                        {id: 0, name: "停用"},
+                        {id: 1, name: "启用"}
+                    ]
+                },
+                {title: "会员ID，0=系统", name: "equal-owner", type: "input"}
+            ], true, false);
+        });
+    });
+</script>
+
+#{include file="../Footer.html"}

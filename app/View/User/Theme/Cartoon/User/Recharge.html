@@ -1,0 +1,67 @@
+#{include file="../Common/Header.html"}
+<div class="layui-container fly-marginTop fly-user-main">
+    #{include file="../Common/Nav.html"}
+    <div class="fly-panel fly-panel-user" pad20>
+        <div class="layui-tab layui-tab-brief" lay-filter="user">
+            <div class="content-header">
+                <i class="layui-icon">&#xe638;</i> 充值余额
+            </div>
+
+            <div class="content-body">
+                <blockquote class="elem-quote">
+                    累计充值：<b style="color: #0C84D1;">¥#{$user.recharge}</b>，您当前用户等级：<b style="color: #0C84D1;">#{$user.group.name}</b>，购物时可以享受：<b style="color: #0C84D1;">#{$user.group.discount*100}%折扣</b>
+                    #{if $groupNext}，升级到 <b style="color: #8d16e3;">#{$groupNext.name}[折扣:#{$groupNext.discount*100}%]</b> 还需要充值 <b style="color: #8d16e3;">¥#{$groupNext.recharge-$user.recharge}</b> #{/if}
+                </blockquote>
+
+                <form class="layui-form" action="">
+                    <div class="form-block">
+                        <div>
+                            <div class="form-header">金额 <span style="color: #63b584;font-size: 14px;">当前余额:#{$user.balance}</span></div>
+                            <div class="form-body"><input type="text" name="amount" required lay-verify="required"
+                                                          value="10" autocomplete="off" class="layui-input"
+                                                          style="width: 150px;color: #ff9191;"></div>
+                        </div>
+                        <div>
+                            <div class="form-header">支付方式</div>
+                            <div class="form-body pay-list"></div>
+                        </div>
+
+                        <div style="margin-top: 25px;">
+                            <button type="button" class="layui-btn layui-btn-pink payButton">立即充值</button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let payId = 0;
+
+    function payClick(obj, id) {
+        User.switchElement(obj);
+        payId = id;
+    }
+
+    $(function () {
+        layui.use('layer', function () {
+            User.getPay(res => {
+                res.forEach(item => {
+                    $('.pay-list').append('<a class="button-click" onclick="payClick(this,' + item.id + ')" style="line-height: 22px;color: #db66ac;"> <img src="' + item.icon + '" class="pay-icon"> ' + item.name + '</a>');
+                });
+            });
+            $('.payButton').click(function () {
+                User.trade({
+                    pay_id: payId,
+                    amount: $('input[name=amount]').val()
+                }, res => {
+                    window.location.href = res.url;
+                });
+            });
+        });
+    });
+
+</script>
+#{include file="../Common/Footer.html"}
