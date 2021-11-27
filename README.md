@@ -1,3 +1,4 @@
+<br>
 <p align="center">
 <a><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
 <a><img src="https://poser.pugx.org/laravel/framework/license.svg" alt="License"></a>
