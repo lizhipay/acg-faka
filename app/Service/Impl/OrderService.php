@@ -296,11 +296,11 @@ class OrderService implements Order
                             $url = '/user/pay/order.' . $base64;
                             break;
                         case \App\Pay\Pay::TYPE_SUBMIT:
-                            $order->save();
                             $base64 = urlencode(base64_encode('type=2&tradeNo=' . $order->trade_no));
                             $url = '/user/pay/order.' . $base64;
                             break;
                     }
+                    $order->save();
                     $option = $trade->getOption();
                     if (!empty($option)) {
                         OrderOption::create($order->id, $trade->getOption());
