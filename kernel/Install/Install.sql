@@ -198,6 +198,7 @@ INSERT INTO `__PREFIX__config` VALUES (28, 'cash_type_wechat', '1');
 INSERT INTO `__PREFIX__config` VALUES (29, 'cash_cost', '5');
 INSERT INTO `__PREFIX__config` VALUES (30, 'cash_min', '100');
 INSERT INTO `__PREFIX__config` VALUES (31, 'cname', '');
+INSERT INTO `__PREFIX__config` VALUES (32, 'background_url', '/assets/admin/images/login/bg.jpg');
 
 DROP TABLE IF EXISTS `__PREFIX__coupon`;
 CREATE TABLE `__PREFIX__coupon`  (
@@ -411,4 +412,5 @@ CREATE TABLE `__PREFIX__user_recharge`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 
+ALTER TABLE __PREFIX__commodity ADD send_email tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '发送邮件：0=否，1=是';
 SET FOREIGN_KEY_CHECKS = 1;

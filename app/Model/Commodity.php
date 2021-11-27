@@ -35,6 +35,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $api_status
  * @property int $draft_status
  * @property int $inventory_hidden
+ * @property int $send_email
  * @property string $seckill_start_time
  * @property string $seckill_end_time
  * @property string $leave_message
@@ -76,6 +77,7 @@ class Commodity extends Model
         'draft_status' => 'integer',
         'draft_premium' => 'float',
         'inventory_hidden' => 'integer',
+        'send_email' => 'integer',
     ];
 
     public function owner(): ?\Illuminate\Database\Eloquent\Relations\HasOne

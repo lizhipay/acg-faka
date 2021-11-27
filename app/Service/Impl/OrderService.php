@@ -14,6 +14,7 @@ use App\Model\OrderOption;
 use App\Model\Pay;
 use App\Model\User;
 use App\Model\UserGroup;
+use App\Service\Email;
 use App\Service\Order;
 use App\Service\Shared;
 use App\Util\Client;
@@ -29,6 +30,9 @@ class OrderService implements Order
 {
     #[Inject]
     private Shared $shared;
+
+    #[Inject]
+    private Email $email;
 
     /**
      * @param int $owner
@@ -422,6 +426,13 @@ class OrderService implements Order
         }
 
         $order->save();
+
+        if ($commodity->contact_type == 2 && $commodity->send_email == 1) {
+            try {
+                $this->email->send($order->contact, "【发货提醒】您购买的卡密发货啦", "您购买的卡密如下：" . $order->secret);
+            } catch (\Exception | \Error $e) {
+            }
+        }
 
         return (string)$order->secret;
     }
