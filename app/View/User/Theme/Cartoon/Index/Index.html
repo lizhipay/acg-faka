@@ -252,6 +252,33 @@
             $('.description').html(commodity.description);
 
 
+            $('.description').find("img").click(function () {
+                let imageUrl = $(this).attr("src");
+
+                let img = new Image()
+                img.src = imageUrl;
+                img.onload = function () {
+                    if (img.width >= window.innerWidth) {
+                        img.width = window.innerWidth * 0.9;
+                    }
+
+                    if (img.height >= window.innerHeight) {
+                        img.height = window.innerHeight * 0.9;
+                    }
+
+                    // 打印
+                    layer.open({
+                        type: 1,
+                        title: false,
+                        closeBtn: 0, //不显示关闭按钮
+                        anim: 5,
+                        area: [img.width + "px", img.height + "px"],
+                        shadeClose: true, //开启遮罩关闭
+                        content: '<img  src="' + imageUrl + '" style="width:' + img.width + 'px;height:' + img.height + 'px">'
+                    });
+                }
+            });
+
             //限时秒杀
             clearInterval(seckillPid);
             if (commodity.seckill_status == 1) {
