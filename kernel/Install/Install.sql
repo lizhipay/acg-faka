@@ -413,4 +413,6 @@ CREATE TABLE `__PREFIX__user_recharge`  (
 
 
 ALTER TABLE __PREFIX__commodity ADD send_email tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '发送邮件：0=否，1=是';
+ALTER TABLE __PREFIX__commodity ADD only_user tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '限制登录购买：0=否，1=是';
+ALTER TABLE __PREFIX__commodity ADD purchase_count int UNSIGNED NOT NULL DEFAULT 0 COMMENT '限制购买数量：0=无限制';
 SET FOREIGN_KEY_CHECKS = 1;

@@ -355,7 +355,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
-                            '            <label class="layui-form-label">' + item.title + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="far fa-question-circle"></i></span>' : '') + '</label>\n' +
+                            '            <label class="layui-form-label">' + item.title + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
                             '            <div class="layui-input-block">\n' +
                             '                <input name="' + item.name + '" placeholder="' + item.placeholder + '" type="text" class="layui-input ' + item.name + '" value="' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '"/>' +
                             '            </div>\n' +
@@ -398,7 +398,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '<div class="layui-form-item"><input type="hidden" name="' + item.name + '" value="' + (values.hasOwnProperty(item.name) ? values[item.name] : 0) + '">\n' +
-                            '                <label class="layui-form-label">' + item.title + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="far fa-question-circle"></i></span>' : '') + '</label>\n' +
+                            '                <label class="layui-form-label">' + item.title + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
                             '                <div class="layui-input-block">\n' +
                             '                    <input class="' + item.name + '" type="checkbox" lay-filter="switch-' + item.name + '" value="1" title="' + item.text + '" ' + (values.hasOwnProperty(item.name) ? (values[item.name] === 1 ? 'checked' : '') : '') + '>\n' +
                             '                </div>\n' +

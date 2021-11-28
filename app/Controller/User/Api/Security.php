@@ -159,4 +159,16 @@ class Security extends User
     }
 
 
+    /**
+     * @return array
+     */
+    public function resetKey(): array
+    {
+        $user = \App\Model\User::query()->find($this->getUser()->id);
+        $user->app_key = strtoupper(Str::generateRandStr(16));;
+        $user->save();
+        return $this->json(200, "重置成功", ["app_key" => $user->app_key]);
+    }
+
+
 }

@@ -78,6 +78,9 @@
                 <p class="card-title">付款方式</p>
             </div>
             <div class="card-block">
+                <div class="login-display"
+                     style="text-align: center;font-weight: bold;margin: 10px 0 20px 0;font-size: 18px;color: #00A3FF;display: none;">
+                    该商品需要登录才能购买，<a class="login-url" href="/user/authentication/login?goto=/">现在登录</a></div>
                 <div class="row pay_type" style="margin-left: 0px;"></div>
             </div>
         </div>
@@ -333,6 +336,14 @@
             }
             $('.price').html('¥' + commodity.price + ' ' + user);
             $('.payAmount').html("¥" + commodity.price);
+
+            //未登录
+            //判断是否需要登录才能购买商品
+            if (commodity.only_user == 1 || commodity.purchase_count > 0) {
+                $('.login-url').attr("href", "/user/authentication/login?goto=" + encodeURIComponent(commodity.share_url));
+                $('.login-display').show();
+                $('.pay_type').hide();
+            }
             #{/if}
 
             if (commodity.delivery_way === 0) {
@@ -395,6 +406,7 @@
                 $('.specified .card-title').html('自选加价:<b style="color: #eba0a0;font-weight: bold;">' + commodity.draft_premium + "元</b>");
                 getDraftCard(commodity.id, 1);
             }
+
 
             $('.clipboard').attr("data-clipboard-text", commodity.share_url);
 

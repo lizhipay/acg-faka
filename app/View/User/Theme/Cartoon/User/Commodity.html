@@ -216,6 +216,13 @@
                         default: 0
                     },
                     {
+                        title: "邮件发送",
+                        name: "send_email",
+                        type: "switch",
+                        text: "启用",
+                        tips: "用户购买商品后，会将卡密信息发送至邮箱，仅联系方式为邮箱状态下有效。"
+                    },
+                    {
                         title: "查询密码",
                         name: "password_status",
                         type: "switch",
@@ -272,6 +279,21 @@
                         type: "input",
                         placeholder: "请输入预选时加价的金额",
                         hide: true
+                    },
+                    {
+                        title: "强制登录",
+                        name: "only_user",
+                        type: "switch",
+                        text: "启用",
+                        tips: "用户必须登录后才能购买商品"
+                    },
+                    {
+                        title: "限购数量",
+                        name: "purchase_count",
+                        type: "input",
+                        placeholder: "0代表不限制",
+                        tips: "0代表不限制，如果限制了购买数量，那么用户必须登录才能购买。",
+                        default: 0,
                     },
                     {
                         title: "隐藏库存",

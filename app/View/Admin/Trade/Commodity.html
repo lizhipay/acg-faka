@@ -376,6 +376,21 @@
                         hide: true
                     },
                     {
+                        title: "强制登录",
+                        name: "only_user",
+                        type: "switch",
+                        text: "启用",
+                        tips: "用户必须登录后才能购买商品"
+                    },
+                    {
+                        title: "限购数量",
+                        name: "purchase_count",
+                        type: "input",
+                        placeholder: "0代表不限制",
+                        tips: "0代表不限制，如果限制了购买数量，那么用户必须登录才能购买。",
+                        default: 0,
+                    },
+                    {
                         title: "API对接",
                         name: "api_status",
                         type: "switch",

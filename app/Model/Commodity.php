@@ -39,6 +39,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $seckill_start_time
  * @property string $seckill_end_time
  * @property string $leave_message
+ * @property int $only_user
+ * @property int $purchase_count
  */
 class Commodity extends Model
 {
@@ -78,6 +80,8 @@ class Commodity extends Model
         'draft_premium' => 'float',
         'inventory_hidden' => 'integer',
         'send_email' => 'integer',
+        'only_user' => 'integer',
+        'purchase_count' => 'integer',
     ];
 
     public function owner(): ?\Illuminate\Database\Eloquent\Relations\HasOne

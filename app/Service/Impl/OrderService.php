@@ -102,6 +102,12 @@ class OrderService implements Order
             throw new JSONException("当前商品已停售");
         }
 
+        if ($commodity->only_user == 1 || $commodity->purchase_count > 0) {
+            if ($owner == 0) {
+                throw new JSONException("请先登录后再购买哦");
+            }
+        }
+
         //预选卡密
         if ($commodity->draft_status == 1 && $cardId != 0) {
             $num = 1;
