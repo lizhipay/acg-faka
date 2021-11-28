@@ -5,8 +5,8 @@
 </p>
 
 ## 快速体验
-- 后台演示：[https://demo.faka.acged.cc/admin](https://demo.faka.acged.cc/admin)  账号：demo@demo.com 密码：123456
-- 前台演示：[https://demo.faka.acged.cc](https://demo.faka.acged.cc) 账号：为了明天美好而战斗 密码：123456
+- 后台演示：[http://162.14.111.118:81/admin](http://162.14.111.118:81/admin)  账号：demo@demo.com 密码：123456
+- 前台演示：[http://162.14.111.118:81](http://162.14.111.118:81) 账号：为了明天美好而战斗 密码：123456
 
 ## 关于异次元发卡系统
 
