@@ -7,6 +7,7 @@ namespace App\Controller\User;
 use App\Controller\Base\View\User;
 use App\Interceptor\UserSession;
 use App\Interceptor\Waf;
+use App\Model\Config;
 use App\Model\UserGroup;
 use App\Model\UserRecharge;
 use Kernel\Annotation\Interceptor;
@@ -23,7 +24,20 @@ class Recharge extends User
     #[Interceptor(UserSession::class)]
     public function index(): string
     {
-        return $this->theme("充值中心", "RECHARGE", "User/Recharge.html", ['groupNext' => UserGroup::get($this->getUser()->recharge,true)]);
+
+        $rechargeWelfareConfig = explode(PHP_EOL, (string)Config::get("recharge_welfare_config"));
+
+        $welfareConfig = [];
+
+        foreach ($rechargeWelfareConfig as $item) {
+            $ape = explode("-", trim($item));
+            $welfareConfig[] = [
+                "recharge" => $ape[0],
+                "amount" => $ape[1]
+            ];
+        }
+
+        return $this->theme("充值中心", "RECHARGE", "User/Recharge.html", ["welfareConfig" => $welfareConfig, 'groupNext' => UserGroup::get($this->getUser()->recharge, true)]);
     }
 
     /**

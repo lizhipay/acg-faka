@@ -54616,3 +54616,7 @@ body {
     border: 1px solid #F5F8FA !important;
     border-radius: 0.475rem;
 }
+
+.w-e-toolbar , .w-e-text-container{
+    z-index: 0 !important;
+}

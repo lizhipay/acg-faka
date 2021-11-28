@@ -15,6 +15,15 @@
 
                 <form class="layui-form" action="">
                     <div class="form-block">
+                        #{if $config.recharge_welfare == 1 && count($welfareConfig) > 0}
+                        <div style="margin-top: 25px;">
+                            <div class="form-body">
+                                #{foreach $welfareConfig as $wc}
+                                <p style="color: #108d25;padding-bottom: 5px;">一次性充值<b style="color: #f15858;">￥#{$wc.recharge}</b>，赠送<b style="color: #6a71f1;">￥#{$wc.amount}</b></p>
+                                #{/foreach}
+                            </div>
+                        </div>
+                        #{/if}
                         <div>
                             <div class="form-header">金额 <span style="color: #63b584;font-size: 14px;">当前余额:#{$user.balance}</span></div>
                             <div class="form-body"><input type="text" name="amount" required lay-verify="required"
@@ -29,6 +38,8 @@
                         <div style="margin-top: 25px;">
                             <button type="button" class="layui-btn layui-btn-pink payButton">立即充值</button>
                         </div>
+
+
 
                     </div>
                 </form>

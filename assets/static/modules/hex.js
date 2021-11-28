@@ -782,6 +782,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 editor.config.onchange = function (html) {
                                     $textarea.val(html);
                                 }
+                                editor.config.zIndex = 0;
                                 editor.config.uploadFileName = 'file';
                                 editor.config.uploadImgServer = uploadUrl;
                                 editor.config.uploadImgMaxLength = 1;
