@@ -122,6 +122,7 @@
         '                                <span style="margin-left: 10px;display: none;" class="kucunView"> 剩余库存: <span\n' +
         '                                        class="badge badge-pill badge-success text-white card_count">0</span></span>\n' +
         '                            </fieldset>\n' +
+        '                            <p><span class="purchase_count" style="font-size: 14px;font-weight: bold;color: #c59de9;display: none;"></span></p>\n' +
         '                            #{if $config.trade_verification==1}\n' +
         '                            <fieldset class="form-group">\n' +
         '                                <label>人机验证：</label>\n' +
@@ -405,6 +406,11 @@
                 $('.specified').show(150);
                 $('.specified .card-title').html('自选加价:<b style="color: #eba0a0;font-weight: bold;">' + commodity.draft_premium + "元</b>");
                 getDraftCard(commodity.id, 1);
+            }
+
+            if (commodity.purchase_count > 0) {
+                $('.purchase_count').html("该商品每人累计购买最多" + commodity.purchase_count + "个");
+                $('.purchase_count').show();
             }
 
 

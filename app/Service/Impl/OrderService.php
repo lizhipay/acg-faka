@@ -108,6 +108,7 @@ class OrderService implements Order
             }
         }
 
+
         //预选卡密
         if ($commodity->draft_status == 1 && $cardId != 0) {
             $num = 1;
@@ -154,6 +155,13 @@ class OrderService implements Order
                 if ($count == 0 || $num > $count) {
                     throw new JSONException("库存不足");
                 }
+            }
+        }
+
+        if ($commodity->purchase_count > 0 && $owner > 0) {
+            $orderCount = \App\Model\Order::query()->where("owner", $owner)->where("commodity_id", $commodity->id)->count();
+            if ($orderCount >= $commodity->purchase_count) {
+                throw new JSONException("该商品每人只能购买{$commodity->purchase_count}件");
             }
         }
 
