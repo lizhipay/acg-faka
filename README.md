@@ -41,6 +41,7 @@ location / {
 <p style="color: red;">手动升级方法：下载升级包后，有两个文件夹，file文件夹里的文件复制到根目录覆盖替换即可，更新包里面的update.sql如果有内容，表示这个版本需要更新数据库某些地方，需要你手动复制到你的数据库执行一次。</p>
 
 
+- 2021/11/29：[0.0.7-beta.zip](https://download.acged.cc/faka/version/0.0.7-beta.zip)
 - 2021/11/29：[0.0.6-beta.zip](https://download.acged.cc/faka/version/0.0.6-beta.zip)
 - 2021/11/28：[0.0.5-beta.zip](https://download.acged.cc/faka/version/0.0.5-beta.zip)
 - 2021/11/28：[0.0.4-beta.zip](https://download.acged.cc/faka/version/0.0.4-beta.zip)
