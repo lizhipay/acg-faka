@@ -8,7 +8,6 @@ require("Helper.php");
 //session
 session_name("ACG-SHOP");
 session_start();
-
 try {
     if (!isset($_GET['s'])) {
         $_GET['s'] = "/user/index/index";
@@ -22,9 +21,18 @@ try {
     $count = count($s);
     $controller = "App\\Controller";
     $ends = end($s);
+
+    if (strtolower($s[0]) == "plugin") {
+        $controller = "App";
+        \Kernel\Util\Plugin::$currentPluginName = ucfirst(trim((string)$s[1]));
+    }
+
     foreach ($s as $j => $x) {
         if ($j == ($count - 1)) {
             break;
+        }
+        if (strtolower($s[0]) == "plugin" && $j == ($count - 2)) {
+            $controller .= "\\Controller";
         }
         $controller .= '\\' . ucfirst(trim($x));
     }
@@ -106,6 +114,10 @@ try {
         }
     }
 
+
+    \Kernel\Util\Plugin::scan();
+
+
     $result = call_user_func_array([$controllerInstance, $action], $params);
 
     if ($result === null) {
@@ -135,4 +147,3 @@ try {
         exit(feedback($e->getFile() . ":" . $e->getLine() . "<br>" . $e->getMessage()));
     }
 }
-

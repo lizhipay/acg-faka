@@ -1,0 +1,136 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-fluid">
+            <!--begin::Tables Widget 9-->
+            <div class="card mb-5 mb-xl-8">
+                <div class="card-body py-3">
+                    <table id="plugin" lay-filter="plugin"></table>
+                </div>
+            </div>
+
+            <!--end::Tables Widget 9-->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+
+<script>
+
+    $(function () {
+        layui.use(['table', 'hex'], function () {
+            let table = layui.table;
+            var cao = layui.hex;
+
+            var tableInstance = table.render({
+                elem: '#plugin'
+                , skin: 'nob'
+                , size: 'lg'
+                , height: document.documentElement.clientHeight - 280
+                , url: '/admin/api/plugin/getPlugins'
+                , page: false
+                , method: "post"
+                , response: {
+                    statusCode: 200
+                }
+                , cols: [[
+                    {
+                        field: 'name', title: '插件名称', templet: function (item) {
+                            return '<span class="badge badge-light-success">' + item.NAME + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'website', title: '官方网站', templet: function (item) {
+                            return '<span class="badge badge-light-primary">' + item.WEB_SITE + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'description', title: '简介', templet: function (item) {
+                            return '<span class="badge badge-light">' + item.DESCRIPTION + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'version', title: '版本号', templet: function (item) {
+                            return '<span class="badge badge-light">' + item.VERSION + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'author', title: '作者', templet: function (item) {
+                            return '<span class="badge badge-light">' + item.AUTHOR + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'status', title: '状态', templet: function (item) {
+                            if (item.PLUGIN_CONFIG && item.PLUGIN_CONFIG.STATUS == 1) {
+                                return '<span class="badge badge-light-success">运行中</span>';
+                            }
+
+                            return '<span class="badge badge-light-danger">未启用</span>';
+                        }
+                    }
+                    , {
+                        templet: function (item) {
+                            let html = "";
+                            if (item.PLUGIN_CONFIG && item.PLUGIN_CONFIG.STATUS == 1) {
+                                html += '<a style="cursor: pointer;" data-id="' + item.id + '" class="badge badge-light text-danger disable"><i class="fa fa-stop-circle text-danger"></i> 停用</a>';
+                            } else {
+                                html += '<a style="cursor: pointer;" data-id="' + item.id + '" class="badge badge-light text-success enable"><i class="fa fa-play-circle text-success"></i> 启用</a>';
+                            }
+
+                            html += '<a style="cursor: pointer;" data-id="' + item.id + '" class="badge badge-light text-primary edit"><i class="fa fa-cog text-primary"></i> 配置</a>';
+                            return html;
+                        }, width: 180
+                    }
+                ]],
+                done: res => {
+                    cao.setIdMap(res.data);
+                    $('.edit').click(function () {
+                        let mapItem = cao.getMapItem(this);
+                        modal(mapItem);
+                    });
+
+                    $('.disable').click(function () {
+                        let id = cao.getObjectId(this);
+                        let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+                        $.post("/admin/api/plugin/setConfig", {id: id, STATUS: 0}, res => {
+                            layer.close(loaderIndex);
+                            if (res.code == 200) {
+                                tableInstance.reload();
+                            }
+                            layer.msg(res.msg);
+                        });
+                    });
+
+                    $('.enable').click(function () {
+                        let id = cao.getObjectId(this);
+                        let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+                        $.post("/admin/api/plugin/setConfig", {id: id, STATUS: 1}, res => {
+                            layer.close(loaderIndex);
+                            if (res.code == 200) {
+                                tableInstance.reload();
+                            }
+                            layer.msg(res.msg);
+                        });
+                    });
+                }
+            });
+
+            let modal = (values = {}) => {
+                cao.popup('/admin/api/plugin/setConfig', values.PLUGIN_SUBMIT, res => {
+                    tableInstance.reload();
+                }, values, "660px", false, "插件配置");
+            }
+        });
+    });
+</script>
+
+#{include file="../Footer.html"}

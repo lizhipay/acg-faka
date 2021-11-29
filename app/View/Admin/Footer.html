@@ -46,8 +46,6 @@
         overflow: auto !important;
     }
 </style>
-
-
 <script>
     layui.config({
         base: '/assets/static/modules/'
@@ -139,6 +137,11 @@
 
 </script>
 <!--end::Javascript-->
+
+<!--start::HOOK-->
+#{hook(\App\Consts\Hook::ADMIN_VIEW_FOOTER)}
+<!--end::HOOK-->
+
 </body>
 <!--end::Body-->
 </html>

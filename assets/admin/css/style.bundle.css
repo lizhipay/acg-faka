@@ -54617,6 +54617,10 @@ body {
     border-radius: 0.475rem;
 }
 
-.w-e-toolbar , .w-e-text-container{
+.w-e-text-container {
     z-index: 0 !important;
+}
+
+.w-e-toolbar {
+    z-index: 1 !important;
 }

@@ -4,10 +4,12 @@ declare(strict_types=1);
 namespace App\Controller\User;
 
 
+use App\Consts\Hook;
 use App\Controller\Base\View\User;
 use App\Interceptor\UserVisitor;
 use App\Interceptor\Waf;
 use Kernel\Annotation\Interceptor;
+use Kernel\Util\Plugin;
 
 #[Interceptor([Waf::class, UserVisitor::class])]
 class Index extends User
@@ -18,6 +20,7 @@ class Index extends User
      */
     public function index(): string
     {
+
 
         $from = (int)$_GET['from'];
 

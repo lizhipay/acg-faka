@@ -1,7 +1,4 @@
-<?php /** @noinspection ALL */
-//@Author: ChunXi <i@acg.sb>
-//@License: MIT
-//@Date: 2021/7/5
+<?php
 declare(strict_types=1);
 
 namespace Kernel\Annotation;

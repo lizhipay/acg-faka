@@ -4,6 +4,7 @@ declare (strict_types=1);
 # composer require symfony/var-dumper
 
 // use namespace
+use Kernel\Util\Plugin;
 use Kernel\Util\View;
 use Symfony\Component\VarDumper\Cloner\VarCloner;
 use Symfony\Component\VarDumper\Dumper\CliDumper;
@@ -198,5 +199,21 @@ if (!function_exists("feedback")) {
         }
 
         return "<!DOCTYPEhtml><htmllang='zh-CN'><head><meta name='viewport' content='width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no'><metacharset='utf-8'><title>{$value}</title></head><body style='margin: 0px;'><center style='color: #ffffff;background-color: #ff6f6f;padding-top: 18px;padding-bottom: 18px;font-size: 18px;'>{$value}</center></body></html>";
+    }
+}
+
+
+if (!function_exists("hook")) {
+    function hook(int $point, mixed ...$args)
+    {
+        Plugin::hook($point, ...$args);
+    }
+}
+
+
+if (!function_exists("getHookNum")) {
+    function getHookNum(int $point): int
+    {
+        return Plugin::getHookNum($point);
     }
 }
