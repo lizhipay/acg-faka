@@ -9,6 +9,7 @@ use App\Entity\CreateObjectEntity;
 use App\Entity\DeleteBatchEntity;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
+use App\Interceptor\Waf;
 use App\Service\Query;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
@@ -16,7 +17,7 @@ use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\Post;
 use Kernel\Exception\JSONException;
 
-#[Interceptor(ManageSession::class, Interceptor::TYPE_API)]
+#[Interceptor([Waf::class, ManageSession::class], Interceptor::TYPE_API)]
 class Pay extends Manage
 {
 

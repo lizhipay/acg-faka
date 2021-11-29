@@ -5,10 +5,11 @@ namespace App\Controller\Admin\Api;
 
 use App\Controller\Base\API\Manage;
 use App\Interceptor\ManageSession;
+use App\Interceptor\Waf;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
 
-#[Interceptor(ManageSession::class, Interceptor::TYPE_API)]
+#[Interceptor([Waf::class, ManageSession::class], Interceptor::TYPE_API)]
 class Plugin extends Manage
 {
     /**
