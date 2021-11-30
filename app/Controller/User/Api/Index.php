@@ -39,6 +39,7 @@ class Index extends User
 
     /**
      * @return array
+     * @throws JSONException
      */
     public function data(): array
     {
@@ -73,7 +74,7 @@ class Index extends User
             $relation->select(['id']);
         }])->withCount(['card as card_count' => function (Builder $relation) {
             $relation->where("status", 0);
-        }])->where("category_id", $categoryId)->where("status", 1)->get(['id', 'name', 'cover', 'delivery_way']);
+        }])->where("category_id", $categoryId)->where("status", 1)->orderBy("sort", "asc")->get(['id', 'name', 'cover', 'delivery_way']);
         return $this->json(200, "success", $commodity->toArray());
     }
 
