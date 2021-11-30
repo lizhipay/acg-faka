@@ -379,6 +379,9 @@ class OrderService implements Order
     }
 
 
+    /**
+     * @throws JSONException
+     */
     public function orderSuccess(\App\Model\Order $order): string
     {
         $commodity = $order->commodity;
@@ -412,26 +415,36 @@ class OrderService implements Order
         }
 
         //真 · 返佣
-        $promote = $order->promote;
-        if ($promote) {
-            $promoteRebateV1 = (float)Config::get("promote_rebate_v1");
-            $rebate = $promoteRebateV1 * $order->amount;
-            if ($rebate >= 0.01) {
-                Bill::create($promote, $rebate, Bill::TYPE_ADD, "推广返佣", 1);
-                $parent = $promote->parent;
-                if ($parent) {
-                    //二级返佣
-                    $promoteRebateV2 = (float)Config::get("promote_rebate_v2");
-                    $rebate = ($promoteRebateV2 * $order->amount) - $rebate;
-                    if ($rebate >= 0.01) {
-                        Bill::create($parent, $rebate, Bill::TYPE_ADD, "推广返佣", 1);
-                        $parent = $parent->parent;
-                        if ($parent) {
-                            //三级返佣
-                            $promoteRebateV3 = (float)Config::get("promote_rebate_v3");
-                            $rebate = ($promoteRebateV3 * $order->amount) - $rebate;
-                            if ($rebate >= 0.01) {
-                                Bill::create($parent, $rebate, Bill::TYPE_ADD, "推广返佣", 1);
+        $promote_1 = $order->promote;
+        //100
+        if ($promote_1) {
+            $promoteRebateV1 = (float)Config::get("promote_rebate_v1");  //3级返佣 0.2
+            $rebate1 = $promoteRebateV1 * $order->amount;  //20.00
+            if ($rebate1 >= 0.01) {
+                $promote_2 = $promote_1->parent; //获取上级
+                if (!$promote_2) {
+                    //没有上级，直接进行1级返佣
+                    Bill::create($promote_1, $rebate1, Bill::TYPE_ADD, "推广返佣", 1); //反20.00
+                } else {
+                    //出现上级，开始将返佣的钱继续拆分
+                    $promoteRebateV2 = (float)Config::get("promote_rebate_v2"); // 0.4
+                    $rebate2 = $promoteRebateV2 * $rebate1; //拿走属于第二级百分比返佣 8.00
+                    //先给上级返佣，这里拿掉上级的拿一份
+                    Bill::create($promote_1, $rebate1 - $rebate2, Bill::TYPE_ADD, "推广返佣", 1); // 20-8=12.00
+                    if ($rebate2 > 0.01) { // 8.00
+                        $promote_3 = $promote_2->parent; //获取第二级的上级
+                        if (!$promote_3) {
+                            //没有上级直接进行第二级返佣
+                            Bill::create($promote_2, $rebate2, Bill::TYPE_ADD, "推广返佣", 1); // 8.00
+                        } else {
+                            //出现上级，继续拆分剩下的佣金
+                            $promoteRebateV3 = (float)Config::get("promote_rebate_v3"); // 0.4
+                            $rebate3 = $promoteRebateV3 * $rebate2; // 8.00 * 0.4 = 3.2
+                            //先给上级反
+                            Bill::create($promote_2, $rebate2 - $rebate3, Bill::TYPE_ADD, "推广返佣", 1); // 8.00 - 3.2 = 4.8
+                            if ($rebate3 > 0.01) {
+                                Bill::create($promote_3, $rebate3, Bill::TYPE_ADD, "推广返佣", 1); // 3.2
+                                //返佣结束  3.2 + 4.8 + 12 = 20.00
                             }
                         }
                     }
