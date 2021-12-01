@@ -40,11 +40,11 @@
 
 <script>
     $(function () {
-        layui.use(['table', 'hex', 'form'], function () {
-            let table = layui.table;
+        layui.use(['hex', 'form'], function () {
+            let table = $("#coupon");
             let cao = layui.hex;
             let form = layui.form;
-            let status = ['<span class="layui-badge layui-bg-red">未使用</span>', '<span class="layui-badge layui-bg-green">已使用</span>', '<span class="layui-badge layui-bg-gray">锁定</span>'];
+            let status = ['<span class="acg-badge acg-badge-light-red">未使用</span>', '<span class="acg-badge acg-badge-light-success">已使用</span>', '<span class="acg-badge acg-badge-light">锁定</span>'];
             var _commodity;
             let commodity = function () {
                 if (!_commodity) {
@@ -56,59 +56,78 @@
                 })
                 return dict;
             }
-
-            var tableInstance = table.render({
-                elem: '#coupon'
-                , skin: 'nob'
-                , size: 'lg'
-                , height: 395
-                , url: '/user/api/coupon/data'
-                , page: true
-                , limit: 6
-                , limits: [6, 10, 20, 30, 50]
-                , method: "post"
-                , response: {
-                    statusCode: 200
-                }
-                , cols: [[
-                    {
-                        type: 'checkbox', fixed: 'left'
+ 
+            let queryParams = null;
+            table.bootstrapTable({
+                url: '/user/api/coupon/data',//请求的url地址
+                method: "post",//请求方式
+                pageSize: 7,//每页显示的数量
+                showRefresh: false,//是否显示刷新按钮
+                cache: false,//是否使用缓存
+                showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                cardView: false,
+                pagination: true,//是否显示分页
+                pageNumber: 1,//初始化显示第几页，默认第1页
+                singleSelect: false,//复选框只能选择一条记录
+                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                dataType: "json",//接收的数据类型
+                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                queryParams: function (params) {
+                    params.page = (params.offset / params.limit) + 1;
+                    if (queryParams) {
+                        for (const key in params) {
+                            queryParams[key] = params[key];
+                        }
+                    } else {
+                        queryParams = params;
                     }
+                    return queryParams;
+                },
+                //回调函数
+                responseHandler: function (res) {
+                    return {
+                        "total": res.count,
+                        "rows": res.data
+                    }
+                },
+                columns: [
+                    {checkbox: true}
                     , {
-                        field: 'secret', title: '卷代码', templet: function (item) {
-                            return '<span class="layui-badge layui-bg-gray">' + item.code + '</span>';
+                        field: 'secret', title: '卷代码', formatter: function (val, item) {
+                            return '<span class="acg-badge acg-badge-light">' + item.code + '</span>';
                         }, width: 210
                     }
                     , {
-                        field: 'money', title: '面值', templet: function (item) {
+                        field: 'money', title: '面值', formatter: function (val, item) {
                             return '<b style="color: green;">' + item.money + '</b>';
                         }
                     }
                     , {
-                        field: 'commodity', title: '商品', templet: function (item) {
+                        field: 'commodity', title: '商品', formatter: function (val, item) {
                             if (!item.commodity) {
                                 return "-";
                             }
-                            return '<span class="layui-badge layui-bg-gray" style="cursor: pointer;">' + item.commodity.name + '</span>';
+                            return '<span>' + item.commodity.name + '</span>';
 
                         }
                     }
                     , {
-                        field: 'expire_time', title: '到期时间', templet: function (item) {
+                        field: 'expire_time', title: '到期时间', formatter: function (val, item) {
                             if (!item.expire_time) {
-                                return '<span class="layui-badge layui-bg-green">永久</span>';
+                                return '<span class="acg-badge acg-badge-light-success">永久</span>';
                             }
                             return item.expire_time;
                         }
                     }
                     , {field: 'note', title: '备注'}
                     , {
-                        field: 'status', title: '状态', templet: function (item) {
+                        field: 'status', title: '状态', formatter: function (val, item) {
                             return status[item.status];
                         }
                     }
                     , {
-                        field: 'service_time', title: '使用时间', templet: function (item) {
+                        field: 'service_time', title: '使用时间', formatter: function (val, item) {
                             if (!item.service_time) {
                                 return '-';
                             }
@@ -116,49 +135,44 @@
                         }
                     }
                     , {
-                        templet: function (item) {
+                        field: 'operate',
+                        title: '',
+                        formatter: function (val, item) {
                             let html = '';
                             if (item.status == 0) {
-                                html += '<button type="button" data-id="' + item.id + '" class="layui-btn layui-btn-xs layui-bg-blue lock"><i class="layui-icon">&#xe673;</i>锁定</button> ';
+                                html += '<span type="button" class="acg-badge-button acg-badge acg-badge-light-primary lock"><i class="layui-icon">&#xe673;</i> 锁定</span> ';
                             } else if (item.status == 2) {
-                                html += '<button type="button" data-id="' + item.id + '" class="layui-btn layui-btn-xs unlock"><i class="layui-icon">&#xe672;</i>解锁</button> ';
+                                html += '<span type="button" class="acg-badge-button acg-badge acg-badge-light-success unlock"><i class="layui-icon">&#xe672;</i> 解锁</span> ';
                             }
-                            html += '<button type="button" data-id="' + item.id + '" class="layui-btn layui-btn-xs layui-bg-red del"><i class="layui-icon">&#xe640;</i>删除</button> ';
+                            html += '<span type="button"  class="acg-badge-button acg-badge acg-badge-light-red del"><i class="layui-icon">&#xe640;</i> 删除</span> ';
                             return html;
-                        }, width: 140
+                        },
+                        events: {
+                            'click .del': function (event, value, row, index) {
+                                layer.confirm('您是否要移除该优惠卷，这是无法恢复的？', {
+                                    btn: ['确认移除', '取消']
+                                }, function () {
+                                    $.post('/user/api/coupon/del', {list: [row.id]}, res => {
+                                        layer.msg(res.msg);
+                                        table.bootstrapTable('refresh', {silent: true});
+                                    });
+                                });
+                            },
+                            'click .unlock': function (event, value, row, index) {
+                                $.post('/user/api/coupon/unlock', {list: [row.id]}, res => {
+                                    layer.msg(res.msg);
+                                    table.bootstrapTable('refresh', {silent: true});
+                                });
+                            },
+                            'click .lock': function (event, value, row, index) {
+                                $.post('/user/api/coupon/lock', {list: [row.id]}, res => {
+                                    layer.msg(res.msg);
+                                    table.bootstrapTable('refresh', {silent: true});
+                                });
+                            }
+                        }
                     }
-                ]],
-                done: res => {
-                    cao.setIdMap(res.data);
-                    $('.del').click(function () {
-                        let id = cao.getObjectId(this);
-                        console.log(id)
-                        layer.confirm('您是否要移除该优惠卷，这是无法恢复的？', {
-                            btn: ['确认移除', '取消']
-                        }, function () {
-                            $.post('/user/api/coupon/del', {list: [id]}, res => {
-                                layer.msg(res.msg);
-                                tableInstance.reload();
-                            });
-                        });
-                    });
-
-                    $('.lock').click(function () {
-                        let id = cao.getObjectId(this);
-                        $.post('/user/api/coupon/lock', {list: [id]}, res => {
-                            layer.msg(res.msg);
-                            tableInstance.reload();
-                        });
-                    });
-
-                    $('.unlock').click(function () {
-                        let id = cao.getObjectId(this);
-                        $.post('/user/api/coupon/unlock', {list: [id]}, res => {
-                            layer.msg(res.msg);
-                            tableInstance.reload();
-                        });
-                    });
-                }
+                ]
             });
 
             let modal = (values = {}) => {
@@ -182,7 +196,7 @@
                     {title: "卷码前缀", name: "prefix", type: "input", placeholder: "请输入优惠卷代码前缀，可留空", default: "ACG"},
                     {title: "生成数量", name: "num", type: "input", placeholder: "你想生成多少张优惠卷", default: 1}
                 ], res => {
-                    tableInstance.reload();
+                    table.bootstrapTable('refresh', {silent: true});
                     layer.open({
                         type: 1,
                         title: "优惠卷[成功:" + res.data.success + "/失败:" + res.data.error + "]",
@@ -197,7 +211,7 @@
             });
 
             $('.button-del').click(() => {
-                var data = cao.listObjectToArray(table.checkStatus('coupon').data);
+                let data = cao.listObjectToArray(table.bootstrapTable('getSelections'));
                 if (data.length == 0) {
                     layer.msg("请至少勾选1个优惠卷再进行操作！");
                     return;
@@ -208,13 +222,13 @@
                 }, function () {
                     $.post("/user/api/coupon/del", {list: data}, res => {
                         layer.msg(res.msg);
-                        tableInstance.reload();
+                        table.bootstrapTable('refresh', {silent: true});
                     });
                 });
             });
 
             $('.button-lock').click(() => {
-                var data = cao.listObjectToArray(table.checkStatus('coupon').data);
+                let data = cao.listObjectToArray(table.bootstrapTable('getSelections'));
                 if (data.length == 0) {
                     layer.msg("请至少勾选1个优惠卷进行操作！");
                     return;
@@ -224,13 +238,13 @@
                 }, function () {
                     $.post("/user/api/coupon/lock", {list: data}, res => {
                         layer.msg(res.msg);
-                        tableInstance.reload();
+                        table.bootstrapTable('refresh', {silent: true});
                     });
                 });
             });
 
             $('.button-unlock').click(() => {
-                var data = cao.listObjectToArray(table.checkStatus('coupon').data);
+                let data = cao.listObjectToArray(table.bootstrapTable('getSelections'));
                 if (data.length == 0) {
                     layer.msg("请至少勾选1个优惠卷进行操作！");
                     return;
@@ -240,7 +254,7 @@
                 }, function () {
                     $.post("/user/api/coupon/unlock", {list: data}, res => {
                         layer.msg(res.msg);
-                        tableInstance.reload();
+                        table.bootstrapTable('refresh', {silent: true});
                     });
                 });
             });
@@ -250,7 +264,7 @@
                 window.open('/user/api/coupon/export?exportStatus=' + query);
             });
 
-            cao.query('.search-query', tableInstance, [
+            cao.query('.search-query', table, [
                 {title: "卷代码", name: "equal-code", type: "input", width: 150},
                 {title: "备注信息", name: "equal-note", type: "input", width: 150},
                 {title: "卷面值", name: "equal-money", type: "input", width: 150},

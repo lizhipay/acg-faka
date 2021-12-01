@@ -16,6 +16,9 @@
                     <div class="card-toolbar">
                         <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fas fa-trash"></i> 移除选中用户
                         </button>
+                        <!--start::HOOK-->
+                        #{hook(\App\Consts\Hook::ADMIN_VIEW_USER_TOOLBAR)}
+                        <!--end::HOOK-->
                     </div>
                 </div>
                 <!--end::Header-->
@@ -110,30 +113,51 @@
 <script>
 
     $(function () {
-        layui.use(['table', 'hex'], function () {
-            let table = layui.table;
+        layui.use(['hex'], function () {
+            let table = $("#user");
             var cao = layui.hex;
 
-            var tableInstance = table.render({
-                elem: '#user'
-                , skin: 'nob'
-                , size: 'lg'
-                , height: document.documentElement.clientHeight - 375
-                , url: '/admin/api/user/data'
-                , page: true
-                , limit: 16
-                , limits: [16, 20, 30]
-                , method: "post"
-                , response: {
-                    statusCode: 200
-                }
-                , cols: [[
-                    {
-                        type: 'checkbox', fixed: 'left'
+            let queryParams = null;
+            table.bootstrapTable({
+                url: '/admin/api/user/data',//请求的url地址
+                method: "post",//请求方式
+                // striped:true,//是否显示行间隔色
+                pageSize: 15,//每页显示的数量
+                pageList: [15, 25, 50, 100],
+                showRefresh: false,//是否显示刷新按钮
+                cache: false,//是否使用缓存
+                showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                cardView: false,
+                pagination: true,//是否显示分页
+                pageNumber: 1,//初始化显示第几页，默认第1页
+                singleSelect: false,//复选框只能选择一条记录
+                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                dataType: "json",//接收的数据类型
+                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                queryParams: function (params) {
+                    params.page = (params.offset / params.limit) + 1;
+                    if (queryParams) {
+                        for (const key in params) {
+                            queryParams[key] = params[key];
+                        }
+                    } else {
+                        queryParams = params;
                     }
+                    return queryParams;
+                },
+                //回调函数
+                responseHandler: function (res) {
+                    return {
+                        "total": res.count,
+                        "rows": res.data
+                    }
+                },
+                columns: [
+                    {checkbox: true}
                     , {field: 'id', title: 'ID', width: 80}
                     , {
-                        field: 'avatar', title: '用户名', templet: function (item) {
+                        field: 'avatar', title: '用户名', formatter: function (val, item) {
                             if (!item.avatar) {
                                 item.avatar = "/favicon.ico";
                             }
@@ -141,20 +165,53 @@
                         }
                     }
                     , {
-                        field: 'business_level', title: '他的店铺', templet: function (item) {
+                        field: 'business_level', title: '他的店铺', formatter: function (val, item) {
                             if (!item.business_level) {
                                 return '-';
                             }
-                            return '<span data-id="' + item.id + '" class="badge badge-light business" style="cursor: pointer;"><img src="' + item.business_level.icon + '"  style="width: 16px;padding-bottom: 3px;"/> ' + item.business_level.name + '</span> '
+                            return '<span  class="badge badge-light business" style="cursor: pointer;"><img src="' + item.business_level.icon + '"  style="width: 16px;padding-bottom: 3px;"/> ' + item.business_level.name + '</span> '
+                        }, events: {
+                            'click .business': function (event, value, row, index) {
+                                let map = row;
+                                let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+                                $.get("/admin/api/user/statistics?id=" + map.id, res => {
+                                    layer.close(loaderIndex);
+                                    if (res.code != 200) {
+                                        return;
+                                    }
+                                    layer.open({
+                                        type: 1,
+                                        shadeClose: true,
+                                        title: '<i class="layui-icon">&#xe600;</i> 店铺信息',
+                                        content: $('.business-modal').html()
+                                            .replace("[avatar]", map.avatar ? map.avatar : '/favicon.ico')
+                                            .replace("[shop_name]", map.business.shop_name ? map.business.shop_name : "-")
+                                            .replace("[title]", map.business.title ? map.business.title : "-")
+                                            .replace("[notice]", map.business.notice ? map.business.notice : "-")
+                                            .replace("[service_qq]", map.business.service_qq ? map.business.service_qq : "-")
+                                            .replaceAll("[service_url]", map.business.service_url ? map.business.service_url : "-")
+                                            .replaceAll("[subdomain]", map.business.subdomain ? map.business.subdomain : "-")
+                                            .replaceAll("[topdomain]", map.business.topdomain ? map.business.topdomain : "-")
+                                            .replace("[create_time]", map.business.create_time)
+                                            .replace("[master_display]", map.business.master_display == 1 ? "<span style='color: green;'>显示</span>" : "<span style='color: green;'>隐藏</span>")
+                                            .replace("[today_order_amount]", res.data.today_order_amount)
+                                            .replace("[yesterday_order_amount]", res.data.yesterday_order_amount)
+                                            .replace("[week_order_amount]", res.data.week_order_amount)
+                                            .replace("[month_order_amount]", res.data.month_order_amount)
+                                            .replace("[total_order_amount]", res.data.total_order_amount)
+                                        , area: cao.isPc() ? "420px" : ["100%", "100%"]
+                                    });
+                                });
+                            }
                         }
                     }
                     , {
-                        field: 'group', title: '会员等级', templet: function (item) {
+                        field: 'group', title: '会员等级', formatter: function (val, item) {
                             return '<img style="height: 32px;" src="' + item.group.icon + '" title="' + item.group.name + ' (减免:' + (item.group.discount * 100) + '%)">'
                         }
                     }
                     , {
-                        field: 'email', title: '邮箱', templet: function (item) {
+                        field: 'email', title: '邮箱', formatter: function (val, item) {
                             if (!item.email) {
                                 return "-";
                             }
@@ -162,7 +219,7 @@
                         }
                     }
                     , {
-                        field: 'phone', title: '手机号', templet: function (item) {
+                        field: 'phone', title: '手机号', formatter: function (val, item) {
                             if (!item.phone) {
                                 return "-";
                             }
@@ -170,7 +227,7 @@
                         }
                     }
                     , {
-                        field: 'qq', title: 'QQ', templet: function (item) {
+                        field: 'qq', title: 'QQ', formatter: function (val, item) {
                             if (!item.qq) {
                                 return "-";
                             }
@@ -178,29 +235,34 @@
                         }
                     }
                     , {
-                        field: 'balance', title: '余额', templet: function (item) {
-                            return '<span class="badge badge-light-primary recharge" style="cursor: pointer;" data-id="' + item.id + '"><i class="fas fa-yen-sign text-primary fs-10"></i> ' + item.balance + '</span>'
+                        field: 'balance', title: '余额', formatter: function (val, item) {
+                            return '<span class="badge badge-light-primary recharge" style="cursor: pointer;" ><i class="fas fa-yen-sign text-primary fs-10"></i> ' + item.balance + '</span>'
+                        },
+                        events: {
+                            'click .recharge': function (event, value, row, index) {
+                                recharge(row);
+                            }
                         }
                     }
 
                     , {
-                        field: 'recharge', title: '总充值', templet: function (item) {
+                        field: 'recharge', title: '总充值', formatter: function (val, item) {
                             return '<span class="badge badge-light-primary">' + item.recharge + '</span>'
                         }
                     }
                     , {
-                        field: 'coin', title: '硬币', templet: function (item) {
+                        field: 'coin', title: '硬币', formatter: function (val, item) {
                             return '<span class="badge badge-light-success"><i class="fas fa-yen-sign text-success fs-10"></i> ' + item.coin + '</span>'
                         }
                     }
                     , {
-                        field: 'total_coin', title: '总硬币', templet: function (item) {
+                        field: 'total_coin', title: '总硬币', formatter: function (val, item) {
                             return '<span class="badge badge-light-success">' + item.total_coin + '</span>'
                         }
                     }
 
                     , {
-                        field: 'avatar', title: '上级', templet: function (item) {
+                        field: 'avatar', title: '上级', formatter: function (val, item) {
                             if (!item.parent) {
                                 return '-';
                             }
@@ -208,118 +270,72 @@
                             if (!item.parent.avatar) {
                                 item.parent.avatar = "/favicon.ico";
                             }
-                            return '<span class="badge badge-light-dark parent" style="cursor: pointer;" data-id="' + item.parent.id + '"><img src="' + item.parent.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.parent.username + '(' + item.parent.id + ')</span>'
+                            return '<span class="badge badge-light-dark parent" style="cursor: pointer;" ><img src="' + item.parent.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.parent.username + '(' + item.parent.id + ')</span>'
+                        },
+                        events: {
+                            'click .parent': function (event, value, row, index) {
+                                $("input[name='equal-pid']").val(row.parent.id);
+                                table.bootstrapTable('refresh', {
+                                    silent: true,
+                                    pageNumber: 1,
+                                    query: {"equal-pid": row.parent.id}
+                                });
+                            }
                         }
                     }
                     , {
-                        field: 'status', title: '状态', templet: function (item) {
+                        field: 'status', title: '状态', formatter: function (val, item) {
                             if (item.status == 1) {
                                 return '<span class="badge badge-light-success">正常</span>';
                             }
                             return '<span class="badge badge-light-danger" >封禁</span>';
                         }
-                    }
-
-                    , {
-                        templet: function (item) {
-                            let html = '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fas fa-user-edit"></i></button> ';
+                    },
+                    <!--start::HOOK-->
+                    #{hook(\App\Consts\Hook::ADMIN_VIEW_USER_TABLE)}
+                    <!--end::HOOK-->
+                    {
+                        field: 'operate',
+                        title: '操作',
+                        formatter: function (val, item) {
+                            let html = '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fas fa-user-edit"></i></button> ';
                             if (item.status == 0) {
-                                html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 start"><i class="far fa-dot-circle" style="color: #17d917;"></i></button> ';
+                                html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 start"><i class="far fa-dot-circle" style="color: #17d917;"></i></button> ';
                             } else {
-                                html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 stop"><i style="color: #ff6c6c;" class="fas fa-ban"></i></button> ';
+                                html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 stop"><i style="color: #ff6c6c;" class="fas fa-ban"></i></button> ';
                             }
-                            html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+                            html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
                             return html;
+                        },
+                        events: {
+                            'click .edit': function (event, value, row, index) {
+                                modal(row);
+                            },
+                            'click .del': function (event, value, row, index) {
+                                layer.confirm('您正在删除会员，该操作极度危险，是否还要继续？', {
+                                    btn: ['确认删除', '取消']
+                                }, function () {
+                                    $.post('/admin/api/user/del', {list: [row.id]}, res => {
+                                        layer.msg(res.msg);
+                                        table.bootstrapTable('refresh', {silent: true});
+                                    });
+                                });
+                            },
+                            'click .start': function (event, value, row, index) {
+                                $.post('/admin/api/user/save', {id: row.id, status: 1}, res => {
+                                    layer.msg(res.msg);
+                                    table.bootstrapTable('refresh', {silent: true});
+                                });
+                            },
+                            'click .stop': function (event, value, row, index) {
+                                $.post('/admin/api/user/save', {id: row.id, status: 0}, res => {
+                                    layer.msg(res.msg);
+                                    table.bootstrapTable('refresh', {silent: true});
+                                });
+                            }
                         }
                     }
-                ]],
-                done: res => {
-                    cao.setIdMap(res.data);
-
-                    $('.edit').click(function () {
-                        let mapItem = cao.getMapItem(this);
-                        modal(mapItem);
-                    });
-
-                    $('.recharge').click(function () {
-                        let mapItem = cao.getMapItem(this);
-                        recharge(mapItem);
-                    });
-
-                    $('.del').click(function () {
-                        let id = cao.getObjectId(this);
-                        console.log(id)
-                        layer.confirm('您正在删除会员，该操作极度危险，是否还要继续？', {
-                            btn: ['确认删除', '取消']
-                        }, function () {
-                            $.post('/admin/api/user/del', {list: [id]}, res => {
-                                layer.msg(res.msg);
-                                tableInstance.reload();
-                            });
-                        });
-                    });
-
-                    $('.start').click(function () {
-                        let id = cao.getObjectId(this);
-                        $.post('/admin/api/user/save', {id: id, status: 1}, res => {
-                            layer.msg(res.msg);
-                            tableInstance.reload();
-                        });
-                    });
-
-                    $('.stop').click(function () {
-                        let id = cao.getObjectId(this);
-                        $.post('/admin/api/user/save', {id: id, status: 0}, res => {
-                            layer.msg(res.msg);
-                            tableInstance.reload();
-                        });
-                    });
-
-                    $('.parent').click(function () {
-                        let id = cao.getObjectId(this);
-                        $("input[name='equal-pid']").val(id);
-                        tableInstance.reload({
-                            where: {"equal-pid": id},
-                            page: {
-                                curr: 1
-                            }
-                        });
-                    });
-                    $('.business').click(function () {
-                        let map = cao.getMapItem(this);
-                        let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
-                        $.get("/admin/api/user/statistics?id=" + map.id, res => {
-                            layer.close(loaderIndex);
-                            if (res.code != 200) {
-                                return;
-                            }
-                            layer.open({
-                                type: 1,
-                                shadeClose: true,
-                                title: '<i class="layui-icon">&#xe600;</i> 店铺信息',
-                                content: $('.business-modal').html()
-                                    .replace("[avatar]", map.avatar ? map.avatar : '/favicon.ico')
-                                    .replace("[shop_name]", map.business.shop_name ? map.business.shop_name : "-")
-                                    .replace("[title]", map.business.title ? map.business.title : "-")
-                                    .replace("[notice]", map.business.notice ? map.business.notice : "-")
-                                    .replace("[service_qq]", map.business.service_qq ? map.business.service_qq : "-")
-                                    .replaceAll("[service_url]", map.business.service_url ? map.business.service_url : "-")
-                                    .replaceAll("[subdomain]", map.business.subdomain ? map.business.subdomain : "-")
-                                    .replaceAll("[topdomain]", map.business.topdomain ? map.business.topdomain : "-")
-                                    .replace("[create_time]", map.business.create_time)
-                                    .replace("[master_display]", map.business.master_display == 1 ? "<span style='color: green;'>显示</span>" : "<span style='color: green;'>隐藏</span>")
-                                    .replace("[today_order_amount]", res.data.today_order_amount)
-                                    .replace("[yesterday_order_amount]", res.data.yesterday_order_amount)
-                                    .replace("[week_order_amount]", res.data.week_order_amount)
-                                    .replace("[month_order_amount]", res.data.month_order_amount)
-                                    .replace("[total_order_amount]", res.data.total_order_amount)
-                                , area: cao.isPc() ? "420px" : "100%"
-                            });
-                        });
-
-
-                    });
-                }
+                ]
             });
 
             let modal = (values = {}) => {
@@ -345,7 +361,7 @@
                     },
                     {title: "状态", name: "status", type: "switch", text: "正常"},
                 ], res => {
-                    tableInstance.reload();
+                    table.bootstrapTable('refresh', {silent: true});
                 }, values);
             }
 
@@ -362,7 +378,7 @@
                     {title: "充值累计", name: "total", type: "switch", text: "是", default: 1},
 
                 ], res => {
-                    tableInstance.reload();
+                    table.bootstrapTable('refresh', {silent: true});
                 }, values, "460px", false, "充值/扣费");
             }
 
@@ -371,7 +387,7 @@
             });
 
             $('.btn-app-del').click(() => {
-                var data = cao.listObjectToArray(table.checkStatus('user').data);
+                let data = cao.listObjectToArray(table.bootstrapTable('getSelections'));
                 if (data.length == 0) {
                     layer.msg("请至少勾选1个用户进行操作！");
                     return;
@@ -382,12 +398,12 @@
                 }, function () {
                     $.post("/admin/api/user/del", {list: data}, res => {
                         layer.msg(res.msg);
-                        tableInstance.reload();
+                        table.bootstrapTable('refresh', {silent: true});
                     });
                 });
             });
 
-            cao.query('.search-query', tableInstance, [
+            cao.query('.search-query', table, [
                 {title: "用户名", name: "search-username", type: "input"},
                 {title: "邮箱", name: "equal-email", type: "input"},
                 {title: "手机号", name: "equal-phone", type: "input"},
@@ -404,5 +420,7 @@
         });
     });
 </script>
-
+<!--start::HOOK-->
+#{hook(\App\Consts\Hook::ADMIN_VIEW_USER_FOOTER)}
+<!--end::HOOK-->
 #{include file="../Footer.html"}

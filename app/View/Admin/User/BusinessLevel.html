@@ -14,16 +14,13 @@
                 <!--begin::Header-->
                 <div class="card-header border-0 pt-5">
                     <div class="card-toolbar">
-                            <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i
-                                    class="fas fa-plus"></i>
-                                新增等级
-                            </button>
+                        <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i
+                                class="fas fa-plus"></i>
+                            新增等级
+                        </button>
                     </div>
                 </div>
-
-
                 <!--end::Header-->
-
                 <div class="card-body py-3">
                     <table id="businessLevel" lay-filter="businessLevel"></table>
                 </div>
@@ -38,29 +35,54 @@
 <!--end::Content-->
 
 <script>
-
     $(function () {
-        layui.use(['table', 'hex'], function () {
-            let table = layui.table;
-            var cao = layui.hex;
-
-            var tableInstance = table.render({
-                elem: '#businessLevel'
-                , skin: 'nob'
-                , size: 'lg'
-                , url: '/admin/api/businessLevel/data'
-                , height: document.documentElement.clientHeight - 320
-                , page: false
-                , limit: 16
-                , method: "post"
-                , response: {
-                    statusCode: 200
-                }
-                , cols: [[
+        layui.use(['hex'], function () {
+            let table = $('#businessLevel');
+            let cao = layui.hex;
+            let queryParams = null;
+            table.bootstrapTable({
+                url: '/admin/api/businessLevel/data',//请求的url地址
+                method: "post",//请求方式
+                // striped:true,//是否显示行间隔色
+                pageSize: 17,//每页显示的数量
+                pageList: [17, 25, 50, 100],
+                showRefresh: false,//是否显示刷新按钮
+                cache: false,//是否使用缓存
+                showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                pagination: true,//是否显示分页
+                hegiht: 20,//表格的高度
+                pageNumber: 1,//初始化显示第几页，默认第1页
+                singleSelect: true,//复选框只能选择一条记录
+                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                dataType: "json",//接收的数据类型
+                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                queryParams: function (params) {
+                    params.page = (params.offset / params.limit) + 1;
+                    if (queryParams) {
+                        for (const key in params) {
+                            queryParams[key] = params[key];
+                        }
+                    } else {
+                        queryParams = params;
+                    }
+                    return queryParams;
+                },
+                //回调函数
+                responseHandler: function (res) {
+                    return {
+                        "total": res.count,
+                        "rows": res.data
+                    }
+                },
+                columns: [
                     {
-                        type: 'checkbox', fixed: 'left'
-                    }, {
-                        field: 'icon', title: '图标', templet: function (item) {
+                        field: 'name', title: '等级名称', formatter: function (val, item) {
+                            return '<span class="badge badge-light">' + item.name + '</span>'
+                        }
+                    },
+                    {
+                        field: 'icon', title: '图标', formatter: function (val, item) {
                             if (!item.icon) {
                                 return "-";
                             }
@@ -68,27 +90,22 @@
                         }
                     }
                     , {
-                        field: 'name', title: '等级名称', templet: function (item) {
-                            return '<span class="badge badge-light">' + item.name + '</span>'
-                        }
-                    }
-                    , {
-                        field: 'price', title: '购买价格', templet: function (item) {
+                        field: 'price', title: '购买价格', formatter: function (val, item) {
                             return '<span class="badge badge-light-success">' + item.price + '</span>'
                         }
                     }
                     , {
-                        field: 'cost', title: '商品抽成', templet: function (item) {
+                        field: 'cost', title: '商品抽成', formatter: function (val, item) {
                             return '<span class="badge badge-light-primary">' + (item.cost * 100) + '%</span>'
                         }
                     }
                     , {
-                        field: 'accrual', title: '分站提成', templet: function (item) {
+                        field: 'accrual', title: '分站提成', formatter: function (val, item) {
                             return '<span class="badge badge-light-primary">' + (item.accrual * 100) + '%</span>'
                         }
                     }
                     , {
-                        field: 'substation', title: '分站权限', templet: function (item) {
+                        field: 'substation', title: '分站权限', formatter: function (val, item) {
                             if (item.substation == 1) {
                                 return '<span class="badge badge-light-success">开启</span>'
                             }
@@ -96,7 +113,7 @@
                         }
                     }
                     , {
-                        field: 'top_domain', title: '绑定域名', templet: function (item) {
+                        field: 'top_domain', title: '绑定域名', formatter: function (val, item) {
                             if (item.top_domain == 1) {
                                 return '<span class="badge badge-light-success">开启</span>'
                             }
@@ -104,34 +121,30 @@
                         }
                     }
                     , {
-                        templet: function (item) {
-                            let html = '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fa fa-edit"></i></button> ';
-                            html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+                        field: 'operate',
+                        title: '操作',
+                        formatter: function (val, item) {
+                            let html = '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fa fa-edit"></i></button> ';
+                            html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
                             return html;
+                        },
+                        events: {               // 注册按钮组事件
+                            'click .edit': function (event, value, row, index) {
+                                modal(row);
+                            },
+                            'click .del': function (event, value, row, index) {
+                                layer.confirm('您正在移除该等级，是否要继续？', {
+                                    btn: ['确认移除', '取消']
+                                }, function () {
+                                    $.post('/admin/api/businessLevel/del', {list: [row.id]}, res => {
+                                        layer.msg(res.msg);
+                                        table.bootstrapTable('refresh', {silent: true});
+                                    });
+                                });
+                            }
                         }
                     }
-                ]],
-                done: res => {
-                    cao.setIdMap(res.data);
-
-                    $('.edit').click(function () {
-                        let mapItem = cao.getMapItem(this);
-                        modal(mapItem);
-                    });
-
-                    $('.del').click(function () {
-                        let id = cao.getObjectId(this);
-                        console.log(id)
-                        layer.confirm('您正在移除该等级，是否要继续？', {
-                            btn: ['确认移除', '取消']
-                        }, function () {
-                            $.post('/admin/api/businessLevel/del', {list: [id]}, res => {
-                                layer.msg(res.msg);
-                                tableInstance.reload();
-                            });
-                        });
-                    });
-                }
+                ]
             });
 
             let modal = (values = {}) => {
@@ -162,7 +175,7 @@
                     },
                     {title: "购买价格", name: "price", type: "input", placeholder: "请输入该等级的购买价格"},
                 ], res => {
-                    tableInstance.reload();
+                    table.bootstrapTable('refresh', {silent: true});
                 }, values);
             }
 

@@ -14,6 +14,8 @@
     <!--layui-->
     <link rel="stylesheet" href="/assets/static/layui/css/layui.css">
     <script src="/assets/static/jquery.min.js"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="/assets/static/bootstrap-table/css/bootstrap-table.css">
     <!--start::HOOK-->
     #{hook(\App\Consts\Hook::ADMIN_VIEW_HEADER)}
     <!--end::HOOK-->
@@ -436,18 +438,16 @@
                         <!--begin::Navbar-->
                         <div class="d-flex align-items-stretch" id="kt_header_nav">
                             <!--begin::Menu wrapper-->
-                            <div class="header-menu align-items-stretch" data-kt-drawer="true"
-                                 data-kt-drawer-name="header-menu" data-kt-drawer-activate="{default: true, lg: false}"
-                                 data-kt-drawer-overlay="true"
-                                 data-kt-drawer-width="{default:'200px', '300px': '250px'}"
-                                 data-kt-drawer-direction="end" data-kt-drawer-toggle="#kt_header_menu_mobile_toggle"
-                                 data-kt-swapper="true" data-kt-swapper-mode="prepend"
-                                 data-kt-swapper-parent="{default: '#kt_body', lg: '#kt_header_nav'}">
+                            <div class="header-menu">
                                 <!--begin::Menu-->
-                                <div class="menu menu-lg-rounded menu-column menu-lg-row menu-state-bg menu-title-gray-700 menu-state-title-primary menu-state-icon-primary menu-state-bullet-primary menu-arrow-gray-400 fw-bold my-5 my-lg-0 align-items-stretch">
+                                <div class="menu me-4 menu-lg-rounded menu-column menu-lg-row menu-state-bg menu-title-gray-700 menu-state-title-primary menu-state-icon-primary menu-state-bullet-primary menu-arrow-gray-400 fw-bold my-5 my-lg-0 align-items-stretch">
                                     <div class="menu-item me-lg-1 app-store"><a class="py-3 text-success fw-bold" href="javascript:void(0)"><i class="fab fa-app-store-ios fs-5 pt-1 text-success"></i> 应用市场</a></div>
                                 </div>
                                 <!--end::Menu-->
+                                <!--start::HOOK-->
+                                #{hook(\App\Consts\Hook::ADMIN_VIEW_NAV)}
+                                <!--end::HOOK-->
+
                             </div>
                             <!--end::Menu wrapper-->
                         </div>

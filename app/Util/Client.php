@@ -32,9 +32,12 @@ class Client
      */
     public static function getUrl(): string
     {
+        if ($_SERVER["HTTPS"] == "on") {
+            $_SERVER['REQUEST_SCHEME'] = "https";
+        }
         return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'];
     }
-
+ 
     /**
      * @return string
      */

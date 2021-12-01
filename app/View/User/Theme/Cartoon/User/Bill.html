@@ -17,68 +17,84 @@
 
 <script>
     $(function () {
-        layui.use(['table', 'hex', 'form'], function () {
-            let table = layui.table;
+        layui.use(['hex', 'form'], function () {
+            let table = $("#bill");
             let cao = layui.hex;
-            let status = ['<span style="color: red;">支出</span>', '<span style="color: green;">收入</span>'];
+            let status = ['<span class="acg-badge-light-red acg-badge">支出</span>', '<span class="acg-badge acg-badge-light-success">收入</span>'];
             let currency = ['<span style="color: #0C84D1;">余额</span>', '<span style="color: #13b413;">硬币</span>'];
-
-            var tableInstance = table.render({
-                elem: '#bill'
-                , skin: 'nob'
-                , size: 'lg'
-                , url: '/user/api/bill/data'
-                , page: true
-                , limit: 7
-                , limits: [7, 15, 20]
-                , method: "post"
-                , response: {
-                    statusCode: 200
-                }
-                , cols: [[
-
+            let queryParams = null;
+            table.bootstrapTable({
+                url:'/user/api/bill/data',//请求的url地址
+                method: "post",//请求方式
+                pageSize: 8,//每页显示的数量
+                showRefresh: false,//是否显示刷新按钮
+                cache: false,//是否使用缓存
+                showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                cardView: false,
+                pagination: true,//是否显示分页
+                pageNumber: 1,//初始化显示第几页，默认第1页
+                singleSelect: false,//复选框只能选择一条记录
+                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                dataType: "json",//接收的数据类型
+                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                queryParams: function (params) {
+                    params.page = (params.offset / params.limit) + 1;
+                    if (queryParams) {
+                        for (const key in params) {
+                            queryParams[key] = params[key];
+                        }
+                    } else {
+                        queryParams = params;
+                    }
+                    return queryParams;
+                },
+                //回调函数
+                responseHandler: function (res) {
+                    return {
+                        "total": res.count,
+                        "rows": res.data
+                    }
+                },
+                columns: [
                     {
-                        field: 'amount', title: '数量', templet: function (item) {
+                        field: 'amount', title: '数量', formatter: function (val, item) {
                             if (item.type == 0) {
-                                return '<b style="color: red;">‐' + item.amount + '</b>';
+                                return '<span class="acg-badge acg-badge-light-red">‐' + item.amount + '</span>';
                             }
-                            return '<b style="color: green;">+' + item.amount + '</b>';
+                            return '<span class="acg-badge acg-badge-light-success">+' + item.amount + '</span>';
                         }
                     }
 
                     , {
-                        field: 'balance', title: '余额', templet: function (item) {
+                        field: 'balance', title: '余额', formatter: function (val, item) {
                             return '<span style="color: #0C84D1;">' + item.balance + '</span>';
                         }
                     }
                     , {
-                        field: 'currency', title: '货币', templet: function (item) {
+                        field: 'currency', title: '货币', formatter: function (val, item) {
                             return currency[item.currency];
                         }
                     }
                     , {
-                        field: 'type', title: '支出/收入', templet: function (item) {
+                        field: 'type', title: '支出/收入', formatter: function (val, item) {
                             return status[item.type];
                         }
                     }
                     , {
-                        field: 'log', title: '交易内容', templet: function (item) {
-                            return '<span class="badge badge-light">' + item.log + '</span>';
+                        field: 'log', title: '交易内容', formatter: function (val, item) {
+                            return '<span class="acg-badge acg-badge-light">' + item.log + '</span>';
                         }
                     }
                     , {
-                        field: 'create_time', title: '交易时间', templet: function (item) {
-                            return '<span class="badge badge-light">' + item.create_time + '</span>';
+                        field: 'create_time', title: '交易时间', formatter: function (val, item) {
+                            return '<span class="acg-badge acg-badge-light">' + item.create_time + '</span>';
                         }, width: 160
                     }
-
-                ]],
-                done: res => {
-                    cao.setIdMap(res.data);
-                }
+                ]
             });
 
-            cao.query('.search-query', tableInstance, [
+            cao.query('.search-query', table, [
                 {
                     title: "支出/收入", name: "equal-type", type: "select", dict: [
                         {id: 0, name: "支出"},

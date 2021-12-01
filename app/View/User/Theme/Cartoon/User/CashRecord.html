@@ -11,7 +11,7 @@
 
             <div class="content-body">
                 <form class="search-query"></form>
-                <table id="bill" lay-filter="bill"></table>
+                <table id="cash"></table>
             </div>
         </div>
     </div>
@@ -19,53 +19,71 @@
 
 <script>
     $(function () {
-        layui.use(['table', 'hex', 'form'], function () {
-            let table = layui.table;
+        layui.use([ 'hex', 'form'], function () {
+            let table = $("#cash");
             let cao = layui.hex;
-            let card = ['<img src="/assets/user/images/cash/alipay.png" style="height: 32px;">', '<img src="/assets/user/images/cash/wechat.png" style="height: 32px;">'];
+            let card = ['<span class="acg-badge acg-badge-light-primary">支付宝</span>', '<span class="acg-badge acg-badge-light-success">微信</span>'];
             let type = ['<span style="color: #0C84D1;">自动结算</span>', '<span style="color: #e8a430;">手动兑现</span>'];
-            let status = ['<span class="layui-badge layui-bg-red">处理中</span>', '<span  class="layui-badge layui-bg-green">已到账</span>', '<span  class="layui-badge layui-bg-gray">失败：[msg]</span>'];
+            let status = ['<span class="acg-badge acg-badge-light-red">银行处理中</span>', '<span  class="acg-badge acg-badge-light-success">已到账</span>', '<span  class="acg-badge acg-badge-light">失败：[msg]</span>'];
 
-            var tableInstance = table.render({
-                elem: '#bill'
-                , skin: 'nob'
-                , size: 'lg'
-                , url: '/user/api/cash/record'
-                , page: true
-                , limit: 7
-                , height: 450
-                , limits: [7, 15, 20]
-                , method: "post"
-                , response: {
-                    statusCode: 200
-                }
-                , cols: [[
-
+            let queryParams = null;
+            table.bootstrapTable({
+                url:'/user/api/cash/record',//请求的url地址
+                method: "post",//请求方式
+                pageSize: 8,//每页显示的数量
+                showRefresh: false,//是否显示刷新按钮
+                cache: false,//是否使用缓存
+                showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                cardView: false,
+                pagination: true,//是否显示分页
+                pageNumber: 1,//初始化显示第几页，默认第1页
+                singleSelect: false,//复选框只能选择一条记录
+                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                dataType: "json",//接收的数据类型
+                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                queryParams: function (params) {
+                    params.page = (params.offset / params.limit) + 1;
+                    if (queryParams) {
+                        for (const key in params) {
+                            queryParams[key] = params[key];
+                        }
+                    } else {
+                        queryParams = params;
+                    }
+                    return queryParams;
+                },
+                //回调函数
+                responseHandler: function (res) {
+                    return {
+                        "total": res.count,
+                        "rows": res.data
+                    }
+                },
+                columns: [
                     {
-                        field: 'amount', title: '硬币', templet: function (item) {
-
+                        field: 'amount', title: '硬币', formatter: function (val, item) {
                             return '<b style="color: green;">￥' + item.amount + '</b>';
                         }
                     }
                     , {
-                        field: 'type', title: '类型', templet: function (item) {
+                        field: 'type', title: '类型', formatter: function (val, item) {
                             return type[item.type];
                         }
                     }
                     , {
-                        field: 'card', title: '到账方式', templet: function (item) {
+                        field: 'card', title: '到账方式', formatter: function (val, item) {
                             return card[item.card];
                         }
                     }
                     , {
-                        field: 'status', title: '状态', templet: function (item) {
+                        field: 'status', title: '状态', formatter: function (val, item) {
                             return status[item.status].replace("[msg]", item.message);
                         }
                     }
                     ,
                     {
-                        field: 'cost', title: '手续费', templet: function (item) {
-
+                        field: 'cost', title: '手续费', formatter: function (val, item) {
                             return '<span style="color: #13c2b3;">' + item.cost + '</span>';
                         }
                     }
@@ -73,21 +91,17 @@
                         field: 'create_time', title: '提交时间'
                     }
                     , {
-                        field: 'arrive_time', title: '到账时间', templet: function (item) {
+                        field: 'arrive_time', title: '到账时间', formatter: function (val, item) {
                             if (!item.arrive_time) {
                                 return "-";
                             }
                             return item.arrive_time;
                         }
                     }
-
-                ]],
-                done: res => {
-                    cao.setIdMap(res.data);
-                }
+                ]
             });
 
-            cao.query('.search-query', tableInstance, [
+            cao.query('.search-query', table, [
                 {
                     title: "到账方式", name: "equal-card", type: "select", dict: [
                         {id: 0, name: "支付宝"},

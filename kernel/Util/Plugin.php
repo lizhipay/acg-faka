@@ -111,13 +111,14 @@ class Plugin
     /**
      * @param int $point
      * @param mixed ...$args
+     * @return false|mixed
      */
     public static function hook(int $point, mixed ...$args)
     {
         $list = self::$container[$point];
         foreach ($list as $item) {
             \Kernel\Util\Plugin::$currentPluginName = $item['pluginName'];
-            call_user_func_array([new $item['namespace'], $item['method']], $args);
+            return call_user_func_array([new $item['namespace'], $item['method']], $args);
         }
     }
 

@@ -206,7 +206,10 @@ if (!function_exists("feedback")) {
 if (!function_exists("hook")) {
     function hook(int $point, mixed ...$args)
     {
-        Plugin::hook($point, ...$args);
+        $result = Plugin::hook($point, ...$args);
+        if ($result) {
+            return $result;
+        }
     }
 }
 

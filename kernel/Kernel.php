@@ -57,6 +57,9 @@ try {
     // 启动Eloquent
     $capsule->bootEloquent();
 
+    //插件
+    \Kernel\Util\Plugin::scan();
+
     $controllerInstance = new $controller;
     //#Class Interceptor
     $interceptors = [];
@@ -113,10 +116,6 @@ try {
             }
         }
     }
-
-
-    \Kernel\Util\Plugin::scan();
-
 
     $result = call_user_func_array([$controllerInstance, $action], $params);
 

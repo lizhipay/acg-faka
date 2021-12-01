@@ -51017,6 +51017,8 @@ body {
     background-color: #ffffffbf;
 }
 
+
+
 @media (min-width: 992px) {
     .aside {
         width: 265px;
@@ -51117,6 +51119,9 @@ body {
 
     .aside .aside-logo {
         display: none;
+    }
+    .aside.aside-light {
+        background-color: #fff6f6;
     }
 }
 

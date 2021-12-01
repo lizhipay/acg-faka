@@ -17,6 +17,9 @@
                         <button class="btn btn-sm btn-light-primary clear me-3"><i class="fab fa-edge"></i>
                             一键清理无用订单
                         </button>
+                        <!--start::HOOK-->
+                        #{hook(\App\Consts\Hook::ADMIN_VIEW_ORDER_TOOLBAR)}
+                        <!--end::HOOK-->
                     </div>
                 </div>
                 <!--end::Header-->
@@ -38,10 +41,9 @@
 <script>
 
     $(function () {
-        layui.use(['table', 'hex', 'form'], function () {
-            let table = layui.table;
+        layui.use(['hex', 'form'], function () {
+            let table = $("#order");
             let cao = layui.hex;
-            let form = layui.form;
             let status = ['<span class="badge badge-light-danger">未支付</span>', '<span class="badge badge-light-success">已支付</span>'];
             let delivery_status = ['<span class="badge badge-light-danger">未发货</span>', '<span class="badge badge-light-success">已发货</span>'];
             let delivery_way = ['<span class="badge badge-light-success">自动发货</span>', '<span class="badge badge-light-danger">手动发货</span>'];
@@ -53,38 +55,70 @@
             ];
             let contactType = ["", "[手机]", "[邮箱]", "[QQ]"];
 
-            var tableInstance = table.render({
-                elem: '#order'
-                , skin: 'nob'
-                , size: 'lg'
-                , height: document.documentElement.clientHeight - 380
-                , url: '/admin/api/order/data'
-                , page: true
-                , limit: 16
-                , limits: [16, 20, 30]
-                , method: "post"
-                , response: {
-                    statusCode: 200
-                }
-                , cols: [[
-                    {
-                        type: 'checkbox', fixed: 'left'
+            let queryParams = null;
+            table.bootstrapTable({
+                url: '/admin/api/order/data',//请求的url地址
+                method: "post",//请求方式
+                // striped:true,//是否显示行间隔色
+                pageSize: 15,//每页显示的数量
+                pageList: [15, 25, 50, 100],
+                showRefresh: false,//是否显示刷新按钮
+                cache: false,//是否使用缓存
+                showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                cardView: false,
+                pagination: true,//是否显示分页
+                pageNumber: 1,//初始化显示第几页，默认第1页
+                singleSelect: false,//复选框只能选择一条记录
+                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                dataType: "json",//接收的数据类型
+                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                queryParams: function (params) {
+                    params.page = (params.offset / params.limit) + 1;
+                    if (queryParams) {
+                        for (const key in params) {
+                            queryParams[key] = params[key];
+                        }
+                    } else {
+                        queryParams = params;
                     }
+                    return queryParams;
+                },
+                //回调函数
+                responseHandler: function (res) {
+                    return {
+                        "total": res.count,
+                        "rows": res.data
+                    }
+                },
+                columns: [
+                    {checkbox: true}
                     , {
-                        field: 'trade_no', title: '订单号', templet: function (item) {
+                        field: 'trade_no', title: '订单号', formatter: function (val, item) {
                             return '<span class="badge badge-light">' + item.trade_no + '</span>';
-                        }, width: 190
-                    }
-                    , {
-                        field: 'owner', title: '会员', templet: function (item) {
-                            if (!item.owner) {
-                                return '<span class="badge badge-light-success owner" style="cursor: pointer;" data-id="0">访客</span>';
-                            }
-                            return '<span class="badge badge-light-dark owner" style="cursor: pointer;" data-id="' + item.owner.id + '"><img src="' + item.owner.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.owner.username + '(' + item.owner.id + ')</span>'
                         }
                     }
                     , {
-                        field: 'commodity', title: '商品', templet: function (item) {
+                        field: 'owner', title: '会员', formatter: function (val, item) {
+                            if (!item.owner) {
+                                return '<span class="badge badge-light-success owner" style="cursor: pointer;" >访客</span>';
+                            }
+                            return '<span class="badge badge-light-dark owner" style="cursor: pointer;" ><img src="' + item.owner.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.owner.username + '(' + item.owner.id + ')</span>'
+                        },
+                        events: {
+                            'click .owner': function (event, value, row, index) {
+                                let id = row.owner ? row.owner.id : 0;
+                                $("input[name='equal-owner']").val(id);
+                                table.bootstrapTable('refresh', {
+                                    silent: true,
+                                    pageNumber: 1,
+                                    query: {"equal-owner": id}
+                                });
+                            }
+                        }
+                    }
+                    , {
+                        field: 'commodity', title: '商品', formatter: function (val, item) {
                             if (!item.commodity) {
                                 return "-";
                             }
@@ -92,118 +126,118 @@
                         }
                     }
                     , {
-                        field: 'amount', title: '金额', templet: function (item) {
+                        field: 'amount', title: '金额', formatter: function (val, item) {
                             return '<span class="badge badge-light-success"><i class="fas fa-yen-sign text-success fs-10"></i> ' + item.amount + '</span>';
-                        }, width: 100
+                        }
                     }
                     , {
-                        field: 'delivery_way', title: '发货方式', templet: function (item) {
+                        field: 'delivery_way', title: '发货方式', formatter: function (val, item) {
                             if (!item.commodity) {
                                 return "-";
                             }
                             return delivery_way[item.commodity.delivery_way];
-                        }, width: 110
+                        }
                     }
                     , {
-                        field: 'pay_id', title: '支付方式', templet: function (item) {
+                        field: 'pay_id', title: '支付方式', formatter: function (val, item) {
                             if (!item.pay) {
                                 return "-";
                             }
                             return '<span class="badge badge-light-primary"><img src="' + item.pay.icon + '"  style="width: 18px;border-radius: 100%;"/> ' + item.pay.name + '</span>';
-                        }, width: 130
+                        }
                     }
                     , {
-                        field: 'create_device', title: '设备', templet: function (item) {
+                        field: 'create_device', title: '设备', formatter: function (val, item) {
                             return '<span class="badge badge-light-primary">' + create_device[item.create_device] + '</span>';
-                        }, width: 80
+                        }
                     }
                     , {
-                        field: 'create_time', title: '下单时间', width: 150, templet: function (item) {
+                        field: 'create_time', title: '下单时间', width: 150, formatter: function (val, item) {
                             return '<span class="badge badge-light">' + item.create_time + '</span>';
                         }
                     }
                     , {
-                        field: 'create_ip', title: '客户IP', width: 115, templet: function (item) {
+                        field: 'create_ip', title: '客户IP', width: 115, formatter: function (val, item) {
                             return '<span class="badge badge-light">' + item.create_ip + '</span>';
                         }
                     }
                     , {
-                        field: 'contact', title: '联系方式', templet: function (item) {
+                        field: 'contact', title: '联系方式', formatter: function (val, item) {
                             if (!item.commodity) {
                                 return "-";
                             }
                             return '<span class="badge badge-light">' + contactType[item.commodity.contact_type] + item.contact + '</span>';
-                        }, align: 'center'
+                        }
                     }
                     , {
-                        field: 'status', title: '支付状态', templet: function (item) {
+                        field: 'status', title: '支付状态', formatter: function (val, item) {
                             return status[item.status];
-                        }, width: 90
+                        }
                     }
                     , {
-                        field: 'delivery_status', title: '发货状态', templet: function (item) {
+                        field: 'delivery_status', title: '发货状态', formatter: function (val, item) {
                             return delivery_status[item.delivery_status];
-                        }, width: 90
+                        }
                     }
 
                     , {
-                        field: 'cost', title: '手续费', templet: function (item) {
+                        field: 'cost', title: '手续费', formatter: function (val, item) {
                             if (!item.user) {
                                 return '-';
                             }
                             return '<span class="badge badge-light-primary"><i class="fas fa-yen-sign text-primary fs-10"></i> ' + item.cost + '</span>';
-                        }, width: 90
+                        }
                     }
                     , {
-                        field: 'secret', title: '卡密信息', templet: function (item) {
+                        field: 'secret', title: '卡密信息', formatter: function (val, item) {
                             if (item.status != 1) {
                                 return "-";
                             }
 
                             if (item.delivery_status != 1) {
-                                return '<span class="badge badge-light-primary delivery-card" style="cursor: pointer;" data-id="' + item.id + '">手动发货</span>';
+                                return '<span class="badge badge-light-primary delivery-card" style="cursor: pointer;" >手动发货</span>';
                             }
 
-                            return '<span class="badge badge-light-primary view-card" style="cursor: pointer;" data-id="' + item.id + '">查看</span>';
-                        }, width: 100
-                    }
-                    , {
-                        field: 'user', title: '商家', templet: function (item) {
-                            if (!item.user) {
-                                return '<span class="badge badge-light-success user" style="cursor: pointer;" data-id="0">系统</span>';
-                            }
-                            return '<span class="badge badge-light-dark user" style="cursor: pointer;" data-id="' + item.user.id + '"><img src="' + item.user.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.user.username + '(' + item.user.id + ')</span>'
+                            return '<span class="badge badge-light-primary view-card" style="cursor: pointer;" >查看</span>';
+                        },
+                        events: {
+                            'click .view-card': function (event, value, map, index) {
+                                layer.open({
+                                    type: 1,
+                                    title: "查看卡密",
+                                    area: cao.isPc() ? ['420px', '420px'] : ["100%", "100%"],
+                                    content: '<textarea class="layui-input" style="padding: 15px;height: 100%;">' + map.secret + '</textarea>'
+                                });
+                            },
+                            'click .delivery-card': function (event, value, map, index) {
+                                modal(map);
+                            },
                         }
                     }
-                ]],
-                done: res => {
-                    cao.setIdMap(res.data);
-                    $('.view-card').click(function () {
-                        let map = cao.getMapItem(this);
-                        layer.open({
-                            type: 1,
-                            title: "查看卡密",
-                            area: ['420px', '420px'],
-                            content: '<textarea class="layui-input" style="padding: 15px;height: 100%;">' + map.secret + '</textarea>'
-                        });
-                    });
-
-                    $('.delivery-card').click(function () {
-                        let mapItem = cao.getMapItem(this);
-                        modal(mapItem);
-                    });
-
-                    $('.owner').click(function () {
-                        let id = cao.getObjectId(this);
-                        $("input[name='equal-owner']").val(id);
-                        tableInstance.reload({
-                            where: {"equal-owner": id},
-                            page: {
-                                curr: 1
+                    , {
+                        field: 'user', title: '商家', formatter: function (val, item) {
+                            if (!item.user) {
+                                return '<span class="badge badge-light-success user" style="cursor: pointer;" >系统</span>';
                             }
-                        });
-                    });
-                }
+                            return '<span class="badge badge-light-dark user" style="cursor: pointer;" ><img src="' + item.user.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.user.username + '(' + item.user.id + ')</span>'
+                        }
+                        ,
+                        events: {
+                            'click .user': function (event, value, row, index) {
+                                let id = row.user ? row.user.id : 0;
+                                $("input[name='equal-user_id']").val(id);
+                                table.bootstrapTable('refresh', {
+                                    silent: true,
+                                    pageNumber: 1,
+                                    query: {"equal-user_id": id}
+                                });
+                            }
+                        }
+                    },
+                    <!--start::HOOK-->
+                    #{hook(\App\Consts\Hook::ADMIN_VIEW_ORDER_TABLE)}
+                    <!--end::HOOK-->
+                ]
             });
 
             let modal = (values = {}) => {
@@ -215,11 +249,11 @@
                         placeholder: "手动发货的信息.."
                     }
                 ], res => {
-                    tableInstance.reload();
+                    table.bootstrapTable('refresh', {silent: true});
                 }, values);
             }
 
-            cao.query('.search-query', tableInstance, [
+            cao.query('.search-query', table, [
                 {title: "订单号", name: "equal-trade_no", type: "input", width: 140},
                 {title: "商品ID", name: "equal-commodity_id", type: "input", width: 140},
                 {title: "卡密信息(模糊)", name: "search-secret", type: "input", width: 140},
@@ -259,10 +293,13 @@
                 $.post("/admin/api/order/clear", res => {
                     layer.close(loaderIndex);
                     layer.msg(res.msg);
+                    table.bootstrapTable('refresh', {silent: true});
                 });
             });
         });
     });
 </script>
-
+<!--start::HOOK-->
+#{hook(\App\Consts\Hook::ADMIN_VIEW_ORDER_FOOTER)}
+<!--end::HOOK-->
 #{include file="../Footer.html"}

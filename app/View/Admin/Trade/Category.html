@@ -40,37 +40,60 @@
 <script>
 
     $(function () {
-        layui.use(['table', 'hex'], function () {
-            let table = layui.table;
+        layui.use(['hex'], function () {
+            let table = $("#category");
             var cao = layui.hex;
 
-            var tableInstance = table.render({
-                elem: '#category'
-                , skin: 'nob'
-                , size: 'lg'
-                , height: document.documentElement.clientHeight - 375
-                , url: '/admin/api/category/data'
-                , page: true
-                , limit: 16
-                , limits: [16, 20, 30]
-                , method: "post"
-                , response: {
-                    statusCode: 200
-                }
-                , cols: [[
-                    {
-                        type: 'checkbox', fixed: 'left'
-                    }, {
-                        field: 'icon', title: '图标', templet: function (item) {
+
+            let queryParams = null;
+            table.bootstrapTable({
+                url: '/admin/api/category/data',//请求的url地址
+                method: "post",//请求方式
+                // striped:true,//是否显示行间隔色
+                pageSize: 15,//每页显示的数量
+                pageList: [15, 25, 50, 100],
+                showRefresh: false,//是否显示刷新按钮
+                cache: false,//是否使用缓存
+                showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                cardView: false,
+                pagination: true,//是否显示分页
+                pageNumber: 1,//初始化显示第几页，默认第1页
+                singleSelect: false,//复选框只能选择一条记录
+                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                dataType: "json",//接收的数据类型
+                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                queryParams: function (params) {
+                    params.page = (params.offset / params.limit) + 1;
+                    if (queryParams) {
+                        for (const key in params) {
+                            queryParams[key] = params[key];
+                        }
+                    } else {
+                        queryParams = params;
+                    }
+                    return queryParams;
+                },
+                //回调函数
+                responseHandler: function (res) {
+                    return {
+                        "total": res.count,
+                        "rows": res.data
+                    }
+                },
+                columns: [
+                    {checkbox: true}
+                    , {
+                        field: 'icon', title: '图标',  formatter: function (val, item) {
                             if (!item.icon) {
                                 return "-";
                             }
-                            return '<img src="' + item.icon + '"  style="width: 38px;"/>'
+                            return '<img src="' + item.icon + '"  style="width: 24px;"/>'
                         }
                     }
                     , {field: 'name', title: '分类名称'}
                     , {
-                        field: 'status', title: '状态', templet: function (item) {
+                        field: 'status', title: '状态', formatter: function (val, item) {
                             if (item.status == 1) {
                                 return '<span class="badge badge-light-success"><i class="fas fa-signal" style="color: #43ff43;"></i></span>';
                             }
@@ -79,88 +102,78 @@
                     }
                     , {field: 'sort', title: '排序(越小越前)'}
                     , {
-                        field: 'share_url', title: '推广链接', templet: function (item) {
-                            return '<span data-id="' + item.id + '" class="badge badge-light clipboard clipboard-' + item.id + '" data-clipboard-text="' + item.share_url + '" style="cursor: pointer;">复制</span>';
+                        field: 'share_url', title: '推广链接',  formatter: function (val, item) {
+                            return '<span  class="badge badge-light clipboard clipboard-' + item.id + '" data-clipboard-text="' + item.share_url + '" style="cursor: pointer;">复制</span>';
+                        }
+                        , events: {
+                            'click .clipboard': function (event, value, row, index) {
+                                let clipboard = new ClipboardJS(".clipboard-" + row.id);
+                                clipboard.on('success', function (e) {
+                                    layer.msg("分享链接已经复制成功了，赶快发给好友吧！");
+                                });
+                            }
                         }
                     }
                     , {
-                        field: 'owner', title: '所属者', templet: function (item) {
+                        field: 'owner', title: '所属者',  formatter: function (val, item) {
                             if (!item.owner) {
-                                return '<span class="badge badge-light-success owner" style="cursor: pointer;" data-id="0">SYSTEM</span>';
+                                return '<span class="badge badge-light-success owner" style="cursor: pointer;" >SYSTEM</span>';
                             }
-                            return '<span class="badge badge-light-dark owner" style="cursor: pointer;" data-id="' + item.owner.id + '"><img src="' + item.owner.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.owner.username + '(' + item.owner.id + ')</span>'
+                            return '<span class="badge badge-light-dark owner" style="cursor: pointer;" ><img src="' + item.owner.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.owner.username + '(' + item.owner.id + ')</span>'
+                        }, events: {
+                            'click .owner': function (event, value, row, index) {
+                                let id = row.owner ? row.owner.id : 0;
+                                $("input[name='equal-owner']").val(id);
+                                table.bootstrapTable('refresh', {
+                                    silent: true,
+                                    pageNumber: 1,
+                                    query: {"equal-owner": id}
+                                });
+                            }
                         }
                     }
-
                     , {
-                        templet: function (item) {
-                            let html = '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fa fa-edit"></i></button> ';
+                        field: 'operate',
+                        title: '操作',
+                        formatter: function (val, item) {
+                            let html = '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fa fa-edit"></i></button> ';
                             if (item.status == 0) {
-                                html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 start"><i class="fa fa-play" style="color: #61ff61;"></i></button> ';
+                                html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 start"><i class="fa fa-play" style="color: #61ff61;"></i></button> ';
                             } else {
-                                html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 stop"><i class="fa fa-pause" style="color: #fdbea7;"></i></button> ';
+                                html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 stop"><i class="fa fa-pause" style="color: #fdbea7;"></i></button> ';
                             }
-                            html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+                            html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
                             return html;
+                        },
+                        events: {
+                            'click .edit': function (event, value, row, index) {
+                                modal(row);
+                            },
+                            'click .del': function (event, value, row, index) {
+                                layer.confirm('您正在移除该分类，是否要继续？', {
+                                    btn: ['确认移除', '取消']
+                                }, function () {
+                                    $.post('/admin/api/category/del', {list: [row.id]}, res => {
+                                        layer.msg(res.msg);
+                                        table.bootstrapTable('refresh', {silent: true});
+                                    });
+                                });
+                            },
+                            'click .start': function (event, value, row, index) {
+                                $.post('/admin/api/category/save', {id: row.id, status: 1}, res => {
+                                    layer.msg(res.msg);
+                                    table.bootstrapTable('refresh', {silent: true});
+                                });
+                            },
+                            'click .stop': function (event, value, row, index) {
+                                $.post('/admin/api/category/save', {id: row.id, status: 0}, res => {
+                                    layer.msg(res.msg);
+                                    table.bootstrapTable('refresh', {silent: true});
+                                });
+                            }
                         }
                     }
-                ]],
-                done: res => {
-                    cao.setIdMap(res.data);
-
-                    $('.edit').click(function () {
-                        let mapItem = cao.getMapItem(this);
-                        modal(mapItem);
-                    });
-
-                    $('.del').click(function () {
-                        let id = cao.getObjectId(this);
-                        console.log(id)
-                        layer.confirm('您正在移除该分类，是否要继续？', {
-                            btn: ['确认移除', '取消']
-                        }, function () {
-                            $.post('/admin/api/category/del', {list: [id]}, res => {
-                                layer.msg(res.msg);
-                                tableInstance.reload();
-                            });
-                        });
-                    });
-
-                    $('.start').click(function () {
-                        let id = cao.getObjectId(this);
-                        $.post('/admin/api/category/save', {id: id, status: 1}, res => {
-                            layer.msg(res.msg);
-                            tableInstance.reload();
-                        });
-                    });
-
-                    $('.stop').click(function () {
-                        let id = cao.getObjectId(this);
-                        $.post('/admin/api/category/save', {id: id, status: 0}, res => {
-                            layer.msg(res.msg);
-                            tableInstance.reload();
-                        });
-                    });
-
-                    $('.owner').click(function () {
-                        let id = cao.getObjectId(this);
-                        $("input[name='equal-owner']").val(id);
-                        tableInstance.reload({
-                            where: {"equal-owner": id},
-                            page: {
-                                curr: 1
-                            }
-                        });
-                    });
-
-                    $('.clipboard').click(function () {
-                        let id = cao.getObjectId(this);
-                        var clipboard = new ClipboardJS(".clipboard-" + id);
-                        clipboard.on('success', function (e) {
-                            layer.msg("分享链接已经复制成功了，赶快发给好友吧！");
-                        });
-                    });
-                }
+                ]
             });
 
             let modal = (values = {}) => {
@@ -170,7 +183,7 @@
                     {title: "分类排序", name: "sort", type: "input", placeholder: "值越小，排名越靠前哦~"},
                     {title: "状态", name: "status", type: "switch", text: "启用"},
                 ], res => {
-                    tableInstance.reload();
+                    table.bootstrapTable('refresh', {silent: true});
                 }, values);
             }
 
@@ -179,23 +192,22 @@
             });
 
             $('.btn-app-del').click(() => {
-                var data = cao.listObjectToArray(table.checkStatus('category').data);
+                var data = cao.listObjectToArray(table.bootstrapTable('getSelections'));
                 if (data.length == 0) {
                     layer.msg("请至少勾选1个商品分类进行操作！");
                     return;
                 }
-
                 layer.confirm('您确定要删除已经选中的商品分类吗？这是不可恢复的操作！', {
                     btn: ['确定', '取消']
                 }, function () {
                     $.post("/admin/api/category/del", {list: data}, res => {
                         layer.msg(res.msg);
-                        tableInstance.reload();
+                        table.bootstrapTable('refresh', {silent: true});
                     });
                 });
             });
 
-            cao.query('.search-query', tableInstance, [
+            cao.query('.search-query', table, [
                 {title: "分类名称", name: "search-name", type: "input"},
                 {
                     title: "状态", name: "equal-status", type: "select", dict: [

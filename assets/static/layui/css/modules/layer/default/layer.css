@@ -580,11 +580,16 @@ html #layuicss-layer {
 }
 
 .layui-layer-page {
-    border-radius: 10px !important;
+    border-radius: 10px;
 }
 
+@media screen and (max-width: 1366px) {
+    .layui-layer-page {
+        border-radius: 0px;
+    }
+}
 
-.layui-layer-iframe .layui-layer-btn, .layui-layer-page .layui-layer-btn {
+    .layui-layer-iframe .layui-layer-btn, .layui-layer-page .layui-layer-btn {
     padding-top: 10px
 }
 

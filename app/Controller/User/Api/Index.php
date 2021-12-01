@@ -216,9 +216,9 @@ class Index extends User
         };
 
         if ($keywords) {
-            $order = Order::query()->where("trade_no", $keywords)->with(['pay', 'commodity' => $callback, 'user' => $userCallback])->get($filed);
+            $order = Order::query()->where("trade_no", trim($keywords))->with(['pay', 'commodity' => $callback, 'user' => $userCallback])->get($filed);
             if (count($order) == 0) {
-                $order = Order::query()->where("contact", $keywords)->with(['pay', 'commodity' => $callback, 'user' => $userCallback])->orderBy("id", "desc")->limit(10)->get($filed);
+                $order = Order::query()->where("contact", trim($keywords))->with(['pay', 'commodity' => $callback, 'user' => $userCallback])->orderBy("id", "desc")->limit(10)->get($filed);
             }
         } else {
             $user = $this->getUser();

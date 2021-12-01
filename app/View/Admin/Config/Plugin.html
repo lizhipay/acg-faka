@@ -27,49 +27,71 @@
 <script>
 
     $(function () {
-        layui.use(['table', 'hex'], function () {
-            let table = layui.table;
+        layui.use(['hex'], function () {
+            let table = $("#plugin");
             var cao = layui.hex;
 
-            var tableInstance = table.render({
-                elem: '#plugin'
-                , skin: 'nob'
-                , size: 'lg'
-                , height: document.documentElement.clientHeight - 280
-                , url: '/admin/api/plugin/getPlugins'
-                , page: false
-                , method: "post"
-                , response: {
-                    statusCode: 200
-                }
-                , cols: [[
+            let queryParams = null;
+            table.bootstrapTable({
+                url: '/admin/api/plugin/getPlugins',//请求的url地址
+                method: "post",//请求方式
+                showRefresh: false,//是否显示刷新按钮
+                cache: false,//是否使用缓存
+                showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                cardView: false,
+                pageNumber: 1,//初始化显示第几页，默认第1页
+                singleSelect: false,//复选框只能选择一条记录
+                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                dataType: "json",//接收的数据类型
+                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                queryParams: function (params) {
+                    params.page = (params.offset / params.limit) + 1;
+                    if (queryParams) {
+                        for (const key in params) {
+                            queryParams[key] = params[key];
+                        }
+                        console.log(queryParams)
+                    } else {
+                        queryParams = params;
+                    }
+                    return queryParams;
+                },
+                //回调函数
+                responseHandler: function (res) {
+                    return {
+                        "total": res.count,
+                        "rows": res.data
+                    }
+                },
+                columns: [
                     {
-                        field: 'name', title: '插件名称', templet: function (item) {
+                        field: 'name', title: '插件名称', formatter: function (val, item) {
                             return '<span class="badge badge-light-success">' + item.NAME + '</span>';
                         }
                     }
                     , {
-                        field: 'website', title: '官方网站', templet: function (item) {
+                        field: 'website', title: '官方网站', formatter: function (val, item) {
                             return '<span class="badge badge-light-primary">' + item.WEB_SITE + '</span>';
                         }
                     }
                     , {
-                        field: 'description', title: '简介', templet: function (item) {
+                        field: 'description', title: '简介', formatter: function (val, item) {
                             return '<span class="badge badge-light">' + item.DESCRIPTION + '</span>';
                         }
                     }
                     , {
-                        field: 'version', title: '版本号', templet: function (item) {
+                        field: 'version', title: '版本号', formatter: function (val, item) {
                             return '<span class="badge badge-light">' + item.VERSION + '</span>';
                         }
                     }
                     , {
-                        field: 'author', title: '作者', templet: function (item) {
+                        field: 'author', title: '作者', formatter: function (val, item) {
                             return '<span class="badge badge-light">' + item.AUTHOR + '</span>';
                         }
                     }
                     , {
-                        field: 'status', title: '状态', templet: function (item) {
+                        field: 'status', title: '状态', formatter: function (val, item) {
                             if (item.PLUGIN_CONFIG && item.PLUGIN_CONFIG.STATUS == 1) {
                                 return '<span class="badge badge-light-success">运行中</span>';
                             }
@@ -78,55 +100,50 @@
                         }
                     }
                     , {
-                        templet: function (item) {
+                        field: 'operate',
+                        title: '操作',
+                        formatter: function (val, item) {
                             let html = "";
                             if (item.PLUGIN_CONFIG && item.PLUGIN_CONFIG.STATUS == 1) {
-                                html += '<a style="cursor: pointer;" data-id="' + item.id + '" class="badge badge-light text-danger disable"><i class="fa fa-stop-circle text-danger"></i> 停用</a>';
+                                html += '<a style="cursor: pointer;"  class="badge badge-light text-danger disable"><i class="fa fa-stop-circle text-danger"></i> 停用</a>';
                             } else {
-                                html += '<a style="cursor: pointer;" data-id="' + item.id + '" class="badge badge-light text-success enable"><i class="fa fa-play-circle text-success"></i> 启用</a>';
+                                html += '<a style="cursor: pointer;"  class="badge badge-light text-success enable"><i class="fa fa-play-circle text-success"></i> 启用</a>';
                             }
-
-                            html += '<a style="cursor: pointer;" data-id="' + item.id + '" class="badge badge-light text-primary edit"><i class="fa fa-cog text-primary"></i> 配置</a>';
+                            html += '<a style="cursor: pointer;"  class="badge badge-light text-primary edit"><i class="fa fa-cog text-primary"></i> 配置</a>';
                             return html;
-                        }, width: 180
+                        },
+                        events: {
+                            'click .edit': function (event, value, row, index) {
+                                modal(row);
+                            },
+                            'click .disable': function (event, value, row, index) {
+                                let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+                                $.post("/admin/api/plugin/setConfig", {id: row.id, STATUS: 0}, res => {
+                                    layer.close(loaderIndex);
+                                    if (res.code == 200) {
+                                        table.bootstrapTable('refresh', {silent: true});
+                                    }
+                                    layer.msg(res.msg);
+                                });
+                            },
+                            'click .enable': function (event, value, row, index) {
+                                let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+                                $.post("/admin/api/plugin/setConfig", {id: row.id, STATUS: 1}, res => {
+                                    layer.close(loaderIndex);
+                                    if (res.code == 200) {
+                                        table.bootstrapTable('refresh', {silent: true});
+                                    }
+                                    layer.msg(res.msg);
+                                });
+                            }
+                        }
                     }
-                ]],
-                done: res => {
-                    cao.setIdMap(res.data);
-                    $('.edit').click(function () {
-                        let mapItem = cao.getMapItem(this);
-                        modal(mapItem);
-                    });
-
-                    $('.disable').click(function () {
-                        let id = cao.getObjectId(this);
-                        let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
-                        $.post("/admin/api/plugin/setConfig", {id: id, STATUS: 0}, res => {
-                            layer.close(loaderIndex);
-                            if (res.code == 200) {
-                                tableInstance.reload();
-                            }
-                            layer.msg(res.msg);
-                        });
-                    });
-
-                    $('.enable').click(function () {
-                        let id = cao.getObjectId(this);
-                        let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
-                        $.post("/admin/api/plugin/setConfig", {id: id, STATUS: 1}, res => {
-                            layer.close(loaderIndex);
-                            if (res.code == 200) {
-                                tableInstance.reload();
-                            }
-                            layer.msg(res.msg);
-                        });
-                    });
-                }
-            });
+                ]
+            }); 
 
             let modal = (values = {}) => {
                 cao.popup('/admin/api/plugin/setConfig', values.PLUGIN_SUBMIT, res => {
-                    tableInstance.reload();
+                    table.bootstrapTable('refresh', {silent: true});
                 }, values, "660px", false, "插件配置");
             }
         });

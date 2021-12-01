@@ -27,49 +27,70 @@
 <script>
 
     $(function () {
-        layui.use(['table', 'hex'], function () {
-            let table = layui.table;
+        layui.use(['hex'], function () {
+            let table = $("#pay-plugin");
             var cao = layui.hex;
-
-            var tableInstance = table.render({
-                elem: '#pay-plugin'
-                , skin: 'nob'
-                , size: 'lg'
-                , height: document.documentElement.clientHeight - 280
-                , url: '/admin/api/pay/getPlugins'
-                , page: false
-                , method: "post"
-                , response: {
-                    statusCode: 200
-                }
-                , cols: [[
+            let queryParams = null;
+            table.bootstrapTable({
+                url: '/admin/api/pay/getPlugins',//请求的url地址
+                method: "post",//请求方式
+                showRefresh: false,//是否显示刷新按钮
+                cache: false,//是否使用缓存
+                showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                cardView: false,
+                pageNumber: 1,//初始化显示第几页，默认第1页
+                singleSelect: false,//复选框只能选择一条记录
+                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                dataType: "json",//接收的数据类型
+                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                queryParams: function (params) {
+                    params.page = (params.offset / params.limit) + 1;
+                    if (queryParams) {
+                        for (const key in params) {
+                            queryParams[key] = params[key];
+                        }
+                        console.log(queryParams)
+                    } else {
+                        queryParams = params;
+                    }
+                    return queryParams;
+                },
+                //回调函数
+                responseHandler: function (res) {
+                    return {
+                        "total": res.count,
+                        "rows": res.data
+                    }
+                },
+                columns: [
                     {
-                        field: 'name', title: '插件名称', templet: function (item) {
+                        field: 'name', title: '插件名称', formatter: function (val, item) {
                             return '<span class="badge badge-light-success">' + item.info.name + '</span>';
                         }
                     }
                     , {
-                        field: 'website', title: '官方网站', templet: function (item) {
+                        field: 'website', title: '官方网站', formatter: function (val, item) {
                             return '<span class="badge badge-light-primary">' + item.info.website + '</span>';
                         }
                     }
                     , {
-                        field: 'description', title: '简介', templet: function (item) {
+                        field: 'description', title: '简介', formatter: function (val, item) {
                             return '<span class="badge badge-light">' + item.info.description + '</span>';
                         }
                     }
                     , {
-                        field: 'version', title: '版本号', templet: function (item) {
+                        field: 'version', title: '版本号', formatter: function (val, item) {
                             return '<span class="badge badge-light">' + item.info.version + '</span>';
                         }
                     }
                     , {
-                        field: 'author', title: '作者', templet: function (item) {
+                        field: 'author', title: '作者', formatter: function (val, item) {
                             return '<span class="badge badge-light">' + item.info.author + '</span>';
                         }
                     }
                     , {
-                        field: 'options', title: '功能', templet: function (item) {
+                        field: 'options', title: '功能', formatter: function (val, item) {
                             let list = [];
                             for (const key in item.info.options) {
                                 list.push('<span class="badge badge-success me-1">' + item.info.options[key] + '</span>');
@@ -78,60 +99,59 @@
                         }
                     }
                     , {
-                        templet: function (item) {
-                            return '<a data-id="' + item.id + '" class="badge badge-light text-success log" style="cursor: pointer;"><i class="far fa-clipboard text-success"></i> 日志</a> <a style="cursor: pointer;" data-id="' + item.id + '" class="badge badge-light text-success edit"><i class="fa fa-cog text-success"></i> 配置</a>';
-                        },width : 160
-                    }
-                ]],
-                done: res => {
-                    cao.setIdMap(res.data);
-                    $('.edit').click(function () {
-                        let mapItem = cao.getMapItem(this);
-                        modal(mapItem);
-                    });
-
-                    $('.log').click(function () {
-                        let mapItem = cao.getMapItem(this);
-                        $.post('/admin/api/pay/getPluginLog', {handle: mapItem.handle}, res => {
-                            if (res.code != 200) {
-                                layer.msg(res.msg);
-                                return;
-                            }
-                            layer.open({
-                                type: 1,
-                                shade: 0.4,
-                                shadeClose: true, //开启遮罩关闭
-                                title: '<i class="fas fa-robot" style="color: #f16a8b;"></i> 日志', //不显示标题
-                                btn: ["清空日志", "关闭"],
-                                content: '<textarea class="log-textarea" style="width: 100%;height: 100%;border: none;color: grey;padding: 5px;">' + res.data.log + '</textarea>',
-                                area: ["860px", "660px"],
-                                maxmin: true,
-                                yes: (index, layero) => {
-                                    $.post('/admin/api/pay/ClearPluginLog', {handle: mapItem.handle}, res => {
-                                        layer.msg("日志已清空");
+                        field: 'operate',
+                        title: '操作',
+                        formatter: function (val, item) {
+                            return '<a  class="badge badge-light text-success log" style="cursor: pointer;"><i class="far fa-clipboard text-success"></i> 日志</a> <a style="cursor: pointer;"  class="badge badge-light text-success edit"><i class="fa fa-cog text-success"></i> 配置</a>';
+                        },
+                        events: {
+                            'click .edit': function (event, value, row, index) {
+                                modal(row);
+                            },
+                            'click .log': function (event, value, row, index) {
+                                let mapItem = row;
+                                $.post('/admin/api/pay/getPluginLog', {handle: mapItem.handle}, res => {
+                                    if (res.code != 200) {
+                                        layer.msg(res.msg);
+                                        return;
+                                    }
+                                    layer.open({
+                                        type: 1,
+                                        shade: 0.4,
+                                        shadeClose: true, //开启遮罩关闭
+                                        title: '<i class="fas fa-robot" style="color: #f16a8b;"></i> 日志', //不显示标题
+                                        btn: ["清空日志", "关闭"],
+                                        content: '<textarea class="log-textarea" style="width: 100%;height: 100%;border: none;color: grey;padding: 5px;">' + res.data.log + '</textarea>',
+                                        area: cao.isPc() ? ["860px", "660px"]  : ["100%", "100%"],  
+                                        maxmin: true,
+                                        yes: (index, layero) => {
+                                            $.post('/admin/api/pay/ClearPluginLog', {handle: mapItem.handle}, res => {
+                                                layer.msg("日志已清空");
+                                            });
+                                        },
+                                        success: (layero, index) => {
+                                            this.timer = setInterval(() => {
+                                                $.post('/admin/api/pay/getPluginLog', {handle: mapItem.handle}, res => {
+                                                    if (res.data.log != $('.log-textarea').html()) {
+                                                        $('.log-textarea').html(res.data.log);
+                                                    }
+                                                });
+                                            }, 1500);
+                                        },
+                                        end: () => {
+                                            clearInterval(this.timer);
+                                        }
                                     });
-                                },
-                                success: (layero, index) => {
-                                    this.timer = setInterval(() => {
-                                        $.post('/admin/api/pay/getPluginLog', {handle: mapItem.handle}, res => {
-                                            if (res.data.log != $('.log-textarea').html()) {
-                                                $('.log-textarea').html(res.data.log);
-                                            }
-                                        });
-                                    }, 1500);
-                                },
-                                end: () => {
-                                    clearInterval(this.timer);
-                                }
-                            });
-                        });
-                    });
-                }
+                                });
+                            }
+                        }
+                    }
+                ] 
             });
 
             let modal = (values = {}) => {
                 cao.popup('/admin/api/pay/setPluginConfig', values.submit, res => {
-                    tableInstance.reload();
+                    table.bootstrapTable('refresh', {silent: true});
                 }, values, "660px", false, "插件配置");
             }
         });

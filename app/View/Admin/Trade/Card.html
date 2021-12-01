@@ -54,52 +54,74 @@
 <script>
 
     $(function () {
-        layui.use(['table', 'hex', 'form'], function () {
-            let table = layui.table;
+        layui.use(['hex', 'form'], function () {
+            let table = $('#trade-card');
             let cao = layui.hex;
             let form = layui.form;
             let status = ['<span class="badge badge-light-danger">未出售</span>', '<span class="badge badge-light-success">已出售</span>', '<span class="badge badge-light">锁定</span>'];
 
-            var tableInstance = table.render({
-                elem: '#trade-card'
-                , skin: 'nob'
-                , size: 'lg'
-                , height: document.documentElement.clientHeight - 375
-                , url: '/admin/api/card/data'
-                , page: true
-                , limit: 16
-                , limits: [16, 20, 30]
-                , method: "post"
-                , response: {
-                    statusCode: 200
-                }
-                , cols: [[
-                    {
-                        type: 'checkbox', fixed: 'left'
+            let queryParams = null;
+            table.bootstrapTable({
+                url: '/admin/api/card/data',//请求的url地址
+                method: "post",//请求方式
+                // striped:true,//是否显示行间隔色
+                pageSize: 15,//每页显示的数量
+                pageList: [15, 25, 50, 100],
+                showRefresh: false,//是否显示刷新按钮
+                cache: false,//是否使用缓存
+                showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                cardView: false,
+                pagination: true,//是否显示分页
+                pageNumber: 1,//初始化显示第几页，默认第1页
+                singleSelect: false,//复选框只能选择一条记录
+                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                dataType: "json",//接收的数据类型
+                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                queryParams: function (params) {
+                    params.page = (params.offset / params.limit) + 1;
+                    if (queryParams) {
+                        for (const key in params) {
+                            queryParams[key] = params[key];
+                        }
+                        console.log(queryParams)
+                    } else {
+                        queryParams = params;
                     }
-                    , {
-                        field: 'secret', title: '卡密信息', templet: function (item) {
+                    return queryParams;
+                },
+                //回调函数
+                responseHandler: function (res) {
+                    return {
+                        "total": res.count,
+                        "rows": res.data
+                    }
+                },
+                columns: [
+                    {checkbox: true},
+                    {
+                        field: 'secret', title: '卡密信息', formatter: function (val, item) {
                             return '<span class="badge badge-light">' + item.secret + '</span>';
                         }
                     }
                     , {
-                        field: 'commodity', title: '商品', templet: function (item) {
+                        field: 'commodity', title: '商品', formatter: function (val, item) {
                             if (!item.commodity) {
                                 return "-";
                             }
-                            return '<span class="badge badge-light" style="cursor: pointer;" data-id="0">' + item.commodity.name + '</span>';
+                            return '<span class="badge badge-light" style="cursor: pointer;" >' + item.commodity.name + '</span>';
 
                         }
                     }
                     , {field: 'create_time', title: '创建时间'}
                     , {field: 'note', title: '备注信息'}
                     , {
-                        field: 'status', title: '状态', templet: function (item) {
+                        field: 'status', title: '状态', formatter: function (val, item) {
                             return status[item.status];
                         }
                     }
                     , {
-                        field: 'purchase_time', title: '出售时间', templet: function (item) {
+                        field: 'purchase_time', title: '出售时间', formatter: function (val, item) {
                             if (!item.purchase_time) {
                                 return '-';
                             }
@@ -107,78 +129,71 @@
                         }
                     }
                     , {
-                        field: 'order', title: '订单号', templet: function (item) {
+                        field: 'order', title: '订单号', formatter: function (val, item) {
                             if (!item.order) {
                                 return "-";
                             }
-                            return '<span class="badge badge-light" style="cursor: pointer;" data-id="0">' + item.order.trade_no + '</span>';
+                            return '<span class="badge badge-light" style="cursor: pointer;" >' + item.order.trade_no + '</span>';
                         }
                     }
                     , {
-                        field: 'owner', title: '所属者', templet: function (item) {
+                        field: 'owner', title: '所属者', formatter: function (val, item) {
                             if (!item.owner) {
-                                return '<span class="badge badge-light-success owner" style="cursor: pointer;" data-id="0">SYSTEM</span>';
+                                return '<span class="badge badge-light-success owner" style="cursor: pointer;" >SYSTEM</span>';
                             }
-                            return '<span class="badge badge-light-dark owner" style="cursor: pointer;" data-id="' + item.owner.id + '"><img src="' + item.owner.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.owner.username + '(' + item.owner.id + ')</span>'
+                            return '<span class="badge badge-light-dark owner" style="cursor: pointer;" ><img src="' + item.owner.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.owner.username + '(' + item.owner.id + ')</span>'
+                        },
+                        events: {
+                            'click .owner': function (event, value, row, index) {
+                                let id = row.owner ? row.owner.id : 0;
+                                $("input[name='equal-owner']").val(id);
+                                table.bootstrapTable('refresh', {
+                                    silent: true,
+                                    pageNumber: 1,
+                                    query: {"equal-owner": id}
+                                });
+                            }
                         }
-                    }
-                    , {
-                        templet: function (item) {
+                    },
+                    {
+                        field: 'operate',
+                        title: '操作',
+                        formatter: function (val, item) {
                             let html = '';
-
                             if (item.status == 0) {
-                                html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 lock"><i class="fa fa-lock" style="color: #ffa361;"></i></button> ';
+                                html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 lock"><i class="fa fa-lock" style="color: #ffa361;"></i></button> ';
                             } else if (item.status == 2) {
-                                html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 unlock"><i class="fa fa-lock-open" style="color: #3f425475;"></i></button> ';
+                                html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 unlock"><i class="fa fa-lock-open" style="color: #3f425475;"></i></button> ';
                             }
-                            html += '<button type="button" data-id="' + item.id + '" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+                            html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
                             return html;
+                        },
+                        events: {
+                            'click .del': function (event, value, row, index) {
+                                layer.confirm('您是否要移除该卡密，这是无法恢复的？', {
+                                    btn: ['确认移除', '取消']
+                                }, function () {
+                                    $.post('/admin/api/card/del', {list: [row.id]}, res => {
+                                        layer.msg(res.msg);
+                                        table.bootstrapTable('refresh', {silent: true});
+                                    });
+                                });
+                            },
+                            'click .lock': function (event, value, row, index) {
+                                $.post('/admin/api/card/edit', {id: row.id, status: 2}, res => {
+                                    layer.msg(res.msg);
+                                    table.bootstrapTable('refresh', {silent: true});
+                                });
+                            },
+                            'click .unlock': function (event, value, row, index) {
+                                $.post('/admin/api/card/edit', {id: row.id, status: 0}, res => {
+                                    layer.msg(res.msg);
+                                    table.bootstrapTable('refresh', {silent: true});
+                                });
+                            }
                         }
                     }
-                ]],
-                done: res => {
-                    cao.setIdMap(res.data);
-
-                    $('.del').click(function () {
-                        let id = cao.getObjectId(this);
-                        console.log(id)
-                        layer.confirm('您是否要移除该卡密，这是无法恢复的？', {
-                            btn: ['确认移除', '取消']
-                        }, function () {
-                            $.post('/admin/api/card/del', {list: [id]}, res => {
-                                layer.msg(res.msg);
-                                tableInstance.reload();
-                            });
-                        });
-                    });
-
-                    $('.lock').click(function () {
-                        let id = cao.getObjectId(this);
-                        $.post('/admin/api/card/edit', {id: id, status: 2}, res => {
-                            layer.msg(res.msg);
-                            tableInstance.reload();
-                        });
-                    });
-
-                    $('.unlock').click(function () {
-                        let id = cao.getObjectId(this);
-                        $.post('/admin/api/card/edit', {id: id, status: 0}, res => {
-                            layer.msg(res.msg);
-                            tableInstance.reload();
-                        });
-                    });
-
-                    $('.owner').click(function () {
-                        let id = cao.getObjectId(this);
-                        $("input[name='equal-owner']").val(id);
-                        tableInstance.reload({
-                            where: {"equal-owner": id},
-                            page: {
-                                curr: 1
-                            }
-                        });
-                    });
-                }
+                ]
             });
 
             let modal = (values = {}) => {
@@ -213,7 +228,7 @@
                         text: "启用（保持数据唯一）"
                     },
                 ], res => {
-                    tableInstance.reload();
+                    table.bootstrapTable('refresh', {silent: true});
                 }, values, ["660px", "720px"]);
             }
 
@@ -222,7 +237,7 @@
             });
 
             $('.btn-app-del').click(() => {
-                var data = cao.listObjectToArray(table.checkStatus('trade-card').data);
+                let data = cao.listObjectToArray(table.bootstrapTable('getSelections'));
                 if (data.length == 0) {
                     layer.msg("请至少勾选1个卡密再进行操作！");
                     return;
@@ -233,13 +248,14 @@
                 }, function () {
                     $.post("/admin/api/card/del", {list: data}, res => {
                         layer.msg(res.msg);
-                        tableInstance.reload();
+                        table.bootstrapTable('refresh', {silent: true});
+
                     });
                 });
             });
 
             $('.btn-app-lock').click(() => {
-                var data = cao.listObjectToArray(table.checkStatus('trade-card').data);
+                let data = cao.listObjectToArray(table.bootstrapTable('getSelections'));
                 if (data.length == 0) {
                     layer.msg("请至少勾选1个卡密进行操作！");
                     return;
@@ -249,13 +265,14 @@
                 }, function () {
                     $.post("/admin/api/card/lock", {list: data}, res => {
                         layer.msg(res.msg);
-                        tableInstance.reload();
+                        table.bootstrapTable('refresh', {silent: true});
+
                     });
                 });
             });
 
             $('.btn-app-unlock').click(() => {
-                var data = cao.listObjectToArray(table.checkStatus('trade-card').data);
+                let data = cao.listObjectToArray(table.bootstrapTable('getSelections'));
                 if (data.length == 0) {
                     layer.msg("请至少勾选1个卡密进行操作！");
                     return;
@@ -265,13 +282,13 @@
                 }, function () {
                     $.post("/admin/api/card/unlock", {list: data}, res => {
                         layer.msg(res.msg);
-                        tableInstance.reload();
+                        table.bootstrapTable('refresh', {silent: true});
+
                     });
                 });
             });
 
             $('.btn-app-export').click(function () {
-
                 layer.open({
                     type: 1,
                     shade: 0.3,
@@ -297,8 +314,7 @@
                 });
             });
 
-
-            cao.query('.search-query', tableInstance, [
+            cao.query('.search-query', table, [
                 {title: "卡密信息(精确搜索,速度快)", name: "equal-secret", type: "input"},
                 {title: "卡密信息(模糊搜索,速度慢)", name: "search-secret", type: "input"},
                 {title: "备注信息", name: "equal-note", type: "input"},

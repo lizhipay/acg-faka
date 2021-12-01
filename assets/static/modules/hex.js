@@ -153,7 +153,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                     values[item.name] = item.default;
                 }
 
-                let width = item.hasOwnProperty('width') ? 'style="width:' + item.width + 'px;padding-top:10px;"' : 'style="padding-top:10px;"';
+                let width = item.hasOwnProperty('width') ? 'style="width:'+(this.isPc() ? item.width + "px" : "100%")+';padding-top:10px;"' : 'style="padding-top:10px;"';
 
                 switch (item.type) {
                     case "input":
@@ -292,12 +292,10 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                     }
                                 });
                                 console.log(serialize);*/
-
-                table.reload({
-                    where: serialize,
-                    page: {
-                        curr: 1
-                    }
+                table.bootstrapTable('refresh', {
+                    silent: true,
+                    pageNumber: 1,
+                    query: serialize
                 });
             });
 
@@ -315,6 +313,9 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
             });
         },
         isPc() {
+            if (document.documentElement.clientWidth < 1366 || document.documentElement.clientHeight < 1024) {
+                return false;
+            }
             var userAgentInfo = navigator.userAgent;
             var Agents = ["Android", "iPhone",
                 "SymbianOS", "Windows Phone",
@@ -330,7 +331,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
         },
         popup(url, fields, done, values = {}, area = '660px', edit = false, title = "添加", success = null) {
 
-            area = this.isPc() ? area : "100%";
+            area = this.isPc() ? area : ["100%", "100%"];
 
             let d = ' <div class="layui-card-body"><form class="layui-form layui-form-pane hex-modal">';
             let objectContainer = {}

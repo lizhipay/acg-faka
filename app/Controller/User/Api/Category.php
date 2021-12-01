@@ -32,6 +32,8 @@ class Category extends User
         $queryTemplateEntity = new QueryTemplateEntity();
         $queryTemplateEntity->setModel(\App\Model\Category::class);
         $queryTemplateEntity->setPaginate(true);
+        $queryTemplateEntity->setLimit((int)$_POST['limit']);
+        $queryTemplateEntity->setPage((int)$_POST['page']);
         $queryTemplateEntity->setWhere($map);
         $queryTemplateEntity->setOrder('sort', 'asc');
         $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();

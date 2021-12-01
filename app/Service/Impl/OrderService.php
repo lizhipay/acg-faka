@@ -191,7 +191,7 @@ class OrderService implements Order
             $order->create_ip = Client::getAddress();
             $order->create_device = $device;
             $order->status = 0;
-            $order->contact = $contact;
+            $order->contact = trim($contact);
             $order->delivery_status = 0;
             $order->card_num = $num;
             $order->user_id = (int)$commodity->owner;
