@@ -52,6 +52,8 @@ class Index extends User
             //商家
             if ($bus->master_display == 0) {
                 $category = $category->where("owner", $bus->user_id);
+            } else {
+                $category = $category->whereRaw("`owner`=0 or `owner`={$bus->user_id}");
             }
         } else {
             //主站
