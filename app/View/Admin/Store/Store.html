@@ -284,7 +284,6 @@
                             let pay = $(this).attr("data-pay");
                             let pluginId = $(this).attr("plugin-id");
                             pluginId = pluginId == undefined ? 0 : pluginId;
-
                             $.post("/admin/api/app/purchase", {
                                 type: type,
                                 plugin_id: pluginId,
@@ -302,12 +301,16 @@
             }
 
 
+            let init = true;
             //验证是否初始化
+            $.ajaxSettings.async = false;
             $.post('/admin/api/app/init', res => {
                 if (res.code != 200) {
                     tab();
+                    init = false;
                 }
             });
+            $.ajaxSettings.async = true;
 
             let type = ["<span class='badge badge-light-primary'>通用扩展</span>", "<span class='badge badge-light-success'>支付扩展</span>", "<span class='badge badge-light-info'>网站模板</span>"];
 
@@ -344,7 +347,9 @@
                 responseHandler: function (res) {
                     layer.close(pluginLoadIndex);
                     if (res.code != 200) {
-                        tab();
+                        if (init){
+                            tab();
+                        }
                     } else if (res.code == 200) {
                         purchasePrice = res.purchase;
                         let level = "";
