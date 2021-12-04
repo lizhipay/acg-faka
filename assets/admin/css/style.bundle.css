@@ -54629,3 +54629,7 @@ body {
 .w-e-toolbar {
     z-index: 1 !important;
 }
+
+.purchase-btn{
+    cursor: pointer;
+}

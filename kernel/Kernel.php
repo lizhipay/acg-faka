@@ -16,8 +16,8 @@ try {
     }
 
     $s = explode("/", trim((string)$_GET['s'], '/'));
-
     \Kernel\Util\Context::set(\Kernel\Consts\Base::ROUTE, "/" . implode("/", $s));
+    \Kernel\Util\Context::set(\Kernel\Consts\Base::LOCK, (string)file_get_contents(BASE_PATH . "/kernel/Install/Lock"));
     $count = count($s);
     $controller = "App\\Controller";
     $ends = end($s);
@@ -56,6 +56,10 @@ try {
     $capsule->setAsGlobal();
     // 启动Eloquent
     $capsule->bootEloquent();
+
+    if (file_exists(BASE_PATH . "/kernel/Theme.php")) {
+        require("Theme.php");
+    }
 
     //插件
     \Kernel\Util\Plugin::scan();

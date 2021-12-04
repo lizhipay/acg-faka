@@ -17,4 +17,14 @@ class Store extends Manage
     {
         return $this->render("店铺共享", "Shared/Store.html");
     }
+
+
+    /**
+     * @return string
+     * @throws \Kernel\Exception\ViewException
+     */
+    public function home(): string
+    {
+        return $this->render("应用商店", "Store/Store.html");
+    }
 }

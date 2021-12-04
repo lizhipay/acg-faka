@@ -91,6 +91,8 @@ if (!function_exists('dda')) {
     }
 }
 
+
+
 if (!function_exists("config")) {
     /**
      * @param string $name
@@ -98,7 +100,11 @@ if (!function_exists("config")) {
      */
     function config(string $name): array
     {
-        return require(BASE_PATH . '/config/' . $name . ".php");
+        $file = BASE_PATH . '/config/' . $name . ".php";
+        if (!file_exists($file)) {
+            return [];
+        }
+        return require($file);
     }
 }
 if (!function_exists("setConfig")) {
@@ -109,7 +115,11 @@ if (!function_exists("setConfig")) {
      */
     function setConfig(array $data, string $file): void
     {
-        $config = require($file);
+        if (file_exists($file)) {
+            $config = require($file);
+        } else {
+            $config = [];
+        }
         foreach ($data as $x => $b) {
             $config[$x] = $b;
         }

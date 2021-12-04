@@ -34,4 +34,62 @@ interface App
      *
      */
     public function install(): void;
+
+
+    /**
+     * @param string $type
+     * @return array
+     */
+    public function captcha(string $type): array;
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @param string $captcha
+     * @param array $cookie
+     * @return array
+     */
+    public function register(string $username, string $password, string $captcha, array $cookie): array;
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     */
+    public function login(string $username, string $password): array;
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function plugins(array $data): array;
+
+    /**
+     * @param int $type
+     * @param int $pluginId
+     * @param int $payType
+     * @return array
+     */
+    public function purchase(int $type, int $pluginId, int $payType): array;
+
+    /**
+     * @param string $key
+     * @param int $type
+     * @param int $pluginId
+     * @return void
+     */
+    public function installPlugin(string $key, int $type, int $pluginId): void;
+
+    /**
+     * @param string $key
+     * @param int $type
+     * @param int $pluginId
+     */
+    public function updatePlugin(string $key, int $type, int $pluginId): void;
+
+    /**
+     * @param string $key
+     * @param int $type
+     */
+    public function uninstallPlugin(string $key, int $type): void;
 }

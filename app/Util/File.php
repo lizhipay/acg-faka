@@ -30,4 +30,25 @@ class File
         }
         closedir($dir);
     }
+
+    /**
+     * 删除目录
+     * @param string $path
+     */
+    public static function delDirectory(string $path): void
+    {
+        if ($handle = opendir($path)) {
+            while (false !== ($item = readdir($handle))) {
+                if ($item != "." && $item != "..") {
+                    if (is_dir("{$path}/{$item}")) {
+                        self::delDirectory("{$path}/{$item}");
+                    } else {
+                        unlink("{$path}/{$item}");
+                    }
+                }
+            }
+            closedir($handle);
+            rmdir($path);
+        }
+    }
 }

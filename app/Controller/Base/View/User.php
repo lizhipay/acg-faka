@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller\Base\View;
 
 
+use App\Consts\Render;
 use App\Model\Business;
 use App\Model\Config;
 use App\Util\Client;
@@ -22,7 +23,7 @@ abstract class User extends \App\Controller\Base\User
      * @param string $template
      * @param array $data
      * @return string
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     public function render(string $title, string $template, array $data = []): string
     {
@@ -45,7 +46,7 @@ abstract class User extends \App\Controller\Base\User
      * @param string $template
      * @param array $data
      * @return string
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     public function theme(string $title, string $template, string $default, array $data = []): string
     {
@@ -69,9 +70,7 @@ abstract class User extends \App\Controller\Base\User
 
             $defaultThemePath = "User/Theme/Cartoon/";
             $themePath = "User/Theme/{$theme}/";
-
             $config = Theme::getConfig($theme);
-
             $path = $defaultThemePath . $default;
 
             //判断路径是否存在
@@ -85,7 +84,12 @@ abstract class User extends \App\Controller\Base\User
                 $data['group'] = $this->getUserGroup()->toArray();
             }
 
-            return View::render($path, $data);
+            if ($config['info']['RENDER'] == Render::ENGINE_SMARTY) {
+                return View::render($path, $data);
+            } elseif ($config['info']['RENDER'] == Render::ENGINE_PHP) {
+                require(BASE_PATH . '/app/View/' . $path);
+                return "";
+            }
         } catch (\SmartyException $e) {
             throw new ViewException($e->getMessage());
         }

@@ -6,10 +6,16 @@ namespace App\Service\Impl;
 
 use App\Service\App;
 use App\Util\File;
+use App\Util\Str;
 use App\Util\Zip;
 use GuzzleHttp\Client;
+use GuzzleHttp\Cookie\CookieJar;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\RequestOptions;
 use Kernel\Annotation\Inject;
+use Kernel\Consts\Base;
 use Kernel\Exception\JSONException;
+use Kernel\Util\Context;
 use Kernel\Util\SQL;
 
 /**
@@ -25,22 +31,36 @@ class AppService implements App
     /**
      * @param string $uri
      * @param array $data
+     * @param array|null $cookie
      * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
-    private function post(string $uri, array $data = []): mixed
+    private function post(string $uri, array $data = [], ?array &$cookies = null): mixed
     {
         try {
-            $response = $this->client->post(self::APP_URL . $uri, [
-                "form_params" => $data
-            ]);
+            $form = [
+                "form_params" => $data,
+                "verify" => false
+            ];
+            if (is_array($cookies)) {
+                $form["cookies"] = CookieJar::fromArray([
+                    "GOLANG_ID" => $cookies['GOLANG_ID']
+                ], parse_url(self::APP_URL)['host']);
+            }
+            $response = $this->client->post(self::APP_URL . $uri, $form);
+            if ($cookies !== null) {
+                $cookie = implode(";", (array)$response->getHeader("Set-Cookie"));
+                $explode = explode(";", $cookie);
+                $cookies = [];
+                foreach ($explode as $item) {
+                    $it = explode("=", $item);
+                    $cookies[trim((string)$it[0])] = trim((string)$it[1]);
+                }
+            }
             $res = (array)json_decode((string)$response->getBody()->getContents(), true);
-
-        } catch (\GuzzleHttp\Exception\GuzzleException $e) {
+        } catch (GuzzleException $e) {
             throw new JSONException("应用商店请求错误");
         }
-
         if ($res['code'] != 200) {
             throw new JSONException($res['msg']);
         }
@@ -49,17 +69,183 @@ class AppService implements App
     }
 
     /**
+     * @param string $uri
+     * @param array $data
+     * @return mixed
+     * @throws GuzzleException
+     * @throws JSONException
+     */
+    private function storeRequest(string $uri, array $data = []): mixed
+    {
+        $store = config("store");
+        $data['sign'] = Str::generateSignature($data, (string)$store["app_key"]);
+        $response = $this->client->post(self::APP_URL . $uri, [
+            "form_params" => $data,
+            "headers" => ["appId" => (int)$store['app_id'], "appKey" => Context::get(Base::LOCK)],
+            "verify" => false
+        ]);
+        $res = (array)json_decode((string)$response->getBody()->getContents(), true);
+
+        if ($res['code'] != 200) {
+            throw new JSONException($res['msg']);
+        }
+        return $res['data'];
+    }
+
+    /**
+     * @param string $uri
+     * @param array $data
+     * @return array|null
+     * @throws GuzzleException
+     */
+    private function storeDownload(string $uri, array $data = []): ?string
+    {
+        $store = config("store");
+        $data['sign'] = Str::generateSignature($data, (string)$store["app_key"]);
+
+        $path = BASE_PATH . "/kernel/Install/OS/";
+        if (!is_dir($path)) {
+            mkdir($path, 0777, true);
+        }
+        $fileName = md5((string)time()) . ".zip";
+        $fileHandle = fopen($path . $fileName, "w+");
+        $response = $this->client->post(self::APP_URL . $uri, [
+            "form_params" => $data,
+            "verify" => false,
+            "headers" => ["appId" => (int)$store['app_id'], "appKey" => Context::get(Base::LOCK)],
+            RequestOptions::SINK => $fileHandle
+        ]);
+
+        if ($response->getStatusCode() === 200) {
+            return $fileName;
+        }
+
+        return null;
+    }
+
+    /**
      * @return array
-     * @throws \Kernel\Exception\JSONException|\GuzzleHttp\Exception\GuzzleException
+     * @throws JSONException|GuzzleException
      */
     public function getVersions(): array
     {
+        if (Context::get(Base::LOCK) == "") {
+            file_put_contents(BASE_PATH . "/kernel/Install/Lock", Str::generateRandStr(32));
+        }
         return (array)$this->post("/open/project/version", ["key" => "faka"]);
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @param string $key
+     * @param int $type 插件类型
+     * @param int $pluginId
+     * @throws GuzzleException
+     * @throws JSONException
+     */
+    public function installPlugin(string $key, int $type, int $pluginId): void
+    {
+        //默认位置，通用插件
+        $pluginPath = BASE_PATH . "/app/Plugin/{$key}/";
+        if ($type == 1) {
+            //支付插件
+            $pluginPath = BASE_PATH . "/app/Pay/{$key}/";
+        } elseif ($type == 2) {
+            //网站模板
+            $pluginPath = BASE_PATH . "/app/View/User/Theme/{$key}/";
+        }
+        if (!is_dir($pluginPath)) {
+            mkdir($pluginPath, 0777, true);
+        } else {
+            throw new JSONException("该插件已被安装，请勿重复安装");
+        }
+        $storeDownload = $this->storeDownload("/store/install", [
+            "plugin_id" => $pluginId
+        ]);
+        if (!$storeDownload) {
+            throw new JSONException("安装失败，请联系技术人员");
+        }
+        //下载完成，开始安装
+        $src = BASE_PATH . "/kernel/Install/OS/{$storeDownload}";
+        if (!Zip::unzip($src, $pluginPath)) {
+            throw new JSONException("安装失败，请检查是否有写入权限");
+        }
+        //安装完成，删除src
+        unlink($src);
+        //判断目标目录是否有install.sqll
+        $installSql = $pluginPath . "install.sql";
+        if (file_exists($installSql)) {
+            $database = config("database");
+            SQL::import($installSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
+        }
+    }
+
+    /**
+     * @param string $key
+     * @param int $type
+     * @param int $pluginId
+     * @throws GuzzleException
+     * @throws JSONException
+     */
+    public function updatePlugin(string $key, int $type, int $pluginId): void
+    {
+        //默认位置，通用插件
+        $pluginPath = BASE_PATH . "/app/Plugin/{$key}/";
+        if ($type == 1) {
+            //支付插件
+            $pluginPath = BASE_PATH . "/app/Pay/{$key}/";
+        } elseif ($type == 2) {
+            //网站模板
+            $pluginPath = BASE_PATH . "/app/View/User/Theme/{$key}/";
+        }
+        if (!is_dir($pluginPath)) {
+            throw new JSONException("该插件还未安装，请先安装插件后再进行更新");
+        }
+        $storeDownload = $this->storeDownload("/store/update", [
+            "plugin_id" => $pluginId
+        ]);
+        if (!$storeDownload) {
+            throw new JSONException("更新失败，请联系技术人员");
+        }
+        //下载完成，开始安装
+        $src = BASE_PATH . "/kernel/Install/OS/{$storeDownload}";
+        if (!Zip::unzip($src, $pluginPath)) {
+            throw new JSONException("更新失败，请检查是否有写入权限");
+        }
+        //更新完成，删除src
+        unlink($src);
+        //判断目标目录是否有update.sql
+        $updateSql = $pluginPath . "update.sql";
+        if (file_exists($updateSql)) {
+            $database = config("database");
+            SQL::import($updateSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
+        }
+    }
+
+    /**
+     * 卸载
+     * @param string $key
+     * @param int $type
+     */
+    public function uninstallPlugin(string $key, int $type): void
+    {
+        //默认位置，通用插件
+        $pluginPath = BASE_PATH . "/app/Plugin/{$key}/";
+        if ($type == 1) {
+            //支付插件
+            $pluginPath = BASE_PATH . "/app/Pay/{$key}/";
+        } elseif ($type == 2) {
+            //网站模板
+            $pluginPath = BASE_PATH . "/app/View/User/Theme/{$key}/";
+        }
+        if (is_dir($pluginPath)) {
+            //开始卸载
+            File::delDirectory($pluginPath);
+        }
+    }
+
+    /**
+     * @throws GuzzleException
+     * @throws JSONException
      */
     public function update(): void
     {
@@ -127,8 +313,7 @@ class AppService implements App
 
     /**
      * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function ad(): array
     {
@@ -136,11 +321,77 @@ class AppService implements App
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function install(): void
     {
         $this->post("/open/project/install", ["key" => "faka"]);
     }
+
+    /**
+     * @param string $type
+     * @return array
+     * @throws JSONException
+     */
+    public function captcha(string $type): array
+    {
+        $cookie = [];
+        $result = (array)$this->post("/auth/captcha", [
+            "type" => $type
+        ], $cookie);
+        $result["cookie"] = $cookie;
+        return $result;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @param string $captcha
+     * @param string $cookie
+     * @return array
+     * @throws JSONException
+     */
+    public function register(string $username, string $password, string $captcha, array $cookie): array
+    {
+        return (array)$this->post("/auth/register", [
+            "captcha" => $captcha,
+            "username" => $username,
+            "password" => $password
+        ], $cookie);
+    }
+
+    /**
+     * @throws JSONException
+     */
+    public function login(string $username, string $password): array
+    {
+        return (array)$this->post("/auth/login", [
+            "username" => $username,
+            "password" => $password
+        ]);
+    }
+
+    /**
+     * @throws GuzzleException
+     * @throws JSONException
+     */
+    public function plugins(array $data): array
+    {
+        return $this->storeRequest("/store/plugins", $data);
+    }
+
+    /**
+     * @throws GuzzleException
+     * @throws JSONException
+     */
+    public function purchase(int $type, int $pluginId, int $payType): array
+    {
+        return $this->storeRequest("/store/purchase", [
+            "type" => $type,
+            "payType" => $payType,
+            "plugin_id" => $pluginId,
+            "return" => \App\Util\Client::getUrl() . "/admin/store/home"
+        ]);
+    }
+
 }

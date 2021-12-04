@@ -784,8 +784,9 @@ html #layuicss-layer {
     height: 43px;
     border-left: 1px solid #eee;
     border-right: 1px solid #eee;
-    background-color: #fff;
-    z-index: 10
+    background-color: #ffebeb;
+    z-index: 10;
+    border-radius: 10px;
 }
 
 .layui-layer-tab .layui-layer-title span:first-child {

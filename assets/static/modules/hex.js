@@ -313,7 +313,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
             });
         },
         isPc() {
-            if (document.documentElement.clientWidth < 1366 || document.documentElement.clientHeight < 1024) {
+            if (document.documentElement.clientWidth < 768) {
                 return false;
             }
             var userAgentInfo = navigator.userAgent;

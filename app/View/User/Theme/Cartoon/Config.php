@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\View\User\Theme\Cartoon;
 
+use App\Consts\Render;
+
 /**
  * Interface Config
  * @package App\View\User\Theme\Cartoon
@@ -17,7 +19,8 @@ interface Config
         "AUTHOR" => "荔枝",
         "VERSION" => "1.0.0",
         "WEB_SITE" => "#",
-        "DESCRIPTION" => "默认模板"
+        "DESCRIPTION" => "默认模板",
+        "RENDER" => Render::ENGINE_SMARTY
     ];
 
     /**

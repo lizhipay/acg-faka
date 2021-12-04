@@ -28,7 +28,8 @@
     "mrgoon/aliyun-sms": "^2.0",
     "ext-gd": "*",
     "khanamiryan/qrcode-detector-decoder": "1.0.5.2",
-    "ext-zip": "*"
+    "ext-zip": "*",
+    "ext-curl": "*"
   },
   "autoload": {
     "psr-4": {

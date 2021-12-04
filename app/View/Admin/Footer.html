@@ -58,10 +58,6 @@
         layui.use(['hex'], function () {
             let cao = layui.hex;
 
-            $('.app-store').click(() => {
-                layer.msg("您当前程序为测试版，应用商店仅在正式版可用。")
-            });
-
             function latestOpen(res) {
                 let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
                 $.get("/admin/api/app/versions", versions => {

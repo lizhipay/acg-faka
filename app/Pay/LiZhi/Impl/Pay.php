@@ -38,7 +38,7 @@ class Pay extends Base implements \App\Pay\Pay
             throw new JSONException("请配置荔枝付商户密钥");
         }
 
-        $client = new Client();
+        $client = new Client(["verify" => false]);
         $postData = [
             'merchant_id' => $this->config['merchant_id'],
             'amount' => $this->amount,

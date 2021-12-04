@@ -47,30 +47,32 @@
 
         Pay.getQuery(keywords, res => {
             res.forEach(order => {
-                let status = '<span style="color: red;">未支付</span>';
-                if (order.status === 1) {
-                    status = '<span style="color: green;">已支付</span>';
+                if (order.commodity && order.pay) {
+                    let status = '<span style="color: red;">未支付</span>';
+                    if (order.status === 1) {
+                        status = '<span style="color: green;">已支付</span>';
+                    }
+                    let html = '<div class="hr-top">\n' +
+                        '                        <div style="font-size: 14px;">订单号：<b class="trade_no">' + order.trade_no + '</b></div>\n' +
+                        '                        <div style="font-size: 14px;">下单金额：<b style="color: red;" class="amount">' + order.amount + '</b></div>\n' +
+                        '                        <div style="font-size: 14px;">购买数量：<b style="color: blue;" class="buyNum">' + order.card_num + '</b></div>\n' +
+                        '                        <div style="font-size: 14px;">下单时间：<b class="create_time">' + order.create_time + '</b></div>\n' +
+                        '                        <div style="font-size: 14px;">商品名称：<b class="commodity_name">' + order.commodity.name + '</b></div>\n' +
+                        '                        <div style="font-size: 14px;">支付方式：<b class="icon"><img src="' + order.pay.icon + '" height="16px"> ' + order.pay.name + '</b></div>\n' +
+                        '                        <div style="font-size: 14px;">订单状态：<b class="status">' + status + '</b></div>\n' +
+                        '                        <div style="font-size: 14px;' + (order.status == 1 ? '' : 'display: none;') + '" class="payDateView">支付时间：<b class="pay_date"\n' +
+                        '                                                                                                style="color: green;">' + order.pay_time + '</b>\n' +
+                        '                        </div>\n' +
+                        '                        <div style="font-size: 14px;">售后支持：<b style="color: #d78aeb;font-weight: bold;"><img src="' + order.business_avatar + '" style="height: 18px;border-radius: 100%;margin-top: -3px;"> ' + order.business_username + '</b> [ <a target="_blank" href="https://wpa.qq.com/msgrd?v=1&uin=' + order.service_qq + '" style="color: #2aa2e3;padding:0 4px 0 4px;font-size: 12px;margin:0 4px 0 0;border-radius: 5px;" class="button-click"><i class="fa fa-qq"></i> QQ客服</a><a target="_blank" href="' + order.service_url + '" class="button-click" style="color: #ff8484;padding:0 4px 0 4px;margin:0;font-size: 12px;border-radius: 5px;"><i class="fa fa-user-plus"></i> 网页客服</a> ]</div>\n' +
+                        '                        <div style="font-size: 14px;' + (order.leave_message ? "" : " display: none;") + '">使用说明：<b>' + order.leave_message + '</b></div>\n' +
+                        '                        <div style="font-size: 14px;">卡密信息：<input style="border: none;box-shadow: #f0d1d4 1px 1px 1px;height: 18px;width:130px;' + (order.commodity.password_status == 1 ? '' : 'display:none;') + '"  type="password" placeholder="请输入查询密码.." class="passId-' + order.id + '"> <b style="cursor:pointer;color: blue;" class="getCard" data-id="' + order.id + '">查看</b></div>\n' +
+                        '                        <div style="margin-top: 10px; display: none;" class="cardInfoView-' + order.id + '">\n' +
+                        '                            <textarea class="form-control cardInfo-' + order.id + '" style="height: 420px;"></textarea>\n' +
+                        '                        </div>\n' +
+                        '                    </div>';
+                    orderSuccess.append(html);
                 }
-                let html = '<div class="hr-top">\n' +
-                    '                        <div style="font-size: 14px;">订单号：<b class="trade_no">' + order.trade_no + '</b></div>\n' +
-                    '                        <div style="font-size: 14px;">下单金额：<b style="color: red;" class="amount">' + order.amount + '</b></div>\n' +
-                    '                        <div style="font-size: 14px;">购买数量：<b style="color: blue;" class="buyNum">' + order.card_num + '</b></div>\n' +
-                    '                        <div style="font-size: 14px;">下单时间：<b class="create_time">' + order.create_time + '</b></div>\n' +
-                    '                        <div style="font-size: 14px;">商品名称：<b class="commodity_name">' + (order.commodity ? order.commodity.name : "-") + '</b></div>\n' +
-                    '                        <div style="font-size: 14px;">支付方式：<b class="icon"><img src="' + (order.pay ? order.pay.icon : '') + '" height="16px"> ' + (order.pay ? order.pay.name : "") + '</b></div>\n' +
-                    '                        <div style="font-size: 14px;">订单状态：<b class="status">' + status + '</b></div>\n' +
-                    '                        <div style="font-size: 14px;' + (order.status == 1 ? '' : 'display: none;') + '" class="payDateView">支付时间：<b class="pay_date"\n' +
-                    '                                                                                                style="color: green;">' + order.pay_time + '</b>\n' +
-                    '                        </div>\n' +
-                    '                        <div style="font-size: 14px;">售后支持：<b style="color: #d78aeb;font-weight: bold;"><img src="' + order.business_avatar + '" style="height: 18px;border-radius: 100%;margin-top: -3px;"> ' + order.business_username + '</b> [ <a target="_blank" href="https://wpa.qq.com/msgrd?v=1&uin=' + order.service_qq + '" style="color: #2aa2e3;padding:0 4px 0 4px;font-size: 12px;margin:0 4px 0 0;border-radius: 5px;" class="button-click"><i class="fa fa-qq"></i> QQ客服</a><a target="_blank" href="' + order.service_url + '" class="button-click" style="color: #ff8484;padding:0 4px 0 4px;margin:0;font-size: 12px;border-radius: 5px;"><i class="fa fa-user-plus"></i> 网页客服</a> ]</div>\n' +
-                    '                        <div style="font-size: 14px;' + (order.leave_message ? "" : " display: none;") + '">使用说明：<b>' + order.leave_message + '</b></div>\n' +
-                    '                        <div style="font-size: 14px;">卡密信息：<input style="border: none;box-shadow: #f0d1d4 1px 1px 1px;height: 18px;width:130px;' + (order.commodity.password_status == 1 ? '' : 'display:none;') + '"  type="password" placeholder="请输入查询密码.." class="passId-' + order.id + '"> <b style="cursor:pointer;color: blue;" class="getCard" data-id="' + order.id + '">查看</b></div>\n' +
-                    '                        <div style="margin-top: 10px; display: none;" class="cardInfoView-' + order.id + '">\n' +
-                    '                            <textarea class="form-control cardInfo-' + order.id + '" style="height: 420px;"></textarea>\n' +
-                    '                        </div>\n' +
-                    '                    </div>';
 
-                orderSuccess.append(html);
             });
             orderSuccess.show();
             $('.getCard').click(function () {
