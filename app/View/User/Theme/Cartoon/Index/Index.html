@@ -129,8 +129,8 @@
         '                                <input class="form-control round captcha" name="captcha" type="text" style="width: 15%;"\n' +
         '                                       value="">\n' +
         '                                <span style="margin-left: 10px;"><img\n' +
-        '                                        onclick="this.src=\'/user/captcha/image?action=trade\'" class="captchaImage"\n' +
-        '                                        style="margin-top: -3px;" src="/user/captcha/image?action=trade"\n' +
+        '                                    class="captchaImage"\n' +
+        '                                        style="margin-top: -3px;cursor: pointer;" src="/user/captcha/image?action=trade"\n' +
         '                                        alt="验证码"></span>\n' +
         '                            </fieldset>\n' +
         '                            #{/if}\n' +
@@ -247,7 +247,6 @@
                 $('.service-avatar').attr("src", "/favicon.ico");
                 $('.service-nickname').css({"color": "#e093ff"}).html("自营商品");
             }
-
 
             $('.commodity').html(commodityHtml);
             $('.shopInfoHtml').show(150);
@@ -423,6 +422,10 @@
                     layer.msg("分享链接已经复制成功了，赶快发给好友吧！")
                 });
             });
+
+            $('.captchaImage').click(function () {
+                captchaImage();
+            });
         });
     }
 
@@ -446,7 +449,7 @@
 
     function captchaImage() {
         #{if $config.trade_verification==1}
-        $('.captchaImage').attr("src", "/user/captcha/image?action=trade");
+        $('.captchaImage').attr("src", "/user/captcha/image?action=trade&rand=" + Math.ceil(Math.random() * 100000));
         #{/if}
     }
 
