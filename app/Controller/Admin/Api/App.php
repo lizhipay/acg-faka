@@ -123,22 +123,26 @@ class App extends Manage
             "group" => (int)$_POST['group'],
         ]);
         //判断自己是否安装
+        $fileInit = false;
         foreach ($plugins['rows'] as $index => $plugin) {
             if ($plugin['type'] == 0) {
                 $installPath = BASE_PATH . "/app/Plugin/{$plugin['plugin_key']}";
-                if (is_dir($installPath)) {
+                $fileInit = file_exists($installPath . "/Config/Info.php");
+                if (is_dir($installPath) && $fileInit) {
                     $config = require($installPath . "/Config/Info.php");
                     $plugins['rows'][$index]['local_version'] = $config[\App\Consts\Plugin::VERSION];
                 }
             } else if ($plugin['type'] == 1) {
                 $installPath = BASE_PATH . "/app/Pay/{$plugin['plugin_key']}";
-                if (is_dir($installPath)) {
+                $fileInit = file_exists($installPath . "/Config/Info.php");
+                if (is_dir($installPath) && $fileInit) {
                     $config = require($installPath . "/Config/Info.php");
                     $plugins['rows'][$index]['local_version'] = $config["version"];
                 }
             } elseif ($plugin['type'] == 2) {
                 $installPath = BASE_PATH . "/app/View/User/Theme/{$plugin['plugin_key']}";
-                if (is_dir($installPath)) {
+                $fileInit = file_exists($installPath . "/Config.php");
+                if (is_dir($installPath) && $fileInit) {
                     $config = require($installPath . "/Config.php");
                     $namespace = "App\\View\\User\\Theme\\{$plugin['plugin_key']}\\Config";
                     $plugins['rows'][$index]['local_version'] = $namespace::INFO["VERSION"];
@@ -146,7 +150,7 @@ class App extends Manage
             } else {
                 continue;
             }
-            if (is_dir($installPath)) {
+            if (is_dir($installPath) && $fileInit) {
                 $plugins['rows'][$index]['install'] = 1;
             } else {
                 $plugins['rows'][$index]['install'] = 0;

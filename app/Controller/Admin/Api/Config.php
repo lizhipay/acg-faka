@@ -59,8 +59,8 @@ class Config extends Manage
      */
     public function other(): array
     {
-        $keys = ["cname", "recharge_welfare_config", "recharge_welfare", "promote_rebate_v1", "promote_rebate_v2", "promote_rebate_v3", "substation_display", "domain", "service_url", "service_qq", "cash_type_alipay", "cash_type_wechat", "cash_cost", "cash_min"]; //全部字段
-        $inits = ["recharge_welfare", "substation_display", "cash_type_alipay", "cash_type_wechat", "cash_cost", "cash_min"]; //需要初始化的字段
+        $keys = ["cname", "default_category", "recharge_welfare_config", "recharge_welfare", "promote_rebate_v1", "promote_rebate_v2", "promote_rebate_v3", "substation_display", "domain", "service_url", "service_qq", "cash_type_alipay", "cash_type_wechat", "cash_cost", "cash_min"]; //全部字段
+        $inits = ["recharge_welfare", "substation_display", "cash_type_alipay", "cash_type_wechat", "cash_cost", "cash_min", "default_category"]; //需要初始化的字段
 
         if (!empty($_POST['recharge_welfare_config'])) {
             $explode = explode(PHP_EOL, trim($_POST['recharge_welfare_config'], PHP_EOL));

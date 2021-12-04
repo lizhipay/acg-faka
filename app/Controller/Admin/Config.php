@@ -7,6 +7,7 @@ use App\Controller\Base\View\Manage;
 use App\Interceptor\ManageSession;
 use App\Util\Theme;
 use Kernel\Annotation\Interceptor;
+use Kernel\Exception\ViewException;
 
 #[Interceptor(ManageSession::class)]
 class Config extends Manage
@@ -28,11 +29,10 @@ class Config extends Manage
     }
 
     /**
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     public function index(): string
     {
-
         return $this->render("网站设置", "Config/Setting.html", ["toolbar" => $this->TOOLBAR, "themes" => Theme::getThemes()]);
     }
 
@@ -50,6 +50,7 @@ class Config extends Manage
 
     public function other(): string
     {
-        return $this->render("其他设置", "Config/Other.html", ["toolbar" => $this->TOOLBAR]);
+        $category = \App\Model\Category::query()->where("status", 1)->where("owner", 0)->get();
+        return $this->render("其他设置", "Config/Other.html", ["toolbar" => $this->TOOLBAR, "category" => $category->toArray()]);
     }
 }

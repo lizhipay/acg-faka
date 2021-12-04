@@ -241,6 +241,26 @@
                             </div>
                             <!--end::Input group-->
 
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">默认展开分类</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <!--begin::Input-->
+                                    <select name="default_category" class="form-select form-select-solid form-select-lg" data-control="select2" data-hide-search="true">
+                                        <option value="0" #{if $config.default_category == 0} selected #{/if}>不展开</option>
+                                        #{foreach $category as $cate}
+                                        <option value="#{$cate.id}" #{if $config.default_category == $cate.id} selected #{/if}>#{$cate.name}</option>
+                                        #{/foreach}
+                                    </select>
+                                    <!--end::Input-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
                         </div>
                         <!--end::Card body-->
                         <!--begin::Actions-->

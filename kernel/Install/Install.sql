@@ -199,6 +199,7 @@ INSERT INTO `__PREFIX__config` VALUES (29, 'cash_cost', '5');
 INSERT INTO `__PREFIX__config` VALUES (30, 'cash_min', '100');
 INSERT INTO `__PREFIX__config` VALUES (31, 'cname', '');
 INSERT INTO `__PREFIX__config` VALUES (32, 'background_url', '/assets/admin/images/login/bg.jpg');
+INSERT INTO `__PREFIX__config` VALUES (33, 'default_category', '0');
 
 DROP TABLE IF EXISTS `__PREFIX__coupon`;
 CREATE TABLE `__PREFIX__coupon`  (

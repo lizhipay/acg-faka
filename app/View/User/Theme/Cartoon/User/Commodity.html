@@ -89,6 +89,22 @@
                     }
                     , {field: 'name', title: '商品名称'}
                     , {
+                        field: 'card_count', title: '库存', formatter: function (val, item) {
+                            if (item.delivery_way == 0 && !item.shared_id) {
+                                return item.card_count;
+                            }
+                            return '-';
+                        }
+                    }
+                    , {
+                        field: 'card_success_count', title: '已售', formatter: function (val, item) {
+                            if (item.delivery_way == 0 && !item.shared_id) {
+                                return item.card_success_count;
+                            }
+                            return '-';
+                        }
+                    }
+                    , {
                         field: 'price', title: '零售价', formatter: function (val, item) {
                             return '<b style="color: green;">' + item.price + '</b>';
                         }
@@ -152,7 +168,7 @@
                     }
                 ]
             });
-         
+
             let modal = (values = {}) => {
                 cao.popup('/user/api/commodity/save', [
                     {

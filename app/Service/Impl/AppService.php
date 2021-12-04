@@ -146,14 +146,17 @@ class AppService implements App
     {
         //默认位置，通用插件
         $pluginPath = BASE_PATH . "/app/Plugin/{$key}/";
+        $fileInit = file_exists($pluginPath . "/Config/Info.php");
         if ($type == 1) {
             //支付插件
             $pluginPath = BASE_PATH . "/app/Pay/{$key}/";
+            $fileInit = file_exists($pluginPath . "/Config/Info.php");
         } elseif ($type == 2) {
             //网站模板
             $pluginPath = BASE_PATH . "/app/View/User/Theme/{$key}/";
+            $fileInit = file_exists($pluginPath . "/Config.php");
         }
-        if (!is_dir($pluginPath)) {
+        if (!is_dir($pluginPath) && !$fileInit) {
             mkdir($pluginPath, 0777, true);
         } else {
             throw new JSONException("该插件已被安装，请勿重复安装");

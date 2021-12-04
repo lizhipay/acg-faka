@@ -54,7 +54,7 @@ var Pay = {
             layer.close(loaderIndex);
             if (res.code !== 200) {
                 layer.msg(res.msg);
-                typeof error === 'function' && error(res.data);
+                typeof error === 'function' && error(res);
                 return;
             }
             typeof done === 'function' && done(res.data);
@@ -66,7 +66,7 @@ var Pay = {
             layer.close(loaderIndex);
             if (res.code !== 200) {
                 layer.msg(res.msg);
-                typeof error === 'function' && error(res.data);
+                typeof error === 'function' && error(res);
                 return;
             }
             typeof done === 'function' && done(res.data);

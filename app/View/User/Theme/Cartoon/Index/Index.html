@@ -150,15 +150,17 @@
     let productInstance = $('#product');
     let globalCommodityId = 0;
     let seckillPid = 0;
+    let defaultCategory = "#{$categoryId}";
+    let defaultCommodity = "#{$commodityId}";
 
     //-----------------------------------获取分类------------------------------------------
     Pay.getCategory(list => {
         list.forEach(category => {
             $(".category").append('<span class="category-' + category.id + ' button-click category-button ' + (category.commodity_count == 0 ? 'empty-commodity' : '') + '" ' + (category.commodity_count == 0 ? '' : 'onclick="getCommodity(this,' + category.id + ')"') + '>' + (category.icon ? '<img class="commodity-icon" src="' + category.icon + '">' : '') + ' ' + category.name + '</span>');
         });
-        let a = "#{$categoryId}";
-        if (a) {
-            $('.category-' + a).click(); //自动点击分类
+        if (defaultCategory) {
+            $('.category-' + defaultCategory).click(); //自动点击分类
+            defaultCategory = null;
         }
     });
 
@@ -181,9 +183,9 @@
                 productInstance.append('<span class="button-click commodity-' + item.id + '" onclick="getCommodityInfo(this,' + item.id + ')" ' + ((item.card_count == 0 && item.delivery_way == 0 && !item.shared) ? 'style="background-color: #ced4dadb;opacity: 0.6;"' : '') + '>' + (item.cover ? '<img class="commodity-icon" src="' + item.cover + '">' : '') + ' ' + item.name + '</span>');
             });
 
-            let b = "#{$commodityId}"
-            if (b) {
-                $('.commodity-' + b).click(); //自动点击商品
+            if (defaultCommodity) {
+                $('.commodity-' + defaultCommodity).click(); //自动点击商品
+                defaultCommodity = null;
             }
         })
     }

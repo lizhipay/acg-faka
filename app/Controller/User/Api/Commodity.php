@@ -14,6 +14,7 @@ use App\Interceptor\Waf;
 use App\Service\Query;
 use App\Util\Client;
 use App\Util\Str;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
@@ -41,6 +42,12 @@ class Commodity extends User
         $queryTemplateEntity->setWhere($map);
         $queryTemplateEntity->setOrder('sort', 'asc');
         $queryTemplateEntity->setWith(['category']);
+        $queryTemplateEntity->setWithCount(['card as card_count' => function (Builder $builder) {
+            $builder->where("status", 0);
+        }]);
+        $queryTemplateEntity->setWithCount(['card as card_success_count' => function (Builder $builder) {
+            $builder->where("status", 1);
+        }]);
         $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
 
         foreach ($data['data'] as $key => $val) {

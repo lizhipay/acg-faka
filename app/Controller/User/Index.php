@@ -8,6 +8,7 @@ use App\Consts\Hook;
 use App\Controller\Base\View\User;
 use App\Interceptor\UserVisitor;
 use App\Interceptor\Waf;
+use App\Model\Config;
 use Kernel\Annotation\Interceptor;
 use Kernel\Util\Plugin;
 
@@ -30,6 +31,9 @@ class Index extends User
         if ($map['from']) {
             $from = $map['from'];
         }
+
+        $map['a'] = $map['a'] ? $map['a'] : Config::get("default_category");
+
 
         return $this->theme("首页", "INDEX", "Index/Index.html", ['user' => $this->getUser(), 'from' => $from, "categoryId" => $map['a'], "commodityId" => $map['b']]);
     }

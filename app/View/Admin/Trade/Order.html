@@ -170,6 +170,14 @@
                         }
                     }
                     , {
+                        field: 'password', title: '查询密码', formatter: function (val, item) {
+                            if (!item.password) {
+                                return "-";
+                            }
+                            return '<span class="badge badge-light-dark">' + item.password + '</span>';
+                        }
+                    }
+                    , {
                         field: 'status', title: '支付状态', formatter: function (val, item) {
                             return status[item.status];
                         }
