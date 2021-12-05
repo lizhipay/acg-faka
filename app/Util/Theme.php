@@ -16,16 +16,21 @@ class Theme
      */
     public static function getConfig(string $name): ?array
     {
-        $interface = "\\App\\View\\User\\Theme\\{$name}\\Config";
+        $data = Context::get("theme_" . $name);
+        if ($data) {
+            return $data;
+        }
 
+        $interface = "\\App\\View\\User\\Theme\\{$name}\\Config";
         if (!interface_exists($interface)) {
             return null;
         }
 
         $info = $interface::INFO;
         $info['KEY'] = $name;
-
-        return ["info" => $info, "theme" => $interface::THEME];
+        $data = ["info" => $info, "theme" => $interface::THEME];
+        Context::set("theme_" . $name, $data);
+        return $data;
     }
 
     /**

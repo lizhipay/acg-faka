@@ -72,19 +72,21 @@ abstract class User extends \App\Controller\Base\User
             $themePath = "User/Theme/{$theme}/";
             $config = Theme::getConfig($theme);
             $path = $defaultThemePath . $default;
+            $system = true;
 
             //判断路径是否存在
             if (key_exists($template, $config['theme'])) {
                 $path = $themePath . $config['theme'][$template];
+                $system = false;
             }
 
             $user = $this->getUser();
             if ($user) {
-                $data['user'] = $user;
+                $data['user'] = $user->toArray();
                 $data['group'] = $this->getUserGroup()->toArray();
             }
 
-            if ($config['info']['RENDER'] == Render::ENGINE_SMARTY) {
+            if ($config['info']['RENDER'] == Render::ENGINE_SMARTY || $system) {
                 return View::render($path, $data);
             } elseif ($config['info']['RENDER'] == Render::ENGINE_PHP) {
                 require(BASE_PATH . '/app/View/' . $path);

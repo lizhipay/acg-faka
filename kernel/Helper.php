@@ -92,7 +92,6 @@ if (!function_exists('dda')) {
 }
 
 
-
 if (!function_exists("config")) {
     /**
      * @param string $name
@@ -100,11 +99,17 @@ if (!function_exists("config")) {
      */
     function config(string $name): array
     {
+        $data = \Kernel\Util\Context::get("config_" . $name);
+        if ($data) {
+            return $data;
+        }
         $file = BASE_PATH . '/config/' . $name . ".php";
         if (!file_exists($file)) {
             return [];
         }
-        return require($file);
+        $data = require($file);
+        \Kernel\Util\Context::set("config_" . $name, $data);
+        return $data;
     }
 }
 if (!function_exists("setConfig")) {

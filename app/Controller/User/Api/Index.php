@@ -132,7 +132,7 @@ class Index extends User
         }
 
         $array['share_url'] = Client::getUrl() . "?code=" . urlencode(base64_encode(($this->getUser() ? "from=" . $this->getUser()->id . "&" : "") . "a={$array['category_id']}&b={$array['id']}"));
-
+        $array['login'] = (bool)$this->getUser();
         return $this->json(200, 'success', $array);
     }
 
@@ -145,6 +145,7 @@ class Index extends User
     public function card(#[Get] int $commodityId, #[Get] int $page): array
     {
         $commodity = Commodity::query()->find($commodityId);
+        $limit = $_GET['limit'] ?? 10;
         if (!$commodity) {
             throw new JSONException("商品不存在");
         }
@@ -161,7 +162,7 @@ class Index extends User
         } else {
             $queryTemplateEntity = new QueryTemplateEntity();
             $queryTemplateEntity->setModel(Card::class);
-            $queryTemplateEntity->setLimit(10);
+            $queryTemplateEntity->setLimit((int)$limit);
             $queryTemplateEntity->setPage($page);
             $queryTemplateEntity->setWhere(["equal-commodity_id" => (string)$commodityId, "equal-status" => 0]);
             $queryTemplateEntity->setPaginate(true);
