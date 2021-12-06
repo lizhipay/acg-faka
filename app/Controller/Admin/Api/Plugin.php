@@ -28,6 +28,7 @@ class Plugin extends Manage
     /**
      * @return array
      * @throws \Kernel\Exception\JSONException
+     * @throws \ReflectionException
      */
     public function setConfig(): array
     {
@@ -45,6 +46,15 @@ class Plugin extends Manage
             throw new JSONException("插件不存在");
         }
         $config = $plugin[\App\Consts\Plugin::PLUGIN_CONFIG];
+
+        if ((int)$config['STATUS'] == 0 && (int)$map['STATUS'] == 1) {
+            //触发启动时
+            \Kernel\Util\Plugin::runHookState($id, \Kernel\Annotation\Plugin::START);
+        } else if ((int)$config['STATUS'] == 1 && (int)$map['STATUS'] == 0) {
+            //触发停止时
+            \Kernel\Util\Plugin::runHookState($id, \Kernel\Annotation\Plugin::STOP);
+        }
+
         foreach ($map as $k => $v) {
             $config[$k] = urldecode((string)$v);
         }

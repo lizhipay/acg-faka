@@ -193,11 +193,19 @@ class App extends Manage
 
     /**
      * @return array
+     * @throws \ReflectionException
      */
     public function uninstall(): array
     {
-        //安装插件
-        $this->app->uninstallPlugin((string)$_POST['plugin_key'], (int)$_POST['type']);
+        //卸载插件
+        $pluginKey = (string)$_POST['plugin_key'];
+        $type = (int)$_POST['type'];
+
+        if ($type == 0) {
+            \Kernel\Util\Plugin::runHookState($pluginKey, \Kernel\Annotation\Plugin::UNINSTALL);
+        }
+
+        $this->app->uninstallPlugin($pluginKey, $type);
         return $this->json(200, "卸载完成");
     }
 }

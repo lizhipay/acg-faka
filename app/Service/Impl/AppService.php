@@ -141,6 +141,7 @@ class AppService implements App
      * @param int $pluginId
      * @throws GuzzleException
      * @throws JSONException
+     * @throws \ReflectionException
      */
     public function installPlugin(string $key, int $type, int $pluginId): void
     {
@@ -179,6 +180,11 @@ class AppService implements App
         if (file_exists($installSql)) {
             $database = config("database");
             SQL::import($installSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
+        }
+ 
+        if ($type == 0) {
+            //安装
+            \Kernel\Util\Plugin::runHookState($key, \Kernel\Annotation\Plugin::INSTALL);
         }
     }
 

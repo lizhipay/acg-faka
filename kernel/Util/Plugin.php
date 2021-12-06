@@ -73,6 +73,39 @@ class Plugin
     }
 
     /**
+     * @param string $pluginName
+     * @param int $state
+     * @throws \ReflectionException
+     */
+    public static function runHookState(string $pluginName, int $state): void
+    {
+        //扫描目标目录文件
+        $path = BASE_PATH . "/app/Plugin/{$pluginName}/Hook/";
+        //扫描插件的hook
+        $hookScan = File::scan($path, true);
+        foreach ($hookScan as $class) {
+            $_class = explode(".", $class);
+            $_className = trim((string)$_class[0]);
+            $namespace = "\\App\\Plugin\\{$pluginName}\\Hook\\{$_className}";
+            if (class_exists($namespace)) {
+                $reflectionClass = new \ReflectionClass(objectOrClass: $namespace);
+                foreach ($reflectionClass->getMethods() as $method) {
+                    $reflectionMethod = new \ReflectionMethod($namespace, $method->getName());
+                    $reflectionAttributes = $reflectionMethod->getAttributes();
+                    foreach ($reflectionAttributes as $attribute) {
+                        $arguments = $attribute->getArguments();
+                        if ($attribute->newInstance() instanceof \Kernel\Annotation\Plugin) {
+                            if ($arguments['state'] == $state) {
+                                call_user_func([new $namespace, $method->getName()]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * @return void
      * @throws \ReflectionException
      */
