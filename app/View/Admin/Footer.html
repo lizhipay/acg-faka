@@ -84,7 +84,7 @@
                         title: '版本更新',
                         content: $('.update-modal').html(),
                         skin: "update-open",
-                        area: ["520px", "620px"],
+                        area: cao.isPc() ? ["520px", "620px"] : ["100%", "100%"],
                         btn: [res.data.latest ? '你已经是最新版本' : "安全更新至 v" + res.data.version, '取消'],
                         success: () => {
                         },

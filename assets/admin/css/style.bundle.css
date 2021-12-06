@@ -50862,8 +50862,12 @@ body {
     }
 
     .header .header-menu {
-        display: none;
+        margin-top: 2px;
         z-index: 99;
+    }
+
+    .plugin-btn , .update-pro{
+        margin: 5px;
     }
 
     .header .page-title {
