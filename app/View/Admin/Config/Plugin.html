@@ -11,6 +11,16 @@
         <div id="kt_content_container" class="container-fluid">
             <!--begin::Tables Widget 9-->
             <div class="card mb-5 mb-xl-8">
+                <!--begin::Header-->
+                <div class="card-header border-0 pt-5">
+                    <div class="card-toolbar">
+                        <a href="/admin/store/home" class="btn btn-sm btn-light-primary btn-app-create me-3"><i class="fab fa-instalod"></i>
+                            获取更多插件
+                        </a>
+                    </div>
+                </div>
+                <!--end::Header-->
+
                 <div class="card-body py-3">
                     <table id="plugin" lay-filter="plugin"></table>
                 </div>
@@ -138,7 +148,7 @@
                         }
                     }
                 ]
-            }); 
+            });
 
             let modal = (values = {}) => {
                 cao.popup('/admin/api/plugin/setConfig', values.PLUGIN_SUBMIT, res => {

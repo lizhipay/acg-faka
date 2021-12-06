@@ -165,7 +165,10 @@ class Plugin
                     }
                 }
             }
-            return call_user_func_array([$instance, $item['method']], $args);
+            $result = call_user_func_array([$instance, $item['method']], $args);
+            if ($result) {
+                return $result;
+            }
         }
     }
 
