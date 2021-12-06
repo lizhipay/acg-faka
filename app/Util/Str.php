@@ -40,7 +40,7 @@ class Str
      * @param string $appKey
      * @return string
      */
-    public static function generateSignature(array $data, string $appKey): string
+    public static function generateSignature(array $data, $appKey): string
     {
         unset($data['sign']);
         ksort($data);
@@ -49,7 +49,7 @@ class Str
                 unset($data[$key]);
             }
         }
-        return md5(urldecode(http_build_query($data) . "&key=" . $appKey));
+        return md5(urldecode(http_build_query($data) . "&key=" . (string)$appKey));
     }
 
     /**
