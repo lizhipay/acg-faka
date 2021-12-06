@@ -82,7 +82,7 @@ abstract class User extends \App\Controller\Base\User
 
             $user = $this->getUser();
             if ($user) {
-                $data['user'] = $user->toArray();
+                $data['user'] = $user;
                 $data['group'] = $this->getUserGroup()->toArray();
             }
 
