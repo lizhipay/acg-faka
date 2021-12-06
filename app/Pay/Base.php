@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace App\Pay;
 
-use App\Util\Date;
 use App\Util\PayConfig;
+use GuzzleHttp\Client;
 
 /**
  * Class Base
@@ -66,5 +66,14 @@ abstract class Base
     protected function log(string $message): void
     {
         PayConfig::log($this->handle, "TRADE", $message);
+    }
+
+    /**
+     * 创建GUZZ HTTP CLIENT
+     * @return Client
+     */
+    protected function http(): Client
+    {
+        return new Client(["verify" => false]);
     }
 }

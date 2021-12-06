@@ -57,12 +57,19 @@ try {
     // 启动Eloquent
     $capsule->bootEloquent();
 
+    //模板库
     if (file_exists(BASE_PATH . "/kernel/Theme.php")) {
         require("Theme.php");
     }
 
-    //插件
+    //插件库
+    if (file_exists(BASE_PATH . "/kernel/Plugin.php")) {
+        require("Plugin.php");
+    }
+
+    //插件初始化
     \Kernel\Util\Plugin::scan();
+    Initialize();
 
     $controllerInstance = new $controller;
     //#Class Interceptor

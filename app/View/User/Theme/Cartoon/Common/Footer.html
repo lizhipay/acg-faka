@@ -1,4 +1,8 @@
 <script>
+    layui.config({
+        version: "#{$app.version}"
+    });
+
     layui.define(['layer', 'element'], function (exports) {
         var $ = layui.jquery, element = layui.element;
         //手机设备的简单适配

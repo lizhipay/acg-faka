@@ -36,4 +36,12 @@ class Context
 
         return self::$context[$name] ?? null;
     }
+
+    /**
+     * @param $unset
+     */
+    public static function _unset(&$unset)
+    {
+        unset($unset);
+    }
 }

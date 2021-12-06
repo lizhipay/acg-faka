@@ -41,4 +41,9 @@ interface Hook
 
     //挂载点 app\Controller\Admin\Config.php -> 挂载链接到网站设置的TOLLBAR上面，需要返回值二维数组
     const ADMIN_VIEW_CONFIG_TOOLBAR = 0x14;
+
+    //-----------------------PLUGIN-----------------------------
+    const ADMIN_API_PLUGIN_SAVE_CONFIG = 0x15; //HOOK后台在保存配置时候，可以返回修改后的内容 HOOK时传参：string pluginName,array  postMap
+
+
 }

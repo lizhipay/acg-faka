@@ -153,7 +153,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                     values[item.name] = item.default;
                 }
 
-                let width = item.hasOwnProperty('width') ? 'style="width:'+(this.isPc() ? item.width + "px" : "100%")+';padding-top:10px;"' : 'style="padding-top:10px;"';
+                let width = item.hasOwnProperty('width') ? 'style="width:' + (this.isPc() ? item.width + "px" : "100%") + ';padding-top:10px;"' : 'style="padding-top:10px;"';
 
                 switch (item.type) {
                     case "input":
@@ -359,6 +359,17 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             '            <label class="layui-form-label">' + item.title + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
                             '            <div class="layui-input-block">\n' +
                             '                <input name="' + item.name + '" placeholder="' + item.placeholder + '" type="text" class="layui-input ' + item.name + '" value="' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '"/>' +
+                            '            </div>\n' +
+                            '        </div>';
+                        break;
+                    case 'explain':
+                        if (edit === true && item.edit === false) {
+                            break;
+                        }
+                        d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
+                            '            <label class="layui-form-label">' + item.title + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
+                            '            <div class="layui-input-block">\n' +
+                            '                <span style="position: relative;top: 6px;">' + item.placeholder + '</span>' +
                             '            </div>\n' +
                             '        </div>';
                         break;

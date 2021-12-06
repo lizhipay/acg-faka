@@ -9,7 +9,7 @@ class Plugin
     /**
      * @var array
      */
-    private static array $container = [];
+    public static array $container = [];
 
     /**
      * @var string|null
@@ -97,7 +97,7 @@ class Plugin
                             foreach ($reflectionAttributes as $attribute) {
                                 $arguments = $attribute->getArguments();
                                 if (isset($arguments['point'])) {
-                                    Plugin::$container[$arguments['point']][] = ["namespace" => $namespace, "method" => $method->getName(), "pluginName" => $pluginName];
+                                    Plugin::$container['hook'][$arguments['point']][] = ["namespace" => $namespace, "method" => $method->getName(), "pluginName" => $pluginName];
                                 }
                             }
                         }

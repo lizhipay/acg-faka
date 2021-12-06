@@ -29,7 +29,7 @@ abstract class User extends \App\Controller\Base\User
     {
         try {
             $data['title'] = $title;
-
+            $data['app']['version'] = \config("app")['version'];
             $cfg = Config::list();
 
             foreach ($cfg as $k => $v) {
@@ -52,6 +52,8 @@ abstract class User extends \App\Controller\Base\User
     {
         try {
             $data['title'] = $title;
+            $data['app']['version'] = \config("app")['version'];
+
             $cfg = Config::list();
 
             foreach ($cfg as $k => $v) {
