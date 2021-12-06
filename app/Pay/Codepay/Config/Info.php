@@ -5,7 +5,7 @@ return [
     'version' => '1.0.0',
     'name' => '<b style="color: red;">[官方推荐]</b> 码支付',
     'author' => '荔枝',
-    'website' => '<a  style="color: green;" href="https://acgpay.losie.net" target="_blank">https://epay.losie.net</a>',
+    'website' => '<a  style="color: green;" href="https://epay.losie.net" target="_blank">https://epay.losie.net</a>',
     'description' => '<span style="color: green;">免挂机，免金额输入，客户付款直达你的收款账户。</span>',
     'options' => [
         'alipay' => '支付宝',

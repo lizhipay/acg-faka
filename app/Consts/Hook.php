@@ -43,7 +43,25 @@ interface Hook
     const ADMIN_VIEW_CONFIG_TOOLBAR = 0x14;
 
     //-----------------------PLUGIN-----------------------------
-    const ADMIN_API_PLUGIN_SAVE_CONFIG = 0x15; //HOOK后台在保存配置时候，可以返回修改后的内容 HOOK时传参：string pluginName,array  postMap
+    //HOOK后台在保存配置时候，可以返回修改后的内容 HOOK时传参：string pluginName,array  postMap
+    const ADMIN_API_PLUGIN_SAVE_CONFIG = 0x15;
 
+
+    //客户下单之前触发的点位，可以做一下防刷机制，HOOK时传参：array $_POST
+    const USER_API_ORDER_TRADE_BEGIN = 0x16;
+    //客户下单成功触发的点位，HOOK时传参：商品对象 $commodity, 订单对象 $order  支付对象 $pay
+    const USER_API_ORDER_TRADE_AFTER = 0x17;
+    //客户成功付款后触发的点位，HOOK时传参：商品对象 $commodity, 订单对象 $order 支付对象 $pay
+    const USER_API_ORDER_PAY_AFTER = 0x18;
+
+
+    //-----------------------------MY
+
+    //挂载点 app\View\User\* -> INDEX -> 头部
+    const USER_VIEW_INDEX_HEADER = 0x10001;
+    //挂载点 app\View\User\* -> INDEX -> 内容
+    const USER_VIEW_INDEX_BODY = 0x10003;
+    //挂载点 app\View\User\* -> INDEX -> 底部
+    const USER_VIEW_INDEX_FOOTER = 0x10004;
 
 }

@@ -32,6 +32,7 @@ class Order extends User
             }
             Captcha::destroy("trade");
         }
+        hook(\App\Consts\Hook::USER_API_ORDER_TRADE_BEGIN, $_POST);
         $trade = $this->order->trade($this->getUser(), $this->getUserGroup());
         return $this->json(200, '下单成功', $trade);
     }

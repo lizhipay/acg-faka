@@ -330,6 +330,7 @@ class OrderService implements Order
 
             $order->save();
 
+            hook(\App\Consts\Hook::USER_API_ORDER_TRADE_AFTER, $commodity, $order, $pay);
             return ['url' => $url, 'amount' => $order->amount, 'tradeNo' => $order->trade_no, 'secret' => $secret];
         });
     }
@@ -461,6 +462,7 @@ class OrderService implements Order
             }
         }
 
+        hook(\App\Consts\Hook::USER_API_ORDER_PAY_AFTER, $commodity, $order, $order->pay);
         return (string)$order->secret;
     }
 

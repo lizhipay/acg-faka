@@ -112,13 +112,27 @@ class Plugin
      * @param int $point
      * @param mixed ...$args
      * @return false|mixed
+     * @throws \ReflectionException
      */
     public static function hook(int $point, mixed ...$args)
     {
         $list = self::$container[$point];
         foreach ($list as $item) {
             \Kernel\Util\Plugin::$currentPluginName = $item['pluginName'];
-            return call_user_func_array([new $item['namespace'], $item['method']], $args);
+            $instance = new $item['namespace'];
+            $ref = new \ReflectionClass($instance);
+            $reflectionProperties = $ref->getProperties();
+            foreach ($reflectionProperties as $property) {
+                $reflectionProperty = new \ReflectionProperty($instance, $property->getName());
+                $reflectionPropertiesAttributes = $reflectionProperty->getAttributes();
+                foreach ($reflectionPropertiesAttributes as $reflectionAttribute) {
+                    $ins = $reflectionAttribute->newInstance();
+                    if ($ins instanceof \Kernel\Annotation\Inject) {
+                        di($instance);
+                    }
+                }
+            }
+            return call_user_func_array([$instance, $item['method']], $args);
         }
     }
 

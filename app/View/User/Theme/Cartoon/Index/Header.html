@@ -18,6 +18,9 @@
     <script src="/assets/static/pay.js?v=2"></script>
     <script src="/assets/static/clipboard.js"></script>
     <title>#{$config.title}</title>
+    <!--start::HOOK-->
+    #{hook(\App\Consts\Hook::USER_VIEW_INDEX_HEADER)}
+    <!--end::HOOK-->
 </head>
 <body style="background: url('#{$config.background_url}') fixed no-repeat;background-size: cover;">
 <div id="app">
