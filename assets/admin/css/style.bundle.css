@@ -50866,7 +50866,7 @@ body {
         z-index: 99;
     }
 
-    .plugin-btn , .update-pro{
+    .plugin-btn, .update-pro {
         margin: 5px;
     }
 
@@ -50937,7 +50937,12 @@ body {
     }
 
     .toolbar .page-title[data-kt-swapper=true] {
-        display: none !important;
+        /*  display: none !important;*/
+        padding-top: 15px;
+    }
+
+    .toolbar {
+        padding: 0 !important;
     }
 }
 
@@ -51020,7 +51025,6 @@ body {
 .aside.aside-light {
     background-color: #ffffffbf;
 }
-
 
 
 @media (min-width: 992px) {
@@ -51124,6 +51128,7 @@ body {
     .aside .aside-logo {
         display: none;
     }
+
     .aside.aside-light {
         background-color: #fff6f6;
     }
@@ -54634,6 +54639,6 @@ body {
     z-index: 1 !important;
 }
 
-.purchase-btn{
+.purchase-btn {
     cursor: pointer;
 }
