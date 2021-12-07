@@ -384,6 +384,17 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             '            </div>\n' +
                             '        </div>';
                         break;
+                    case 'html':
+                        if (edit === true && item.edit === false) {
+                            break;
+                        }
+                        d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
+                            '            <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '            <div class="layui-input-block">\n' +
+                            '                <textarea ' + (item.hasOwnProperty('height') ? 'style="height:' + item.height + 'px"' : '') + ' name="' + item.name + '" placeholder="' + item.placeholder + '" class="layui-textarea ' + item.name + '">' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '</textarea>' +
+                            '            </div>\n' +
+                            '        </div>';
+                        break;
                     case 'editor':
                         if (edit === true && item.edit === false) {
                             break;
@@ -391,7 +402,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                         d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
                             '            <label class="layui-form-label">' + item.title + '</label>\n' +
                             '            <div class="layui-input-block"><textarea name="' + item.name + '" style="display: none;"></textarea>\n' +
-                            '                <div ' + (item.hasOwnProperty('height') ? 'style="height:' + item.height + 'px"' : '') + ' class="' + item.name + '">' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '</div>' +
+                            '                <div style=""><button data-type="0" class="button-switch-' + item.name + '" type="button" style="width: 100%;border: none;background: white;border-radius: 5px 5px 0 0;color: #c9b8b8;"><i class="fas fa-code" style="color: #c9b8b8;"></i> HTML</button></div><div ' + (item.hasOwnProperty('height') ? 'style="height:' + item.height + 'px"' : '') + ' class="' + item.name + '">' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '</div>' +
                             '            </div>\n' +
                             '        </div>';
                         break;
@@ -561,6 +572,9 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 break;
                             case "json":
                                 paramsToJSONObject[item.name] = encodeURIComponent(JSON.stringify(objectContainer[item.name].get()));
+                                break;
+                            case "html":
+                                paramsToJSONObject[item.name] = objectContainer[item.name].getValue();
                                 break;
                         }
                     });
@@ -791,6 +805,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 let editorInstance = window.wangEditor;
                                 const editor = new editorInstance('.hex-modal .' + item.name);
                                 const $textarea = $(".hex-modal textarea[name='" + item.name + "'")
+
                                 editor.config.onchange = function (html) {
                                     $textarea.val(html);
                                 }
@@ -811,8 +826,78 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                     }
                                 }
 
+                                if (item.hasOwnProperty("height")) {
+                                    editor.config.height = item.height - 120;
+                                }
+
                                 editor.create();
                                 $textarea.val(editor.txt.html())
+
+                                $('.hex-modal div[class=' + item.name + ']').find(".w-e-toolbar").css("border", "none");
+                                $('.hex-modal div[class=' + item.name + ']').find(".w-e-text-container").css("border", "none");
+
+                                $('.button-switch-' + item.name).click(function () {
+                                    let type = $(this).attr("data-type");
+                                    if (type == 0) {
+                                        $('.hex-modal div[class=' + item.name + ']').hide();
+                                        $(this).attr("data-type", 1);
+                                        $(this).html('<i class="fas fa-feather" style="color: #c9b8b8;"></i> ' + "写作");
+
+                                        //创建临时HTML编辑器
+                                        $('.hex-modal div[class=' + item.name + ']').parent().append('<textarea class="textarea-temp-' + item.name + '"></textarea>');
+                                        let optd = {
+                                            mode: "text/html",
+                                            lineNumbers: true,
+                                            lineWrapping: true,
+                                            extraKeys: {
+                                                "Ctrl-Q": function (cm) {
+                                                    cm.foldCode(cm.getCursor());
+                                                }
+                                            },
+                                            foldGutter: true,
+                                            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
+                                        };
+                                        objectContainer[item.name] = CodeMirror.fromTextArea($('.hex-modal .textarea-temp-' + item.name).get(0), optd);
+                                        objectContainer[item.name].setValue(editor.txt.html());
+                                        objectContainer[item.name].on("change", function (aa) {
+                                            let html = objectContainer[item.name].getValue();
+                                            $textarea.val(html);
+                                        });
+
+                                        if (item.hasOwnProperty("height")) {
+                                            $('.hex-modal .textarea-temp-' + item.name).siblings(".CodeMirror").css("height", item.height + "px");
+                                        }
+                                    } else {
+                                        let html = objectContainer[item.name].getValue();
+                                        editor.txt.html(html);
+
+                                        $('.hex-modal div[class=' + item.name + ']').show();
+                                        $('.hex-modal div[class=' + item.name + ']').parent().find(".CodeMirror").remove();
+                                        $('.hex-modal .textarea-temp-' + item.name).remove();
+                                        $(this).attr("data-type", 0);
+                                        $(this).html('<i class="fas fa-code" style="color: #c9b8b8;"></i> ' + "HTML");
+                                    }
+                                });
+                                break;
+                            case 'html':
+                                let optd = {
+                                    mode: "text/html",
+                                    lineNumbers: true,
+                                    lineWrapping: true,
+                                    extraKeys: {
+                                        "Ctrl-Q": function (cm) {
+                                            cm.foldCode(cm.getCursor());
+                                        }
+                                    },
+                                    foldGutter: true,
+                                    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
+                                };
+                                objectContainer[item.name] = CodeMirror.fromTextArea($('.hex-modal .' + item.name).get(0), optd);
+
+                                if (item.hasOwnProperty("height")) {
+                                    $('.hex-modal .' + item.name).siblings(".CodeMirror").css("height", item.height == "100%" ? item.height : item.height + "px");
+                                }
+
                                 break;
                         }
 

@@ -16,6 +16,22 @@
     <script src="/assets/static/jquery.min.js?v=#{$app.version}"></script>
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="/assets/static/bootstrap-table/css/bootstrap-table.css?v=#{$app.version}">
+    <link rel="stylesheet" href="/assets/static/codemirror/lib/codemirror.css">
+    <link rel="stylesheet" href="/assets/static/codemirror/addon/fold/foldgutter.css">
+    <script src="/assets/static/codemirror/lib/codemirror.js"></script>
+    <script src="/assets/static/codemirror/addon/fold/foldcode.js"></script>
+    <script src="/assets/static/codemirror/addon/fold/foldgutter.js"></script>
+    <script src="/assets/static/codemirror/addon/fold/brace-fold.js"></script>
+    <script src="/assets/static/codemirror/addon/fold/xml-fold.js"></script>
+    <script src="/assets/static/codemirror/addon/fold/indent-fold.js"></script>
+    <script src="/assets/static/codemirror/addon/fold/markdown-fold.js"></script>
+    <script src="/assets/static/codemirror/addon/fold/comment-fold.js"></script>
+    <script src="/assets/static/codemirror/mode/javascript/javascript.js"></script>
+    <script src="/assets/static/codemirror/mode/xml/xml.js"></script>
+    <script src="/assets/static/codemirror/mode/css/css.js"></script>
+    <script src="/assets/static/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+    <script src="/assets/static/codemirror/mode/python/python.js"></script>
+    <script src="/assets/static/codemirror/mode/markdown/markdown.js"></script>
     <!--start::HOOK-->
     #{hook(\App\Consts\Hook::ADMIN_VIEW_HEADER)}
     <!--end::HOOK-->
