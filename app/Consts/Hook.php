@@ -55,6 +55,17 @@ interface Hook
     const USER_API_ORDER_PAY_AFTER = 0x18;
 
 
+    //注册账号之前，可以做一些限制
+    const USER_API_AUTH_REGISTER_BEGIN = 0x19;
+    //注册账户之后，HOOK时传参：$user 注册成功后的用户对象
+    const USER_API_AUTH_REGISTER_AFTER = 0x20;
+
+    //登录账号之前，可以做一些限制
+    const USER_API_AUTH_LOGIN_BEGIN = 0x21;
+    //登录账户之后，HOOK时传参：$user 注册成功后的用户对象
+    const USER_API_AUTH_LOGIN_AFTER = 0x22;
+
+
 
     //-----------------------------MY
 

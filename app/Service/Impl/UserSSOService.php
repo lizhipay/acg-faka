@@ -13,7 +13,7 @@ class UserSSOService implements UserSSO
 {
 
     /**
-     * @param \App\Model\User $user
+     * @param User $user
      */
     public function loginSuccess(User $user): void
     {
@@ -23,5 +23,6 @@ class UserSSOService implements UserSSO
         $user->login_ip = Client::getAddress();
         $user->save();
         $_SESSION[\App\Consts\User::SESSION] = $user->toArray();
+        hook(\App\Consts\Hook::USER_API_AUTH_LOGIN_AFTER);
     }
 }

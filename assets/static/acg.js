@@ -48,7 +48,12 @@ let acg = {
             seconds: diffSeconds,
         }
     },
-    ready(callback) {
+    ready(fromId, callback) {
+        let from = parseInt(fromId);
+        if (from !== 0) {
+            localStorage.setItem("from_id", from);
+        }
+
         acg.loadScript("/assets/static/jquery.min.js", () => {
             acg.loadScript("/assets/static/layer/layer.js", () => {
                 acg.loadScript("/assets/static/clipboard.js", callback);
