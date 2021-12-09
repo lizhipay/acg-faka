@@ -69,18 +69,18 @@ class OrderService implements Order
      * @return array
      * @throws \Kernel\Exception\JSONException
      */
-    public function trade(?User $user, ?UserGroup $userGroup): array
+    public function trade(?User $user, ?UserGroup $userGroup, array $map): array
     {
         #CFG begin
-        $commodityId = (int)$_POST['commodity_id'];//商品ID
-        $contact = (string)$_POST['contact'];//联系方式
-        $num = (int)$_POST['num']; //购买数量
-        $cardId = (int)$_POST['card_id'];//预选的卡号ID
-        $payId = (int)$_POST['pay_id'];//支付方式id
-        $device = (int)$_POST['device'];//设备
-        $password = (string)$_POST['password'];//查单密码
-        $coupon = (string)$_POST['coupon'];//优惠卷
-        $from = (int)$_POST['from'];//推广人ID
+        $commodityId = (int)$map['commodity_id'];//商品ID
+        $contact = (string)$map['contact'];//联系方式
+        $num = (int)$map['num']; //购买数量
+        $cardId = (int)$map['card_id'];//预选的卡号ID
+        $payId = (int)$map['pay_id'];//支付方式id
+        $device = (int)$map['device'];//设备
+        $password = (string)$map['password'];//查单密码
+        $coupon = (string)$map['coupon'];//优惠卷
+        $from = (int)$map['from'];//推广人ID
         $owner = $user == null ? 0 : $user->id;
         #CFG end
 

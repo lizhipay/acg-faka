@@ -66,6 +66,11 @@
                 if (handle == null) {
                     return '-';
                 }
+
+                if (!plugins[handle]) {
+                    return '-';
+                }
+
                 return plugins[handle].info.options[code];
             }
 
@@ -73,6 +78,11 @@
                 if (handle == null) {
                     return '-';
                 }
+
+                if (!plugins[handle]) {
+                    return '-';
+                }
+
                 return plugins[handle].info.name;
             }
 
@@ -203,6 +213,10 @@
 
             let payModal = function (values = {}, id) {
                 layer.closeAll();
+                if (!plugins[id]) {
+                    layer.msg("插件异常");
+                    return;
+                }
                 let listDict = [];
                 let list = plugins[id].info.options;
                 for (let index in list) {

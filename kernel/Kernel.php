@@ -31,7 +31,7 @@ try {
         if ($j == ($count - 1)) {
             break;
         }
-        if (strtolower($s[0]) == "plugin" && $j == ($count - 2)) {
+        if (strtolower($s[0]) == "plugin" && $j == 2) {
             $controller .= "\\Controller";
         }
         $controller .= '\\' . ucfirst(trim($x));

@@ -74,10 +74,12 @@ class Index extends User
     {
         $commodity = Commodity::query()->with(['shared' => function (Relation $relation) {
             $relation->select(['id']);
-        }])->withCount(['card as card_count' => function (Builder $relation) {
-            $relation->where("status", 0);
-        }])->where("category_id", $categoryId)->where("status", 1)->orderBy("sort", "asc")->get(['id', 'name', 'cover', 'delivery_way']);
-        return $this->json(200, "success", $commodity->toArray());
+        }])->where("category_id", $categoryId)->where("status", 1)->orderBy("sort", "asc")->get(['id', 'name', 'cover', 'delivery_way', 'price', 'user_price']);
+        $data = $commodity->toArray();
+        foreach ($data as $key => $val) {
+            $data[$key]['card_count'] = Card::query()->where("status", 0)->where("commodity_id", $val['id'])->count();
+        }
+        return $this->json(200, "success", $data);
     }
 
     /**

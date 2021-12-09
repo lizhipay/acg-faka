@@ -10,6 +10,11 @@ namespace App\Util;
 class File
 {
     /**
+     * @var array
+     */
+    private static array $cache = [];
+
+    /**
      * 拷贝目录
      * @param string $src 源目录
      * @param string $dst 目标目录
@@ -50,5 +55,20 @@ class File
             closedir($handle);
             rmdir($path);
         }
+    }
+
+
+    /**
+     * 缓存文件
+     * @param string $path
+     * @return mixed
+     */
+    public static function codeLoad(string $path): mixed
+    {
+        if (isset(self::$cache[$path])) {
+            return self::$cache[$path];
+        }
+        self::$cache[$path] = require($path);
+        return self::$cache[$path];
     }
 }

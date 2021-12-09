@@ -20,10 +20,10 @@ class Client
     {
         if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
             $arr = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-            return $arr[0];
+            return (string)$arr[0];
         }
 
-        return $_SERVER['REMOTE_ADDR'];
+        return (string)$_SERVER['REMOTE_ADDR'];
     }
 
     /**

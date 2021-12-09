@@ -73,4 +73,19 @@ class Str
         mt_srand();
         return $amount + (mt_rand($min, $max) / 100);
     }
+
+
+    /**
+     * @param int $type
+     * @return string|int
+     */
+    public static function generateContact(int $type): string|int
+    {
+        return match ($type) {
+            0 => self::generateRandStr(16),
+            1 => "188" . mt_rand(1000, 9999) . mt_rand(1000, 9999),
+            2 => self::generateRandStr(10) . "@system.do",
+            3 => mt_rand(1000000, 99999999)
+        };
+    }
 }

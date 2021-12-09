@@ -1,3 +1,4 @@
+</div>
 <script src="../../../assets/admin/js/scripts.bundle.js"></script></div>
 <!--end::Wrapper-->
 </div>
@@ -31,8 +32,10 @@
 <script src="/assets/static/clipboard.js"></script>
 <script src="/assets/static/wangEditor.min.js"></script>
 <script src="/assets/static/jquery.qrcode.min.js"></script>
+<script src="/assets/static/jquery.pjax.js"></script>
 <script src="/assets/static/bootstrap-table/js/bootstrap-table.min.js"></script>
 <script src="/assets/static/bootstrap-table/js/bootstrap-table-zh-CN.js"></script>
+<script src="/assets/static/jsoneditor/jsoneditor.min.js"></script>
 
 <div style="display: none" class="update-modal">
     <div style="padding: 20px;" class="more-table">
@@ -49,6 +52,22 @@
     }
 </style>
 <script>
+
+
+    $(document).pjax('a[target!=_blank]', '#pjax-container', {fragment: '#pjax-container',timeout: 8000}); //#wrap为刷新的id
+    $(document).on('pjax:send', function() {
+        $(".loading").css("display", "block");
+    });
+
+    $(document).on('pjax:complete', function() {
+        $(".loading").css("display", "none");
+    });
+
+    $("a[target!=_blank]").click(function(){
+        $('a[target!=_blank]').removeClass("active");
+        $(this).addClass("active");
+    });
+
     layui.config({
         base: '/assets/static/modules/',
         version: "#{$app.version}"
@@ -140,7 +159,14 @@
 <!--start::HOOK-->
 #{hook(\App\Consts\Hook::ADMIN_VIEW_FOOTER)}
 <!--end::HOOK-->
-
+<div class="loading" style="background: #00000033;width: 100%;height: 100%;position: fixed;z-index: 9999999;overflow: hidden;display: none;">
+    <div class="loader">
+        <div class="dot dot1"></div><!--
+  --><div class="dot dot2"></div><!--
+  --><div class="dot dot3"></div><!--
+  --><div class="dot dot4"></div>
+    </div>
+</div>
 </body>
 <!--end::Body-->
 </html>

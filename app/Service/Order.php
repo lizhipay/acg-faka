@@ -25,7 +25,7 @@ interface Order
      * @param \App\Model\UserGroup|null $userGroup
      * @return array
      */
-    public function trade(?User $user, ?UserGroup $userGroup): array;
+    public function trade(?User $user, ?UserGroup $userGroup, array $map): array;
 
 
     /**

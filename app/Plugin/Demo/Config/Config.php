@@ -2,6 +2,6 @@
 declare (strict_types=1);
 
 return [
-    'STATUS' => '0',
+    'STATUS' => '1',
     'demo' => 'demo',
 ];
