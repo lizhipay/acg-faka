@@ -20,7 +20,8 @@
                 <!--begin::Header-->
                 <div class="card-header border-0 pt-5">
                     <div class="card-toolbar">
-                        <a href="/admin/store/home" class="btn btn-sm btn-light-primary btn-app-create me-3"><i class="fab fa-instalod"></i>
+                        <a href="/admin/store/home" class="btn btn-sm btn-light-primary btn-app-create me-3"><i
+                                class="fab fa-instalod"></i>
                             获取更多插件
                         </a>
                     </div>
@@ -159,7 +160,13 @@
             let modal = (values = {}) => {
                 cao.popup('/admin/api/plugin/setConfig', values.PLUGIN_SUBMIT, res => {
                     table.bootstrapTable('refresh', {silent: true});
-                }, values, "660px", false, "插件配置");
+                }, values, "660px", false, "插件配置", () => {
+                    if (cao.isPc()) {
+                        if ($('.layui-layer-page').height() > 768) {
+                            $('.layui-layer-content').css("height", "720px");
+                        }
+                    }
+                });
             }
         });
     });

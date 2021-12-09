@@ -39,8 +39,9 @@ class Plugin extends Manage
         $id = $map['id'];
         unset($map['id']);
 
-        $map = array_merge($map, (array)hook(Hook::ADMIN_API_PLUGIN_SAVE_CONFIG, $id, $map));
+        hook(Hook::ADMIN_API_PLUGIN_SAVE_CONFIG, $id, $map);//12/09-重写HOOK逻辑
 
+        //   $map = array_merge($map, (array));
         $plugin = \Kernel\Util\Plugin::getPlugin($id);
         if (!$plugin) {
             throw new JSONException("插件不存在");
@@ -60,6 +61,7 @@ class Plugin extends Manage
         }
         unlink(BASE_PATH . "/runtime/plugin/plugin.cache");
         setConfig($config, BASE_PATH . '/app/Plugin/' . $id . '/Config/Config.php');
+
         return $this->json(200, '配置已生效');
     }
 }

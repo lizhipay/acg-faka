@@ -19,7 +19,7 @@ class Plugin
      * @param int $expire
      * @throws \Kernel\Exception\JSONException
      */
-    public static function setCache(string $pluginName, string $db, string $key, mixed $value, int $expire = 0): void
+    public static function setCache(string $pluginName, string $db, string $key, mixed $value, int $expire = 0, bool $cli = false): void
     {
         $path = BASE_PATH . '/app/Plugin/' . $pluginName . '/Db/';
         $db = $path . $db . ".php";
@@ -28,7 +28,7 @@ class Plugin
         }
         $data = [];
         if (file_exists($db)) {
-            $data = (array)File::codeLoad($db);
+            $data = (array)File::codeLoad($db, $cli);
         }
 
         $data[$key] = serialize([
@@ -45,7 +45,7 @@ class Plugin
      * @return mixed
      * @throws JSONException
      */
-    public static function getCache(string $pluginName, string $db, string $key): mixed
+    public static function getCache(string $pluginName, string $db, string $key, bool $cli = false): mixed
     {
         $path = BASE_PATH . '/app/Plugin/' . $pluginName . '/Db/' . $db . ".php";
 
@@ -53,7 +53,7 @@ class Plugin
             return null;
         }
 
-        $data = (array)File::codeLoad($path);
+        $data = (array)File::codeLoad($path, $cli);
 
         if (!isset($data[$key])) {
             return null;
@@ -74,13 +74,13 @@ class Plugin
      * @return array
      * @throws JSONException
      */
-    public static function getCaches(string $pluginName, string $db): array
+    public static function getCaches(string $pluginName, string $db, bool $cli = false): array
     {
         $path = BASE_PATH . '/app/Plugin/' . $pluginName . '/Db/' . $db . ".php";
         if (!file_exists($path)) {
             return [];
         }
-        $data = (array)File::codeLoad($path);
+        $data = (array)File::codeLoad($path, $cli);
         $success = [];
         foreach ($data as $key => $val) {
             $unserialize = unserialize($val);
@@ -96,13 +96,13 @@ class Plugin
     /**
      * @throws JSONException
      */
-    public static function delCache(string $pluginName, string $db, string $key): void
+    public static function delCache(string $pluginName, string $db, string $key, bool $cli = false): void
     {
         $path = BASE_PATH . '/app/Plugin/' . $pluginName . '/Db/' . $db . ".php";
         if (!file_exists($path)) {
             return;
         }
-        $data = (array)File::codeLoad($path);
+        $data = (array)File::codeLoad($path, $cli);
         unset($data[$key]);
 
         if (count($data) == 0) {
@@ -129,14 +129,35 @@ class Plugin
 
     /**
      * @param string $pluginName
+     * @param bool $cache
      * @return array
      */
-    public static function getConfig(string $pluginName): array
+    public static function getConfig(string $pluginName, bool $cache = true): array
     {
         $path = BASE_PATH . '/app/Plugin/' . $pluginName . '/Config/Config.php';
         if (!file_exists($path)) {
             return [];
         }
+
+        if (!$cache) {
+            return (array)require($path);
+        }
+
         return (array)File::codeLoad($path);
+    }
+
+    /**
+     * @param string $pluginName
+     * @param string $key
+     * @param string $value
+     * @param bool $cli
+     * @throws \Kernel\Exception\JSONException
+     */
+    public static function setConfig(string $pluginName, string $key, string $value, bool $cache = true): void
+    {
+        unlink(BASE_PATH . "/runtime/plugin/plugin.cache");
+        $config = self::getConfig($pluginName, $cache);
+        $config[$key] = urldecode((string)$value);
+        setConfig($config, BASE_PATH . '/app/Plugin/' . $pluginName . '/Config/Config.php');
     }
 }

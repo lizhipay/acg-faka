@@ -63,8 +63,12 @@ class File
      * @param string $path
      * @return mixed
      */
-    public static function codeLoad(string $path): mixed
+    public static function codeLoad(string $path, bool $cli = false): mixed
     {
+        if ($cli) {
+            return require($path);
+        }
+
         if (isset(self::$cache[$path])) {
             return self::$cache[$path];
         }
