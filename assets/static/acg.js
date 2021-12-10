@@ -332,7 +332,7 @@ let acg = {
             if (opt.categoryId === "") {
                 return;
             }
-            acg.$get("/user/api/index/commodity?categoryId=" + opt.categoryId, res => {
+            acg.$get("/user/api/index/commodity?categoryId=" + opt.categoryId + (opt.keywords ? "&keywords=" + opt.keywords : ""), res => {
                 if (res.length == 0) {
                     typeof opt.empty === 'function' && opt.empty();
                     return;
@@ -380,10 +380,15 @@ let acg = {
                             //
                             continue;
                         } else if (autoKey == "captcha") {
-                            acg.API.captcha(opt.auto[autoKey]);
-                            instance.click(function () {
+                            if (res.trade_captcha == 1) {
+                                instance.parents(".captcha_status").show();
                                 acg.API.captcha(opt.auto[autoKey]);
-                            });
+                                instance.click(function () {
+                                    acg.API.captcha(opt.auto[autoKey]);
+                                });
+                            } else {
+                                instance.parents(".captcha_status").hide();
+                            }
                             continue;
                         } else if (autoKey == "password_status") {
                             //查询密码
@@ -456,9 +461,13 @@ let acg = {
                             }
                             continue;
                         } else if (autoKey == "card") {
+                            if (res.delivery_way == 1 || res.shared) {
+                                instance.addClass("card_count_unknown").html("未知");
+                                continue;
+                            }
                             if (res.inventory_hidden == 1) {
                                 if (res.card <= 0) {
-                                    instance.addClass("card_count_empty").html("无");
+                                    instance.addClass("card_count_empty").html("已售罄");
                                 } else if (res.card <= 5) {
                                     instance.addClass("card_count_immediately").html("马上卖完!");
                                 } else if (res.card <= 20) {

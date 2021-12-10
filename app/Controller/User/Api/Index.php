@@ -72,9 +72,20 @@ class Index extends User
      */
     public function commodity(#[Get] int $categoryId): array
     {
+        $keywords = (string)$_GET['keywords'];
+
         $commodity = Commodity::query()->with(['shared' => function (Relation $relation) {
             $relation->select(['id']);
-        }])->where("category_id", $categoryId)->where("status", 1)->orderBy("sort", "asc")->get(['id', 'name', 'cover', 'delivery_way', 'price', 'user_price']);
+        }]);
+        if ($categoryId != 0) {
+            $commodity = $commodity->where("category_id", $categoryId);
+        }
+
+        if ($keywords != "") {
+            $commodity = $commodity->where('name', 'like', '%' . $keywords . '%');
+        }
+
+        $commodity = $commodity->where("status", 1)->orderBy("sort", "asc")->get(['id', 'name', 'cover', 'delivery_way', 'price', 'user_price', 'inventory_hidden']);
         $data = $commodity->toArray();
         foreach ($data as $key => $val) {
             $data[$key]['card_count'] = Card::query()->where("status", 0)->where("commodity_id", $val['id'])->count();
@@ -135,6 +146,10 @@ class Index extends User
 
         $array['share_url'] = Client::getUrl() . "?code=" . urlencode(base64_encode(($this->getUser() ? "from=" . $this->getUser()->id . "&" : "") . "a={$array['category_id']}&b={$array['id']}"));
         $array['login'] = (bool)$this->getUser();
+
+        //获取网站是否需要验证码
+        $array['trade_captcha'] = (int)Config::get("trade_verification");
+
         return $this->json(200, 'success', $array);
     }
 
