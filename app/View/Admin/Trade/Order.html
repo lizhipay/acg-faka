@@ -126,6 +126,11 @@
                         }
                     }
                     , {
+                        field: 'card_num', title: '数量', formatter: function (val, item) {
+                            return '<span class="badge badge-light-dark">' + item.card_num + '</span>';
+                        }
+                    }
+                    , {
                         field: 'amount', title: '金额', formatter: function (val, item) {
                             return '<span class="badge badge-light-success"><i class="fas fa-yen-sign text-success fs-10"></i> ' + item.amount + '</span>';
                         }

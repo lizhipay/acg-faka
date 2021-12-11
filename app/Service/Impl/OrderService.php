@@ -496,9 +496,7 @@ class OrderService implements Order
             1 => "rand()",
             2 => "id desc"
         };
-
         $cards = Card::query()->where("commodity_id", $order->commodity_id)->orderByRaw($direction)->where("status", 0)->limit($order->card_num)->get();
-
         if (count($cards) == $order->card_num) {
             $ids = [];
             $cardc = '';
@@ -530,7 +528,7 @@ class OrderService implements Order
     {
         $callback = $this->callbackInitialize($handle, $map);
         $json = json_encode($map, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
+        DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
         DB::transaction(function () use ($handle, $map, $callback, $json) {
             //获取订单
             $order = \App\Model\Order::query()->where("trade_no", $callback['trade_no'])->first();
@@ -538,17 +536,14 @@ class OrderService implements Order
                 PayConfig::log($handle, "CALLBACK", "订单不存在，接受数据：" . $json);
                 throw new JSONException("order not found");
             }
-
             if ($order->status != 0) {
                 PayConfig::log($handle, "CALLBACK", "重复通知，当前订单已支付");
                 throw new JSONException("order status error");
             }
-
             if ($order->amount != $callback['amount']) {
                 PayConfig::log($handle, "CALLBACK", "订单金额不匹配，接受数据：" . $json);
                 throw new JSONException("amount error");
             }
-
             $this->orderSuccess($order);
         });
         return $callback['success'];

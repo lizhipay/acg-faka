@@ -293,10 +293,13 @@
                     type: 1,
                     shade: 0.3,
                     content: '<form class="layui-form" action="">\n' +
-                        '    <div style="margin-top: 10px;margin-left: 20px;">\n' +
+                        '    <div style="margin-top: 10px;margin-left: 20px;margin-right: 20px;">\n' +
                         '      <input type="radio" name="export_status" value="0" title="不操作" checked>\n' +
                         '      <input type="radio" name="export_status" value="1" title="锁定卡密">\n' +
                         '      <input type="radio" name="export_status" value="2" title="删除卡密">\n' +
+                        '    </div>\n' +
+                        '    <div style="margin-top: 10px;margin-left: 20px;margin-right: 20px;">\n' +
+                        '      <input type="input" name="export_num" class="layui-input" placeholder="指定导出数量，不填则全部哦">\n' +
                         '    </div>\n' +
                         '</form>',
                     title: "导出后，你还想做什么？（・ω・）",
@@ -305,8 +308,9 @@
                     yes: (index, layero) => {
                         layer.close(index);
                         let exportStatus = $(".layui-form input[name=export_status]:checked").val();
+                        let exportNum = $(".layui-form input[name=export_num]").val();
                         let query = $('.search-query').serialize();
-                        window.open('/admin/api/card/export?exportStatus=' + exportStatus + "&" + query);
+                        window.open('/admin/api/card/export?exportStatus=' + exportStatus + "&exportNum=" + exportNum + "&" + query);
                     },
                     success: (layero, index) => {
                         form.render();

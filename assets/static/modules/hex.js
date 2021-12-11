@@ -293,7 +293,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 });
                                 console.log(serialize);*/
                 table.bootstrapTable('refresh', {
-                    silent: true,
+                    silent: false,
                     pageNumber: 1,
                     query: serialize
                 });

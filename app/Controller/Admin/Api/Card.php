@@ -184,17 +184,33 @@ class Card extends Manage
     {
         $map = $_GET;
         $exportStatus = $map['exportStatus'];
+        $exportNum = (int)$map['exportNum'];
+
         unset($map['exportStatus']);
+        unset($map['exportNum']);
+
+
         $queryTemplateEntity = new QueryTemplateEntity();
         $queryTemplateEntity->setModel(\App\Model\Card::class);
         $queryTemplateEntity->setWhere($map);
-        $data = $this->query->findTemplateAll($queryTemplateEntity);
+
+        if ($exportNum > 0) {
+            $queryTemplateEntity->setLimit($exportNum);
+            $queryTemplateEntity->setPaginate(true);
+            $queryTemplateEntity->setPage(1);
+            $data = $this->query->findTemplateAll($queryTemplateEntity);
+            $data = $data->items();
+        } else {
+            $data = $this->query->findTemplateAll($queryTemplateEntity);
+        }
+
         $card = '';
         $ids = [];
         foreach ($data as $d) {
             $card .= $d->secret . PHP_EOL;
             $ids[] = $d->id;
         }
+
         if ($exportStatus == 1) {
             //锁定卡密
             try {
