@@ -13,4 +13,7 @@ interface Pay
     const FIELD_ORDER_KEY = 0x5; //订单key
     const FIELD_AMOUNT_KEY = 0x6; //金额key
     const FIELD_RESPONSE = 0x7; //返回值
+
+
+    const DAFA = "FROM_PAY_DATA"; //回调数据上下文
 }

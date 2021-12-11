@@ -25,6 +25,7 @@ use Illuminate\Database\Capsule\Manager as DB;
 use JetBrains\PhpStorm\ArrayShape;
 use Kernel\Annotation\Inject;
 use Kernel\Exception\JSONException;
+use Kernel\Util\Context;
 
 class OrderService implements Order
 {
@@ -343,7 +344,6 @@ class OrderService implements Order
     #[ArrayShape(["trade_no" => "mixed", "amount" => "mixed", "success" => "mixed"])] public function callbackInitialize(string $handle, array $map): array
     {
         $json = json_encode($map, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
         $payInfo = PayConfig::info($handle);
         $payConfig = PayConfig::config($handle);
         $callback = $payInfo['callback'];
@@ -361,10 +361,12 @@ class OrderService implements Order
                 throw new JSONException("signature not implements interface");
             }
             $signature = new $class;
+            Context::set(\App\Consts\Pay::DAFA, $map);
             if (!$signature->verification($map, $payConfig)) {
                 PayConfig::log($handle, "CALLBACK", "签名验证失败，接受数据：" . $json);
                 throw new JSONException("sign error");
             }
+            $map = Context::get(\App\Consts\Pay::DAFA);
         }
 
         //验证状态
