@@ -71,17 +71,17 @@ try {
     \Kernel\Util\Plugin::scan();
     Initialize();
 
+    hook(\App\Consts\Hook::KERNEL_INIT);
+
     $controllerInstance = new $controller;
     //#Class Interceptor
     $interceptors = [];
     $ref = new ReflectionClass($controllerInstance);
     $reflectionAttributes = $ref->getAttributes();
 
-
     foreach ($reflectionAttributes as $attribute) {
         $newInstance = $attribute->newInstance();
     }
-
 
     //#Method Interceptor
     $params = [];

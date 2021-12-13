@@ -66,6 +66,10 @@ interface Hook
     const USER_API_AUTH_LOGIN_AFTER = 0x22;
 
 
+    //核心初始化完成
+    const KERNEL_INIT = 0x30;
+
+
 
     //-----------------------------MY
 

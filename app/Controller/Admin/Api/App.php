@@ -208,4 +208,102 @@ class App extends Manage
         $this->app->uninstallPlugin($pluginKey, $type);
         return $this->json(200, "卸载完成");
     }
+
+    /**
+     * 开发者插件
+     * @return array
+     */
+    public function developerPlugins(): array
+    {
+        $plugins = $this->app->developerPlugins([
+            "page" => (int)$_POST['page'],
+            "limit" => (int)$_POST['limit']
+        ]);
+        $json = $this->json(200, null, $plugins['rows']);
+        $json['count'] = $plugins['count'];
+        $json['user'] = $plugins['user'];
+        return $json;
+    }
+
+
+    /**
+     * 创建插件
+     * @return array
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function developerCreatePlugin(): array
+    {
+        $file = $_POST['icon'];
+        if (!file_exists(BASE_PATH . $file)) {
+            throw new JSONException("请上传图标");
+        }
+        $iconBody = file_get_contents(BASE_PATH . $file);
+        $_POST['icon'] = $iconBody;
+        return $this->json(200, "创建成功", $this->app->developerCreatePlugin($_POST));
+    }
+
+    /**
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function developerCreateKit(): array
+    {
+        $file = $_POST['resource'];
+        if (!file_exists(BASE_PATH . $file)) {
+            throw new JSONException("请重新上传插件包");
+        }
+        //上传安装包
+        $upload = $this->app->upload([
+            [
+                'name' => 'file',
+                'contents' => fopen(BASE_PATH . $file, 'r'),
+                'filename' => 'file.zip'
+            ]
+        ]);
+        //删除本地安装包
+        unlink(BASE_PATH . $file);
+        //需要审核的安装包临时存放地址
+        $_POST['resource'] = $upload['path'];
+        return $this->json(200, "提交成功", $this->app->developerCreateKit($_POST));
+    }
+
+    /**
+     * @return array
+     */
+    public function developerDeletePlugin(): array
+    {
+        return $this->json(200, "删除成功", $this->app->developerDeletePlugin($_POST));
+    }
+
+    /**
+     * @return array
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function developerUpdatePlugin(): array
+    {
+        $file = $_POST['audit_resource'];
+        if (!file_exists(BASE_PATH . $file)) {
+            throw new JSONException("请重新上传插件包");
+        }
+        //上传更新包
+        $upload = $this->app->upload([
+            [
+                'name' => 'file',
+                'contents' => fopen(BASE_PATH . $file, 'r'),
+                'filename' => 'file.zip'
+            ]
+        ]);
+        //删除本地更新包
+        unlink(BASE_PATH . $file);
+        //需要审核的安装包临时存放地址
+        $_POST['audit_resource'] = $upload['path'];
+        return $this->json(200, "提交成功", $this->app->developerUpdatePlugin($_POST));
+    }
+
+    /**
+     * @return array
+     */
+    public function developerPluginPriceSet(): array
+    {
+        return $this->json(200, "新的定价已生效", $this->app->developerPluginPriceSet($_POST));
+    }
 }

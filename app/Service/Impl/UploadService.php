@@ -83,7 +83,7 @@ class UploadService implements Upload
 
         //最后一个值必定是后缀
         $fix = $exp[count($exp) - 1];
-        if (!in_array(strtolower($fix), $type)) return '不支持该后缀的文件:';
+        if (!in_array(strtolower($fix), $type)) return '不支持该后缀的文件:' . $type;
 
         //文件大小限制
         $upload_size = $upload['size'] / 1024;

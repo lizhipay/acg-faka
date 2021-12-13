@@ -41,6 +41,7 @@ class EmailService implements Email
             $mail->AddAddress($email);
             $mail->Subject = $title;
             $mail->MsgHTML($content);
+            $mail->Timeout = 10; //默认超时10秒钟
             $result = $mail->Send();
         } catch (\Exception $e) {
             return false;

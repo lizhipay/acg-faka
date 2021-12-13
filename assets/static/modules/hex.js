@@ -498,7 +498,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '<div class="layui-form-item" ><input type="hidden" name="' + item.name + '" value="' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '">\n' +
-                            '    <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '    <label class="layui-form-label">' + item.title + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
                             '    <div class="layui-input-block ' + item.name + '">\n' +
                             '       <div class="' + item.name + '"></div>' +
                             '    </div>\n' +

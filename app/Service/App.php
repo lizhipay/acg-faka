@@ -24,6 +24,11 @@ interface App
      */
     public function update(): void;
 
+    /**
+     *
+     */
+    public function upload(array $data): array;
+
 
     /**
      * @return array
@@ -92,4 +97,41 @@ interface App
      * @param int $type
      */
     public function uninstallPlugin(string $key, int $type): void;
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function developerPlugins(array $data): array;
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function developerCreatePlugin(array $data): array;
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function developerCreateKit(array $data): array;
+
+    /**
+     * 删除自己的插件
+     * @param array $data
+     * @return array
+     */
+    public function developerDeletePlugin(array $data): array;
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function developerUpdatePlugin(array $data): array;
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function developerPluginPriceSet(array $data): array;
 }

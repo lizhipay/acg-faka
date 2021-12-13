@@ -181,7 +181,7 @@ class AppService implements App
             $database = config("database");
             SQL::import($installSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
         }
- 
+
         if ($type == 0) {
             //安装
             \Kernel\Util\Plugin::runHookState($key, \Kernel\Annotation\Plugin::INSTALL);
@@ -390,6 +390,29 @@ class AppService implements App
     }
 
     /**
+     * @param array $data
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function developerPlugins(array $data): array
+    {
+        return $this->storeRequest("/developer/plugins", $data);
+    }
+
+
+    /**
+     * @param array $data
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function developerCreatePlugin(array $data): array
+    {
+        return $this->storeRequest("/developer/create", $data);
+    }
+
+    /**
      * @throws GuzzleException
      * @throws JSONException
      */
@@ -403,4 +426,69 @@ class AppService implements App
         ]);
     }
 
+    /**
+     * @param array $data
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function developerCreateKit(array $data): array
+    {
+        return $this->storeRequest("/developer/createKit", $data);
+    }
+
+
+    /**
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function developerDeletePlugin(array $data): array
+    {
+        return $this->storeRequest("/developer/deletePlugin", $data);
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function upload(array $data): array
+    {
+        try {
+            $form = [
+                "multipart" => $data,
+                "verify" => false
+            ];
+            $response = $this->client->post(self::APP_URL . "/open/project/upload", $form);
+            $res = (array)json_decode((string)$response->getBody()->getContents(), true);
+        } catch (GuzzleException $e) {
+            throw new JSONException("应用商店连接失败");
+        }
+        if ($res['code'] != 200) {
+            throw new JSONException($res['msg']);
+        }
+        return $res['data'];
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function developerUpdatePlugin(array $data): array
+    {
+        return $this->storeRequest("/developer/createUpdate", $data);
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function developerPluginPriceSet(array $data): array
+    {
+        return $this->storeRequest("/developer/priceSet", $data);
+    }
 }

@@ -347,7 +347,7 @@
                 responseHandler: function (res) {
                     layer.close(pluginLoadIndex);
                     if (res.code != 200) {
-                        if (init){
+                        if (init) {
                             tab();
                         }
                     } else if (res.code == 200) {
@@ -505,9 +505,9 @@
                                 });
                             },
                             'click .upgrade': function (event, value, row, index) {
-                                layer.confirm('您正在更新插件 <span style="color: red;"> ' + row.plugin_name + " </span>，是否继续？", {
+                                layer.confirm(row.update_content, {
                                     btn: ['立即更新', '取消'],
-                                    title: "更新插件"
+                                    title: "更新插件 -> " + '<span style="color: red;">' + row.plugin_name + '</span>'
                                 }, function () {
                                     let layIndex = layer.load(1, {shade: [0.3, '#fff']});
                                     $.post('/admin/api/app/upgrade', {
