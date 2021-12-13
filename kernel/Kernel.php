@@ -44,10 +44,7 @@ try {
     //存储
     $_GET["_PARAMETER"] = $parameter;
 
-    //检测类是否存在
-    if (!class_exists($controller)) {
-        throw new \Kernel\Exception\NotFoundException("404 Not Found");
-    }
+
     //初始化数据库
     $capsule = new \Illuminate\Database\Capsule\Manager();
     // 创建链接
@@ -72,6 +69,11 @@ try {
     Initialize();
 
     hook(\App\Consts\Hook::KERNEL_INIT);
+
+    //检测类是否存在
+    if (!class_exists($controller)) {
+        throw new \Kernel\Exception\NotFoundException("404 Not Found");
+    }
 
     $controllerInstance = new $controller;
     //#Class Interceptor
