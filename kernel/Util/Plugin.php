@@ -17,6 +17,11 @@ class Plugin
     public static ?string $currentPluginName = null;
 
     /**
+     * @var string|null
+     */
+    public static ?string $currentControllerPluginName = null;
+
+    /**
      * @param string $name
      * @return array|null
      */

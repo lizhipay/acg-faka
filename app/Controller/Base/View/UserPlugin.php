@@ -44,7 +44,7 @@ abstract class UserPlugin extends \App\Controller\Base\User
                 $data['user'] = $user;
                 $data['group'] = $this->getUserGroup()->toArray();
             }
-            return View::render($template, $data, BASE_PATH . "/app/Plugin/" . \Kernel\Util\Plugin::$currentPluginName . "/View");
+            return View::render($template, $data, BASE_PATH . "/app/Plugin/" . \Kernel\Util\Plugin::$currentControllerPluginName . "/View");
         } catch (\SmartyException $e) {
             throw new ViewException($e->getMessage());
         }

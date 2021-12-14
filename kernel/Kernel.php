@@ -24,7 +24,7 @@ try {
 
     if (strtolower($s[0]) == "plugin") {
         $controller = "App";
-        \Kernel\Util\Plugin::$currentPluginName = ucfirst(trim((string)$s[1]));
+        \Kernel\Util\Plugin::$currentControllerPluginName = ucfirst(trim((string)$s[1]));
     }
 
     foreach ($s as $j => $x) {

@@ -44,7 +44,7 @@ abstract class ManagePlugin extends \App\Controller\Base\Manage
                 };
             }
             $data['manage_view_path'] = BASE_PATH . '/app/View/Admin/';
-            return View::render($template, $data, BASE_PATH . "/app/Plugin/" . \Kernel\Util\Plugin::$currentPluginName . "/View");
+            return View::render($template, $data, BASE_PATH . "/app/Plugin/" . \Kernel\Util\Plugin::$currentControllerPluginName . "/View");
         } catch (\SmartyException $e) {
             throw new ViewException($e->getMessage());
         }

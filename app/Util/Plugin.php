@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Util;
 
 use Kernel\Exception\JSONException;
+use Kernel\Util\View;
 
 /**
  * Class Plugin
@@ -159,5 +160,16 @@ class Plugin
         $config = self::getConfig($pluginName, $cache);
         $config[$key] = urldecode((string)$value);
         setConfig($config, BASE_PATH . '/app/Plugin/' . $pluginName . '/Config/Config.php');
+    }
+
+    /**
+     * @param string $pluginName
+     * @param string $template
+     * @param array $data
+     * @return string
+     */
+    public static function render(string $pluginName, string $template, array $data = []): string
+    {
+        return View::render($template, $data, BASE_PATH . "/app/Plugin/" . $pluginName . "/View");
     }
 }
