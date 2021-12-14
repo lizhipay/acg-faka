@@ -20,7 +20,7 @@ abstract class ManagePlugin extends \App\Controller\Base\Manage
      * @return string
      * @throws \Kernel\Exception\ViewException
      */
-    public function render(?string $title, string $template, array $data = []): string
+    public function render(?string $title, string $template, array $data = [], bool $controller = false): string
     {
         try {
             $data['title'] = $title;
@@ -44,7 +44,7 @@ abstract class ManagePlugin extends \App\Controller\Base\Manage
                 };
             }
             $data['manage_view_path'] = BASE_PATH . '/app/View/Admin/';
-            return View::render($template, $data, BASE_PATH . "/app/Plugin/" . \Kernel\Util\Plugin::$currentControllerPluginName . "/View");
+            return View::render($template, $data, BASE_PATH . "/app/Plugin/" . ($controller ? \Kernel\Util\Plugin::$currentControllerPluginName : \Kernel\Util\Plugin::$currentPluginName) . "/View");
         } catch (\SmartyException $e) {
             throw new ViewException($e->getMessage());
         }

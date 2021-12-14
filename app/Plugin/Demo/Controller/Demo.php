@@ -21,6 +21,6 @@ class Demo extends ManagePlugin
      */
     public function test(): string
     {
-        return $this->render("插件DEMO", "Demo.html");
+        return $this->render(title: '插件DEMO', template: 'Demo.html', controller: true);
     }
 }

@@ -20,10 +20,11 @@ abstract class UserPlugin extends \App\Controller\Base\User
      * @param string $title
      * @param string $template
      * @param array $data
+     * @param bool $controller
      * @return string
      * @throws \Kernel\Exception\ViewException
      */
-    public function render(string $title, string $template, array $data = []): string
+    public function render(string $title, string $template, array $data = [], bool $controller = false): string
     {
         try {
             $data['title'] = $title;
@@ -44,7 +45,7 @@ abstract class UserPlugin extends \App\Controller\Base\User
                 $data['user'] = $user;
                 $data['group'] = $this->getUserGroup()->toArray();
             }
-            return View::render($template, $data, BASE_PATH . "/app/Plugin/" . \Kernel\Util\Plugin::$currentControllerPluginName . "/View");
+            return View::render($template, $data, BASE_PATH . "/app/Plugin/" . ($controller ? \Kernel\Util\Plugin::$currentControllerPluginName : \Kernel\Util\Plugin::$currentPluginName) . "/View");
         } catch (\SmartyException $e) {
             throw new ViewException($e->getMessage());
         }

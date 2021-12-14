@@ -161,15 +161,4 @@ class Plugin
         $config[$key] = urldecode((string)$value);
         setConfig($config, BASE_PATH . '/app/Plugin/' . $pluginName . '/Config/Config.php');
     }
-
-    /**
-     * @param string $pluginName
-     * @param string $template
-     * @param array $data
-     * @return string
-     */
-    public static function render(string $pluginName, string $template, array $data = []): string
-    {
-        return View::render($template, $data, BASE_PATH . "/app/Plugin/" . $pluginName . "/View");
-    }
 }
