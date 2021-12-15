@@ -168,6 +168,14 @@
                             <span class="indicator-label">注册 (Register)</span>
                         </button>
                         <!--end::Submit button-->
+                        #{if getHookNum(\App\Consts\Hook::USER_VIEW_AUTH_REGISTER_BUTTON) > 0}
+                        <!--begin::Separator-->
+                        <div class="text-center text-muted text-uppercase fw-bolder mb-5">or</div>
+                        <!--end::Separator-->
+                        #{/if}
+                        <!--start::HOOK-->
+                        #{hook(\App\Consts\Hook::USER_VIEW_AUTH_REGISTER_BUTTON)}
+                        <!--end::HOOK-->
                     </div>
                     <!--end::Actions-->
                 </form>

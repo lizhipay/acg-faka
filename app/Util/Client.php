@@ -37,7 +37,7 @@ class Client
         }
         return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'];
     }
- 
+
     /**
      * @return string
      */
@@ -55,8 +55,12 @@ class Client
      */
     #[NoReturn] public static function redirect(string $url, string $message, int $time = 2): void
     {
-        header("refresh:{$time},url={$url}");
-        echo View::render("404.html", ["msg" => $message]);
+        if ($time == 0) {
+            header('location:' . $url);
+        } else {
+            header("refresh:{$time},url={$url}");
+            echo View::render("404.html", ["msg" => $message]);
+        }
         exit;
     }
 }

@@ -70,6 +70,15 @@ interface Hook
     const KERNEL_INIT = 0x30;
 
 
+    //登录页面，第三方登录扩展按钮
+    const USER_VIEW_AUTH_LOGIN_BUTTON = 0x41;
+    //注册页面，第三方登录按钮扩展
+    const USER_VIEW_AUTH_REGISTER_BUTTON = 0x42;
+    //安全中心NAV SecurityNav.html
+    const USER_VIEW_SECURITY_NAV = 0x43;
+    //个人资料选项
+    const USER_VIEW_PERSONAL_FORM = 0x44;
+
 
     //-----------------------------MY
 
