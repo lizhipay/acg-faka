@@ -11,6 +11,7 @@ class Plugin
     const STOP = 0x2;
     const UNINSTALL = 0x3;
     const INSTALL = 0x4;
+    const UPGRADE = 0x5;
 
     /**
      * @var int

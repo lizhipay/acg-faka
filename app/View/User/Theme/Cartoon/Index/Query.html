@@ -78,7 +78,16 @@
             $('.getCard').click(function () {
                 let orderId = $(this).attr('data-id');
                 Pay.getSecret(orderId, $('.passId-' + orderId).val(), res => {
-                    $('.cardInfo-' + orderId).html(res.secret);
+                    let secret = "";
+                    if (res.widget) {
+                        secret += "--------------您隐私内容---------------\n";
+                        for (const widgetKey in res.widget) {
+                            secret += res.widget[widgetKey].cn + "：" + res.widget[widgetKey].value + "\n";
+                        }
+                        secret += "--------------卡密信息---------------\n";
+                    }
+                    secret += res.secret;
+                    $('.cardInfo-' + orderId).html(secret);
                     $('.cardInfoView-' + orderId).show(80);
                 });
             });

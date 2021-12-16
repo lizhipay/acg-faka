@@ -373,6 +373,16 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             '            </div>\n' +
                             '        </div>';
                         break;
+                    case 'custom':
+                        if (edit === true && item.edit === false) {
+                            break;
+                        }
+                        d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
+                            '            <label class="layui-form-label">' + item.title + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
+                            '            <div class="layui-input-block container-' + item.name + '"> \n' +
+                            '            </div> \n' +
+                            '        </div>';
+                        break;
                     case 'textarea':
                         if (edit === true && item.edit === false) {
                             break;
@@ -559,7 +569,6 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                         } else {
                             paramsToJSONObject[item.name] = item.value.replace(/\+/g, "%2B").replace(/\&/g, "%26");
                         }
-
                     });
 
                     //let paramsToJSONObject = this.paramsToJSONObject(serialize);
@@ -575,6 +584,28 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 break;
                             case "html":
                                 paramsToJSONObject[item.name] = objectContainer[item.name].getValue();
+                                break;
+                            case "custom":
+                                let json = [];
+                                paramsToJSONObject["name-" + item.name].forEach((name, index) => {
+                                    if (name != "") {
+                                        json.push({
+                                            cn: paramsToJSONObject["cn-" + item.name][index],
+                                            name: name,
+                                            placeholder: paramsToJSONObject["placeholder-" + item.name][index],
+                                            type: paramsToJSONObject["type-" + item.name][index],
+                                            regex: paramsToJSONObject["regex-" + item.name][index],
+                                            error: paramsToJSONObject["error-" + item.name][index],
+                                        });
+                                    }
+                                });
+                                delete paramsToJSONObject["cn-" + item.name];
+                                delete paramsToJSONObject["placeholder-" + item.name];
+                                delete paramsToJSONObject["type-" + item.name];
+                                delete paramsToJSONObject["regex-" + item.name];
+                                delete paramsToJSONObject["error-" + item.name];
+                                delete paramsToJSONObject["name-" + item.name];
+                                paramsToJSONObject[item.name] = encodeURIComponent(JSON.stringify(json));
                                 break;
                         }
                     });
@@ -898,6 +929,71 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                     $('.hex-modal .' + item.name).siblings(".CodeMirror").css("height", item.height == "100%" ? item.height : item.height + "px");
                                 }
 
+                                break;
+                            case 'custom':
+                                let preset = [];
+
+                                if (values.hasOwnProperty(item.name) && values[item.name].length > 0) {
+                                    preset = JSON.parse(values[item.name]);
+                                }
+
+                                let instance = $('.container-' + item.name);
+                                let viewNum = 0;
+                                let bindButton = function (id) {
+                                    viewNum++;
+                                    $('.view-' + id).show(150);
+                                    $('.append-' + id).click(function () {
+                                        let res = render();
+                                        $(this).parent().parent().after(res.html);
+                                        form.render();
+                                        bindButton(res.id);
+                                    });
+                                    $('.del-' + id).click(function () {
+                                        if (viewNum <= 1) {
+                                            layer.msg("(⁎˃ᆺ˂)最后一个不能移除哦，但是已经帮你清空了");
+                                            let res = render();
+                                            instance.html(res.html);
+                                            form.render();
+                                            bindButton(res.id);
+                                            viewNum--;
+                                            return;
+                                        }
+
+                                        let dom = $(this).parent().parent();
+                                        dom.fadeOut('fast', function () {
+                                            dom.remove();
+                                            viewNum--;
+                                        });
+                                    });
+                                }
+
+                                let render = function (opt = {}) {
+                                    let id = Math.random().toString(36).slice(-10);
+                                    let html = '' +
+                                        '<div style="border-bottom: 1px dashed #ff7c7c3b;margin-bottom: 5px;padding-bottom: 5px;display: none;" class="view-' + id + '"><input type="text"  name="cn-' + item.name + '[]" placeholder="中文名(CN)" class="layui-input" value="' + (opt.hasOwnProperty("cn") ? opt.cn : "") + '"  style="width:100px;display: inline-block;"> ' +
+                                        '<input value="' + (opt.hasOwnProperty("name") ? opt.name : "") + '" name="name-' + item.name + '[]" type="text" placeholder="键名(NAME)" class="layui-input" style="width: 100px;display: inline-block;"> ' +
+                                        '<input value="' + (opt.hasOwnProperty("placeholder") ? opt.placeholder : "") + '" name="placeholder-' + item.name + '[]" type="text" placeholder="提示内容" class="layui-input" style="width: 120px;display: inline-block;"> ' +
+                                        '<input value="' + (opt.hasOwnProperty("regex") ? opt.regex : "") + '"  name="regex-' + item.name + '[]" type="text" placeholder="正则(regex)" class="layui-input" style="width: 120px;display: inline-block;"> ' +
+                                        '<input value="' + (opt.hasOwnProperty("error") ? opt.error : "") + '" name="error-' + item.name + '[]" type="text" placeholder="匹配错误提示" class="layui-input" style="width: 120px;display: inline-block;"> ' +
+                                        '<div style="width: 140px;display: inline-block;"><select name="type-' + item.name + '[]">' +
+                                        '<option ' + (opt.hasOwnProperty("type") && opt.type == "text" ? "selected" : "") + '  value="text">文本框(text)</option>' +
+                                        '<option ' + (opt.hasOwnProperty("type") && opt.type == "password" ? "selected" : "") + ' value="password">密码框(password)</option>' +
+                                        '<option ' + (opt.hasOwnProperty("type") && opt.type == "number" ? "selected" : "") + ' value="number">数字框(number)</option>' +
+                                        '</select></div> <div style="display: inline-block;margin-left: 2px;"><i class="layui-icon append-' + id + '" style="color: #23a148;cursor: pointer;font-size: 16px;font-weight: bold;">&#xe61f;</i> <i class="layui-icon del-' + id + '" style="color: #eb8181;cursor: pointer;font-size: 16px;font-weight: bold;">&#x1006;</i></div></div>';
+                                    return {id: id, html: html};
+                                }
+
+                                if (preset.length > 0) {
+                                    preset.forEach(item => {
+                                        let res = render(item);
+                                        instance.append(res.html);
+                                        bindButton(res.id);
+                                    })
+                                } else {
+                                    let res = render();
+                                    instance.html(res.html);
+                                    bindButton(res.id);
+                                }
                                 break;
                         }
 

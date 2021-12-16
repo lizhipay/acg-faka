@@ -154,5 +154,20 @@ var Pay = {
             minutes: diffMinutes,
             seconds: diffSeconds,
         }
+    },
+    arrayToObject(serializeArray) {
+        let paramsToJSONObject = {};
+        serializeArray.forEach(item => {
+            if (item.name.match(RegExp(/\[\]/))) {
+                let name = item.name.replace("[]", "");
+                if (!paramsToJSONObject.hasOwnProperty(name)) {
+                    paramsToJSONObject[name] = [];
+                }
+                paramsToJSONObject[name].push(item.value);
+            } else {
+                paramsToJSONObject[item.name] = item.value.replace(/\+/g, "%2B").replace(/\&/g, "%26");
+            }
+        });
+        return paramsToJSONObject;
     }
 }

@@ -109,6 +109,25 @@ class OrderService implements Order
             }
         }
 
+        $widget = [];
+
+        //widget
+        if ($commodity->widget) {
+            $widgetList = (array)json_decode((string)$commodity->widget, true);
+            foreach ($widgetList as $item) {
+                if ($item['regex'] != "") {
+                    if (!preg_match("/{$item['regex']}/", (string)$map[$item['name']])) {
+                        throw new JSONException($item['error']);
+                    }
+                }
+                $widget[$item['name']] = [
+                    "value" => $map[$item['name']],
+                    "cn" => $item['cn']
+                ];
+            }
+        }
+
+        $widget = json_encode($widget, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         //预选卡密
         if ($commodity->draft_status == 1 && $cardId != 0) {
@@ -180,9 +199,10 @@ class OrderService implements Order
             throw new JSONException("当前支付方式已停用，请换个支付方式再进行支付");
         }
 
-        return Db::transaction(function () use ($userGroup, $num, $contact, $device, $amount, $owner, $commodity, $pay, $cardId, $password, $coupon, $from) {
+        return Db::transaction(function () use ($userGroup, $num, $contact, $device, $amount, $owner, $commodity, $pay, $cardId, $password, $coupon, $from, $widget) {
             $date = Date::current();
             $order = new  \App\Model\Order();
+            $order->widget = $widget;
             $order->owner = $owner;
             $order->trade_no = Str::generateTradeNo();
             $order->amount = $amount;

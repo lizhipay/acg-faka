@@ -246,6 +246,41 @@
                                 });
                             }
                         }
+                    }
+                    , {
+                        field: 'widget', title: '控件', formatter: function (val, item) {
+                            let parse = JSON.parse(item.widget);
+                            if (!parse || parse.length == 0) {
+                                return '-';
+                            }
+                            return '<span class="widget" style="cursor: pointer;" ><i class="fas fa-eye"></i></span>';
+                        }
+                        , events: {
+                            'click .widget': function (event, value, map, index) {
+                                let html = '<div style="padding: 10px;" class="more-table">\n' +
+                                    '        <table class="layui-table">\n' +
+                                    '            <tbody class="widget-container">\n' +
+                                    '            </tbody>\n' +
+                                    '        </table>\n' +
+                                    '    </div>';
+                                let parse = JSON.parse(map.widget);
+                                if (!parse) {
+                                    return;
+                                }
+                                layer.open({
+                                    type: 1,
+                                    shadeClose: true,
+                                    title: '<i class="fas fa-eye"></i> <span style="color: gray;">Widget</span>',
+                                    content: html,
+                                    area: cao.isPc() ? "420px" : ["100%", "100%"],
+                                    success: () => {
+                                        for (const parseKey in parse) {
+                                            $('.widget-container').append('<tr><td>' + parse[parseKey].cn + '</td><td>' + parse[parseKey].value + '</td></tr>');
+                                        }
+                                    }
+                                });
+                            }
+                        }
                     },
                     <!--start::HOOK-->
                     #{hook(\App\Consts\Hook::ADMIN_VIEW_ORDER_TABLE)}

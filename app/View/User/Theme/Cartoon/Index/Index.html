@@ -121,7 +121,7 @@
         '                                       type="number" style="width: 10%;" value="1">\n' +
         '                                <span style="margin-left: 10px;display: none;" class="kucunView"> 剩余库存: <span\n' +
         '                                        class="badge badge-pill badge-success text-white card_count">0</span></span>\n' +
-        '                            </fieldset>\n' +
+        '                            </fieldset><p class="widget"></p>\n' +
         '                            <p><span class="purchase_count" style="font-size: 14px;font-weight: bold;color: #c59de9;display: none;"></span></p>\n' +
         '                            #{if $config.trade_verification==1}\n' +
         '                            <fieldset class="form-group">\n' +
@@ -415,6 +415,19 @@
                 $('.purchase_count').show();
             }
 
+            //控件
+            if (commodity.widget) {
+                let parse = JSON.parse(commodity.widget);
+                if (parse != null) {
+                    parse.forEach(widget => {
+                        $('.widget').append(' <fieldset class="form-group">\n' +
+                            '                                <label style="display: inline-block;">' + widget.cn + '：</label>\n' +
+                            '                                <input type="' + widget.type + '" class="form-control round" name="' + widget.name + '" placeholder="' + widget.placeholder + '">\n' +
+                            '                            </fieldset>');
+                    });
+                }
+            }
+
 
             $('.clipboard').attr("data-clipboard-text", commodity.share_url);
 
@@ -444,7 +457,6 @@
             cardId = 0;
         }
         Pay.getTradeAmount(globalCommodityId, coupon, cardId, num, res => {
-            console.log(res);
             $('.payAmount').html("¥" + res.amount);
         });
     }
@@ -460,18 +472,15 @@
         if (cardId === undefined) {
             cardId = 0;
         }
-        Pay.trade({
-            captcha: $('input[name=captcha]').val(),
-            commodity_id: globalCommodityId,
-            contact: $('input[name=contact]').val(),
-            num: $('input[name=num]').val(),
-            password: $('input[name=password]').val(),
-            coupon: $('input[name=coupon]').val(),
-            card_id: cardId,
-            pay_id: payId,
-            device: Pay.device(),
-            from: localStorage.getItem("from_id")
-        }, res => {
+
+        let arrayToObject = Pay.arrayToObject($('.commodity').serializeArray());
+        arrayToObject.commodity_id = globalCommodityId;
+        arrayToObject.card_id = cardId;
+        arrayToObject.pay_id = payId;
+        arrayToObject.device = Pay.device();
+        arrayToObject.from = localStorage.hasOwnProperty("from_id") ? localStorage.getItem("from_id") : 0;
+
+        Pay.trade(arrayToObject, res => {
             captchaImage();
             if (res.secret == null) {
                 window.location.href = res.url;

@@ -194,6 +194,7 @@ class AppService implements App
      * @param int $pluginId
      * @throws GuzzleException
      * @throws JSONException
+     * @throws \ReflectionException
      */
     public function updatePlugin(string $key, int $type, int $pluginId): void
     {
@@ -227,6 +228,10 @@ class AppService implements App
         if (file_exists($updateSql)) {
             $database = config("database");
             SQL::import($updateSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
+        }
+
+        if ($type == 0) {
+            \Kernel\Util\Plugin::runHookState($key, \Kernel\Annotation\Plugin::UPGRADE);
         }
     }
 

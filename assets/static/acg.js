@@ -84,6 +84,21 @@ let acg = {
         });
     },
     Util: {
+        arrayToObject(serializeArray) {
+            let paramsToJSONObject = {};
+            serializeArray.forEach(item => {
+                if (item.name.match(RegExp(/\[\]/))) {
+                    let name = item.name.replace("[]", "");
+                    if (!paramsToJSONObject.hasOwnProperty(name)) {
+                        paramsToJSONObject[name] = [];
+                    }
+                    paramsToJSONObject[name].push(item.value);
+                } else {
+                    paramsToJSONObject[item.name] = item.value.replace(/\+/g, "%2B").replace(/\&/g, "%26");
+                }
+            });
+            return paramsToJSONObject;
+        },
         isPc() {
             var userAgentInfo = navigator.userAgent;
             var Agents = ["Android", "iPhone",
@@ -189,36 +204,23 @@ let acg = {
             }, opt.error);
         },
         trade(opt) {
-            acg.$post("/user/api/order/trade", {
-                captcha: opt.data.captcha,
-                commodity_id: opt.data.commodity_id,
-                contact: opt.data.contact,
-                num: opt.data.num,
-                password: opt.data.password,
-                coupon: opt.data.coupon,
-                card_id: opt.data.card_id,
-                pay_id: opt.data.pay_id,
-                device: opt.data.device,
-                from: localStorage.getItem("from_id")
-            }, opt.success, opt.error);
+            acg.$post("/user/api/order/trade", opt.data, opt.success, opt.error);
         },
         tradePerform(payId) {
             let cardId = $('input[name=card_id]:checked').val();
             if (cardId === undefined) {
                 cardId = 0;
             }
+
+            let arrayToObject = acg.Util.arrayToObject($('.commodity-form').serializeArray());
+            arrayToObject.commodity_id = acg.property.cache.currentCommodityId;
+            arrayToObject.card_id = cardId;
+            arrayToObject.pay_id = payId;
+            arrayToObject.device = acg.Util.device();
+            arrayToObject.from = localStorage.hasOwnProperty("from_id") ? localStorage.getItem("from_id") : 0;
+
             acg.API.trade({
-                data: {
-                    captcha: $('input[name=captcha]').val(),
-                    commodity_id: acg.property.cache.currentCommodityId,
-                    contact: $('input[name=contact]').val(),
-                    num: $('input[name=num]').val(),
-                    password: $('input[name=password]').val(),
-                    coupon: $('input[name=coupon]').val(),
-                    card_id: cardId,
-                    pay_id: payId,
-                    device: acg.Util.device()
-                },
+                data: arrayToObject,
                 success: res => {
                     if (res.secret == null) {
                         window.location.href = res.url;
@@ -509,6 +511,20 @@ let acg = {
                             if (res.draft_status == 1) {
                                 instance.show();
                                 acg.API.draftCardPerform(opt.auto[autoKey], res.id, 1, res.draft_premium);
+                            } else {
+                                instance.hide();
+                            }
+                            continue;
+                        } else if (autoKey == "widget") {
+                            if (res.widget) {
+                                let parse = JSON.parse(res.widget);
+                                if (parse != null) {
+                                    parse.forEach(widget => {
+                                        instance.append('<p>' + widget.cn + '：<input class="acg-input" type="' + widget.type + '" name="' + widget.name + '" placeholder="' + widget.placeholder + '"></p>');
+                                    });
+                                } else {
+                                    instance.hide();
+                                }
                             } else {
                                 instance.hide();
                             }
