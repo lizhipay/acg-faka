@@ -52,8 +52,6 @@
     }
 </style>
 <script>
-
-
     $(document).pjax('a[target!=_blank]', '#pjax-container', {fragment: '#pjax-container',timeout: 8000}); //#wrap为刷新的id
     $(document).on('pjax:send', function() {
         $(".loading").css("display", "block");

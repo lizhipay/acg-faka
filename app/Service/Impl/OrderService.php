@@ -216,10 +216,11 @@ class OrderService implements Order
             $order->delivery_status = 0;
             $order->card_num = $num;
             $order->user_id = (int)$commodity->owner;
+            $order->rent = $commodity->factory_price * $num; //成本价
             if ($from != 0 && $order->user_id != $from) {
                 $order->from = $from;
             }
-
+ 
             if ($commodity->draft_status == 1 && $cardId != 0) {
                 $card = Card::query()->find($cardId);
                 if (!$card || $card->status != 0) {

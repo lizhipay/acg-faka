@@ -61,7 +61,7 @@ class Dashboard extends \App\Controller\Base\API\Manage
         //订单数量
         $data['order_num'] = (clone $order)->count();
         //手续费
-        $data['cost'] = sprintf("%.2f", (clone $order)->sum("cost"));
+        $data['cost'] = sprintf("%.2f", (clone $order)->where("user_id", "!=", 0)->sum("cost"));
         //店铺数量
         $data['business'] = $business->count();
         //未处理的提现
@@ -71,6 +71,66 @@ class Dashboard extends \App\Controller\Base\API\Manage
         //充值金额
         $data['recharge_amount'] = (clone $recharge)->where("status", 1)->sum("amount");
 
+        //盈利
+        $data['rent'] = ((clone $order)->where("user_id", 0)->sum("amount") - (clone $order)->where("user_id", 0)->sum("rent")) + (float)$data['cost'];
+        $data['rent'] = sprintf("%.2f", $data['rent']);;
+
         return $this->json(200, 'success', $data);
+    }
+
+    /**
+     * 本周数据
+     * @return array
+     */
+    public function weekStatistics(): array
+    {
+        $w = date('w');
+        $w = $w == 0 ? 7 : $w;
+
+        $week = [
+            1 => "星期一",
+            2 => "星期二",
+            3 => "星期三",
+            4 => "星期四",
+            5 => "星期五",
+            6 => "星期六",
+            7 => "星期七"
+        ];
+
+        $weeks = [];
+
+
+        $series = [
+            "trade" => [],
+            "profit" => [],
+            "cost" => [],
+            "cash" => [],
+            "recharge" => [],
+        ];
+
+        for ($i = 1; $i <= $w; $i++) {
+            $weeks[] = $week[$i];
+            //交易额
+            $amount = \App\Model\Order::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->sum("amount");
+            $series["trade"][] = sprintf("%.2f", $amount);
+            //手续费
+            $cost = \App\Model\Order::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->where("user_id", "!=", 0)->sum("cost");
+            $series["cost"][] = sprintf("%.2f", $cost);
+            //纯盈利
+            $rent = \App\Model\Order::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->where("user_id", 0)->sum("rent");//主站成本
+            $profit = (\App\Model\Order::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->where("user_id", 0)->sum("amount") - $rent) + $cost;;
+            $series["profit"][] = sprintf("%.2f", $profit);
+            //提现
+            $cash = \App\Model\Cash::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->sum("amount");
+            $series["cash"][] = sprintf("%.2f", $cash);
+            //充值
+            $recharge = \App\Model\UserRecharge::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->sum("amount");;
+            $series["recharge"][] = sprintf("%.2f", $recharge);
+        }
+
+        return $this->json(200, "success", [
+            "series" => $series,
+            "week" => $weeks
+        ]);
     }
 }

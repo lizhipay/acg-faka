@@ -7,14 +7,92 @@
 </style>
 
 <!--begin::Content-->
-<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+<div class="content d-flex flex-column flex-column-fluid">
     <!--begin::Toolbar-->
     #{include file="../Toolbar.html"}
     <!--end::Toolbar-->
     <!--begin::Post-->
-    <div class="post d-flex flex-column-fluid" id="kt_post">
+    <div class="post d-flex flex-column-fluid">
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
+            <!--begin::Row-->
+            <div class="row g-5 g-xl-10">
+                <div class="col-xl-2">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8" style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">总商品</span>
+                            <div class="fw-bolder text-primary my-6">#{$all}个</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+                <div class="col-xl-2">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8" style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-2.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">已上架</span>
+                            <div class="fw-bolder text-primary my-6">#{$shelves}个</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+                <div class="col-xl-2">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-5 mb-xl-8" style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-1.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">未上架</span>
+                            <div class="fw-bolder text-primary my-6">#{$not}个</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+
+                <div class="col-xl-2">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-5 mb-xl-8" style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-3.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">主站商品</span>
+                            <div class="fw-bolder text-primary my-6">#{$main}个</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+                <div class="col-xl-2">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-5 mb-xl-8" style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">子站商品</span>
+                            <div class="fw-bolder text-primary my-6">#{$child}个</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+                <div class="col-xl-2">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-5 mb-xl-8" style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">子站上架</span>
+                            <div class="fw-bolder text-primary my-6">#{$child_shelves}个</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+            </div>
+            <!--end::Row-->
+
             <!--begin::Tables Widget 9-->
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->
@@ -60,8 +138,8 @@
                 url: '/admin/api/commodity/data',//请求的url地址
                 method: "post",//请求方式
                 // striped:true,//是否显示行间隔色
-                pageSize: 15,//每页显示的数量
-                pageList: [15, 25, 50, 100],
+                pageSize: 13,//每页显示的数量
+                pageList: [13, 25, 50, 100],
                 showRefresh: false,//是否显示刷新按钮
                 cache: false,//是否使用缓存
                 showToggle: false,//是否显示详细视图和列表视图的切换按钮
@@ -131,10 +209,14 @@
                     , {field: 'factory_price', title: '成本价'}
                     , {field: 'price', title: '零售价'}
                     , {field: 'user_price', title: '会员价'}
+                    , {field: 'order_today_amount', title: '今日'}
+                    , {field: 'order_yesterday_amount', title: '昨日'}
+                    , {field: 'order_week_amount', title: '本周'}
+                    , {field: 'order_all_amount', title: '全部'}
                     , {
                         field: 'code', title: '对接代码', formatter: function (val, item) {
                             return '<span class="badge badge-light-info">' + item.code + '</span>';
-                        }, width: 180
+                        }
                     }
                     , {
                         field: 'status', title: '状态', formatter: function (val, item) {

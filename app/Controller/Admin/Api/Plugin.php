@@ -57,7 +57,7 @@ class Plugin extends Manage
         }
 
         foreach ($map as $k => $v) {
-            $config[$k] = urldecode((string)$v);
+            $config[$k] = is_scalar($v) ? urldecode((string)$v) : $v;
         }
         unlink(BASE_PATH . "/runtime/plugin/plugin.cache");
         setConfig($config, BASE_PATH . '/app/Plugin/' . $id . '/Config/Config.php');

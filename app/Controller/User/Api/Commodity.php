@@ -28,7 +28,6 @@ class Commodity extends User
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
      */
     public function data(): array
     {
@@ -48,6 +47,8 @@ class Commodity extends User
         $queryTemplateEntity->setWithCount(['card as card_success_count' => function (Builder $builder) {
             $builder->where("status", 1);
         }]);
+
+
         $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
 
         foreach ($data['data'] as $key => $val) {

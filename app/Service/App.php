@@ -99,6 +99,18 @@ interface App
     public function uninstallPlugin(string $key, int $type): void;
 
     /**
+     * @param int $pluginId
+     * @return array
+     */
+    public function purchaseRecords(int $pluginId): array;
+
+    /**
+     * @param int $authId
+     * @return array
+     */
+    public function unbind(int $authId): array;
+
+    /**
      * @param array $data
      * @return array
      */

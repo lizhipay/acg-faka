@@ -48,9 +48,17 @@ class Order extends Manage
                 $relation->select(["id", "name", "icon"]);
             }
         ]);
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
+
+        $query = \App\Model\Order::query();
+        $data = $this->query->findTemplateAll($queryTemplateEntity, $query)->toArray();
         $json = $this->json(200, null, $data['data']);
         $json['count'] = $data['total'];
+
+        //获取订单数量
+        $json['order_count'] = (clone $query)->count();
+        $json['order_amount'] = (clone $query)->sum("amount");
+        $json['order_cost'] = (clone $query)->sum("cost");
+
         return $json;
     }
 

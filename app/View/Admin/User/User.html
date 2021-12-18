@@ -298,7 +298,7 @@
                         field: 'operate',
                         title: '操作',
                         formatter: function (val, item) {
-                            let html = '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fas fa-user-edit"></i></button> ';
+                            let html = '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-success btn-sm me-1 recharge"><i class="fas fa-comment-dollar text-success"></i></button> <button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fas fa-user-edit text-primary"></i></button> ';
                             if (item.status == 0) {
                                 html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 start"><i class="far fa-dot-circle" style="color: #17d917;"></i></button> ';
                             } else {
@@ -308,6 +308,9 @@
                             return html;
                         },
                         events: {
+                            'click .recharge': function (event, value, row, index) {
+                                recharge(row);
+                            },
                             'click .edit': function (event, value, row, index) {
                                 modal(row);
                             },
@@ -359,6 +362,7 @@
                         dict: "business_level,id,name",
                         placeholder: "暂未开通"
                     },
+                    {title: "累计充值", name: "recharge", type: "input", placeholder: "可以修改累计充值让用户达到理想等级"},
                     {title: "状态", name: "status", type: "switch", text: "正常"},
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});

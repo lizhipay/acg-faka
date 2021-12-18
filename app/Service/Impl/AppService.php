@@ -258,6 +258,28 @@ class AppService implements App
     }
 
     /**
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function purchaseRecords(int $pluginId): array
+    {
+        return $this->storeRequest("/store/records", [
+            "plugin_id" => $pluginId
+        ]);
+    }
+
+    /**
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function unbind(int $authId): array
+    {
+        return $this->storeRequest("/store/unbind", [
+            "auth_id" => $authId
+        ]);
+    }
+
+    /**
      * @throws GuzzleException
      * @throws JSONException
      */

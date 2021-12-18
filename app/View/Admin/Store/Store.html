@@ -394,8 +394,8 @@
                     ,
                     {
                         field: 'description', title: '说明', formatter: function (val, item) {
-                            return '<span class="badge badge-light">' + item.description + '</span>';
-                        }
+                            return '<span class="description">' + item.description + '</span>';
+                        },
                     },
                     {
                         field: 'description', title: '官网', formatter: function (val, item) {
@@ -453,11 +453,103 @@
                                 html += " <span class='badge badge-light-danger uninstall' style='cursor: pointer;'>卸载</span> ";
                             }
                             if (item.price > 0 && item.has.has == false) {
-                                html += " <span class='badge badge-light-success purchase' style='cursor: pointer;'>立即购买</span> ";
+                                if (item.owned == true) {
+                                    html += " <span class='badge badge-light-primary unbind' style='cursor: pointer;'>解绑</span> <span class='badge badge-light-success purchase' style='cursor: pointer;'>重新购买</span>";
+                                } else {
+                                    html += " <span class='badge badge-light-success purchase' style='cursor: pointer;'>立即购买</span> ";
+                                }
                             }
                             return html;
                         },
                         events: {
+                            'click .unbind': function (event, value, row, index) {
+                                layer.open({
+                                    type: 1,
+                                    shade: false,
+                                    title: false,
+                                    area: cao.isPc() ? "712px" : ["100%", "100%"],
+                                    content: '<div style="padding: 30px;"><table id="purchaseRecords"></table></div>',
+                                    success: function () {
+                                        $("#purchaseRecords").bootstrapTable({
+                                            url: '/admin/api/app/purchaseRecords?plugin_id=' + row.id,//请求的url地址
+                                            method: "post",//请求方式
+                                            // striped:true,//是否显示行间隔色
+                                            showRefresh: false,//是否显示刷新按钮
+                                            cache: false,//是否使用缓存
+                                            showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                                            cardView: false,
+                                            singleSelect: true,//复选框只能选择一条记录
+                                            contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                                            dataType: "json",//接收的数据类型
+                                            clickToSelect: true,
+                                            queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                                            queryParams: function (params) {
+                                                params.page = (params.offset / params.limit) + 1;
+                                                if (queryParams) {
+                                                    for (const key in params) {
+                                                        queryParams[key] = params[key];
+                                                    }
+                                                } else {
+                                                    queryParams = params;
+                                                }
+                                                return queryParams;
+                                            },
+                                            //回调函数
+                                            responseHandler: function (res) {
+                                                return {
+                                                    "total": res.count,
+                                                    "rows": res.data
+                                                }
+                                            },
+                                            columns: [
+                                                {checkbox: true}
+                                                ,
+                                                {
+                                                    field: 'server_ip',
+                                                    title: '服务器IP'
+                                                },
+                                                {
+                                                    field: 'app_key', title: '授权指纹',
+                                                    formatter: function (val, item) {
+                                                        return '<span class="badge badge-light-primary">' + item.app_key + '</span>';
+                                                    }
+                                                },
+                                                {
+                                                    field: 'expire_date', title: '到期时间',
+                                                    formatter: function (val, item) {
+                                                        return '<span class="badge badge-light-success">' + item.expire_date + '</span>';
+                                                    }
+                                                }
+                                            ]
+                                        });
+                                    },
+                                    btn: ["解绑授权至本机器"],
+                                    yes: () => {
+                                        let data = cao.listObjectToArray($("#purchaseRecords").bootstrapTable('getSelections'));
+                                        let authId = data[0];
+                                        if (authId > 0) {
+                                            layer.confirm('您正在进行指纹授权解绑操作，解绑后，该插件将在原站点授权失效，是否继续？', {
+                                                btn: ['立即解绑', '取消'],
+                                                title: "解绑提示"
+                                            }, function () {
+                                                let layIndex = layer.load(1, {shade: [0.3, '#fff']});
+                                                $.post('/admin/api/app/unbind', {
+                                                    auth_id: authId
+                                                }, res => {
+                                                    layer.close(layIndex);
+                                                    if (res.code == 200) {
+                                                        table.bootstrapTable('refresh', {silent: true});
+                                                        layer.closeAll();
+                                                    }
+                                                    layer.msg(res.msg);
+                                                });
+                                            });
+                                        } else {
+                                            layer.msg("请选择要解绑的授权");
+                                        }
+                                    }
+                                });
+                            },
                             'click .purchase': function (event, value, row, index) {
                                 purchase(row);
                             },

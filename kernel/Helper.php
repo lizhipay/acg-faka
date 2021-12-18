@@ -132,7 +132,17 @@ if (!function_exists("setConfig")) {
         $ret = "<?php
 declare (strict_types=1);\n\nreturn [\n";
         foreach ($config as $k => $v) {
-            $ret .= "    '{$k}' => '{$v}',\n";
+            $value = "'{$v}'";
+            if (is_array($v)) {
+                $akv = "[";
+                foreach ($v as $av) {
+                    $akv .= "'{$av}'" . ",";
+                }
+                $akv = trim($akv, ",");
+                $akv .= "]";
+                $value = $akv;
+            }
+            $ret .= "    '{$k}' => $value,\n";
         }
         $ret .= '];';
         if (file_put_contents($file, $ret) === false) {

@@ -720,7 +720,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                     }
                                     this.getDict(item.dict, res => {
                                         res.data.forEach(s => {
-                                            instance.append('<input type="checkbox" ' + (val.indexOf(s.id) !== -1 ? 'checked' : '') + ' value="' + s.id + '" name="' + item.name + '[]" title="' + s.name + '">\n');
+                                            instance.append('<input type="checkbox" ' + (val.indexOf(s.id) !== -1 || val.indexOf(s.id.toString()) !== -1 ? 'checked' : '') + ' value="' + s.id + '" name="' + item.name + '[]" title="' + s.name + '">\n');
                                         });
                                         form.render();
                                     });

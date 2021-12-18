@@ -104,4 +104,10 @@ class Commodity extends Model
     {
         return $this->hasMany(Card::class, 'commodity_id', 'id');
     }
+
+    //订单
+    public function order(): ?\Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Order::class, 'commodity_id', 'id');
+    }
 }

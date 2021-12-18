@@ -306,4 +306,22 @@ class App extends Manage
     {
         return $this->json(200, "新的定价已生效", $this->app->developerPluginPriceSet($_POST));
     }
+
+
+    /**
+     * @return array
+     */
+    public function purchaseRecords(): array
+    {
+        return $this->json(200, "ok", $this->app->purchaseRecords((int)$_GET['plugin_id']));
+    }
+
+    /**
+     * @return array
+     */
+    public function unbind(): array
+    {
+        $this->app->unbind((int)$_POST['auth_id']);
+        return $this->json(200, "解绑成功");
+    }
 }

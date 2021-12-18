@@ -28,6 +28,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $status
  * @property int $from
  * @property string $trade_no
+ * @property string $widget
+ * @property float $rent
  */
 class Order extends Model
 {
@@ -44,7 +46,7 @@ class Order extends Model
     /**
      * @var array
      */
-    protected $casts = ['amount' => 'float', 'cost' => 'float', 'user_id' => 'integer', 'from' => 'integer', 'commodity_id' => 'integer', 'card_id' => 'integer', 'card_num' => 'integer', 'create_device' => 'integer', 'delivery_status' => 'integer', 'id' => 'integer', 'owner' => 'integer', 'pay_id' => 'integer', 'status' => 'integer'];
+    protected $casts = ['amount' => 'float', 'cost' => 'float', 'rent' => 'float', 'user_id' => 'integer', 'from' => 'integer', 'commodity_id' => 'integer', 'card_id' => 'integer', 'card_num' => 'integer', 'create_device' => 'integer', 'delivery_status' => 'integer', 'id' => 'integer', 'owner' => 'integer', 'pay_id' => 'integer', 'status' => 'integer'];
 
     public function owner(): ?\Illuminate\Database\Eloquent\Relations\HasOne
     {

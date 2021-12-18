@@ -9,6 +9,47 @@
     <div class="post d-flex flex-column-fluid" id="kt_post">
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
+            <!--begin::Row-->
+            <div class="row g-5 g-xl-10">
+                <div class="col-xl-4">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8" style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">订单数量</span>
+                            <div class="fw-bolder fs-1 text-primary my-6 order_count">...</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+                <div class="col-xl-4">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8" style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">订单金额</span>
+                            <div class="fw-bolder fs-1 text-success my-6 order_amount">...</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+                <div class="col-xl-4">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8" style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">手续费</span>
+                            <div class="fw-bolder fs-1 text-danger my-6 order_cost">...</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+            </div>
+            <!--end::Row-->
+
             <!--begin::Tables Widget 9-->
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->
@@ -20,6 +61,7 @@
                         <!--start::HOOK-->
                         #{hook(\App\Consts\Hook::ADMIN_VIEW_ORDER_TOOLBAR)}
                         <!--end::HOOK-->
+                        <span class="badge badge-light-primary fs-8">Tips：上方订单数据显示会根据下方的查询条件进行筛选显示。</span>
                     </div>
                 </div>
                 <!--end::Header-->
@@ -60,8 +102,8 @@
                 url: '/admin/api/order/data',//请求的url地址
                 method: "post",//请求方式
                 // striped:true,//是否显示行间隔色
-                pageSize: 15,//每页显示的数量
-                pageList: [15, 25, 50, 100],
+                pageSize: 13,//每页显示的数量
+                pageList: [13, 25, 50, 100],
                 showRefresh: false,//是否显示刷新按钮
                 cache: false,//是否使用缓存
                 showToggle: false,//是否显示详细视图和列表视图的切换按钮
@@ -86,6 +128,10 @@
                 },
                 //回调函数
                 responseHandler: function (res) {
+                    $('.order_count').html(res.order_count);
+                    $('.order_amount').html(res.order_amount);
+                    $('.order_cost').html(res.order_cost);
+
                     return {
                         "total": res.count,
                         "rows": res.data
@@ -341,7 +387,7 @@
                 $.post("/admin/api/order/clear", res => {
                     layer.close(loaderIndex);
                     layer.msg(res.msg);
-                    table.bootstrapTable('refresh', {silent: true});
+                    table.bootstrapTable('refresh', {silent: false});
                 });
             });
         });
