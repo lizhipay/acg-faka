@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $service_time
  * @property string $note
  * @property int $status
+ * @property int $life
+ * @property int $use_life
  */
 class Coupon extends Model
 {
@@ -34,7 +36,7 @@ class Coupon extends Model
     /**
      * @var array
      */
-    protected $casts = ['commodity_id' => 'integer', 'id' => 'integer', 'money' => 'float', 'owner' => 'integer', 'status' => 'integer'];
+    protected $casts = ['commodity_id' => 'integer', 'id' => 'integer', 'money' => 'float', 'owner' => 'integer', 'status' => 'integer', 'life' => 'integer', 'use_life' => 'integer'];
 
     public function owner(): ?\Illuminate\Database\Eloquent\Relations\HasOne
     {

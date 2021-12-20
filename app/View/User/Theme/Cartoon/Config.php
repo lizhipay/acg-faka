@@ -28,6 +28,7 @@ interface Config
      */
     const THEME = [
         "INDEX" => "Index/Index.html", //卡网首页
+        "CLOSED" => "Index/Closed.html", //维护页面
         "QUERY" => "Index/Query.html", //订单查询
         "LOGIN" => "Authentication/Login.html", //用户登录
         "REGISTER" => "Authentication/Register.html", //用户注册

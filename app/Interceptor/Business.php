@@ -4,13 +4,11 @@ declare(strict_types=1);
 namespace App\Interceptor;
 
 
-use App\Consts\User;
 use App\Util\Client;
 use App\Util\Context;
 use JetBrains\PhpStorm\NoReturn;
 use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\InterceptorInterface;
-use Kernel\Exception\JSONException;
 
 /**
  * Class Business
@@ -25,6 +23,10 @@ class Business implements InterceptorInterface
         $var = Context::get(\App\Consts\User::SESSION);
         if (!$var->businessLevel) {
             $this->kick("您暂时没有权限使用该功能，请开通店铺后在使用该功能。", $type);
+        }
+
+        if ($var->businessLevel->supplier != 1) {
+            $this->kick("您暂时没有供货权限，请升级商户等级后在使用该功能", $type);
         }
     }
 

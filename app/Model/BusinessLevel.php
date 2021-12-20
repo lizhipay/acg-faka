@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $substation
  * @property int $top_domain
  * @property float $price
+ * @property int $supplier
  */
 class BusinessLevel extends Model
 {
@@ -31,5 +32,5 @@ class BusinessLevel extends Model
     /**
      * @var array
      */
-    protected $casts = ['id' => 'integer' , 'cost' => 'float' , 'accrual' => 'float' , 'substation' => 'integer' , 'top_domain' => 'integer' , 'price' => 'float'];
+    protected $casts = ['id' => 'integer', 'cost' => 'float', 'accrual' => 'float', 'substation' => 'integer', 'top_domain' => 'integer', 'supplier' => 'integer', 'price' => 'float'];
 }

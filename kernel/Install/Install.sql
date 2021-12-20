@@ -200,6 +200,9 @@ INSERT INTO `__PREFIX__config` VALUES (30, 'cash_min', '100');
 INSERT INTO `__PREFIX__config` VALUES (31, 'cname', '');
 INSERT INTO `__PREFIX__config` VALUES (32, 'background_url', '/assets/admin/images/login/bg.jpg');
 INSERT INTO `__PREFIX__config` VALUES (33, 'default_category', '0');
+INSERT INTO `__PREFIX__config` VALUES (34, 'substation_display_list', '[]');
+INSERT INTO `__PREFIX__config` VALUES (35, 'closed', '0');
+INSERT INTO `__PREFIX__config` VALUES (36, 'closed_message', '我们正在升级，请耐心等待完成。');
 
 DROP TABLE IF EXISTS `__PREFIX__coupon`;
 CREATE TABLE `__PREFIX__coupon`  (
@@ -419,5 +422,8 @@ ALTER TABLE __PREFIX__commodity ADD purchase_count int UNSIGNED NOT NULL DEFAULT
 ALTER TABLE __PREFIX__commodity ADD `widget` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '控件';
 ALTER TABLE __PREFIX__order ADD `widget` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '控件内容';
 ALTER TABLE __PREFIX__order ADD `rent` decimal(10, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '成本价';
+ALTER TABLE __PREFIX__business_level ADD `supplier` tinyint UNSIGNED NOT NULL DEFAULT 1 COMMENT '供货商权限：0=关闭，1=启用';
+ALTER TABLE __PREFIX__coupon ADD `life` int UNSIGNED NOT NULL DEFAULT 1 COMMENT '卡密使用寿命';
+ALTER TABLE __PREFIX__coupon ADD `use_life` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '已使用次数';
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -38,10 +38,16 @@ class Business extends Model
 
     /**
      * @param string $domain
-     * @return \App\Model\Business|null
+     * @return \App\Model\Business|mixed
      */
     public static function get(string $domain): ?Business
     {
         return self::query()->where("subdomain", $domain)->first() ?? self::query()->where("topdomain", $domain)->first();
+    }
+
+
+    public function user(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(User::class, "id", "user_id");
     }
 }

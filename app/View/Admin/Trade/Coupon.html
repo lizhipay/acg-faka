@@ -26,7 +26,7 @@
                             解锁选中优惠卷
                         </button>
                         <button class="btn btn-sm btn-light-primary btn-app-export me-3"><i
-                                class="fas fa-file-export"></i>
+                                    class="fas fa-file-export"></i>
                             导出筛选优惠卷
                         </button>
                     </div>
@@ -54,7 +54,7 @@
             let table = $("#coupon");
             let cao = layui.hex;
             let form = layui.form;
-            let status = ['<span class="badge badge-light-danger">未使用</span>', '<span class="badge badge-light-success">已使用</span>', '<span class="badge badge-light">锁定</span>'];
+            let status = ['<span class="badge badge-light-success">正常使用</span>', '<span class="badge badge-light-danger">已失效</span>', '<span class="badge badge-light">锁定</span>'];
 
             let queryParams = null;
             table.bootstrapTable({
@@ -122,6 +122,8 @@
                             return item.expire_time;
                         }
                     }
+                    , {field: 'life', title: '剩余次数'}
+                    , {field: 'use_life', title: '已使用次数'}
                     , {field: 'note', title: '备注信息'}
                     , {
                         field: 'status', title: '状态', formatter: function (val, item) {
@@ -137,12 +139,7 @@
                         }
                     }
                     , {
-                        field: 'trade_no', title: '订单号', formatter: function (val, item) {
-                            if (!item.trade_no) {
-                                return "-";
-                            }
-                            return '<span class="badge badge-light" style="cursor: pointer;">' + item.trade_no + '</span>';
-                        }
+                        field: 'trade_no', title: '订单号(最后使用)'
                     }
                     , {
                         field: 'owner', title: '所属者', formatter: function (val, item) {
@@ -224,6 +221,7 @@
                     },
                     {title: "面值(金额)", name: "money", type: "input", placeholder: "请输入该优惠卷能够抵扣的金额"},
                     {title: "过期时间", name: "expire_time", type: "date", placeholder: "过了该时间优惠卷自动失效，不填代表永不过期"},
+                    {title: "可用次数", name: "life", type: "input", placeholder: "该优惠卷可以使用次数", default: "1"},
                     {title: "卷码前缀", name: "prefix", type: "input", placeholder: "请输入优惠卷代码前缀，可留空", default: "ACG"},
                     {title: "生成数量", name: "num", type: "input", placeholder: "你想生成多少张优惠卷", default: 1}
                 ], res => {

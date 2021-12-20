@@ -11,7 +11,7 @@
             我的店铺#{if $user.businessLevel}<span class="layui-badge layui-bg-pro">#{$user.businessLevel.name}</span>#{/if}
         </a>
     </li>
-    #{if $user.businessLevel}
+    #{if $user.businessLevel and $user.businessLevel.supplier == 1}
     <li class="layui-nav-item #{if $title=='商品分类'} layui-this #{/if}">
         <a href="/user/category/index">
             <i class="layui-icon">&#xe66e;</i>

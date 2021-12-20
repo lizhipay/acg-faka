@@ -4,8 +4,11 @@ declare(strict_types=1);
 namespace App\Controller\Admin\Api;
 
 use App\Controller\Base\API\Manage;
+use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
+use App\Service\Query;
 use App\Util\Date;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use App\Model\Config as CFG;
@@ -16,6 +19,9 @@ use PHPMailer\PHPMailer\PHPMailer;
 #[Interceptor(ManageSession::class, Interceptor::TYPE_API)]
 class Config extends Manage
 {
+
+    #[Inject]
+    private Query $query;
 
     #[Inject]
     private AliSms $sms;
@@ -29,8 +35,8 @@ class Config extends Manage
      */
     public function setting(): array
     {
-        $keys = ["user_theme", "background_url", "shop_name", "title", "description", "keywords", "registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "notice", "trade_verification"]; //全部字段
-        $inits = ["registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "trade_verification"]; //需要初始化的字段
+        $keys = ["closed_message", "closed", "user_theme", "background_url", "shop_name", "title", "description", "keywords", "registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "notice", "trade_verification"]; //全部字段
+        $inits = ["closed", "registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "trade_verification"]; //需要初始化的字段
 
         $file = $_POST['logo'];
         if ($file != '/favicon.ico') {
@@ -86,6 +92,31 @@ class Config extends Manage
         }
 
         return $this->json(200, '保存成功');
+    }
+
+
+    /**
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function setSubstationDisplayList(): array
+    {
+        $userId = (int)$_POST['id'];
+        $type = (int)$_POST['type'];
+        $list = json_decode(CFG::get("substation_display_list"), true);
+        if ($type == 0) {
+            //添加过滤
+            if (!in_array($userId, $list)) {
+                $list[] = $userId;
+            }
+        } else {
+            //解除过滤
+            if (($key = array_search($userId, $list)) !== false) {
+                unset($list[$key]);
+                $list = array_values($list);
+            }
+        }
+        CFG::put("substation_display_list", json_encode($list));
+        return $this->json(200, "成功", $list);
     }
 
     /**
@@ -168,5 +199,25 @@ class Config extends Manage
         }
 
         return $this->json(200, "成功!");
+    }
+
+
+    /**
+     * @return array
+     */
+    public function getBusiness(): array
+    {
+        $queryTemplateEntity = new QueryTemplateEntity();
+        $queryTemplateEntity->setModel(\App\Model\Business::class);
+        $queryTemplateEntity->setLimit((int)$_POST['limit']);
+        $queryTemplateEntity->setPage((int)$_POST['page']);
+        $queryTemplateEntity->setPaginate(true);
+        $queryTemplateEntity->setWith(['user' => function (Relation $relation) {
+            $relation->with(['businessLevel'])->select(["id", "business_level", "username", "avatar"]);
+        }]);
+        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
+        $json = $this->json(200, null, $data['data']);
+        $json['count'] = $data['total'];
+        return $json;
     }
 }

@@ -56,9 +56,14 @@ class Index extends User
                 $category = $category->whereRaw("`owner`=0 or `owner`={$bus->user_id}");
             }
         } else {
+            $category = $category->where("owner", 0);
             //主站
-            if (Config::get("substation_display") == 0) {
-                $category = $category->where("owner", 0);
+            if (Config::get("substation_display") == 1) {
+                //显示商家
+                $list = (array)json_decode(Config::get("substation_display_list"), true);
+                foreach ($list as $userId) {
+                    $category = $category->orWhere("owner", "=", $userId);
+                }
             }
         }
         $category = $category->get()->toArray();

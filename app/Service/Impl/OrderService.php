@@ -220,7 +220,7 @@ class OrderService implements Order
             if ($from != 0 && $order->user_id != $from) {
                 $order->from = $from;
             }
- 
+
             if ($commodity->draft_status == 1 && $cardId != 0) {
                 $card = Card::query()->find($cardId);
                 if (!$card || $card->status != 0) {
@@ -257,7 +257,7 @@ class OrderService implements Order
                 }
 
                 if ($voucher->status != 0) {
-                    throw new JSONException("该优惠卷无法使用");
+                    throw new JSONException("该优惠卷已失效");
                 }
 
                 //检测过期时间
@@ -273,7 +273,13 @@ class OrderService implements Order
                 //进行优惠
                 $order->amount = $order->amount - $voucher->money;
                 $voucher->service_time = $date;
-                $voucher->status = 1;
+                $voucher->use_life = $voucher->use_life + 1;
+                $voucher->life = $voucher->life - 1;
+
+                if ($voucher->life <= 0) {
+                    $voucher->status = 1;
+                }
+
                 $voucher->trade_no = $order->trade_no;
                 $voucher->save();
                 $order->coupon_id = $voucher->id;

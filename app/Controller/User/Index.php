@@ -17,12 +17,13 @@ class Index extends User
 {
     /**
      * @return string
-     * @throws \Kernel\Exception\ViewException
+     * @throws \Kernel\Exception\ViewException|\Kernel\Exception\JSONException
      */
     public function index(): string
     {
-
-
+        if ((int)Config::get("closed") == 1) {
+            return $this->theme("店铺正在维护", "CLOSED", "Index/Closed.html");
+        }
         $from = (int)$_GET['from'];
 
         $map = [];

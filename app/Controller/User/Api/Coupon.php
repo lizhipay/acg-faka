@@ -64,6 +64,8 @@ class Coupon extends User
         $expireTime = (string)$_POST['expire_time'];//到期时间
         $money = (float)$_POST['money']; //金额
         $num = (int)$_POST['num']; //生成数量
+        $life = (int)$_POST['life']; //可用次数
+
         $userId = $this->getUser()->id;
         if ($commodityId == 0) {
             throw new JSONException('ಠ_ಠ请选择商品');
@@ -97,6 +99,7 @@ class Coupon extends User
             $voucher->money = $money;
             $voucher->status = 0;
             $voucher->note = $note;
+            $voucher->life = $life;
             try {
                 $voucher->save();
                 $success++;

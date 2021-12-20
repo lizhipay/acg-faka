@@ -142,4 +142,23 @@ class Business extends User
 
         return $this->json(200, "保存成功");
     }
+
+
+    /**
+     * @return array
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function unbind(): array
+    {
+        $this->businessValidation();
+        $type = (int)$_POST['type'];
+        $business = \App\Model\Business::query()->where("user_id", $this->getUser()->id)->first(); //店铺信息
+        if ($type == 0) {
+            $business->subdomain = null;
+        } else {
+            $business->topdomain = null;
+        }
+        $business->save();
+        return $this->json(200, "解绑成功");
+    }
 }
