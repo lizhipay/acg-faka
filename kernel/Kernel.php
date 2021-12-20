@@ -62,13 +62,12 @@ try {
     //插件库
     if (file_exists(BASE_PATH . "/kernel/Plugin.php")) {
         require("Plugin.php");
+        //插件初始化
+        \Kernel\Util\Plugin::scan();
+        Initialize();
+        //插件初始化
+        hook(\App\Consts\Hook::KERNEL_INIT);
     }
-
-    //插件初始化
-    \Kernel\Util\Plugin::scan();
-    Initialize();
-
-    hook(\App\Consts\Hook::KERNEL_INIT);
 
     //检测类是否存在
     if (!class_exists($controller)) {

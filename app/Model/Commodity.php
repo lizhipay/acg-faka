@@ -41,6 +41,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $leave_message
  * @property int $only_user
  * @property int $purchase_count
+ * @property string $widget
  */
 class Commodity extends Model
 {
@@ -99,13 +100,11 @@ class Commodity extends Model
         return $this->hasOne(Category::class, "id", "category_id");
     }
 
-    //获取卡密
     public function card(): ?\Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Card::class, 'commodity_id', 'id');
     }
 
-    //订单
     public function order(): ?\Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Order::class, 'commodity_id', 'id');

@@ -79,6 +79,9 @@ interface Hook
     //个人资料选项
     const USER_VIEW_PERSONAL_FORM = 0x44;
 
+    //商品管理中的添加商品表单
+    const ADMIN_VIEW_COMMODITY_POST = 0x45;
+
 
     //-----------------------------MY
 
