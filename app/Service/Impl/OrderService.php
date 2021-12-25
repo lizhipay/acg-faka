@@ -39,14 +39,41 @@ class OrderService implements Order
      * @param int $owner
      * @param int $num
      * @param \App\Model\Commodity $commodity
+     * @param \App\Model\UserGroup|null $group
      * @return float
      */
-    public function calcAmount(int $owner, int $num, Commodity $commodity): float
+    public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group): float
     {
         $price = $owner == 0 ? $commodity->price : $commodity->user_price;
+        $lotConfig = $commodity->lot_config;
+
+        //禁用任何折扣,直接计算
+        if ($commodity->level_disable == 1) {
+            return $num * $price;
+        }
+
+        if ($group) {
+            $levelPrice = (array)json_decode((string)$commodity->level_price, true);
+            $userDefinedPrice = array_key_exists($group->id, $levelPrice) ? $levelPrice[$group->id] : null;
+            if ($userDefinedPrice) {
+                $userDefinedAmount = (float)$userDefinedPrice['amount'];
+                //如果自定义价格成功，那么将覆盖其他价格
+                if ($userDefinedAmount > 0) {
+                    $price = $userDefinedAmount;
+                }
+                //如果自定义批发价格，将覆盖系统批发规则
+                $userDefinedLotConfig = trim((string)$userDefinedPrice['lot_config']);
+                if ($userDefinedLotConfig != "") {
+                    $lotConfig = $userDefinedLotConfig;
+                }
+            } else {
+                $price = $price - ($price * $group->discount);
+            }
+        }
+
         if ($commodity->lot_status == 1) {
             $list = [];
-            $wholesales = explode(PHP_EOL, trim(trim((string)$commodity->lot_config), PHP_EOL));
+            $wholesales = explode(PHP_EOL, trim(trim((string)$lotConfig), PHP_EOL));
             foreach ($wholesales as $item) {
                 $s = explode('-', $item);
                 if (count($s) == 2) {
@@ -61,12 +88,28 @@ class OrderService implements Order
                 }
             }
         }
+
         return $num * $price;
+    }
+
+    /**
+     * @param \App\Model\Commodity $commodity
+     * @param \App\Model\UserGroup|null $group
+     * @return array|null
+     */
+    public function userDefinedPrice(Commodity $commodity, ?UserGroup $group): ?array
+    {
+        if ($group) {
+            $levelPrice = (array)json_decode((string)$commodity->level_price, true);
+            return array_key_exists($group->id, $levelPrice) ? $levelPrice[$group->id] : null;
+        }
+        return null;
     }
 
     /**
      * @param \App\Model\User|null $user
      * @param \App\Model\UserGroup|null $userGroup
+     * @param array $map
      * @return array
      * @throws \Kernel\Exception\JSONException
      */
@@ -186,9 +229,9 @@ class OrderService implements Order
         }
 
         //计算订单基础价格
-        $amount = $this->calcAmount($owner, $num, $commodity);
-        //判断预选费用
+        $amount = $this->calcAmount($owner, $num, $commodity, $userGroup);
 
+        //判断预选费用
         $pay = Pay::query()->find($payId);
 
         if (!$pay) {
@@ -217,7 +260,7 @@ class OrderService implements Order
             $order->card_num = $num;
             $order->user_id = (int)$commodity->owner;
             $order->rent = $commodity->factory_price * $num; //成本价
-            if ($from != 0 && $order->user_id != $from) {
+            if ($from != 0 && $order->user_id != $from && $owner != $from) {
                 $order->from = $from;
             }
 
@@ -241,9 +284,9 @@ class OrderService implements Order
             }
 
             //用户组减免
-            if ($userGroup) {
-                $order->amount = $order->amount - ($order->amount * $userGroup->discount);
-            }
+            /*  if ($userGroup) {
+                  $order->amount = $order->amount - ($order->amount * $userGroup->discount);
+              }*/
 
             //优惠卷
             if ($coupon != "") {
@@ -613,10 +656,10 @@ class OrderService implements Order
         if ($user) {
             $ow = $user->id;
         }
-        $amount = $this->calcAmount($ow, $num, $commodity);
-        if ($userGroup) {
-            $amount = $amount - ($userGroup->discount * $amount);
-        }
+        $amount = $this->calcAmount($ow, $num, $commodity, $userGroup);
+        /*    if ($userGroup) {
+                $amount = $amount - ($userGroup->discount * $amount);
+            }*/
         $couponMoney = 0;
         //优惠卷
         $price = $amount / $num;

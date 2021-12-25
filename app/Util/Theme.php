@@ -13,6 +13,7 @@ class Theme
     /**
      * @param string $name
      * @return array|null
+     * @throws \ReflectionException
      */
     public static function getConfig(string $name): ?array
     {
@@ -28,7 +29,28 @@ class Theme
 
         $info = $interface::INFO;
         $info['KEY'] = $name;
-        $data = ["info" => $info, "theme" => $interface::THEME];
+
+
+        $ref = new \ReflectionClass($interface);
+        $submit = $ref->getConstant("SUBMIT");
+
+        if (!$submit) {
+            $submit = [];
+        }
+
+        //获取配置
+        $setting = [];
+        $settingPath = BASE_PATH . "/app/View/User/Theme/{$name}/Setting.php";
+        if (file_exists($settingPath)) {
+            $setting = (array)require($settingPath);
+            foreach ($submit as $index => $item) {
+                if (isset($setting[$item['name']])) {
+                    $submit[$index]['default'] = $setting[$item['name']];
+                }
+            }
+        }
+
+        $data = ["info" => $info, "theme" => $interface::THEME, "submit" => $submit, "setting" => $setting];
         Context::set("theme_" . $name, $data);
         return $data;
     }

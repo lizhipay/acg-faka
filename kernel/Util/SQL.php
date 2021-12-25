@@ -23,18 +23,24 @@ class SQL
         if (file_put_contents($sql . '.process', $sqlSrc) === false) {
             throw new JSONException("没有写入权限，请检查权限是否足够");
         }
+
+        $tmp = BASE_PATH . '/runtime/tmp';
+        if (!is_dir($tmp)) {
+            mkdir($tmp, 0777, true);
+        }
+
         $dump = new Dump();
         $dump
             ->file($sql . '.process')
             ->dsn('mysql:dbname=' . $db . ';host=' . $host)
             ->user($username)
             ->pass($password)
-            ->tmp(BASE_PATH . '/runtime/tmp');
+            ->tmp($tmp);
         try {
             new Import($dump);
             unlink($sql . '.process');
         } catch (\Exception $e) {
-            throw new JSONException("数据库导入失败，请检查填写的数据库信息是否正确");
+            throw new JSONException("数据库出错，原因：" . $e->getMessage());
         }
     }
 }

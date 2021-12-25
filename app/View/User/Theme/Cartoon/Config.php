@@ -24,6 +24,29 @@ interface Config
     ];
 
     /**
+     * 配置信息
+     */
+    const SUBMIT = [
+        [
+            "title" => "模板风格",
+            "name" => "style",
+            "type" => "select",
+            "dict" => [
+                ["id" => 0, "name" => "会员中心-二次元风(默认)"],
+                ["id" => 1, "name" => "会员中心-商务风"],
+            ],
+            "placeholder" => "请选择",
+            "default" => 0
+        ],
+        [
+            "title" => "ICP备案号",
+            "name" => "icp",
+            "type" => "input",
+            "placeholder" => "填写后将会在店铺底部显示ICP备案号，不填写则不显示。"
+        ],
+    ];
+
+    /**
      * 模板文件重定向，不需要修改的直接删除
      */
     const THEME = [

@@ -44,9 +44,11 @@ abstract class User extends \App\Controller\Base\User
     /**
      * @param string $title
      * @param string $template
+     * @param string $default
      * @param array $data
      * @return string
-     * @throws ViewException
+     * @throws \Kernel\Exception\ViewException
+     * @throws \ReflectionException
      */
     public function theme(string $title, string $template, string $default, array $data = []): string
     {
@@ -86,6 +88,12 @@ abstract class User extends \App\Controller\Base\User
             if ($user) {
                 $data['user'] = $user;
                 $data['group'] = $this->getUserGroup()->toArray();
+            }
+
+            if ($system) {
+                $data['setting'] = Theme::getConfig("Cartoon")["setting"];
+            } else {
+                $data['setting'] = $config['setting'];
             }
 
             if ($config['info']['RENDER'] == Render::ENGINE_SMARTY || $system) {

@@ -329,11 +329,17 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
             }
             return flag;
         },
+        randomNum(min, max) {
+            let Range = max - min;
+            let Rand = Math.random();
+            return (min + Math.round(Rand * Range));
+        },
         popup(url, fields, done, values = {}, area = '660px', edit = false, title = "添加", success = null) {
 
             area = this.isPc() ? area : ["100%", "100%"];
+            let unqueId = this.randomNum(10000, 99999);
 
-            let d = ' <div class="layui-card-body"><form class="layui-form layui-form-pane hex-modal">';
+            let d = ' <div class="layui-card-body"><form class="layui-form layui-form-pane hex-modal-' + unqueId + '">';
             let objectContainer = {}
             //初步渲染界面
             fields.forEach(item => {
@@ -557,7 +563,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                 maxmin: true,
                 yes: (index, layero) => {
                     //let serialize = decodeURIComponent($('.hex-modal').serialize());
-                    var serializeArray = $('.hex-modal').serializeArray();
+                    var serializeArray = $('.hex-modal-' + unqueId).serializeArray();
                     let paramsToJSONObject = {};
                     serializeArray.forEach(item => {
                         if (item.name.match(RegExp(/\[\]/))) {
@@ -576,7 +582,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                         switch (item.type) {
                             case "treeCheckbox":
                                 delete paramsToJSONObject['ids'];
-                                let data = authtree.getChecked('.hex-modal .' + item.name);
+                                let data = authtree.getChecked('.hex-modal-' + unqueId + ' .' + item.name);
                                 paramsToJSONObject[item.name] = data;
                                 break;
                             case "json":
@@ -610,7 +616,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                         }
                     });
                     if (typeof url == "function") {
-                        url(paramsToJSONObject);
+                        url(paramsToJSONObject, index);
                         return;
                     }
 
@@ -634,7 +640,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                         switch (item.type) {
                             case "radio":
                                 if (item.hasOwnProperty('dict')) {
-                                    let instance = $('.hex-modal .' + item.name);
+                                    let instance = $('.hex-modal-' + unqueId + ' .' + item.name);
                                     this.getDict(item.dict, res => {
                                         res.data.forEach(s => {
                                             instance.append('<input name="' + item.name + '" type="radio" value="' + s.id + '" title="' + s.name + '" ' + (values.hasOwnProperty(item.name) ? (values[item.name] == s.id ? 'checked' : '') : '') + ' />');
@@ -645,7 +651,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 break;
                             case "select":
                                 if (item.hasOwnProperty('dict')) {
-                                    let instance = $('.hex-modal .' + item.name);
+                                    let instance = $('.hex-modal-' + unqueId + ' .' + item.name);
                                     this.getDict(item.dict, res => {
                                         res.data.forEach(s => {
                                             instance.append(' <option value="' + s.id + '"  ' + (values.hasOwnProperty(item.name) ? (values[item.name] == s.id ? 'selected' : '') : '') + '>' + s.name + '</option>');
@@ -665,7 +671,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                     //图标选择器
                                     iconPicker.render({
                                         // 选择器，推荐使用input
-                                        elem: '.hex-modal .' + item.name,
+                                        elem: '.hex-modal-' + unqueId + ' .' + item.name,
                                         // 数据类型：fontClass/unicode，推荐使用fontClass
                                         type: 'fontClass',
                                         // 是否开启搜索：true/false，默认true
@@ -696,7 +702,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             case "treeCheckbox":
                                 if (item.hasOwnProperty('dict')) {
                                     this.getDict(item.dict, res => {
-                                        authtree.render('.hex-modal .' + item.name, res.data, {
+                                        authtree.render('.hex-modal-' + unqueId + ' .' + item.name, res.data, {
                                             inputname: 'ids[]'
                                             , layfilter: 'lay-check-auth'
                                             , themePath: 'module/src/style/authtree/css/'
@@ -713,7 +719,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 break;
                             case "checkbox":
                                 if (item.hasOwnProperty('dict')) {
-                                    let instance = $('.hex-modal .' + item.name);
+                                    let instance = $('.hex-modal-' + unqueId + ' .' + item.name);
                                     let val = [];
                                     if (values.hasOwnProperty(item.name)) {
                                         val = values[item.name];
@@ -729,7 +735,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             case "switch":
                                 form.on('checkbox(switch-' + item.name + ')', function (res) {
                                     let value = res.elem.checked === true ? '1' : '0'
-                                    $('.hex-modal input[name=' + item.name + ']').val(value);
+                                    $('.hex-modal-' + unqueId + ' input[name=' + item.name + ']').val(value);
                                     if (item.hasOwnProperty('change')) {
                                         item.change(value, res.elem.checked);
                                     }
@@ -737,15 +743,15 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 break;
                             case 'image':
                                 let opts = {
-                                    elem: '.hex-modal .' + item.name
+                                    elem: '.hex-modal-' + unqueId + ' .' + item.name
                                     , url: uploadUrl
                                     , accept: 'images' //只允许上传图片
                                     , acceptMime: 'image/*' //只筛选图片
                                     , done: res => {
                                         if (res.code === 200) {
-                                            let imgInstance = $('.hex-modal .' + item.name + ' img');
-                                            $('.hex-modal input[name=' + item.name + ']').val(res.data[uploadUrlName]);
-                                            $('.hex-modal .' + item.name + ' button').hide();
+                                            let imgInstance = $('.hex-modal-' + unqueId + ' .' + item.name + ' img');
+                                            $('.hex-modal-' + unqueId + ' input[name=' + item.name + ']').val(res.data[uploadUrlName]);
+                                            $('.hex-modal-' + unqueId + ' .' + item.name + ' button').hide();
                                             imgInstance.attr('src', (item.hasOwnProperty('viewUrl') ? item.viewUrl : '') + res.data[uploadUrlName]);
                                             imgInstance.show();
                                         }
@@ -759,17 +765,17 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 upload.render(opts)
                                 break;
                             case 'file':
-                                let buttonSpanInstance = $('.hex-modal .' + item.name + ' button span');
+                                let buttonSpanInstance = $('.hex-modal-' + unqueId + ' .' + item.name + ' button span');
                                 let exts = item.hasOwnProperty('exts') ? item.exts : 'jpg|png|gif|bmp|jpeg|gz|zip|rar|doc|xlsx';
                                 let acceptMime = item.hasOwnProperty('acceptMime') ? item.acceptMime : '/*';
                                 let opt = {
-                                    elem: '.hex-modal .' + item.name
+                                    elem: '.hex-modal-' + unqueId + ' .' + item.name
                                     , url: uploadUrl
                                     , exts: exts
                                     , acceptMime: acceptMime
                                     , done: res => {
                                         if (res.code === 200) {
-                                            $('.hex-modal input[name=' + item.name + ']').val(res.data[uploadUrlName]);
+                                            $('.hex-modal-' + unqueId + ' input[name=' + item.name + ']').val(res.data[uploadUrlName]);
                                             buttonSpanInstance.html('上传成功');
                                         }
                                         layer.msg(res.msg);
@@ -782,7 +788,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 upload.render(opt)
                                 break;
                             case 'json':
-                                objectContainer[item.name] = new JSONEditor(document.getElementsByClassName('hex-modal')[0].getElementsByClassName(item.name)[0], {});
+                                objectContainer[item.name] = new JSONEditor(document.getElementsByClassName('hex-modal-' + unqueId)[0].getElementsByClassName(item.name)[0], {});
                                 if (values.hasOwnProperty(item.name)) {
                                     if (typeof (values[item.name]) === "object") {
                                         objectContainer[item.name].set(values[item.name]);
@@ -795,7 +801,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 break;
                             case 'date':
                                 laydate.render({
-                                    elem: '.hex-modal .' + item.name,
+                                    elem: '.hex-modal-' + unqueId + ' .' + item.name,
                                     type: 'datetime'
                                 });
                                 break;
@@ -805,7 +811,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                     initValue = [values[item.name]];
                                 }
                                 xmSelect.render({
-                                    el: '.hex-modal .' + item.name,
+                                    el: '.hex-modal-' + unqueId + ' .' + item.name,
                                     radio: true,
                                     autoRow: true,
                                     name: item.name,
@@ -834,8 +840,8 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 break;
                             case 'editor':
                                 let editorInstance = window.wangEditor;
-                                const editor = new editorInstance('.hex-modal .' + item.name);
-                                const $textarea = $(".hex-modal textarea[name='" + item.name + "'")
+                                const editor = new editorInstance('.hex-modal-' + unqueId + ' .' + item.name);
+                                const $textarea = $(".hex-modal-" + unqueId + " textarea[name='" + item.name + "'")
 
                                 editor.config.onchange = function (html) {
                                     $textarea.val(html);
@@ -864,18 +870,18 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 editor.create();
                                 $textarea.val(editor.txt.html())
 
-                                $('.hex-modal div[class=' + item.name + ']').find(".w-e-toolbar").css("border", "none");
-                                $('.hex-modal div[class=' + item.name + ']').find(".w-e-text-container").css("border", "none");
+                                $('.hex-modal-' + unqueId + ' div[class=' + item.name + ']').find(".w-e-toolbar").css("border", "none");
+                                $('.hex-modal-' + unqueId + ' div[class=' + item.name + ']').find(".w-e-text-container").css("border", "none");
 
                                 $('.button-switch-' + item.name).click(function () {
                                     let type = $(this).attr("data-type");
                                     if (type == 0) {
-                                        $('.hex-modal div[class=' + item.name + ']').hide();
+                                        $('.hex-modal-' + unqueId + ' div[class=' + item.name + ']').hide();
                                         $(this).attr("data-type", 1);
                                         $(this).html('<i class="fas fa-feather" style="color: #c9b8b8;"></i> ' + "写作");
 
                                         //创建临时HTML编辑器
-                                        $('.hex-modal div[class=' + item.name + ']').parent().append('<textarea class="textarea-temp-' + item.name + '"></textarea>');
+                                        $('.hex-modal-' + unqueId + ' div[class=' + item.name + ']').parent().append('<textarea class="textarea-temp-' + item.name + '"></textarea>');
                                         let optd = {
                                             mode: "text/html",
                                             lineNumbers: true,
@@ -888,7 +894,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                             foldGutter: true,
                                             gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
                                         };
-                                        objectContainer[item.name] = CodeMirror.fromTextArea($('.hex-modal .textarea-temp-' + item.name).get(0), optd);
+                                        objectContainer[item.name] = CodeMirror.fromTextArea($('.hex-modal-' + unqueId + ' .textarea-temp-' + item.name).get(0), optd);
                                         objectContainer[item.name].setValue(editor.txt.html());
                                         objectContainer[item.name].on("change", function (aa) {
                                             let html = objectContainer[item.name].getValue();
@@ -896,15 +902,15 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                         });
 
                                         if (item.hasOwnProperty("height")) {
-                                            $('.hex-modal .textarea-temp-' + item.name).siblings(".CodeMirror").css("height", item.height + "px");
+                                            $('.hex-modal-' + unqueId + ' .textarea-temp-' + item.name).siblings(".CodeMirror").css("height", item.height + "px");
                                         }
                                     } else {
                                         let html = objectContainer[item.name].getValue();
                                         editor.txt.html(html);
 
-                                        $('.hex-modal div[class=' + item.name + ']').show();
-                                        $('.hex-modal div[class=' + item.name + ']').parent().find(".CodeMirror").remove();
-                                        $('.hex-modal .textarea-temp-' + item.name).remove();
+                                        $('.hex-modal-' + unqueId + ' div[class=' + item.name + ']').show();
+                                        $('.hex-modal-' + unqueId + ' div[class=' + item.name + ']').parent().find(".CodeMirror").remove();
+                                        $('.hex-modal-' + unqueId + ' .textarea-temp-' + item.name).remove();
                                         $(this).attr("data-type", 0);
                                         $(this).html('<i class="fas fa-code" style="color: #c9b8b8;"></i> ' + "HTML");
                                     }
@@ -923,10 +929,10 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                     foldGutter: true,
                                     gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
                                 };
-                                objectContainer[item.name] = CodeMirror.fromTextArea($('.hex-modal .' + item.name).get(0), optd);
+                                objectContainer[item.name] = CodeMirror.fromTextArea($('.hex-modal-' + unqueId + ' .' + item.name).get(0), optd);
 
                                 if (item.hasOwnProperty("height")) {
-                                    $('.hex-modal .' + item.name).siblings(".CodeMirror").css("height", item.height == "100%" ? item.height : item.height + "px");
+                                    $('.hex-modal-' + unqueId + ' .' + item.name).siblings(".CodeMirror").css("height", item.height == "100%" ? item.height : item.height + "px");
                                 }
 
                                 break;
@@ -998,7 +1004,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                         }
 
                         let hover = null;
-                        $(".hex-modal .tips-" + item.name).hover(function () {
+                        $(".hex-modal-" + unqueId + " .tips-" + item.name).hover(function () {
                             hover = layer.tips(item.tips, this, {
                                 tips: [1, '#f7b4d9f7'],
                                 time: 0
@@ -1010,26 +1016,25 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                     form.render();
 
                     if (success) {
-                        success();
+                        success(unqueId);
                     }
-
                     //添加动漫人物
                     $('.layui-layer-page').append('<img src="/assets/admin/images/menu/left.png" style="position: absolute;height: 200px;top: 0px;left: -142px;"><img src="/assets/admin/images/menu/right.png" style="position: absolute;height: 200px;top: 0px;right: -142px;">');
                 }
             });
         },
-        popupElement(name, type) {
+        popupElement(name, type, uniqueId = 0) {
             let element = null;
             switch (type) {
                 case "input" :
                 case "date":
-                    element = $(".hex-modal input[name='" + name + "']");
+                    element = $(".hex-modal-" + uniqueId + " input[name='" + name + "']");
                     break;
                 case "textarea":
-                    element = $(".hex-modal textarea[name='" + name + "']");
+                    element = $(".hex-modal-" + uniqueId + " textarea[name='" + name + "']");
                     break;
                 case "select":
-                    element = $(".hex-modal select[name='" + name + "']");
+                    element = $(".hex-modal-" + uniqueId + " select[name='" + name + "']");
                     break;
             }
             return element;

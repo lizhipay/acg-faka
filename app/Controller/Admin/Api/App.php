@@ -5,6 +5,7 @@ namespace App\Controller\Admin\Api;
 
 use App\Interceptor\ManageSession;
 use App\Interceptor\Waf;
+use App\Util\Helper;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
@@ -160,6 +161,43 @@ class App extends Manage
         $json['count'] = $plugins['count'];
         $json['user'] = $plugins['user'];
         $json['purchase'] = $plugins['purchase'];
+        return $json;
+    }
+
+    /**
+     * @return array
+     */
+    public function getUpdateNum(): array
+    {
+
+        $plugins = $this->app->plugins([
+            "type" => -1,
+            "page" => 1,
+            "limit" => 1000,
+            "group" => 0,
+        ]);
+
+        $update = 0;
+
+        foreach ($plugins['rows'] as $plugin) {
+            $info = Helper::isInstall($plugin['plugin_key'], (int)$plugin['type']);
+
+            if (!$info) {
+                continue;
+            }
+
+            $versionKey = match ((int)$plugin['type']) {
+                0 => \App\Consts\Plugin::VERSION,
+                1 => "version",
+                2 => "VERSION"
+            };
+
+            if ($info[$versionKey] != $plugin['version']) {
+                $update++;
+            }
+        }
+
+        $json = $this->json(200, "ok", ['count' => $update]);
         return $json;
     }
 

@@ -11,6 +11,15 @@
     <link href="/assets/admin/css/style.bundle.css" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="/assets/static/layui/css/layui.css">
     <!--end::Global Stylesheets Bundle-->
+    <style>
+        .text-color {
+        #{if $setting.style==0}
+            color: pink;
+        #{else}
+            color: #70b5ff;
+        #{/if}
+        }
+    </style>
 </head>
 <!--end::Head-->
 <!--begin::Body-->
@@ -31,7 +40,7 @@
                     <!--begin::Heading-->
                     <div class="text-center mb-10">
                         <!--begin::Title-->
-                        <a href="/"><h1 class="mb-3" style="color: pink;font-weight: bold;">#{$config.shop_name}</h1></a>
+                        <a href="/"><h1 class="mb-3 text-color" style="font-weight: bold;">#{$config.shop_name}</h1></a>
                         <!--end::Title-->
                         <div class="text-gray-400 fw-bold fs-5">已有账号? <a href="/user/authentication/login"
                                                                          class="link-primary fw-bolder">现在登录!</a></div>
@@ -40,7 +49,7 @@
                     <!--begin::Input group-->
                     <div class="fv-row mb-10">
                         <!--begin::Label-->
-                        <label class="form-label fs-6 fw-bolder" style="color: pink;">用户名</label>
+                        <label class="form-label fs-6 fw-bolder text-color">用户名</label>
                         <!--end::Label-->
                         <!--begin::Input-->
                         <input class="form-control form-control-lg form-control-solid" type="text" name="username" placeholder="请输入用户名，支持中文"
@@ -53,7 +62,7 @@
                         <!--begin::Wrapper-->
                         <div class="d-flex flex-stack mb-2">
                             <!--begin::Label-->
-                            <label class="form-label fw-bolder fs-6 mb-0" style="color: pink;">密码</label>
+                            <label class="form-label fw-bolder fs-6 mb-0 text-color">密码</label>
                             <!--end::Label-->
                         </div>
                         <!--end::Wrapper-->
@@ -68,7 +77,7 @@
                     <div class="row fv-row mb-7 fv-plugins-icon-container">
                         <!--begin::Col-->
                         <div class="col-9">
-                            <label class="form-label fw-bolder fs-6" style="color: pink;">验证码</label>
+                            <label class="form-label fw-bolder fs-6 text-color">验证码</label>
                             <input class="form-control form-control-lg form-control-solid" type="text"
                                    name="captcha"
                                    autocomplete="off" placeholder="验证码"/>
@@ -91,7 +100,7 @@
                         <!--begin::Wrapper-->
                         <div class="d-flex flex-stack mb-2">
                             <!--begin::Label-->
-                            <label class="form-label fw-bolder fs-6 mb-0" style="color: pink;">邮箱</label>
+                            <label class="form-label fw-bolder fs-6 mb-0 text-color">邮箱</label>
                             <!--end::Label-->
                         </div>
                         <!--end::Wrapper-->
@@ -105,7 +114,7 @@
                     <div class="row fv-row mb-7 fv-plugins-icon-container">
                         <!--begin::Col-->
                         <div class="col-xl-8">
-                            <label class="form-label fw-bolder fs-6" style="color: pink;">邮箱验证码</label>
+                            <label class="form-label fw-bolder fs-6 text-color">邮箱验证码</label>
                             <input class="form-control form-control-lg form-control-solid" type="text"
                                    name="email_captcha"
                                    autocomplete="off"/>
@@ -114,7 +123,7 @@
                         <!--end::Col-->
                         <!--begin::Col-->
                         <div class="col-xl-4 pt-8">
-                            <button type="button" class="btn btn-lg btn-light-danger w-100 email-captcha">
+                            <button type="button" class="btn btn-lg #{if $setting.style==0}btn-light-danger#{else} btn-light-primary #{/if} w-100 email-captcha">
                                 <span class="indicator-label">获取</span>
                             </button>
                         </div>
@@ -129,7 +138,7 @@
                         <!--begin::Wrapper-->
                         <div class="d-flex flex-stack mb-2">
                             <!--begin::Label-->
-                            <label class="form-label fw-bolder fs-6 mb-0" style="color: pink;">手机号</label>
+                            <label class="form-label fw-bolder fs-6 mb-0 text-color">手机号</label>
                             <!--end::Label-->
                         </div>
                         <!--end::Wrapper-->
@@ -143,7 +152,7 @@
                     <div class="row fv-row mb-7 fv-plugins-icon-container">
                         <!--begin::Col-->
                         <div class="col-xl-8">
-                            <label class="form-label fw-bolder fs-6" style="color: pink;">手机验证码</label>
+                            <label class="form-label fw-bolder fs-6 text-color">手机验证码</label>
                             <input class="form-control form-control-lg form-control-solid" type="text"
                                    name="phone_captcha"
                                    autocomplete="off"/>
@@ -152,7 +161,7 @@
                         <!--end::Col-->
                         <!--begin::Col-->
                         <div class="col-xl-4 pt-8">
-                            <button type="button" class="btn btn-lg btn-light-danger w-100 phone-captcha">
+                            <button type="button" class="btn btn-lg #{if $setting.style==0}btn-light-danger#{else} btn-light-primary #{/if} w-100 phone-captcha">
                                 <span class="indicator-label">获取</span>
                             </button>
                         </div>
@@ -164,7 +173,7 @@
                     <!--begin::Actions-->
                     <div class="text-center">
                         <!--begin::Submit button-->
-                        <button type="button" class="btn btn-lg btn-light-success w-100 mb-5 data-submit">
+                        <button type="button" class="btn btn-lg #{if $setting.style==0}btn-light-danger#{else} btn-light-primary #{/if} w-100 mb-5 data-submit">
                             <span class="indicator-label">注册 (Register)</span>
                         </button>
                         <!--end::Submit button-->

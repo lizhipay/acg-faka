@@ -82,15 +82,23 @@
                                 <label class="col-lg-4 col-form-label required fw-bold fs-6">网站模板</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
-                                <div class="col-lg-8 fv-row">
+                                <div class="col-lg-6 fv-row">
                                     <!--begin::Input-->
                                     <select name="user_theme" class="form-select form-select-solid form-select-lg"
                                             data-control="select2" data-hide-search="true">
                                         #{foreach $themes as $theme}
-                                        <option value="#{$theme.info.KEY}" #{if $theme.info.KEY== $config.user_theme}
-                                                selected #{/if}>#{$theme.info.NAME} (v#{$theme.info.VERSION})</option>
+                                            <option value="#{$theme.info.KEY}" #{if $theme.info.KEY== $config.user_theme}
+                                            selected #{/if}>#{$theme.info.NAME} (v#{$theme.info.VERSION})
+                                            </option>
                                         #{/foreach}
                                     </select>
+                                    <!--end::Input-->
+                                </div>
+                                <div class="col-lg-2 fv-row">
+                                    <!--begin::Input-->
+                                    <button type="button" class="btn btn-light theme-setting"><i
+                                                class="fas fa-cogs"></i> 模板设置
+                                    </button>
                                     <!--end::Input-->
                                 </div>
                                 <!--end::Col-->
@@ -202,8 +210,10 @@
                                     <select name="registered_type" class="form-select form-select-solid form-select-lg"
                                             data-control="select2" data-hide-search="true">
                                         <option value="0" #{if $config.registered_type== 0} selected #{/if}>用户名</option>
-                                        <option value="1" #{if $config.registered_type== 1} selected #{/if}>用户名+手机</option>
-                                        <option value="2" #{if $config.registered_type== 2} selected #{/if}>用户名+邮箱</option>
+                                        <option value="1" #{if $config.registered_type== 1} selected #{/if}>用户名+手机
+                                        </option>
+                                        <option value="2" #{if $config.registered_type== 2} selected #{/if}>用户名+邮箱
+                                        </option>
                                     </select>
                                     <!--end::Input-->
                                 </div>
@@ -223,21 +233,24 @@
                                         <!--begin::Option-->
                                         <label class="form-check form-check-inline form-check-solid me-5">
                                             <input class="form-check-input" name="registered_verification"
-                                                   type="checkbox" value="1" #{if $config.registered_verification== 1} checked #{/if}>
+                                                   type="checkbox"
+                                                   value="1" #{if $config.registered_verification== 1} checked #{/if}>
                                             <span class="fw-bold ps-2 fs-6">人机验证</span>
                                         </label>
                                         <!--end::Option-->
                                         <!--begin::Option-->
                                         <label class="form-check form-check-inline form-check-solid">
                                             <input class="form-check-input" name="registered_phone_verification"
-                                                   type="checkbox" value="1" #{if $config.registered_phone_verification== 1} checked #{/if}>
+                                                   type="checkbox"
+                                                   value="1" #{if $config.registered_phone_verification== 1} checked #{/if}>
                                             <span class="fw-bold ps-2 fs-6">手机验证码</span>
                                         </label>
                                         <!--end::Option-->
                                         <!--begin::Option-->
                                         <label class="form-check form-check-inline form-check-solid">
                                             <input class="form-check-input" name="registered_email_verification"
-                                                   type="checkbox" value="1" #{if $config.registered_email_verification== 1} checked #{/if}>
+                                                   type="checkbox"
+                                                   value="1" #{if $config.registered_email_verification== 1} checked #{/if}>
                                             <span class="fw-bold ps-2 fs-6">邮箱验证码</span>
                                         </label>
                                         <!--end::Option-->
@@ -285,7 +298,8 @@
                                 <div class="col-lg-8 d-flex align-items-center">
                                     <div class="form-check form-check-solid form-switch fv-row">
                                         <input class="form-check-input w-45px h-30px" type="checkbox"
-                                               name="registered_state" value="1" #{if $config.registered_state== 1} checked #{/if}/>
+                                               name="registered_state"
+                                               value="1" #{if $config.registered_state== 1} checked #{/if}/>
                                         <label class="form-check-label"></label>
                                     </div>
                                 </div>
@@ -368,7 +382,14 @@
 
 <script>
     $(function () {
+        let themesRef = #{json_encode($themes)};
+        let themes = {};
+        themesRef.forEach(item => {
+            themes[item.info.KEY] = item;
+        });
+
         layui.use(['layer', 'form', 'hex'], function () {
+            let cao = layui.hex;
             let uploadUrl = "/admin/api/upload/handle";
             let editorInstance = window.wangEditor;
             const editor = new editorInstance('.notice-div');
@@ -406,7 +427,7 @@
                 if (type == 0) {
                     noticeDiv.hide();
                     $(this).attr("data-type", 1);
-                    $(this).html('<i class="fas fa-feather" style="color: #c9b8b8;"></i> '+"写作");
+                    $(this).html('<i class="fas fa-feather" style="color: #c9b8b8;"></i> ' + "写作");
                     //创建临时HTML编辑器
                     noticeDiv.parent().append('<textarea class="textarea-temp"></textarea>');
                     let optd = {
@@ -434,7 +455,7 @@
                     noticeDiv.parent().find(".CodeMirror").remove();
                     $('.textarea-temp').remove();
                     $(this).attr("data-type", 0);
-                    $(this).html('<i class="fas fa-code" style="color: #c9b8b8;"></i> ' +"HTML");
+                    $(this).html('<i class="fas fa-code" style="color: #c9b8b8;"></i> ' + "HTML");
                 }
             });
             //----------------------
@@ -476,6 +497,30 @@
                     layer.close(loaderIndex);
                     layer.msg(res.msg);
                 });
+            });
+
+            let modal = (values = {}) => {
+                if (values.submit.length == 0) {
+                    layer.msg("该模板暂时没有可设置的选项");
+                    return;
+                }
+
+                values.setting.id = values.info.KEY;
+
+                cao.popup('/admin/api/plugin/setThemeConfig', values.submit, res => {
+                    window.location.reload();
+                }, values.setting, "660px", false, "模板设置", () => {
+                    if (cao.isPc()) {
+                        if ($('.layui-layer-page').height() > 768) {
+                            $('.layui-layer-content').css("height", "720px");
+                        }
+                    }
+                });
+            }
+
+            $('.theme-setting').click(function () {
+                let userTheme = $('select[name=user_theme]').val();
+                modal(themes[userTheme]);
             });
         });
     });

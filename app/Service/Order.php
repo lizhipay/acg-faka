@@ -15,9 +15,17 @@ interface Order
      * @param int $owner
      * @param int $num
      * @param \App\Model\Commodity $commodity
+     * @param \App\Model\UserGroup|null $group
      * @return float
      */
-    public function calcAmount(int $owner, int $num, Commodity $commodity): float;
+    public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group): float;
+
+    /**
+     * @param \App\Model\Commodity $commodity
+     * @param \App\Model\UserGroup|null $group
+     * @return array|null
+     */
+    public function userDefinedPrice(Commodity $commodity, ?UserGroup $group): ?array;
 
 
     /**

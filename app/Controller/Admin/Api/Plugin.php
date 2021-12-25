@@ -7,6 +7,7 @@ use App\Consts\Hook;
 use App\Controller\Base\API\Manage;
 use App\Interceptor\ManageSession;
 use App\Interceptor\Waf;
+use App\Util\Theme;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
 
@@ -63,5 +64,30 @@ class Plugin extends Manage
         setConfig($config, BASE_PATH . '/app/Plugin/' . $id . '/Config/Config.php');
 
         return $this->json(200, '配置已生效');
+    }
+
+    /**
+     * @return array
+     * @throws \Kernel\Exception\JSONException
+     * @throws \ReflectionException
+     */
+    public function setThemeConfig(): array
+    {
+        $map = $_POST;
+        if (!$map['id'] === "" || !isset($map['id'])) {
+            throw new JSONException("模板不存在");
+        }
+        $id = $map['id'];
+        unset($map['id']);
+        $theme = Theme::getConfig($id);
+        if (!$theme) {
+            throw new JSONException("模板不存在");
+        }
+        $config = $theme["setting"];
+        foreach ($map as $k => $v) {
+            $config[$k] = is_scalar($v) ? urldecode((string)$v) : $v;
+        }
+        setConfig($config, BASE_PATH . "/app/View/User/Theme/{$id}/Setting.php");
+        return $this->json(200, '模板设置已生效');
     }
 }

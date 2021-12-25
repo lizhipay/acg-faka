@@ -147,6 +147,18 @@
                     latestOpen(res);
                 });
             });
+
+
+            $.get("/admin/api/app/getUpdateNum", res => {
+                if (res.code != 200){
+                    return;
+                }
+
+                if (res.data.count > 0){
+                    $('.update-num').html(res.data.count + "个更新");
+                }
+
+            });
         });
     });
 

@@ -34,6 +34,7 @@ class Config extends Model
      * 为了方便，在这里直接静态get
      * @param string $key
      * @return string
+     * @throws \Kernel\Exception\JSONException
      */
     public static function get(string $key): string
     {

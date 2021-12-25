@@ -30,7 +30,7 @@
                             解锁选中卡密
                         </button>
                         <button class="btn btn-sm btn-light-primary btn-app-export me-3"><i
-                                class="fas fa-file-export"></i>
+                                    class="fas fa-file-export"></i>
                             导出筛选卡密
                         </button>
                     </div>
@@ -235,10 +235,10 @@
                     },
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});
-                }, values, ["660px", "770px"], false, "添加", () => {
+                }, values, ["660px", "770px"], false, "添加", unqueId => {
                     $('.draft-btn').click(function () {
                         let regx = $('.draft-input').val();
-                        let cards = cao.popupElement("secret", "textarea").val().trim();
+                        let cards = cao.popupElement("secret", "textarea", unqueId).val().trim();
                         let newCards = "";
                         let success = 0;
                         let error = 0;
@@ -252,7 +252,7 @@
                                 success++;
                             }
                         });
-                        cao.popupElement("secret", "textarea").val(newCards.trim());
+                        cao.popupElement("secret", "textarea", unqueId).val(newCards.trim());
                         layer.msg("预选卡密处理完成，已处理：" + success + "，未处理：" + error);
                     });
                 });

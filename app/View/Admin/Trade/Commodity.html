@@ -4,6 +4,20 @@
         position: relative !important;
         overflow: auto !important;
     }
+
+    .level_price_div .bootstrap-table {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .level_price_div .bootstrap-table .fixed-table-toolbar::after {
+        clear: none !important;
+        display: none;
+    }
+
+    .level_price_div .bootstrap-table .fixed-table-container {
+        clear: none !important;
+    }
 </style>
 
 <!--begin::Content-->
@@ -333,6 +347,55 @@
                 ]
             });
 
+            let levelPriceModal = (values = {}, levelPriceWidget) => {
+                let levelPriceWidgetJson = {};
+                try {
+                    levelPriceWidgetJson = JSON.parse(decodeURIComponent(levelPriceWidget.val()));
+                } catch (e) {
+                }
+
+                if (levelPriceWidgetJson.hasOwnProperty(values.id)) {
+                    values.amount = levelPriceWidgetJson[values.id].amount;
+                    values.lot_config = levelPriceWidgetJson[values.id].lot_config;
+                }
+
+                cao.popup((res, index) => {
+                    let amount = parseFloat(res.amount);
+
+                    if (isNaN(amount) || amount <= 0) {
+                        delete levelPriceWidgetJson[res.id];
+                        delete values["amount"];
+                        delete values["lot_config"];
+                        $(".level_price_show_" + res.id).html("继承系统");
+                    } else {
+                        levelPriceWidgetJson[res.id] = {
+                            amount: amount,
+                            lot_config: res.lot_config
+                        }
+                        $(".level_price_show_" + res.id).html(amount);
+                    }
+
+                    levelPriceWidget.val(encodeURIComponent(JSON.stringify(levelPriceWidgetJson)));
+                    layer.close(index);
+                }, [
+                    {
+                        title: "单价",
+                        name: "amount",
+                        type: "input",
+                        placeholder: "请输入单价"
+                    },
+                    {
+                        title: "批发配置",
+                        name: "lot_config",
+                        type: "textarea",
+                        placeholder: "数量-单价(如：100-9.99)，一行一个，顺序可随意，该配置需要商品批发总开关开启才会生效，不配置将会自动继承商品总配置。"
+                    },
+                ], res => {
+                    table.bootstrapTable('refresh', {silent: true});
+                }, values, "460px", false, values.name + ' - 自定义单价');
+            }
+
+            let commodityUnqueId = 0;
             let modal = (values = {}) => {
                 cao.popup('/admin/api/commodity/save', [
                     {title: "商品图标", name: "cover", type: "image", placeholder: "请选择图片(推荐64*64)"},
@@ -349,13 +412,32 @@
                     {title: "商品单价", name: "price", type: "input", placeholder: "商品单价(未登录游客购买价)"},
                     {title: "会员价", name: "user_price", type: "input", placeholder: "会员价(登录注册后购买的价格)"},
                     {
+                        title: "禁用折扣",
+                        name: "level_disable",
+                        type: "switch",
+                        text: "禁用",
+                        tips: "如果禁用会员等级后，那么登录用户购买该商品将无法应用会员折扣，不包含会员价。"
+                    },
+                    {
+                        title: "会员定价",
+                        name: "level_price",
+                        type: "textarea",
+                        hide: true
+                    },
+                    {
+                        title: "会员定价",
+                        name: "level_price_table",
+                        type: "explain",
+                        placeholder: '<div class="level_price_div"><table class="level_price_table"></table></div>'
+                    },
+                    {
                         title: "共享平台",
                         name: "shared_id",
                         type: "select",
                         placeholder: "本地自营(LOCAL)",
                         dict: "shared,id,name", change: function (value) {
-                            let sharedCodeElement = cao.popupElement("shared_code", "input").parent().parent();
-                            let d2 = cao.popupElement("delivery_way", "select").parent().parent();
+                            let sharedCodeElement = cao.popupElement("shared_code", "input", commodityUnqueId).parent().parent();
+                            let d2 = cao.popupElement("delivery_way", "select", commodityUnqueId).parent().parent();
                             if (value == 0 || !value) {
                                 sharedCodeElement.hide();
                                 d2.show();
@@ -375,8 +457,8 @@
                         dict: [{id: 0, name: "自动发货"}, {id: 1, name: "手动发货/插件"}],
                         default: 0,
                         change: function (value) {
-                            let d1 = cao.popupElement("delivery_message", "textarea").parent().parent();
-                            let d2 = cao.popupElement("delivery_auto_mode", "select").parent().parent();
+                            let d1 = cao.popupElement("delivery_message", "textarea", commodityUnqueId).parent().parent();
+                            let d2 = cao.popupElement("delivery_auto_mode", "select", commodityUnqueId).parent().parent();
                             if (value == 1) {
                                 d1.show();
                                 d2.hide();
@@ -434,7 +516,7 @@
                     {title: "排序", name: "sort", type: "input", placeholder: "排序，越小越靠前"},
                     {
                         title: "批发优惠", name: "lot_status", type: "switch", text: "启用", change: function (value) {
-                            let lotConfigElement = cao.popupElement("lot_config", "textarea").parent().parent();
+                            let lotConfigElement = cao.popupElement("lot_config", "textarea", commodityUnqueId).parent().parent();
                             if (value == 1) {
                                 lotConfigElement.show();
                             } else {
@@ -452,8 +534,8 @@
                     {title: "优惠卷", name: "coupon", type: "switch", text: "启用"},
                     {
                         title: "限时秒杀", name: "seckill_status", type: "switch", text: "启用", change: function (value) {
-                            let d1 = cao.popupElement("seckill_start_time", "date").parent().parent();
-                            let d2 = cao.popupElement("seckill_end_time", "date").parent().parent();
+                            let d1 = cao.popupElement("seckill_start_time", "date", commodityUnqueId).parent().parent();
+                            let d2 = cao.popupElement("seckill_end_time", "date", commodityUnqueId).parent().parent();
                             if (value == 1) {
                                 d1.show();
                                 d2.show();
@@ -467,7 +549,7 @@
                     {title: "秒杀结束时间", name: "seckill_end_time", type: "date", placeholder: "结束时间", hide: true},
                     {
                         title: "卡密预选", name: "draft_status", type: "switch", text: "启用", change: function (value) {
-                            let d1 = cao.popupElement("draft_premium", "input").parent().parent();
+                            let d1 = cao.popupElement("draft_premium", "input", commodityUnqueId).parent().parent();
                             if (value == 1) {
                                 d1.show();
                             } else {
@@ -521,13 +603,97 @@
                     #{hook(\App\Consts\Hook::ADMIN_VIEW_COMMODITY_POST)}
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});
-                }, values, ["720px", "720px"], false, "添加", () => {
+                }, values, ["720px", "720px"], false, "添加", unqueId => {
+                    commodityUnqueId = unqueId;
                     //success
-                    let d = cao.popupElement("draft_premium", "input").parent().parent();
-                    cao.popupElement("draft_status", "input").val() == 1 ? d.show() : d.hide();
+                    let d = cao.popupElement("draft_premium", "input", unqueId).parent().parent();
+                    cao.popupElement("draft_status", "input", unqueId).val() == 1 ? d.show() : d.hide();
 
-                    let d1 = cao.popupElement("delivery_auto_mode", "select").parent().parent();
-                    cao.popupElement("delivery_way", "select").val() == 0 ? d1.show() : d1.hide();
+                    let d1 = cao.popupElement("delivery_auto_mode", "select", unqueId).parent().parent();
+                    cao.popupElement("delivery_way", "select", unqueId).val() == 0 ? d1.show() : d1.hide();
+
+                    let levelPriceWidget = cao.popupElement("level_price", "textarea", unqueId);
+                    levelPriceWidget.parent().parent().hide();
+
+                    let levelPriceWidgetJson = {};
+                    try {
+                        levelPriceWidgetJson = JSON.parse(decodeURIComponent(levelPriceWidget.val()));
+                    } catch (e) {
+                    }
+
+
+                    //初始化表格
+                    let queryParamsLevel = null;
+                    $('.level_price_table').bootstrapTable({
+                        url: '/admin/api/group/data',//请求的url地址
+                        method: "post",//请求方式
+                        // striped:true,//是否显示行间隔色
+                        pageSize: 500,//每页显示的数量
+                        showRefresh: false,//是否显示刷新按钮
+                        cache: false,//是否使用缓存
+                        showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                        cardView: false,
+                        pagination: false,//是否显示分页
+                        pageNumber: 1,//初始化显示第几页，默认第1页
+                        singleSelect: false,//复选框只能选择一条记录
+                        sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                        contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                        dataType: "json",//接收的数据类型
+                        queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                        queryParams: function (params) {
+                            params.page = (params.offset / params.limit) + 1;
+                            if (queryParamsLevel) {
+                                for (const key in params) {
+                                    queryParamsLevel[key] = params[key];
+                                }
+                            } else {
+                                queryParamsLevel = params;
+                            }
+                            return queryParamsLevel;
+                        },
+                        //回调函数
+                        responseHandler: function (res) {
+                            return {
+                                "total": res.count,
+                                "rows": res.data
+                            }
+                        },
+                        columns: [
+                            {
+                                field: "icon", title: "LOGO", formatter: function (val, item) {
+                                    if (!item.icon) {
+                                        return "-";
+                                    }
+                                    return '<img src="' + item.icon + '"  style="height: 32px;"/>';
+                                }
+                            },
+                            {
+                                field: "name", title: "等级", formatter: function (val, item) {
+                                    return '<span class="badge badge-light">' + item.name + '</span>'
+                                }
+                            },
+                            {
+                                field: "price", title: "自定义单价", formatter: function (val, item) {
+                                    if (levelPriceWidgetJson.hasOwnProperty(item.id)) {
+                                        return '<span class="level_price_show_' + item.id + '">' + levelPriceWidgetJson[item.id].amount + '</span>';
+                                    }
+                                    return '<span class="level_price_show_' + item.id + '">继承系统</span>';
+                                }
+                            },
+                            {
+                                field: 'operate',
+                                title: '定价',
+                                formatter: function (val, item) {
+                                    return '<span class="level_price_config" style="cursor: pointer"><i class="fas fa-cog text-primary"></i></span>';
+                                },
+                                events: {
+                                    'click .level_price_config': function (event, value, row, index) {
+                                        levelPriceModal(row, levelPriceWidget);
+                                    }
+                                }
+                            }
+                        ]
+                    });
                 });
             }
 

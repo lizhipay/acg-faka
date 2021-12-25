@@ -54,11 +54,11 @@ let acg = {
             localStorage.setItem("from_id", from);
         }
 
-        acg.loadScript("/assets/static/jquery.min.js", () => {
-            acg.loadScript("/assets/static/layer/layer.js", () => {
-                acg.loadScript("/assets/static/clipboard.js", callback);
-            });
+        // acg.loadScript("/assets/static/jquery.min.js", () => {
+        acg.loadScript("/assets/static/layer/layer.js", () => {
+            acg.loadScript("/assets/static/clipboard.js", callback);
         });
+        // });
     },
     $post(url, data, done, error = null) {
         let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});

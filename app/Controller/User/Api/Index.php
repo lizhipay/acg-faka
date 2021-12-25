@@ -107,7 +107,7 @@ class Index extends User
     {
         $commodity = Commodity::query()->with(['owner' => function (Relation $relation) {
             $relation->select(["id", "username", "avatar"]);
-        }])->find($commodityId, ["id", "name", "description", "only_user", "purchase_count", "category_id", "cover", "price", "user_price", "status", "owner", "delivery_way", "contact_type", "password_status", "lot_status", "lot_config", "coupon", "shared_id", "shared_code", "seckill_status", "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden", "widget"]);
+        }])->find($commodityId, ["id", "name", "description", "only_user", "purchase_count", "category_id", "cover", "price", "user_price", "status", "owner", "delivery_way", "contact_type", "password_status", "level_price", "level_disable", "lot_status", "lot_config", "coupon", "shared_id", "shared_code", "seckill_status", "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden", "widget"]);
 
         if (!$commodity) {
             throw new JSONException("商品不存在");
@@ -133,7 +133,12 @@ class Index extends User
         //检测是否登录
         $userGroup = $this->getUserGroup();
         if ($userGroup) {
-            $commodity->user_price = $commodity->user_price - ($userGroup->discount * $commodity->user_price);
+            $commodity->user_price = $this->order->calcAmount($this->getUser()->id, 1, $commodity, $userGroup);
+            $userDefinedPrice = $this->order->userDefinedPrice($commodity, $userGroup);
+
+            if ($userDefinedPrice) {
+                $commodity->lot_config = $userDefinedPrice['lot_config'];
+            }
         }
 
         $commodity->service_url = Config::get("service_url");
@@ -154,6 +159,8 @@ class Index extends User
 
         //获取网站是否需要验证码
         $array['trade_captcha'] = (int)Config::get("trade_verification");
+
+        //批发规则替换
 
         return $this->json(200, 'success', $array);
     }
