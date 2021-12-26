@@ -39,8 +39,13 @@ class Security extends User
         $user->nicename = (string)$_POST['nicename'];
         $user->settlement = (int)$_POST['settlement'] == 0 ? 0 : 1;
 
-        $wechat = (string)$_POST['wechat'];
+        $plugin = (array)$_POST['plugin'];
 
+        foreach ($plugin as $key => $val) {
+            $user->$key = $val;
+        }
+
+        $wechat = (string)$_POST['wechat'];
         if ($wechat != "") {
 
             $qrCode = QrCode::parse(BASE_PATH . $wechat);

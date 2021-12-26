@@ -39,12 +39,12 @@ class Plugin
         $submit = (array)require($submitPath);
         $config = (array)require($configPath);
 
-        $submit[] = [
+/*        $submit[] = [
             "title" => "插件状态",
             "name" => \App\Consts\Plugin::STATUS,
             "type" => "switch",
             "text" => "启用"
-        ];
+        ];*/
 
         //submit
         if (is_array($submit)) {

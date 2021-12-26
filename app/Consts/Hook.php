@@ -82,6 +82,9 @@ interface Hook
     //商品管理中的添加商品表单
     const ADMIN_VIEW_COMMODITY_POST = 0x45;
 
+    //用户前台中的添加商品表单
+    const USER_VIEW_COMMODITY_POST = 0x46;
+
 
     //-----------------------------MY
 

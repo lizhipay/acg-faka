@@ -74,6 +74,7 @@ class Index extends User
     /**
      * @param int $categoryId
      * @return array
+     * @throws \Kernel\Exception\JSONException
      */
     public function commodity(#[Get] int $categoryId): array
     {
@@ -88,6 +89,26 @@ class Index extends User
 
         if ($keywords != "") {
             $commodity = $commodity->where('name', 'like', '%' . $keywords . '%');
+        }
+
+        $bus = \App\Model\Business::get(Client::getDomain());
+        if ($bus) {
+            //商家
+            if ($bus->master_display == 0) {
+                $commodity = $commodity->where("owner", $bus->user_id);
+            } else {
+                $commodity = $commodity->whereRaw("`owner`=0 or `owner`={$bus->user_id}");
+            }
+        } else {
+            $commodity = $commodity->where("owner", 0);
+            //主站
+            if (Config::get("substation_display") == 1) {
+                //显示商家
+                $list = (array)json_decode(Config::get("substation_display_list"), true);
+                foreach ($list as $userId) {
+                    $commodity = $commodity->orWhere("owner", "=", $userId);
+                }
+            }
         }
 
         $commodity = $commodity->where("status", 1)->orderBy("sort", "asc")->get(['id', 'name', 'cover', 'delivery_way', 'price', 'user_price', 'inventory_hidden']);

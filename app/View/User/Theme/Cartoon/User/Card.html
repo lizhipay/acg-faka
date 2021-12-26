@@ -187,7 +187,13 @@
                         placeholder: "卡密信息+预选信息（多个），一行即算一个卡密信息+预选信息\n\n" +
                             "例子1（游戏账号+预选信息）：\n大区:神境之地----等级:100----ID:逆天而行----觉醒:已觉醒----段位:无人之境----账号:admin----密码:123456#[大区:神境之地----等级:100----ID:逆天而行----觉醒:已觉醒----段位:无人之境]#\n\n" +
                             "例子2（卡密信息+无预选）：\nAAKvSsfWGnFdnqP\nf5V61wpeAIuX35t\n1a9Xn35qsEQwp32\n\n提示：#[我是预选信息内容]#，预选信息代表买家在购买的时候可以通过加价的方式预选自己想购买的卡密信息，一般用作与购买自己想要的账号等",
-                        height: 560
+                        height: 420
+                    },
+                    {
+                        title: "",
+                        name: "explain",
+                        type: "explain",
+                        placeholder: '<input class="draft-input" style="border:1px solid #fdabe678;border-radius: 5px;padding:5px;" type="text" placeholder="预选卡密隐藏正则，可不填"><button type="button" style="border: none;margin-left: 5px;padding: 2px 5px 2px 5px;background: #fd6ace96;border-radius: 5px;color: whitesmoke;cursor:pointer;" class="draft-btn">处理</button>'
                     },
                     {
                         title: "去除重复",
@@ -197,7 +203,27 @@
                     },
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});
-                }, values, ["660px", "830px"]);
+                }, values, ["660px", "770px"], false, "添加", unqueId => {
+                    $('.draft-btn').click(function () {
+                        let regx = $('.draft-input').val();
+                        let cards = cao.popupElement("secret", "textarea", unqueId).val().trim();
+                        let newCards = "";
+                        let success = 0;
+                        let error = 0;
+                        cards.split('\n').forEach(item => {
+                            item = item.trim();
+                            if (/#\[(.*?)\]#/.test(item)) {
+                                newCards += item + "\n";
+                                error++;
+                            } else {
+                                newCards += item + '#[' + item.replace(eval("/" + regx + "/i"), "") + ']#\n';
+                                success++;
+                            }
+                        });
+                        cao.popupElement("secret", "textarea", unqueId).val(newCards.trim());
+                        layer.msg("预选卡密处理完成，已处理：" + success + "，未处理：" + error);
+                    });
+                });
             }
 
             $('.button-add').click(function () {
