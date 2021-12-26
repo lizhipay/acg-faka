@@ -46,28 +46,31 @@ class Index extends User
         $category = \App\Model\Category::query()->withCount(['children as commodity_count' => function (Builder $builder) {
             $builder->where("status", 1);
         }])->where("status", 1)->orderBy("sort", "asc");
-
         $bus = \App\Model\Business::get(Client::getDomain());
         if ($bus) {
             //商家
             if ($bus->master_display == 0) {
                 $category = $category->where("owner", $bus->user_id);
             } else {
-                $category = $category->whereRaw("`owner`=0 or `owner`={$bus->user_id}");
+                $category = $category->whereRaw("(`owner`=0 or `owner`={$bus->user_id})");
             }
         } else {
-            $category = $category->where("owner", 0);
             //主站
             if (Config::get("substation_display") == 1) {
                 //显示商家
                 $list = (array)json_decode(Config::get("substation_display_list"), true);
+                $let = "(`owner`=0 or ";
                 foreach ($list as $userId) {
-                    $category = $category->orWhere("owner", "=", $userId);
+                    // $category = $category->orWhere("owner", "=", $userId);
+                    $let .= "`owner`={$userId} or ";
                 }
+                $let = trim(trim($let), "or") . ")";
+                $category = $category->whereRaw($let);
+            } else {
+                $category = $category->where("owner", 0);
             }
         }
         $category = $category->get()->toArray();
-
         return $this->json(200, "success", $category);
     }
 
@@ -83,6 +86,7 @@ class Index extends User
         $commodity = Commodity::query()->with(['shared' => function (Relation $relation) {
             $relation->select(['id']);
         }]);
+
         if ($categoryId != 0) {
             $commodity = $commodity->where("category_id", $categoryId);
         }
@@ -97,17 +101,21 @@ class Index extends User
             if ($bus->master_display == 0) {
                 $commodity = $commodity->where("owner", $bus->user_id);
             } else {
-                $commodity = $commodity->whereRaw("`owner`=0 or `owner`={$bus->user_id}");
+                $commodity = $commodity->whereRaw("(`owner`=0 or `owner`={$bus->user_id})");
             }
         } else {
-            $commodity = $commodity->where("owner", 0);
             //主站
             if (Config::get("substation_display") == 1) {
+                $let = "(`owner`=0 or ";
                 //显示商家
                 $list = (array)json_decode(Config::get("substation_display_list"), true);
                 foreach ($list as $userId) {
-                    $commodity = $commodity->orWhere("owner", "=", $userId);
+                    $let .= "`owner`={$userId} or ";
                 }
+                $let = trim(trim($let), "or") . ")";
+                $commodity = $commodity->whereRaw($let);
+            } else {
+                $commodity = $commodity->where("owner", 0);
             }
         }
 

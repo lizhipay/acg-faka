@@ -10,6 +10,7 @@ use App\Entity\DeleteBatchEntity;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
 use App\Model\Bill;
+use App\Model\Business;
 use App\Model\UserGroup;
 use App\Service\Query;
 use App\Util\Date;
@@ -163,6 +164,14 @@ class User extends Manage
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }
+
+        $list = (array)$_POST['list'];
+
+        //删除店铺
+        foreach ($list as $id) {
+            Business::query()->where("user_id", $id)->delete();
+        }
+
         return $this->json(200, '（＾∀＾）移除成功');
     }
 }
