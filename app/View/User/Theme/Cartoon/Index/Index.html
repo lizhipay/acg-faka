@@ -50,14 +50,14 @@
                     <div style="margin-bottom: 10px;"><img src="/favicon.ico" alt=""
                                                            style="border-radius: 100%;height: 28px;"
                                                            class="service-avatar"> <span
-                            style="color: #e093ff;position: relative;top: 1px;" class="service-nickname">自营商品</span>
+                                style="color: #e093ff;position: relative;top: 1px;" class="service-nickname">自营商品</span>
                     </div>
                     <a class="button-click service-url" style="line-height: 22px;margin-right: 0;color: #ff8888;"
                        target="_blank"><i
-                            class="fa fa-user-plus"></i> 网页客服</a>
+                                class="fa fa-user-plus"></i> 网页客服</a>
                     <a class="button-click service-qq" style="line-height: 22px;margin-right: 0;color: #7599b1;"
                        target="_blank"><i
-                            class="fa fa-qq"></i> ＱＱ客服</a>
+                                class="fa fa-qq"></i> ＱＱ客服</a>
                 </div>
             </div>
         </div>
@@ -257,6 +257,10 @@
             $('.productName').html(commodity.name);
             $('.description').html(commodity.description);
 
+            if (commodity.minimum > 0) {
+                $('.buyNum').val(commodity.minimum).change();
+            }
+
 
             $('.description').find("img").click(function () {
                 let imageUrl = $(this).attr("src");
@@ -374,8 +378,12 @@
 
             $('.contact').attr("placeholder", "请输入您的" + contactType[commodity.contact_type] + "，方便订单查询");
 
+            if (commodity.login) {
+                $('.contact').parent().hide();
+            }
+
             //
-            if (commodity.password_status === 1) {
+            if (commodity.password_status === 1 && !commodity.login) {
                 $('.fieldset-password').show();
             }
 

@@ -157,11 +157,15 @@ class AppService implements App
             $pluginPath = BASE_PATH . "/app/View/User/Theme/{$key}/";
             $fileInit = file_exists($pluginPath . "/Config.php");
         }
-        if (!is_dir($pluginPath) && !$fileInit) {
+
+        if (!is_dir($pluginPath)) {
             mkdir($pluginPath, 0777, true);
-        } else {
+        }
+
+        if ($fileInit) {
             throw new JSONException("该插件已被安装，请勿重复安装");
         }
+
         $storeDownload = $this->storeDownload("/store/install", [
             "plugin_id" => $pluginId
         ]);

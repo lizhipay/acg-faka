@@ -372,6 +372,11 @@ let acg = {
                             }
                             continue
                         } else if (autoKey == "contact_type") {
+                            if (res.login){
+                                instance.parent().hide();
+                                continue;
+                            }
+
                             let contactType = ["任意联系方式", "手机号", "邮箱", "QQ号"];
                             instance.attr("placeholder", "请输入您的" + contactType[value]);
                             continue;
@@ -380,6 +385,9 @@ let acg = {
                             continue;
                         } else if (autoKey == "purchase_num") {
                             //
+                            if (res.minimum > 0){
+                                instance.val(res.minimum).change();
+                            }
                             continue;
                         } else if (autoKey == "captcha") {
                             if (res.trade_captcha == 1) {
@@ -394,7 +402,7 @@ let acg = {
                             continue;
                         } else if (autoKey == "password_status") {
                             //查询密码
-                            value == 0 ? instance.hide() : instance.show();
+                            (value == 0 || res.login) ? instance.hide() : instance.show();
                             continue;
                         } else if (autoKey == "lot_status") {
                             if (value == 1) {

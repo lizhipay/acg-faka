@@ -138,6 +138,7 @@ class OrderService implements Order
 
         $commodity = Commodity::query()->find($commodityId);
 
+
         if (!$commodity) {
             throw new JSONException("商品不存在");
         }
@@ -149,6 +150,12 @@ class OrderService implements Order
         if ($commodity->only_user == 1 || $commodity->purchase_count > 0) {
             if ($owner == 0) {
                 throw new JSONException("请先登录后再购买哦");
+            }
+        }
+
+        if ($commodity->minimum > 0) {
+            if ($num < $commodity->minimum) {
+                throw new JSONException("本商品最少购买{$commodity->minimum}个");
             }
         }
 
@@ -177,24 +184,23 @@ class OrderService implements Order
             $num = 1;
         }
 
-        if (mb_strlen($contact) < 3) {
-            throw new JSONException("联系方式不能低于3个字符");
-        }
-
         $regx = ['/^1[3456789]\d{9}$/', '/.*(.{2}@.*)$/i', '/[1-9]{1}[0-9]{4,11}/'];
         $msg = ['手机', '邮箱', 'QQ号'];
-
-        //联系方式正则判断
-        if ($commodity->contact_type != 0) {
-            if (!preg_match($regx[$commodity->contact_type - 1], $contact)) {
-                throw new JSONException("您输入的{$msg[$commodity->contact_type - 1]}格式不正确！");
+        //未登录才检测，登录后无需检测
+        if (!$user) {
+            if (mb_strlen($contact) < 3) {
+                throw new JSONException("联系方式不能低于3个字符");
+            }
+            //联系方式正则判断
+            if ($commodity->contact_type != 0) {
+                if (!preg_match($regx[$commodity->contact_type - 1], $contact)) {
+                    throw new JSONException("您输入的{$msg[$commodity->contact_type - 1]}格式不正确！");
+                }
+            }
+            if ($commodity->password_status == 1 && mb_strlen($password) < 6) {
+                throw new JSONException("您的设置的密码过于简单，不能低于6位哦");
             }
         }
-
-        if ($commodity->password_status == 1 && mb_strlen($password) < 6) {
-            throw new JSONException("您的设置的密码过于简单，不能低于6位哦");
-        }
-
 
         if ($commodity->seckill_status == 1) {
             if (time() < strtotime($commodity->seckill_start_time)) {
@@ -242,7 +248,12 @@ class OrderService implements Order
             throw new JSONException("当前支付方式已停用，请换个支付方式再进行支付");
         }
 
-        return Db::transaction(function () use ($userGroup, $num, $contact, $device, $amount, $owner, $commodity, $pay, $cardId, $password, $coupon, $from, $widget) {
+        return Db::transaction(function () use ($user, $userGroup, $num, $contact, $device, $amount, $owner, $commodity, $pay, $cardId, $password, $coupon, $from, $widget) {
+            //生成联系方式
+            if ($user) {
+                $contact = Str::generateContact($commodity->contact_type);
+            }
+
             $date = Date::current();
             $order = new  \App\Model\Order();
             $order->widget = $widget;
@@ -647,8 +658,6 @@ class OrderService implements Order
         }
 
         if ($cardId != 0 && $commodity->draft_status == 1) {
-            $commodity->price = $commodity->price + $commodity->draft_premium;
-            $commodity->user_price = $commodity->user_price + $commodity->draft_premium;
             $num = 1;
         }
 
@@ -657,9 +666,10 @@ class OrderService implements Order
             $ow = $user->id;
         }
         $amount = $this->calcAmount($ow, $num, $commodity, $userGroup);
-        /*    if ($userGroup) {
-                $amount = $amount - ($userGroup->discount * $amount);
-            }*/
+        if ($cardId != 0 && $commodity->draft_status == 1) {
+            $amount = $amount + $commodity->draft_premium;
+        }
+
         $couponMoney = 0;
         //优惠卷
         $price = $amount / $num;

@@ -9,6 +9,7 @@ use App\Interceptor\Waf;
 use App\Model\Config;
 use App\Model\UserRecharge;
 use App\Util\Captcha;
+use App\Util\Str;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\Post;
@@ -32,6 +33,7 @@ class Order extends User
             }
             Captcha::destroy("trade");
         }
+        
         hook(\App\Consts\Hook::USER_API_ORDER_TRADE_BEGIN, $_POST);
         $trade = $this->order->trade($this->getUser(), $this->getUserGroup(), $_POST);
         return $this->json(200, '下单成功', $trade);

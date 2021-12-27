@@ -42,6 +42,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $only_user
  * @property int $purchase_count
  * @property string $widget
+ * @property int $minimum
  */
 class Commodity extends Model
 {
@@ -83,6 +84,7 @@ class Commodity extends Model
         'send_email' => 'integer',
         'only_user' => 'integer',
         'purchase_count' => 'integer',
+        'minimum' => 'integer',
     ];
 
     public function owner(): ?\Illuminate\Database\Eloquent\Relations\HasOne

@@ -82,7 +82,7 @@ class Helper
                     return false;
                 }
                 $namespace = "App\\View\\User\\Theme\\{$key}\\Config";
-                if (!class_exists($namespace)) {
+                if (!interface_exists($namespace)) {
                     return false;
                 }
                 return $namespace::INFO;
