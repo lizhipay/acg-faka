@@ -39,6 +39,20 @@ interface Config
             "default" => 0
         ],
         [
+            "title" => "缓存",
+            "name" => "cache",
+            "type" => "switch",
+            "text" => "开启",
+            "tips" => "浏览器本地缓存，缓存时间60秒"
+        ],
+        [
+            "title" => "缓存时间",
+            "name" => "cache_expire",
+            "type" => "input",
+            "placeholder" => "缓存过期时间，推荐60秒",
+            "default" => 60
+        ],
+        [
             "title" => "ICP备案号",
             "name" => "icp",
             "type" => "input",

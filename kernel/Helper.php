@@ -141,7 +141,7 @@ declare (strict_types=1);\n\nreturn [\n";
                 $akv .= "]";
                 $value = $akv;
             } else {
-                $value = "'" . str_replace("'", "\\'", $v) . "'";
+                $value = "'" . str_replace("'", "\\'", (string)$v) . "'";
             }
             $ret .= "    '{$k}' => $value,\n";
         }

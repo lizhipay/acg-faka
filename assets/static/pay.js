@@ -1,4 +1,29 @@
 var Pay = {
+    setCache(key, value, expire = 0) {
+        localStorage.setItem("cache_" + key, JSON.stringify({
+            data: value,
+            expire: expire,
+            time: Math.round(new Date().getTime() / 1000)
+        }));
+    },
+    getCache(key) {
+        key = "cache_" + key;
+
+        let item = localStorage.getItem(key);
+        if (!item) {
+            return null;
+        }
+
+        item = JSON.parse(item);
+
+        if (item.expire != 0 && Math.round(new Date().getTime() / 1000) > item.time + item.expire) {
+            localStorage.removeItem(key);
+            return null;
+        }
+
+        return item.data;
+    },
+
     isPc() {
         var userAgentInfo = navigator.userAgent;
         var Agents = ["Android", "iPhone",
@@ -73,22 +98,76 @@ var Pay = {
         });
     },
     getWebSiteInfo(done) {
-        this.$get("/user/api/site/info", done);
+        let cacheKey = "site_info";
+        let data = Pay.getCache(cacheKey);
+        if (data) {
+            typeof done === 'function' && done(data);
+            return;
+        }
+        this.$get("/user/api/site/info", data => {
+            if (setting_cache == 1) {
+                Pay.setCache(cacheKey, data, setting_cache_expire);
+            }
+            typeof done === 'function' && done(data);
+        });
     },
     getCategory(done) {
-        this.$get("/user/api/index/data", done);
+        let data = Pay.getCache("category");
+        if (data) {
+            typeof done === 'function' && done(data);
+            return;
+        }
+        this.$get("/user/api/index/data", data => {
+            if (setting_cache == 1) {
+                Pay.setCache("category", data, setting_cache_expire);
+            }
+            typeof done === 'function' && done(data);
+        });
     },
     getCommodityAll(categoryId, done) {
-        this.$get("/user/api/index/commodity?categoryId=" + categoryId, done);
+        let cacheKey = "commodity_" + categoryId;
+        let data = Pay.getCache(cacheKey);
+        if (data) {
+            typeof done === 'function' && done(data);
+            return;
+        }
+        this.$get("/user/api/index/commodity?categoryId=" + categoryId, data => {
+            if (setting_cache == 1) {
+                Pay.setCache(cacheKey, data, setting_cache_expire);
+            }
+            typeof done === 'function' && done(data);
+        });
     },
     getCommodityDetail(commodityId, done) {
-        this.$get("/user/api/index/commodityDetail?commodityId=" + commodityId, done);
+        let cacheKey = "commodityDetail_" + commodityId;
+        let data = Pay.getCache(cacheKey);
+        if (data) {
+            typeof done === 'function' && done(data);
+            return;
+        }
+        this.$get("/user/api/index/commodityDetail?commodityId=" + commodityId, data => {
+            if (setting_cache == 1) {
+                Pay.setCache(cacheKey, data, 10);
+            }
+            typeof done === 'function' && done(data);
+        });
     },
     getDraftCard(commodityId, page, done) {
         this.$get("/user/api/index/card?commodityId=" + commodityId + "&page=" + page, done);
     },
     getPay(done) {
-        this.$get("/user/api/index/pay", done);
+        let cacheKey = "pay";
+        let data = Pay.getCache(cacheKey);
+        if (data) {
+            typeof done === 'function' && done(data);
+            return;
+        }
+        this.$get("/user/api/index/pay", data => {
+            if (setting_cache == 1) {
+                Pay.setCache(cacheKey, data, setting_cache_expire);
+            }
+            typeof done === 'function' && done(data);
+        });
     },
     getTradeAmount(commodityId, coupon, cardId, num, done) {
         this.$post("/user/api/index/tradeAmount", {
