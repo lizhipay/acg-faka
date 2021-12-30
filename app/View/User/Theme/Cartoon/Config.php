@@ -34,6 +34,7 @@ interface Config
             "dict" => [
                 ["id" => 0, "name" => "会员中心-二次元风(默认)"],
                 ["id" => 1, "name" => "会员中心-商务风"],
+                ["id" => 2, "name" => "会员中心-二次元风(高端)"], 
             ],
             "placeholder" => "请选择",
             "default" => 0

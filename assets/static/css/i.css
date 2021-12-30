@@ -10,6 +10,17 @@ img {
     vertical-align: middle
 }
 
+.content-icp {
+    color: #a19d9d;
+    font-weight: bolder;
+    text-align: center;
+    max-width: 1110px;
+    margin: 30px auto 0 auto;
+    border-radius: 20px;
+    padding: 5px;
+}
+
+
 body {
     text-align: left
 }
@@ -980,7 +991,7 @@ h1, h3, h5 {
 }
 
 .content-wrapper {
-   /* padding: 0 15px*/
+    /* padding: 0 15px*/
 }
 
 h1, h3, h5 {

@@ -5,10 +5,15 @@
     });
 
     layui.define(['layer', 'element'], function (exports) {
+
         var $ = layui.jquery, element = layui.element;
         //手机设备的简单适配
         var treeMobile = $('.site-tree-mobile')
-            , shadeMobile = $('.site-mobile-shade')
+            , shadeMobile = $('.site-mobile-shade');
+
+        $('a').click(()=>{
+            $('.net-loading').show();
+        });
 
         treeMobile.on('click', function () {
             $('body').addClass('site-mobile');
@@ -18,7 +23,6 @@
         });
 
         $('.logout').click(function () {
-
             layer.confirm('您是否要注销登录？', {
                 btn: ['确认', '取消'],
                 title: "安全注销"

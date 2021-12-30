@@ -1,4 +1,24 @@
 let acg = {
+    setCache(key, value, expire = 0) {
+        localStorage.setItem("cache_" + key, JSON.stringify({
+            data: value,
+            expire: expire,
+            time: Math.round(new Date().getTime() / 1000)
+        }));
+    },
+    getCache(key) {
+        key = "cache_" + key;
+        let item = localStorage.getItem(key);
+        if (!item) {
+            return null;
+        }
+        item = JSON.parse(item);
+        if (item.expire != 0 && Math.round(new Date().getTime() / 1000) > item.time + item.expire) {
+            localStorage.removeItem(key);
+            return null;
+        }
+        return item.data;
+    },
     property: {
         Browser: {
             ie: /msie/.test(window.navigator.userAgent.toLowerCase()),
@@ -6,7 +26,11 @@ let acg = {
             opera: /opera/.test(window.navigator.userAgent.toLowerCase()),
             safari: /safari/.test(window.navigator.userAgent.toLowerCase())
         },
-        cache: {}
+        cache: {},
+        setting: {
+            cache: 0,
+            cache_expire: 0
+        },
     },
     loadScript(url, callback = null) {
         let _script = document.createElement('script');
@@ -54,13 +78,29 @@ let acg = {
             localStorage.setItem("from_id", from);
         }
 
+        if (typeof cache_status != "undefined") {
+            acg.property.setting.cache = cache_status;
+        }
+
+        if (typeof cache_expire != "undefined") {
+            acg.property.setting.cache_expire = cache_expire;
+        }
+
         // acg.loadScript("/assets/static/jquery.min.js", () => {
         acg.loadScript("/assets/static/layer/layer.js", () => {
             acg.loadScript("/assets/static/clipboard.js", callback);
         });
         // });
     },
-    $post(url, data, done, error = null) {
+    $post(url, data, done, error = null, cache = 0, cache_expire = 0) {
+        if (cache == 1) {
+            let cacheRes = acg.getCache(url + encodeURIComponent(JSON.stringify(data)));
+            if (cacheRes) {
+                typeof done === 'function' && done(cacheRes);
+                return;
+            }
+        }
+
         let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
         $.post(url, data, res => {
             layer.close(loaderIndex);
@@ -69,10 +109,23 @@ let acg = {
                 typeof error === 'function' ? error(res) : layer.msg(res.msg);
                 return;
             }
+
+            if (cache == 1) {
+                acg.setCache(url + encodeURIComponent(JSON.stringify(data)), res.data, cache_expire);
+            }
+
             typeof done === 'function' && done(res.data);
         });
     },
-    $get(url, done, error = null) {
+    $get(url, done, error = null, cache = 0, cache_expire = 0) {
+        if (cache == 1) {
+            let cacheRes = acg.getCache(url);
+            if (cacheRes) {
+                typeof done === 'function' && done(cacheRes);
+                return;
+            }
+        }
+
         let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
         $.get(url, res => {
             layer.close(loaderIndex);
@@ -80,6 +133,11 @@ let acg = {
                 typeof error === 'function' ? error(res) : layer.msg(res.msg);
                 return;
             }
+
+            if (cache == 1) {
+                acg.setCache(url, res.data, cache_expire);
+            }
+
             typeof done === 'function' && done(res.data);
         });
     },
@@ -201,7 +259,7 @@ let acg = {
                     typeof opt.success === 'function' && opt.success(item);
                 });
                 typeof opt.yes === 'function' && opt.yes(res);
-            }, opt.error);
+            }, opt.error, acg.property.setting.cache, acg.property.setting.cache_expire);
         },
         trade(opt) {
             acg.$post("/user/api/order/trade", opt.data, opt.success, opt.error);
@@ -282,7 +340,7 @@ let acg = {
                     typeof opt.success === 'function' && opt.success(item);
                 });
                 typeof opt.yes === 'function' && opt.yes();
-            }, opt.error);
+            }, opt.error, acg.property.setting.cache, acg.property.setting.cache_expire);
         },
         draftCard(opt) {
             acg.$get("/user/api/index/card?commodityId=" + opt.commodityId + "&page=" + opt.page + "&limit=" + opt.limit, res => {
@@ -343,7 +401,7 @@ let acg = {
                     typeof opt.success === 'function' && opt.success(item);
                 });
                 typeof opt.yes === 'function' && opt.yes();
-            }, opt.error);
+            }, opt.error, acg.property.setting.cache, acg.property.setting.cache_expire);
         },
         //获取商品信息
         commodity(opt) {
@@ -572,12 +630,10 @@ let acg = {
                     }
                 }
                 typeof opt.success === 'function' && opt.success(res);
-            }, opt.error);
+            }, opt.error, acg.property.setting.cache, 10);
         },
         captcha(obj) {
             $(obj).attr("src", "/user/captcha/image?action=trade&rand=" + Math.ceil(Math.random() * 10000000));
         }
     },
-
-
 }

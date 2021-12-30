@@ -8,9 +8,12 @@
     <link rel="stylesheet" href="/assets/static/bootstrap-table/css/bootstrap-table.css">
     #{if $setting.style == 0}
         <link rel="stylesheet" href="/assets/user/css/global.css?v=#{$app.version}">
-    #{else}
+    #{elseif $setting.style == 1}
         <link rel="stylesheet" href="/assets/user/css/global_1.css?v=#{$app.version}">
+    #{elseif $setting.style == 2}
+        <link rel="stylesheet" href="/assets/user/css/global_2.css?v=#{$app.version}">
     #{/if}
+    <link rel="stylesheet" href="/assets/static/css/style.css?v=#{$app.version}">
 
     <script src="/assets/static/jquery.min.js"></script>
     <script src="/assets/static/layui/layui.js"></script>
@@ -41,39 +44,45 @@
     </script>
 </head>
 <body style="background: url('#{$config.background_url}') fixed no-repeat;background-size: cover;">
-<div style="background: rgba(255,255,255,0.77);overflow:auto;height:calc(100vh - 61px);">
-<div class="fly-header">
-    <div class="layui-container">
-        <a class="fly-logo" href="/">
-            #{$config.shop_name}
-        </a>
-        <ul class="layui-nav fly-nav layui-hide-xs">
-            <li class="layui-nav-item layui-this">
-                <a href="/user/index/query"><i class="iconfont icon-jiaoliu"></i>我的订单</a>
-            </li>
-        </ul>
-
-        <ul class="layui-nav fly-nav-user">
-            <!-- 登入后的状态 -->
-            <li class="layui-nav-item">
-                <div class="fly-nav-avatar" href="javascript:;">
-                    <span class="user-level"><img src="#{$user.group.icon}"
-                                                  style="transform: scale(.8,.8);margin-left: 0;">#{$user.username}</span>
-                    <span class="user-username"><img src="#{$user.avatar}" class="user-avatar"></span>
-
-                </div>
-                <dl class="layui-nav-child">
-                    <dd><a href="/user/security/personal" style="text-align: center;"><i class="layui-icon"
-                                                                                         style="font-size: 18px;">&#xe66f;</i>个人资料</a>
-                    </dd>
-                    <dd><a href="/user/security/password" style="text-align: center;"><i class="layui-icon"
-                                                                                         style="font-size: 18px;">&#xe673;</i>修改密码</a>
-                        <hr style="margin: 5px 0;">
-                    <dd><a href="javascript:void(0);" class="logout" style="text-align: center;"><i class="layui-icon"
-                                                                                                    style="font-size: 18px;">&#xe682;</i>安全注销</a>
-                    </dd>
-                </dl>
-            </li>
-        </ul>
+<div class="net-loading" style="display: none;">
+    <div class="loading-view">
+        <div class="loading-image"></div>
     </div>
 </div>
+<div style="background: rgba(255,255,255,0.77);overflow:auto;height:calc(100vh - 61px);" class="bg-content">
+    <div class="fly-header">
+        <div class="layui-container">
+            <a class="fly-logo" href="/">
+                #{$config.shop_name}
+            </a>
+            <ul class="layui-nav fly-nav layui-hide-xs">
+                <li class="layui-nav-item layui-this">
+                    <a href="/user/index/query"><i class="iconfont icon-jiaoliu"></i>我的订单</a>
+                </li>
+            </ul>
+
+            <ul class="layui-nav fly-nav-user">
+                <!-- 登入后的状态 -->
+                <li class="layui-nav-item">
+                    <div class="fly-nav-avatar" href="javascript:;">
+                    <span class="user-level"><img src="#{$user.group.icon}"
+                                                  style="transform: scale(.8,.8);margin-left: 0;">#{$user.username}</span>
+                        <span class="user-username"><img src="#{$user.avatar}" class="user-avatar"></span>
+
+                    </div>
+                    <dl class="layui-nav-child">
+                        <dd><a href="/user/security/personal" style="text-align: center;"><i class="layui-icon"
+                                                                                             style="font-size: 18px;">&#xe66f;</i>个人资料</a>
+                        </dd>
+                        <dd><a href="/user/security/password" style="text-align: center;"><i class="layui-icon"
+                                                                                             style="font-size: 18px;">&#xe673;</i>修改密码</a>
+                            <hr style="margin: 5px 0;">
+                        <dd><a href="javascript:void(0);" class="logout" style="text-align: center;"><i
+                                        class="layui-icon"
+                                        style="font-size: 18px;">&#xe682;</i>安全注销</a>
+                        </dd>
+                    </dl>
+                </li>
+            </ul>
+        </div>
+    </div>
