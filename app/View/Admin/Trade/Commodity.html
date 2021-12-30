@@ -618,6 +618,27 @@
                     let d1 = cao.popupElement("delivery_auto_mode", "select", unqueId).parent().parent();
                     cao.popupElement("delivery_way", "select", unqueId).val() == 0 ? d1.show() : d1.hide();
 
+                    //批发配置
+                    let lot = cao.popupElement("lot_status", "checkbox", unqueId);
+                    let lotConfig = cao.popupElement("lot_config", "textarea", unqueId).parent().parent();
+                    if (lot.val() == 1) {
+                        lotConfig.show();
+                    } else {
+                        lotConfig.hide();
+                    }
+
+                    //限时秒杀 seckill_start_time seckill_end_time
+                    let seckill = cao.popupElement("seckill_status", "checkbox", unqueId);
+                    let seckillStartTime = cao.popupElement("seckill_start_time", "input", unqueId).parent().parent();
+                    let seckillEndTime = cao.popupElement("seckill_end_time", "input", unqueId).parent().parent();
+                    if (seckill.val() == 1) {
+                        seckillStartTime.show();
+                        seckillEndTime.show();
+                    } else {
+                        seckillStartTime.hide();
+                        seckillEndTime.hide();
+                    }
+
                     let levelPriceWidget = cao.popupElement("level_price", "textarea", unqueId);
                     levelPriceWidget.parent().parent().hide();
 
@@ -626,7 +647,6 @@
                         levelPriceWidgetJson = JSON.parse(decodeURIComponent(levelPriceWidget.val()));
                     } catch (e) {
                     }
-
 
                     //初始化表格
                     let queryParamsLevel = null;

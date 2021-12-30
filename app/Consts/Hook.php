@@ -86,6 +86,10 @@ interface Hook
     const USER_VIEW_COMMODITY_POST = 0x46;
 
 
+    //在HTTP请求后，在返还给用户之前，拿到的返回数据
+    const HTTP_ROUTE_RESPONSE = 0x47;
+
+
     //-----------------------------MY
 
     //挂载点 app\View\User\* -> INDEX -> 头部

@@ -132,15 +132,16 @@ if (!function_exists("setConfig")) {
         $ret = "<?php
 declare (strict_types=1);\n\nreturn [\n";
         foreach ($config as $k => $v) {
-            $value = "'{$v}'";
             if (is_array($v)) {
                 $akv = "[";
                 foreach ($v as $av) {
-                    $akv .= "'{$av}'" . ",";
+                    $akv .= "'" . str_replace("'", "\\'", $av) . "'" . ",";
                 }
                 $akv = trim($akv, ",");
                 $akv .= "]";
                 $value = $akv;
+            } else {
+                $value = "'" . str_replace("'", "\\'", $v) . "'";
             }
             $ret .= "    '{$k}' => $value,\n";
         }

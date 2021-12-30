@@ -108,13 +108,23 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">背景图床</label>
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">背景图床(支持http地址或者图床api)</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
-                                <div class="col-lg-8 fv-row">
+                                <div class="col-lg-6 fv-row">
                                     <input type="text" name="background_url"
                                            class="form-control form-control-lg form-control-solid"
                                            placeholder="请输入背景图床地址，可以是url" value="#{$config.background_url}"/>
+                                </div>
+                                <div class="col-lg-2 fv-row">
+                                    <!--begin::Input-->
+                                    <input type="file" class="background-upload" style="display: none;"
+                                           accept=".png, .jpg, .jpeg, .gif"/>
+                                    <button type="button" class="btn btn-light background-upload"
+                                            onclick="document.getElementsByClassName('background-upload')[0].click();">
+                                        <i class="fas fa-cloud-upload-alt"></i> 上传图片
+                                    </button>
+                                    <!--end::Input-->
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -479,6 +489,35 @@
                         if (res.code == 200) {
                             layer.msg('图标上传成功，但需要保存后才会生效哦~');
                             $('input[name=logo]').val(res.data.path);
+                        } else {
+                            layer.msg(res.msg);
+                        }
+                    },
+                    error: function (data) {
+                        layer.close(index);
+                        layer.msg('上传失败');
+                    }
+                });
+            });
+
+            $('.background-upload').change(function () {
+                let formdata = new FormData();
+                formdata.append("file", $(this)[0].files[0]);
+                let index = layer.load(1, {
+                    shade: [0.3, '#fff']
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "/admin/api/upload/handle",
+                    data: formdata,
+                    contentType: false, // 不设置内容类型
+                    processData: false, // 不处理数据
+                    dataType: "json",
+                    success: function (res) {
+                        layer.close(index);
+                        if (res.code == 200) {
+                            layer.msg('背景图片上传成功，需要保存才会生效哦。');
+                            $('input[name=background_url]').val(res.data.path);
                         } else {
                             layer.msg(res.msg);
                         }

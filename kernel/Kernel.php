@@ -131,6 +131,8 @@ try {
 
     $result = call_user_func_array([$controllerInstance, $action], $params);
 
+    hook(\App\Consts\Hook::HTTP_ROUTE_RESPONSE, trim($_GET['s'], "/"), $result);
+
     if ($result === null) {
         return;
     }

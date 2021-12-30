@@ -29,7 +29,8 @@
     "ext-gd": "*",
     "khanamiryan/qrcode-detector-decoder": "1.0.5.2",
     "ext-zip": "*",
-    "ext-curl": "*"
+    "ext-curl": "*",
+    "ext-redis": "*"
   },
   "autoload": {
     "psr-4": {

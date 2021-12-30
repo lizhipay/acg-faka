@@ -1036,6 +1036,9 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                 case "select":
                     element = $(".hex-modal-" + uniqueId + " select[name='" + name + "']");
                     break;
+                case "checkbox":
+                    element = $(".hex-modal-" + uniqueId + " input[name='" + name + "']");
+                    break;
             }
             return element;
         }

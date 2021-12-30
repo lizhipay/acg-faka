@@ -58,11 +58,11 @@ class Commodity extends Manage
         }]);
         //昨日盈利
         $queryTemplateEntity->setWithCount(['order as order_yesterday_amount' => function (Builder $relation) {
-            $relation->whereBetween('create_time',[Date::calcDay(-1), Date::calcDay()])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_yesterday_amount"));
+            $relation->whereBetween('create_time', [Date::calcDay(-1), Date::calcDay()])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_yesterday_amount"));
         }]);
         //今日盈利
         $queryTemplateEntity->setWithCount(['order as order_today_amount' => function (Builder $relation) {
-            $relation->whereBetween('create_time',[Date::calcDay(), Date::calcDay(1)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_today_amount"));
+            $relation->whereBetween('create_time', [Date::calcDay(), Date::calcDay(1)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_today_amount"));
         }]);
 
         $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
@@ -110,10 +110,8 @@ class Commodity extends Manage
             }
         }
 
-        if ($map['lot_status'] == 1) {
-            if (!$map['lot_config']) {
-                throw new JSONException("您开启了批发优惠，请填写详细的优惠规则哦(｡￫‿￩｡)");
-            }
+        if ($map['lot_status'] == 1 && $map['lot_config']) {
+            // throw new JSONException("您开启了批发优惠，请填写详细的优惠规则哦(｡￫‿￩｡)");
             $lotConfig = explode(PHP_EOL, trim(trim($map['lot_config']), PHP_EOL));
             foreach ($lotConfig as $item) {
                 if (count(explode("-", $item)) != 2) {

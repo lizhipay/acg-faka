@@ -372,7 +372,7 @@ let acg = {
                             }
                             continue
                         } else if (autoKey == "contact_type") {
-                            if (res.login){
+                            if (res.login) {
                                 instance.parent().hide();
                                 continue;
                             }
@@ -385,7 +385,7 @@ let acg = {
                             continue;
                         } else if (autoKey == "purchase_num") {
                             //
-                            if (res.minimum > 0){
+                            if (res.minimum > 0) {
                                 instance.val(res.minimum).change();
                             }
                             continue;
@@ -536,6 +536,31 @@ let acg = {
                             } else {
                                 instance.hide();
                             }
+                            continue;
+                        } else if (autoKey == "description") {
+                            instance.html(value);
+                            instance.find("img").click(function () {
+                                let imageUrl = $(this).attr("src");
+                                let img = new Image()
+                                img.src = imageUrl;
+                                img.onload = function () {
+                                    if (img.width >= window.innerWidth) {
+                                        img.width = window.innerWidth * 0.9;
+                                    }
+                                    if (img.height >= window.innerHeight) {
+                                        img.height = window.innerHeight * 0.9;
+                                    }
+                                    layer.open({
+                                        type: 1,
+                                        title: false,
+                                        closeBtn: 0, //不显示关闭按钮
+                                        anim: 5,
+                                        area: [img.width + "px", img.height + "px"],
+                                        shadeClose: true, //开启遮罩关闭
+                                        content: '<img  src="' + imageUrl + '" style="border-radius: 20px;width:' + img.width + 'px;height:' + img.height + 'px">'
+                                    });
+                                }
+                            });
                             continue;
                         }
                         instance.html(value);
