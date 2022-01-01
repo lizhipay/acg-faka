@@ -31,7 +31,7 @@
 
 ## 程序安装教程
 
-- 在安装之前，请检查你的系统环境，`php>=8.0`，`MySQL版本>=5.7`，因为使用了大量的PHP8注解以及PHP8的新特性，所以php版本不得不从8.0起，这里还需要注意。
+- 在安装之前，请检查你的系统环境，`php>=8.0`，`MySQL版本>=5.6[不推荐5.6后续升级可能会有问题，推荐5.7或者8.0]`，因为使用了大量的PHP8注解以及PHP8的新特性，所以php版本不得不从8.0起，这里还需要注意。
 - 将源码下载至你的服务器
 - 以上步骤完成后，然后配置伪静态，Apache无需配置，根目录已经有.htaccess文件了，但如果你是Nginx，则需要配置伪静态。
 - 下面是Nginx伪静态规则：
@@ -49,6 +49,7 @@ location / {
 <p style="color: red;">手动升级方法：下载升级包后，有两个文件夹，file文件夹里的文件复制到根目录覆盖替换即可，更新包里面的update.sql如果有内容，表示这个版本需要更新数据库某些地方，需要你手动复制到你的数据库执行一次。</p>
 
 
+- 2022/01/01：[0.5.0-beta.zip](https://download.acged.cc/faka/version/0.5.0-beta.zip)
 - 2021/12/30：[0.4.9-beta.zip](https://download.acged.cc/faka/version/0.4.9-beta.zip)
 - 2021/12/30：[0.4.8-beta.zip](https://download.acged.cc/faka/version/0.4.8-beta.zip)
 - 2021/12/30：[0.4.7-beta.zip](https://download.acged.cc/faka/version/0.4.7-beta.zip)
