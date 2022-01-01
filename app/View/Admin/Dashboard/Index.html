@@ -58,9 +58,8 @@
                                             </div>
                                             <!--end::Name-->
                                             <!--begin::Info-->
-                                            <div class="d-flex flex-wrap fw-bold fs-6 mb-4 pe-2">
-                                        <span
-                                                class="d-flex align-items-center text-gray-400 text-hover-primary mb-2">
+                                            <div class="d-flex flex-wrap fw-bold fs-6 mb-1 pe-2">
+                                        <span class="d-flex align-items-center text-gray-400 text-hover-primary mb-2">
                                             <span class="svg-icon svg-icon-4 me-1">
 																<svg xmlns="http://www.w3.org/2000/svg" width="24"
                                                                      height="24" viewBox="0 0 24 24" fill="none">
@@ -70,16 +69,23 @@
 																	<path d="M21 5H2.99999C2.69999 5 2.49999 5.10005 2.29999 5.30005L11.2 13.3C11.7 13.7 12.4 13.7 12.8 13.3L21.7 5.30005C21.5 5.10005 21.3 5 21 5Z"
                                                                           fill="black"/>
 																</svg>
-															</span>
-                                            <!--end::Svg Icon-->#{$user.email}</span>
+											</span>
+                                            <!--end::Svg Icon-->#{$user.email} </span>
                                             </div>
+                                            <div class="d-flex flex-wrap fw-bold fs-6 pe-2">
+                                                <span class="d-flex align-items-center text-gray-400 text-hover-primary mb-2">
+                                                   <i class="fas fa-map-marker-alt text-success"></i> <span class="mx-1 text-success fs-10">本次登录IP->#{$user.login_ip}</span>
+                                                    ·<span class="mx-1 text-danger fs-10">上次登录IP->#{if $user.last_login_ip}#{$user.last_login_ip}(#{$user.last_login_time})#{else} - #{/if}</span>
+                                                </span>
+                                            </div>
+
                                             <!--end::Info-->
                                         </div>
                                         <!--end::User-->
                                         <!--begin::Actions-->
                                         <div class="d-flex my-4">
                                             <a href="/admin/manage/set" class="btn btn-sm btn-light-primary me-3"><i
-                                                    class="fas fa-pen-square"></i> 修改资料</a>
+                                                        class="fas fa-pen-square"></i> 修改资料</a>
 
                                         </div>
                                         <!--end::Actions-->
@@ -100,7 +106,7 @@
                             <!--begin::Select wrapper-->
                             <div class="w-100px me-5">
                                 <!--begin::Select-->
-                                <select name="status" data-control="select2" data-hide-search="true"
+                                <select name="status"
                                         class="form-select form-select-white form-select-sm dashboard-data-type">
                                     <option value="0" selected="selected">今日数据</option>
                                     <option value="1">昨日数据</option>
@@ -130,7 +136,7 @@
                                         </div>
                                         <!--end::Icon-->
                                         <!--begin::Title-->
-                                        <a  class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">交易金额</a>
+                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">交易金额</a>
                                         <!--end::Title-->
                                     </div>
                                     <!--end::Card title-->
@@ -161,7 +167,7 @@
                                         </div>
                                         <!--end::Icon-->
                                         <!--begin::Title-->
-                                        <a  class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">订单</a>
+                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">订单</a>
                                         <!--end::Title-->
                                     </div>
                                     <!--end::Card title-->
@@ -192,7 +198,7 @@
                                         </div>
                                         <!--end::Icon-->
                                         <!--begin::Title-->
-                                        <a  class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">盈利</a>
+                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">盈利</a>
                                         <!--end::Title-->
                                     </div>
                                     <!--end::Card title-->
@@ -223,7 +229,7 @@
                                         </div>
                                         <!--end::Icon-->
                                         <!--begin::Title-->
-                                        <a  class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">手续费</a>
+                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">手续费</a>
                                         <!--end::Title-->
                                     </div>
                                     <!--end::Card title-->
@@ -254,7 +260,7 @@
                                         </div>
                                         <!--end::Icon-->
                                         <!--begin::Title-->
-                                        <a  class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">子站</a>
+                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">子站</a>
                                         <!--end::Title-->
                                     </div>
                                     <!--end::Card title-->
@@ -285,7 +291,7 @@
                                         </div>
                                         <!--end::Icon-->
                                         <!--begin::Title-->
-                                        <a  class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">未处理提现</a>
+                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">未处理提现</a>
                                         <!--end::Title-->
                                     </div>
                                     <!--end::Card title-->
@@ -316,7 +322,7 @@
                                         </div>
                                         <!--end::Icon-->
                                         <!--begin::Title-->
-                                        <a  class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">成功提现金额</a>
+                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">成功提现金额</a>
                                         <!--end::Title-->
                                     </div>
                                     <!--end::Card title-->
@@ -348,7 +354,7 @@
                                         </div>
                                         <!--end::Icon-->
                                         <!--begin::Title-->
-                                        <a  class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">注册用户</a>
+                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">注册用户</a>
                                         <!--end::Title-->
                                     </div>
                                     <!--end::Card title-->
@@ -380,7 +386,7 @@
                                         </div>
                                         <!--end::Icon-->
                                         <!--begin::Title-->
-                                        <a  class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">打卡用户</a>
+                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">打卡用户</a>
                                         <!--end::Title-->
                                     </div>
                                     <!--end::Card title-->
@@ -411,7 +417,7 @@
                                         </div>
                                         <!--end::Icon-->
                                         <!--begin::Title-->
-                                        <a  class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">充值金额</a>
+                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">充值金额</a>
                                         <!--end::Title-->
                                     </div>
                                     <!--end::Card title-->
@@ -519,9 +525,8 @@
             getDashboardData(0);
 
 
-            $('.dashboard-data-type').on('select2:select', function (e) {
-                var data = e.params.data;
-                getDashboardData(data.id);
+            $('.dashboard-data-type').change(function (e) {
+                getDashboardData(this.value);
             });
 
 

@@ -32324,7 +32324,7 @@ textarea.form-control-lg {
 
 .flex-root {
     flex: 1;
-    background-color: #ffffff82;
+    background-color: rgba(255, 255, 255, 0.85);
 }
 
 .flex-column-auto {

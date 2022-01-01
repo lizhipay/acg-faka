@@ -137,6 +137,36 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">单次最低充值金额</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="recharge_min"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="单次最低充值金额，0代表不限制，默认10元" value="#{$config.recharge_min}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">单次最高充值金额</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="recharge_max"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="单次最高充值金额，0代表不限制" value="#{$config.recharge_max}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
                                 <label class="col-lg-4 col-form-label fw-bold fs-6">充值赠送</label>
                                 <!--begin::Label-->
                                 <!--begin::Label-->

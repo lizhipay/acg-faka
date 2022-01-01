@@ -426,7 +426,7 @@ let acg = {
                             if (value == 0) {
                                 instance.html("自动发货").addClass("delivery_way_auto");
                             } else {
-                                instance.html("手动发货").addClass("delivery_way_hand");
+                                instance.html("在线发货").addClass("delivery_way_hand");
                             }
                             continue
                         } else if (autoKey == "contact_type") {

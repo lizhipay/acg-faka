@@ -36,9 +36,18 @@ class RechargeService implements Recharge
         $payId = (int)$_POST['pay_id'];//支付方式id
         $amount = (float)$_POST['amount'];//充值金额
 
-        if ($amount < 10) {
-            throw new JSONException("最低充值10元");
+        $rechargeMin = (float)Config::get("recharge_min");
+        $rechargeMin = $rechargeMin == 0 ? 10 : $rechargeMin;
+        $rechargeMax = (float)Config::get("recharge_max");
+
+        if ($amount < $rechargeMin) {
+            throw new JSONException("单次最低充值{$rechargeMin}元");
         }
+
+        if ($amount > $rechargeMax && $rechargeMax > 0 && $rechargeMax > $rechargeMin) {
+            throw new JSONException("单次最高充值{$rechargeMax}元");
+        }
+
 
         $pay = Pay::query()->find($payId);
 

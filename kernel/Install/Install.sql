@@ -203,6 +203,8 @@ INSERT INTO `__PREFIX__config` VALUES (33, 'default_category', '0');
 INSERT INTO `__PREFIX__config` VALUES (34, 'substation_display_list', '[]');
 INSERT INTO `__PREFIX__config` VALUES (35, 'closed', '0');
 INSERT INTO `__PREFIX__config` VALUES (36, 'closed_message', '我们正在升级，请耐心等待完成。');
+INSERT INTO `__PREFIX__config` VALUES (37, 'recharge_min', '10');
+INSERT INTO `__PREFIX__config` VALUES (38, 'recharge_max', '1000');
 
 DROP TABLE IF EXISTS `__PREFIX__coupon`;
 CREATE TABLE `__PREFIX__coupon`  (

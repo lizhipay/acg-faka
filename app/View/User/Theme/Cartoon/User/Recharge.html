@@ -9,25 +9,34 @@
 
             <div class="content-body">
                 <blockquote class="elem-quote">
-                    累计充值：<b style="color: #0C84D1;">¥#{$user.recharge}</b>，您当前用户等级：<b style="color: #0C84D1;">#{$user.group.name}</b>，购物时可以享受：<b style="color: #0C84D1;">#{$user.group.discount*100}%折扣</b>
-                    #{if $groupNext}，升级到 <b style="color: #8d16e3;">#{$groupNext.name}[折扣:#{$groupNext.discount*100}%]</b> 还需要充值 <b style="color: #8d16e3;">¥#{$groupNext.recharge-$user.recharge}</b> #{/if}
+                    累计充值：<b style="color: #0C84D1;">¥#{$user.recharge}</b>，您当前用户等级：<b
+                            style="color: #0C84D1;">#{$user.group.name}</b>，购物时可以享受：<b
+                            style="color: #0C84D1;">#{$user.group.discount*100}%折扣</b>
+                    #{if $groupNext}，升级到
+                        <b style="color: #8d16e3;">#{$groupNext.name}[折扣:#{$groupNext.discount*100}%]</b>
+                        还需要充值
+                        <b style="color: #8d16e3;">¥#{$groupNext.recharge-$user.recharge}</b>
+                    #{/if}
                 </blockquote>
 
                 <form class="layui-form" action="">
                     <div class="form-block">
                         #{if $config.recharge_welfare == 1 && count($welfareConfig) > 0}
-                        <div style="margin-top: 25px;">
-                            <div class="form-body">
-                                #{foreach $welfareConfig as $wc}
-                                <p style="color: #108d25;padding-bottom: 5px;">一次性充值<b style="color: #f15858;">￥#{$wc.recharge}</b>，赠送<b style="color: #6a71f1;">￥#{$wc.amount}</b></p>
-                                #{/foreach}
+                            <div style="margin-top: 25px;">
+                                <div class="form-body">
+                                    #{foreach $welfareConfig as $wc}
+                                        <p style="color: #108d25;padding-bottom: 5px;">一次性充值<b
+                                                    style="color: #f15858;">￥#{$wc.recharge}</b>，赠送<b
+                                                    style="color: #6a71f1;">￥#{$wc.amount}</b></p>
+                                    #{/foreach}
+                                </div>
                             </div>
-                        </div>
                         #{/if}
                         <div>
-                            <div class="form-header">金额 <span style="color: #63b584;font-size: 14px;">当前余额:#{$user.balance}</span></div>
+                            <div class="form-header">金额 <span
+                                        style="color: #63b584;font-size: 14px;">当前余额:#{$user.balance}</span></div>
                             <div class="form-body"><input type="text" name="amount" required lay-verify="required"
-                                                          value="10" autocomplete="off" class="layui-input"
+                                                          value="#{if $config.recharge_min == 0}10#{else}#{$config.recharge_min}#{/if}" autocomplete="off" class="layui-input"
                                                           style="width: 150px;color: #ff9191;"></div>
                         </div>
                         <div>
@@ -39,6 +48,30 @@
                             <button type="button" class="layui-btn layui-btn-pink payButton">立即充值</button>
                         </div>
 
+
+                        <div>
+                            <div class="form-header">会员等级划分</div>
+                            <div class="form-body">
+                                <table class="layui-table">
+                                    <thead>
+                                    <tr>
+                                        <td>等级</td>
+                                        <td>累计充值</td>
+                                        <td>购物折扣</td>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    #{foreach $groups as $g}
+                                        <tr>
+                                            <td><img src="#{$g.icon}" style="height: 32px;"> <span class="layui-badge layui-bg-gray">#{$g.name}</span></td>
+                                            <td style="color: #f68b8b;font-weight: bolder;">￥#{$g.recharge}</td>
+                                            <td>#{$g.discount*100}%</td>
+                                        </tr>
+                                    #{/foreach}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
 
                     </div>

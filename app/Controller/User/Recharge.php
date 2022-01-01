@@ -37,7 +37,11 @@ class Recharge extends User
             ];
         }
 
-        return $this->theme("充值中心", "RECHARGE", "User/Recharge.html", ["welfareConfig" => $welfareConfig, 'groupNext' => UserGroup::get($this->getUser()->recharge, true)]);
+        return $this->theme("充值中心", "RECHARGE", "User/Recharge.html", [
+            "welfareConfig" => $welfareConfig,
+            'groupNext' => UserGroup::get($this->getUser()->recharge, true),
+            "groups" => UserGroup::query()->orderBy("recharge", "asc")->get()
+        ]);
     }
 
     /**
