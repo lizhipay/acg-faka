@@ -34,7 +34,7 @@ interface Config
             "dict" => [
                 ["id" => 0, "name" => "会员中心-二次元风(默认)"],
                 ["id" => 1, "name" => "会员中心-商务风"],
-                ["id" => 2, "name" => "会员中心-二次元风(高端)"], 
+                ["id" => 2, "name" => "会员中心-二次元风(高端)"],
             ],
             "placeholder" => "请选择",
             "default" => 0
@@ -86,6 +86,7 @@ interface Config
         "PHONE" => "User/Phone.html", //会员-手机
         "PASSWORD" => "User/Password.html", //会员-密码设置
         "ORDER" => "User/Order.html", //会员-密码设置
+        "AGENT_MEMBER" => "Agent/Member.html", //推广代理-我的下级
     ];
 
 }

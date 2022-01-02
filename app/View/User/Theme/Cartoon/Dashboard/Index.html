@@ -56,13 +56,13 @@
                         </tr>
                         <tr>
                             <td class="layui-col-md2">上次登录IP：</td>
-                            <td class="layui-col-md10" style="color: #00A3FF;">#{$user.last_login_ip} #{if
-                                $user.login_ip != $user.last_login_ip} <span style="color: red;">(异地登录)</span>#{/if}
+                            <td class="layui-col-md10" style="color: #00A3FF;">#{if $user.last_login_ip}#{$user.last_login_ip} #{if
+                                $user.login_ip != $user.last_login_ip} <span style="color: red;">(异地登录)</span>#{/if}#{else}-#{/if}
                             </td>
                         </tr>
                         <tr>
                             <td class="layui-col-md2">上次登录时间：</td>
-                            <td class="layui-col-md10">#{$user.last_login_time}</td>
+                            <td class="layui-col-md10">#{if $user.last_login_time}#{$user.last_login_time}#{else}-#{/if}</td>
                         </tr>
                         <tr>
                             <td class="layui-col-md2">商户ID：</td>

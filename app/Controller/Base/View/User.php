@@ -70,6 +70,10 @@ abstract class User extends \App\Controller\Base\User
                 $data['config']['title'] = $business->title;
                 $data['config']['notice'] = $business->notice;
                 $data['config']['service_url'] = $business->service_url != "" ? $business->service_url : "https://wpa.qq.com/msgrd?v=1&uin={$business->service_qq}";
+                if (!$data['from']) {
+                    $data['from'] = $business->user_id;
+                }
+
             }
 
             $defaultThemePath = "User/Theme/Cartoon/";

@@ -49,10 +49,22 @@
             充值中心
         </a>
     </li>
+    <li class="layui-nav-item #{if $title=='购买记录'} layui-this #{/if}">
+        <a href="/user/personal/purchaseRecord">
+            <i class="layui-icon">&#xe657;</i>
+            购买记录
+        </a>
+    </li>
     <li class="layui-nav-item #{if $title=='硬币兑现' or $title=='兑现记录'} layui-this #{/if}">
         <a href="/user/cash/index">
             <i class="layui-icon">&#xe735;</i>
             硬币兑现
+        </a>
+    </li>
+    <li class="layui-nav-item #{if $title=='我的下级'} layui-this #{/if}">
+        <a href="/user/agent/member">
+            <i class="layui-icon">&#xe612;</i>
+            我的下级
         </a>
     </li>
     <li class="layui-nav-item #{if $title=='我的账单'} layui-this #{/if}">

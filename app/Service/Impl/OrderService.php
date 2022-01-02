@@ -378,7 +378,13 @@ class OrderService implements Order
                 $payObject->tradeNo = $order->trade_no;
                 $payObject->config = PayConfig::config($pay->handle);
                 $payObject->callbackUrl = Client::getUrl() . '/user/api/order/callback.' . $pay->handle;
-                $payObject->returnUrl = Client::getUrl() . '/user/index/query?tradeNo=' . $order->trade_no;
+
+                //判断如果登录
+                if ($owner == 0) {
+                    $payObject->returnUrl = Client::getUrl() . '/user/index/query?tradeNo=' . $order->trade_no . "&password=" . $order->password;
+                } else {
+                    $payObject->returnUrl = Client::getUrl() . '/user/personal/purchaseRecord?tradeNo=' . $order->trade_no;
+                }
 
                 $payObject->clientIp = Client::getAddress();
                 $payObject->code = $pay->code;

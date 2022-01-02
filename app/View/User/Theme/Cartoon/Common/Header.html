@@ -14,6 +14,7 @@
         <link rel="stylesheet" href="/assets/user/css/global_2.css?v=#{$app.version}">
     #{/if}
     <link rel="stylesheet" href="/assets/static/css/style.css?v=#{$app.version}">
+    <link href="/favicon.ico" rel="icon">
 
     <script src="/assets/static/jquery.min.js"></script>
     <script src="/assets/static/layui/layui.js"></script>
@@ -53,11 +54,15 @@
     <div class="fly-header">
         <div class="layui-container">
             <a class="fly-logo" href="/">
-                #{$config.shop_name}
+                <span class="user-logo"><img src="/favicon.ico"></span>
+                <span class="user-logo-title">#{$config.shop_name}</span>
             </a>
             <ul class="layui-nav fly-nav layui-hide-xs">
-                <li class="layui-nav-item layui-this">
-                    <a href="/user/index/query"><i class="iconfont icon-jiaoliu"></i>我的订单</a>
+                <li class="layui-nav-item">
+                    <a href="/user/personal/purchaseRecord"><i class="iconfont icon-jiaoliu"></i>我的订单</a>
+                </li>
+                <li class="layui-nav-item">
+                    <a href="/"><i class="iconfont icon-shichang"></i>购买商品</a>
                 </li>
             </ul>
 

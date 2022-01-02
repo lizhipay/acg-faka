@@ -9,6 +9,7 @@ use App\Controller\Base\View\User;
 use App\Interceptor\UserVisitor;
 use App\Interceptor\Waf;
 use App\Model\Config;
+use App\Util\Client;
 use Kernel\Annotation\Interceptor;
 use Kernel\Util\Plugin;
 
@@ -17,7 +18,7 @@ class Index extends User
 {
     /**
      * @return string
-     * @throws \Kernel\Exception\ViewException|\Kernel\Exception\JSONException
+     * @throws \Kernel\Exception\ViewException|\Kernel\Exception\JSONException|\ReflectionException
      */
     public function index(): string
     {
@@ -41,11 +42,18 @@ class Index extends User
 
     /**
      * @return string
-     * @throws \Kernel\Exception\ViewException
+     * @throws \Kernel\Exception\ViewException|\ReflectionException
      */
     public function query(): string
     {
         $tradeNo = (string)$_GET['tradeNo'];
-        return $this->theme("订单查询", "QUERY", "Index/Query.html", ['user' => $this->getUser(), 'tradeNo' => $tradeNo]);
+        $password = (string)$_GET['password'];
+        $user = $this->getUser();
+
+        if ($user) {
+            Client::redirect("/user/personal/purchaseRecord" . ($tradeNo != "" ? "?tradeNo=" . $tradeNo : ""), "正在跳转..", 0);
+        }
+
+        return $this->theme("订单查询", "QUERY", "Index/Query.html", ['user' => $user, 'tradeNo' => $tradeNo, 'password' => $password]);
     }
 }

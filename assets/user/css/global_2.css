@@ -453,6 +453,14 @@ pre {
     color: #ff9085c7;
     font-size: 24px;
     overflow: hidden;
+    z-index: 123;
+}
+
+.fly-logo .user-logo img {
+    height: 32px;
+    border-radius: 10px;
+    position: relative;
+    top: -2px;
 }
 
 .fly-logo:hover {
@@ -460,7 +468,7 @@ pre {
 }
 
 .fly-nav {
-    margin-left: 200px;
+    text-align: center;
 }
 
 .fly-nav-avatar cite {
@@ -2322,6 +2330,10 @@ body .fly-user-main {
 
 
 @media screen and (max-width: 768px) {
+    .fly-logo .user-logo-title {
+        display: none;
+    }
+
     .fly-main {
         width: 100%;
     }
