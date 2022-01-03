@@ -33,7 +33,7 @@ class PurchaseRecord extends User
         $queryTemplateEntity->setWhere($map);
         $queryTemplateEntity->setWith([
             'commodity' => function (Relation $relation) {
-                $relation->select(["id", "name", "delivery_way", "contact_type"]);
+                $relation->select(["id", "name", "delivery_way", "contact_type", "leave_message"]);
             },
             'pay' => function (Relation $relation) {
                 $relation->select(["id", "name", "icon"]);

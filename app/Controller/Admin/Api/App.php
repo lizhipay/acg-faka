@@ -179,6 +179,9 @@ class App extends Manage
 
         $update = 0;
 
+        //appStroe缓存
+        $appStore = json_decode((string)file_get_contents(BASE_PATH . "/runtime/plugin/store.cache"), true);
+
         foreach ($plugins['rows'] as $plugin) {
             $info = Helper::isInstall($plugin['plugin_key'], (int)$plugin['type']);
 
@@ -195,7 +198,13 @@ class App extends Manage
             if ($info[$versionKey] != $plugin['version']) {
                 $update++;
             }
+
+            $appStore[$plugin['plugin_key']] = [
+                "icon" => $plugin['icon'],
+                "name" => $plugin['plugin_name']
+            ];
         }
+        file_put_contents(BASE_PATH . "/runtime/plugin/store.cache", json_encode($appStore));
 
         $json = $this->json(200, "ok", ['count' => $update]);
         return $json;

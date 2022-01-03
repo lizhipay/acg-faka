@@ -21,7 +21,7 @@
                 <div class="card-header border-0 pt-5">
                     <div class="card-toolbar">
                         <a href="/admin/store/home" class="btn btn-sm btn-light-primary btn-app-create me-3"><i
-                                class="fab fa-instalod"></i>
+                                    class="fab fa-instalod"></i>
                             获取更多插件
                         </a>
                     </div>
@@ -82,8 +82,8 @@
                 },
                 columns: [
                     {
-                        field: 'name', title: '插件名称', formatter: function (val, item) {
-                            return '<span class="badge badge-light-success">' + item.NAME + '</span>';
+                        field: 'plugin_name', title: '插件名称', formatter: function (val, item) {
+                            return '<span class="badge badge-light-dark"><img src="' + item.icon + '"  style="width: 18px;border-radius: 5px;margin-top: -2px"/> ' + item.NAME + '</span> '
                         }
                     }
                     , {
@@ -94,6 +94,14 @@
                     , {
                         field: 'description', title: '简介', formatter: function (val, item) {
                             return '<span class="badge badge-light">' + item.DESCRIPTION + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'wiki', title: '文档手册', formatter: function (val, item) {
+                            if (!item.wiki) {
+                                return '-';
+                            }
+                            return '<a class="badge badge-light-primary" href="' + item.wiki + '" target="_blank">查看文档</a>';
                         }
                     }
                     , {
@@ -125,7 +133,9 @@
                             } else {
                                 html += '<a style="cursor: pointer;"  class="badge badge-light text-success enable"><i class="fa fa-play-circle text-success"></i> 启用</a>';
                             }
-                            html += '<a style="cursor: pointer;"  class="badge badge-light text-primary edit"><i class="fa fa-cog text-primary"></i> 配置</a>';
+                            if (item.hasOwnProperty('PLUGIN_SUBMIT') && item.PLUGIN_SUBMIT.length > 0) {
+                                html += '<a style="cursor: pointer;"  class="badge badge-light text-primary edit"><i class="fa fa-cog text-primary"></i> 配置</a>';
+                            }
                             return html;
                         },
                         events: {

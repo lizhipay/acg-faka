@@ -165,6 +165,14 @@
                         }
                     }
                     , {
+                        field: 'leave_message', title: '商家留言', formatter: function (val, item) {
+                            if (item.status != 1) {
+                                return "-";
+                            }
+                            return '<span style="padding: 5px;">' + item.commodity.leave_message + '</span>';
+                        }
+                    }
+                    , {
                         field: 'secret', title: '宝贝信息', formatter: function (val, item) {
                             if (!item.secret) {
                                 return "-";

@@ -20,8 +20,19 @@ class Plugin extends Manage
     public function getPlugins(): array
     {
         $plugins = \Kernel\Util\Plugin::getPlugins();
+        $appStore = json_decode((string)file_get_contents(BASE_PATH . "/runtime/plugin/store.cache"), true);
+        $path = BASE_PATH . "/app/Plugin/";
         foreach ($plugins as $key => $plugin) {
             $plugins[$key]["id"] = $plugin[\App\Consts\Plugin::PLUGIN_NAME];
+            if (!array_key_exists($plugins[$key]["id"], $appStore)) {
+                $plugins[$key]['icon'] = "/favicon.ico";
+            } else {
+                $plugins[$key]['icon'] = \App\Service\App::APP_URL . $appStore[$plugins[$key]["id"]]['icon'];
+            }
+            //判断文档是否存在
+            if (file_exists($path . $plugins[$key]["id"] . "/Wiki/Index.html")) {
+                $plugins[$key]['wiki'] = "/app/Plugin/{$plugins[$key]["id"]}/Wiki/Index.html";
+            }
         }
         return $this->json(200, 'success', $plugins);
     }

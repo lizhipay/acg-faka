@@ -14,7 +14,8 @@
                 <!--begin::Header-->
                 <div class="card-header border-0 pt-5">
                     <div class="card-toolbar">
-                        <a href="/admin/store/home" class="btn btn-sm btn-light-primary btn-app-create me-3"><i class="fab fa-instalod"></i>
+                        <a href="/admin/store/home" class="btn btn-sm btn-light-primary btn-app-create me-3"><i
+                                    class="fab fa-instalod"></i>
                             获取更多插件
                         </a>
                     </div>
@@ -75,7 +76,7 @@
                 columns: [
                     {
                         field: 'name', title: '插件名称', formatter: function (val, item) {
-                            return '<span class="badge badge-light-success">' + item.info.name + '</span>';
+                            return '<span class="badge badge-light-dark"><img src="' + item.icon + '"  style="width: 18px;border-radius: 5px;margin-top: -2px"/> ' + item.info.name + '</span>';
                         }
                     }
                     , {
@@ -131,7 +132,7 @@
                                         title: '<i class="fas fa-robot" style="color: #f16a8b;"></i> 日志', //不显示标题
                                         btn: ["清空日志", "关闭"],
                                         content: '<textarea class="log-textarea" style="width: 100%;height: 100%;border: none;color: grey;padding: 5px;">' + res.data.log + '</textarea>',
-                                        area: cao.isPc() ? ["860px", "660px"]  : ["100%", "100%"],  
+                                        area: cao.isPc() ? ["860px", "660px"] : ["100%", "100%"],
                                         maxmin: true,
                                         yes: (index, layero) => {
                                             $.post('/admin/api/pay/ClearPluginLog', {handle: mapItem.handle}, res => {
@@ -155,7 +156,7 @@
                             }
                         }
                     }
-                ] 
+                ]
             });
 
             let modal = (values = {}) => {
