@@ -2,7 +2,7 @@
 declare (strict_types=1);
 
 return [
-    'app_id' => '',
-    'public_key' => '',
-    'private_key' => '',
+    'app_id' => 'dwafwa21231',
+    'public_key' => '32131wdfadaw',
+    'private_key' => '231123dwadwa',
 ];

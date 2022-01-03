@@ -7,6 +7,7 @@ use App\Consts\Hook;
 use App\Controller\Base\API\Manage;
 use App\Interceptor\ManageSession;
 use App\Interceptor\Waf;
+use App\Util\Opcache;
 use App\Util\Theme;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
@@ -19,7 +20,7 @@ class Plugin extends Manage
      */
     public function getPlugins(): array
     {
-        $plugins = \Kernel\Util\Plugin::getPlugins();
+        $plugins = \Kernel\Util\Plugin::getPlugins(\Kernel\Util\Plugin::isCache());
         $appStore = json_decode((string)file_get_contents(BASE_PATH . "/runtime/plugin/store.cache"), true);
         $path = BASE_PATH . "/app/Plugin/";
         foreach ($plugins as $key => $plugin) {
@@ -54,7 +55,7 @@ class Plugin extends Manage
         hook(Hook::ADMIN_API_PLUGIN_SAVE_CONFIG, $id, $map);//12/09-重写HOOK逻辑
 
         //   $map = array_merge($map, (array));
-        $plugin = \Kernel\Util\Plugin::getPlugin($id);
+        $plugin = \Kernel\Util\Plugin::getPlugin($id, false);
         if (!$plugin) {
             throw new JSONException("插件不存在");
         }

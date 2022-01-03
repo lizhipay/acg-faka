@@ -117,10 +117,10 @@
                     , {
                         field: 'status', title: '状态', formatter: function (val, item) {
                             if (item.PLUGIN_CONFIG && item.PLUGIN_CONFIG.STATUS == 1) {
-                                return '<span class="badge badge-light-success">运行中</span>';
+                                return '<span class="badge badge-light-success plugin-state" data-id="' + item.id + '">运行中</span>';
                             }
 
-                            return '<span class="badge badge-light-danger">未启用</span>';
+                            return '<span class="badge badge-light-danger plugin-state" data-id="' + item.id + '">未启用</span>';
                         }
                     }
                     , {
@@ -148,6 +148,7 @@
                                     layer.close(loaderIndex);
                                     if (res.code == 200) {
                                         table.bootstrapTable('refresh', {silent: true});
+                                        $('.plugin-state[data-id=' + row.id + ']').removeClass("badge-light-success").addClass("badge-light-danger").html("已停止");
                                     }
                                     layer.msg(res.msg);
                                 });
@@ -158,6 +159,7 @@
                                     layer.close(loaderIndex);
                                     if (res.code == 200) {
                                         table.bootstrapTable('refresh', {silent: true});
+                                        $('.plugin-state[data-id=' + row.id + ']').removeClass("badge-light-danger").addClass("badge-light-success").html("已启动");
                                     }
                                     layer.msg(res.msg);
                                 });

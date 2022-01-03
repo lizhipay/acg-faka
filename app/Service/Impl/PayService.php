@@ -5,6 +5,7 @@ namespace App\Service\Impl;
 
 
 use App\Service\Pay;
+use App\Util\Opcache;
 
 /**
  * Class PayService
@@ -66,10 +67,16 @@ class PayService implements Pay
         $plugPath = BASE_PATH . '/app/Pay/' . $name;
         //判断插件信息是否存在
         if (file_exists($plugPath . '/Config/Info.php') && file_exists($plugPath . '/Config/Submit.php')) {
+            $infoPath = $plugPath . '/Config/Info.php';
+            $submitPath = $plugPath . '/Config/Submit.php';
+            $configPath = $plugPath . '/Config/Config.php';
+
+            Opcache::invalidate($infoPath, $submitPath, $configPath);
+
             //解析信息
-            $info = require($plugPath . '/Config/Info.php');
-            $submit = require($plugPath . '/Config/Submit.php');
-            $config = require($plugPath . '/Config/Config.php');
+            $info = require($infoPath);
+            $submit = require($submitPath);
+            $config = require($configPath);
 
             foreach ($submit as $index => $item) {
                 if (isset($config[$item['name']])) {

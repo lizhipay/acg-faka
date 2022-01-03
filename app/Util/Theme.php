@@ -41,6 +41,8 @@ class Theme
         //获取配置
         $setting = [];
         $settingPath = BASE_PATH . "/app/View/User/Theme/{$name}/Setting.php";
+        Opcache::invalidate($settingPath);
+
         if (file_exists($settingPath)) {
             $setting = (array)require($settingPath);
             foreach ($submit as $index => $item) {

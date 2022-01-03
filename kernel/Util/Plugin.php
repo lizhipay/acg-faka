@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Kernel\Util;
 
 
+use App\Util\Opcache;
+
 class Plugin
 {
     /**
@@ -23,9 +25,10 @@ class Plugin
 
     /**
      * @param string $name
+     * @param bool $cache
      * @return array|null
      */
-    public static function getPlugin(string $name): ?array
+    public static function getPlugin(string $name, bool $cache = true): ?array
     {
         $path = BASE_PATH . "/app/Plugin/{$name}";
 
@@ -35,16 +38,21 @@ class Plugin
         if (!file_exists($infoPath) || !file_exists($submitPath) || !file_exists($configPath)) {
             return null;
         }
+
+        if (!$cache) {
+            Opcache::invalidate($infoPath, $submitPath, $configPath);
+        }
+
         $info = (array)require($infoPath);
         $submit = (array)require($submitPath);
         $config = (array)require($configPath);
 
-/*        $submit[] = [
-            "title" => "插件状态",
-            "name" => \App\Consts\Plugin::STATUS,
-            "type" => "switch",
-            "text" => "启用"
-        ];*/
+        /*        $submit[] = [
+                    "title" => "插件状态",
+                    "name" => \App\Consts\Plugin::STATUS,
+                    "type" => "switch",
+                    "text" => "启用"
+                ];*/
 
         //submit
         if (is_array($submit)) {
@@ -60,15 +68,16 @@ class Plugin
     }
 
     /**
+     * @param bool $cache
      * @return array|null
      */
-    public static function getPlugins(): ?array
+    public static function getPlugins(bool $cache = true): ?array
     {
         $path = BASE_PATH . "/app/Plugin/";
         $scan = File::scan($path);
         $plugins = [];
         foreach ($scan as $item) {
-            $plugin = self::getPlugin($item);
+            $plugin = self::getPlugin($item, $cache);
             if ($plugin) {
                 $plugin[\App\Consts\Plugin::PLUGIN_NAME] = $item;
                 $plugins[] = $plugin;
@@ -116,7 +125,7 @@ class Plugin
      */
     public static function scan(): void
     {
-        $plugins = self::getPlugins();
+        $plugins = self::getPlugins(self::isCache());
         $path = BASE_PATH . "/app/Plugin/";
         foreach ($plugins as $plugin) {
             $pluginName = $plugin[\App\Consts\Plugin::PLUGIN_NAME];
@@ -184,5 +193,14 @@ class Plugin
     public static function getHookNum(int $point): int
     {
         return (int)count((array)self::$container[$point]);
+    }
+
+    /**
+     * 判断当前插件是否处于缓存中
+     * @return bool
+     */
+    public static function isCache(): bool
+    {
+        return file_exists(BASE_PATH . "/runtime/plugin/plugin.cache");
     }
 }
