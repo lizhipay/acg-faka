@@ -1,109 +1,393 @@
-<!DOCTYPE html>
-<html lang="en">
-<!--begin::Head-->
+<!doctype html>
+<html>
 <head>
+    <meta charset="utf-8">
     <title>登录 - #{$config.title}</title>
-    <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <link rel="shortcut icon" href="/favicon.ico"/>
-    <!--begin::Global Stylesheets Bundle(used by all pages)-->
-    <link href="/assets/admin/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css"/>
-    <link href="/assets/admin/css/style.bundle.css" rel="stylesheet" type="text/css"/>
-    <!--end::Global Stylesheets Bundle-->
+    <script src="/assets/static/jquery.min.js"></script>
+    <script src="/assets/static/layer/layer.js"></script>
+    <style>
+        @media screen and (max-width: 768px) {
+            .login-box {
+                height: 100%;
+                width: 100%;
+            }
+        }
+
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-family: "微软雅黑", serif;
+        }
+
+        html {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: url('#{$config.background_url}') fixed no-repeat;
+            background-size: cover;
+            width: 100%;
+            height: 100%;
+        }
+
+        #app {
+            background: #000000de;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        @keyframes login {
+            from {
+                box-shadow: rgba(253, 173, 204, 0.35) 0px 7px 29px 0px;
+            }
+            to {
+                box-shadow: rgb(253 173 204) 0px 7px 29px 0px;
+            }
+        }
+
+        @-webkit-keyframes login /* Safari 与 Chrome */
+        {
+            from {
+                box-shadow: rgba(253, 173, 204, 0.35) 0px 7px 29px 0px;
+            }
+            to {
+                box-shadow: rgb(253 173 204) 0px 7px 29px 0px;
+            }
+        }
+
+        .login-animation {
+            animation: login 2s;
+            animation-direction: alternate;
+            animation-iteration-count: infinite;
+            -webkit-animation: login 2s; /* Safari 与 Chrome */
+            -webkit-animation-direction: alternate;
+            -webkit-animation-iteration-count: infinite;
+        }
+
+        .login-box {
+            position: relative;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 380px;
+            padding: 40px;
+            background: linear-gradient(to bottom right, #2d3e5594, #7d617cbd);
+            box-sizing: border-box;
+            /*   box-shadow: 0 15px 25px rgba(253, 173, 204, 0.28);*/
+            box-shadow: rgba(253, 173, 204, 0.35) 0px 7px 29px 0px;
+            border-radius: 10px;
+            border-top: 5px solid rgb(240 74 133 / 45%);
+        }
+
+        .login-box h2 {
+            margin: 0 0 70px;
+            padding: 0;
+            text-align: center;
+            font-weight: bolder !important;
+        }
+
+        .login-box h2 span {
+            padding: 5px 20px;
+            padding-bottom: 10px;
+            opacity: 0.8;
+            font-size: 18px;
+            border: 1px dashed rgba(234, 136, 171, 0.45);
+            border-top: none;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            transform: translate(-50%, 0);
+            color: rgba(253, 173, 204, 0.62);
+        }
+
+        .login-box .user-box {
+            position: relative;
+        }
+
+        .login-box .user-box input {
+            margin-top: 10px;
+            width: 100%;
+            padding: 10px 0;
+            font-size: 14px;
+            color: #4acb5b;
+            margin-bottom: 30px;
+            border: none;
+            border-bottom: 1px dashed #ea88ab;
+            outline: none;
+            background: transparent;
+        }
+
+        .login-box .user-box label {
+            position: absolute;
+            padding: 10px 0;
+            pointer-events: none;
+            transition: .5s;
+            top: -20px;
+            left: 0;
+            color: #ea88ab;
+            font-size: 12px;
+            font-weight: bolder;
+        }
+
+
+        .login-box form a {
+            position: relative;
+            display: inline-block;
+            padding: 10px 20px;
+            color: #ea88ab;
+            font-size: 14px;
+            text-decoration: none;
+            text-transform: uppercase;
+            overflow: hidden;
+            transition: .5s;
+            margin-top: 40px;
+            letter-spacing: 4px;
+        }
+
+        .login-box a:hover {
+            background: rgba(243, 193, 210, 0.38);
+            color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 5px #ea88ab,
+            0 0 25px #ea88ab,
+            0 0 50px #ea88ab,
+            0 0 100px #ea88ab;
+        }
+
+        .login-box a span {
+            position: absolute;
+            display: block;
+        }
+
+        .login-box a span:nth-child(1) {
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ea88ab);
+            animation: btn-anim1 1s linear infinite;
+        }
+
+        @keyframes btn-anim1 {
+            0% {
+                left: -100%;
+            }
+            50%, 100% {
+                left: 100%;
+            }
+        }
+
+        .login-box a span:nth-child(2) {
+            top: -100%;
+            right: 0;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, transparent, #ea88ab);
+            animation: btn-anim2 1s linear infinite;
+            animation-delay: .25s
+        }
+
+        @keyframes btn-anim2 {
+            0% {
+                top: -100%;
+            }
+            50%, 100% {
+                top: 100%;
+            }
+        }
+
+        .login-box a span:nth-child(3) {
+            bottom: 0;
+            right: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(270deg, transparent, #ea88ab);
+            animation: btn-anim3 1s linear infinite;
+            animation-delay: .5s
+        }
+
+        @keyframes btn-anim3 {
+            0% {
+                right: -100%;
+            }
+            50%, 100% {
+                right: 100%;
+            }
+        }
+
+        .login-box a span:nth-child(4) {
+            bottom: -100%;
+            left: 0;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(360deg, transparent, #ea88ab);
+            animation: btn-anim4 1s linear infinite;
+            animation-delay: .75s
+        }
+
+        @keyframes btn-anim4 {
+            0% {
+                bottom: -100%;
+            }
+            50%, 100% {
+                bottom: 100%;
+            }
+        }
+
+        input:-webkit-autofill {
+            -webkit-text-fill-color: #a8b72b !important; /*浏览器记住密码的字的颜色*/
+            transition: background-color 5000s ease-in-out 0s; /*通过延时渲染背景色变相去除背景颜色*/
+            caret-color: #ffffff; /*光标颜色*/
+        }
+
+        /*外边框线去除*/
+        input:focus {
+            outline: none;
+        }
+
+        input::-webkit-input-placeholder {
+            /* placeholder颜色  */
+            color: #aab2bd;
+            /* placeholder字体大小  */
+            font-size: 12px;
+            /* placeholder位置  */
+        }
+
+        input ::-webkit-input-placeholder {
+            /* WebKit, Blink, Edge */
+            /* placeholder颜色  */
+            color: #aab2bd;
+            /* placeholder字体大小  */
+            font-size: 12px;
+            /* placeholder位置  */
+        }
+
+        input:-moz-placeholder {
+            /* Mozilla Firefox 4 to 18 */
+            /* placeholder颜色  */
+            color: #aab2bd;
+            /* placeholder字体大小  */
+            font-size: 12px;
+            /* placeholder位置  */
+        }
+
+        input::-moz-placeholder {
+            /* Mozilla Firefox 19+ */
+            color: #aab2bd;
+            /* placeholder字体大小  */
+            font-size: 12px;
+            /* placeholder位置  */
+        }
+
+        input:-ms-input-placeholder {
+            /* Internet Explorer 10-11 */
+            /* placeholder颜色  */
+            color: #aab2bd;
+            /* placeholder字体大小  */
+            font-size: 12px;
+            /* placeholder位置  */
+        }
+    </style>
 </head>
-<!--end::Head-->
-<!--begin::Body-->
-<body id="kt_body" class="bg-body">
-<!--begin::Main-->
-<div class="d-flex flex-column flex-root">
-    <!--begin::Authentication - Sign-in -->
-    <div class="d-flex flex-column flex-column-fluid bgi-position-y-bottom position-x-center bgi-no-repeat bgi-size-contain bgi-attachment-fixed"
-         style="background: url('#{$config.background_url}') fixed no-repeat;background-size: cover;">
-        <!--begin::Content-->
-        <div class="d-flex flex-center flex-column flex-column-fluid p-10 pb-lg-20">
-            <!--begin::Logo-->
-            <!--end::Logo-->
-            <!--begin::Wrapper-->
-            <div class="w-lg-400px bg-body rounded shadow-sm p-10 p-lg-15 mx-auto">
-                <!--begin::Form-->
-                <form class="form w-100" novalidate="novalidate" id="kt_sign_in_form" action="#">
-                    <!--begin::Heading-->
-                    <div class="text-center mb-10">
-                        <!--begin::Title-->
-                        <h1 class="mb-3" style="color: pink;">#{$config.shop_name}</h1>
-                        <!--end::Title-->
-                    </div>
-                    <!--begin::Heading-->
-                    <!--begin::Input group-->
-                    <div class="fv-row mb-10">
-                        <!--begin::Label-->
-                        <label class="form-label fs-6 fw-bolder" style="color: pink;">Email</label>
-                        <!--end::Label-->
-                        <!--begin::Input-->
-                        <input class="form-control form-control-lg form-control-solid" type="text" name="email"
-                               autocomplete="off"/>
-                        <!--end::Input-->
-                    </div>
-                    <!--end::Input group-->
-                    <!--begin::Input group-->
-                    <div class="fv-row mb-10">
-                        <!--begin::Wrapper-->
-                        <div class="d-flex flex-stack mb-2">
-                            <!--begin::Label-->
-                            <label class="form-label fw-bolder fs-6 mb-0" style="color: pink;">密码</label>
-                            <!--end::Label-->
-                            <!--begin::Link-->
-                            <a href="#" class="link-primary fs-8 fw-bolder">忘记密码?</a>
-                            <!--end::Link-->
-                        </div>
-                        <!--end::Wrapper-->
-                        <!--begin::Input-->
-                        <input class="form-control form-control-lg form-control-solid" type="password" name="password"
-                               autocomplete="off"/>
-                        <!--end::Input-->
-                    </div>
-                    <!--end::Input group-->
-                    <!--begin::Actions-->
-                    <div class="text-center">
-                        <!--begin::Submit button-->
-                        <button type="submit" id="kt_sign_in_submit" class="btn btn-lg btn-light-danger w-100 mb-5">
-                            <span class="indicator-label">LOGIN</span>
-                            <span class="indicator-progress">Please wait...<span
-                                    class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
-                        </button>
-                        <!--end::Submit button-->
-                    </div>
-                    <!--end::Actions-->
-                </form>
-                <!--end::Form-->
+<body>
+<div id="app">
+    <div class="login-box">
+        <h2><span>#{$config.shop_name}</span></h2>
+        <form>
+            <div class="user-box">
+                <input type="email" name="email" required="" placeholder="请输入你的邮箱..">
+                <label>Email</label>
             </div>
-            <!--end::Wrapper-->
-        </div>
-        <!--end::Content-->
-        <!--begin::Footer-->
-        <div class="d-flex flex-center flex-column-auto p-10">
-            <!--begin::Links-->
-            <div class="d-flex align-items-center fw-bold fs-8">
-                <span style="color: pink;">@#{$config.shop_name}</span>
+            <div class="user-box">
+                <input type="password" name="password" required="" placeholder="请输入密码..">
+                <label>密码</label>
             </div>
-            <!--end::Links-->
-        </div>
-        <!--end::Footer-->
+            <a href="javascript:void(0);" class="login-button">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                登录
+            </a>
+        </form>
     </div>
-    <!--end::Authentication - Sign-in-->
 </div>
-<!--end::Main-->
-<script>var hostUrl = "/assets/admin/";</script>
-<!--begin::Javascript-->
-<!--begin::Global Javascript Bundle(used by all pages)-->
-<script src="/assets/admin/plugins/global/plugins.bundle.js"></script>
-<script src="/assets/admin/js/scripts.bundle.js"></script>
-<script src="/assets/admin/js/util.js"></script>
-<!--end::Global Javascript Bundle-->
-<!--begin::Page Custom Javascript(used by this page)-->
-<script src="/assets/admin/js/general/login.js"></script>
-<!--end::Page Custom Javascript-->
-<!--end::Javascript-->
+
+<script>
+    function get(variable) {
+        var query = window.location.search.substring(1);
+        var vars = query.split("&");
+        for (var i = 0; i < vars.length; i++) {
+            var pair = vars[i].split("=");
+            if (pair[0] == variable) {
+                return pair[1];
+            }
+        }
+        return 0;
+    }
+
+    let goto = decodeURIComponent(get("goto"));
+
+    if (goto == 0) {
+        goto = "/admin/dashboard/index";
+    }
+
+
+    function DisableHandle(obj) {
+        $(obj).text("正在登录..");
+        $('.login-box').addClass("login-animation");
+        $("input").attr("disabled", true);
+    }
+
+    function EnableHandle(obj) {
+        $(obj).text("登录");
+        $('.login-box').removeClass("login-animation");
+        $("input").attr("disabled", false);
+    }
+
+    let loginStatus = false;
+
+    $(".login-button").click(function () {
+        if (loginStatus) {
+            return;
+        }
+        loginStatus = true;
+        DisableHandle(this);
+        $.post("/admin/api/authentication/login", {
+            username: $('input[name=email]').val(),
+            password: $('input[name=password]').val()
+        }, res => {
+            loginStatus = false;
+            if (res.code != 200) {
+                EnableHandle(this);
+                layer.msg(res.msg);
+                return;
+            }
+            window.location.href = goto;
+        }).fail(error => {
+            loginStatus = false;
+            layer.msg("网络错误，请重试");
+            EnableHandle(this);
+        });
+
+    });
+
+    $("body").keypress(function (even) {
+        if (even.which == 13) {
+            $(".login-button").click();
+        }
+    });
+
+</script>
+
 </body>
-<!--end::Body-->
 </html>
