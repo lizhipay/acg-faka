@@ -249,7 +249,16 @@ class Index extends User
      */
     public function pay(): array
     {
-        $pay = Pay::query()->orderBy("sort", "asc")->where("commodity", 1)->get(['id', 'name', 'icon', 'handle'])->toArray();
+
+        $equipment = 2;
+
+        if (Client::isMobile()) {
+            $equipment = 1;
+        }
+
+        $let = "(`equipment`=0 or `equipment`={$equipment})";
+
+        $pay = Pay::query()->orderBy("sort", "asc")->where("commodity", 1)->whereRaw($let)->get(['id', 'name', 'icon', 'handle'])->toArray();
         return $this->json(200, 'success', $pay);
     }
 

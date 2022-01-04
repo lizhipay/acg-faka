@@ -352,6 +352,8 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                     values[item.name] = '';
                 }
 
+                let required = (item.hasOwnProperty("required") && item.required == true ? "<span class='layui-required' title='必须'>*</span>" : "");
+
 
                 switch (item.type) {
                     case 'hidden':
@@ -362,7 +364,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
-                            '            <label class="layui-form-label">' + item.title + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
+                            '            <label class="layui-form-label">' + item.title + required + required + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
                             '            <div class="layui-input-block">\n' +
                             '                <input name="' + item.name + '" placeholder="' + item.placeholder + '" type="text" class="layui-input ' + item.name + '" value="' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '"/>' +
                             '            </div>\n' +
@@ -373,7 +375,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
-                            '            <label class="layui-form-label">' + item.title + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
+                            '            <label class="layui-form-label">' + item.title + required + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
                             '            <div class="layui-input-block">\n' +
                             '                <span style="position: relative;top: 6px;">' + item.placeholder + '</span>' +
                             '            </div>\n' +
@@ -384,7 +386,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
-                            '            <label class="layui-form-label">' + item.title + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
+                            '            <label class="layui-form-label">' + item.title + required + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
                             '            <div class="layui-input-block container-' + item.name + '"> \n' +
                             '            </div> \n' +
                             '        </div>';
@@ -394,7 +396,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
-                            '            <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '            <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '            <div class="layui-input-block">\n' +
                             '                <textarea ' + (item.hasOwnProperty('height') ? 'style="height:' + item.height + 'px"' : '') + ' name="' + item.name + '" placeholder="' + item.placeholder + '" class="layui-textarea ' + item.name + '">' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '</textarea>' +
                             '            </div>\n' +
@@ -405,7 +407,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
-                            '            <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '            <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '            <div class="layui-input-block">\n' +
                             '                <textarea ' + (item.hasOwnProperty('height') ? 'style="height:' + item.height + 'px"' : '') + ' name="' + item.name + '" placeholder="' + item.placeholder + '" class="layui-textarea ' + item.name + '">' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '</textarea>' +
                             '            </div>\n' +
@@ -416,7 +418,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
-                            '            <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '            <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '            <div class="layui-input-block"><textarea name="' + item.name + '" style="display: none;"></textarea>\n' +
                             '                <div style=""><button data-type="0" class="button-switch-' + item.name + '" type="button" style="width: 100%;border: none;background: white;border-radius: 5px 5px 0 0;color: #c9b8b8;"><i class="fas fa-code" style="color: #c9b8b8;"></i> HTML</button></div><div ' + (item.hasOwnProperty('height') ? 'style="height:' + item.height + 'px"' : '') + ' class="' + item.name + '">' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '</div>' +
                             '            </div>\n' +
@@ -427,7 +429,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '<div class="layui-form-item">\n' +
-                            '            <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '            <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '            <div class="layui-input-block ' + item.name + '">\n' +
                             '            </div>\n' +
                             '        </div>';
@@ -437,7 +439,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '<div class="layui-form-item"><input type="hidden" name="' + item.name + '" value="' + (values.hasOwnProperty(item.name) ? values[item.name] : 0) + '">\n' +
-                            '                <label class="layui-form-label">' + item.title + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
+                            '                <label class="layui-form-label">' + item.title + required + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
                             '                <div class="layui-input-block">\n' +
                             '                    <input class="' + item.name + '" type="checkbox" lay-filter="switch-' + item.name + '" value="1" title="' + item.text + '" ' + (values.hasOwnProperty(item.name) ? (values[item.name] == 1 ? 'checked' : '') : '') + '>\n' +
                             '                </div>\n' +
@@ -448,7 +450,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '<div class="layui-form-item">\n' +
-                            '                <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '                <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '                <div class="layui-input-block">\n' +
                             '                    <select lay-filter="hex-' + item.name + '"  class="' + item.name + '" name="' + item.name + '" ' + (item.search == true ? 'lay-search=""' : "") + '><option value="">' + item.placeholder + '</option></select>\n' +
                             '                </div>\n' +
@@ -459,7 +461,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '<div class="layui-form-item">\n' +
-                            '      <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '      <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '           <div class="layui-input-block">\n' +
                             '               <input type="text" name="' + item.name + '" class="layui-input ' + item.name + '" lay-filter="' + item.name + '">\n' +
                             '           </div>\n' +
@@ -470,7 +472,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '<div class="layui-form-item">\n' +
-                            '      <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '      <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '           <div class="layui-input-block">\n' +
                             '               <div class="' + item.name + '"></div>\n' +
                             '           </div>\n' +
@@ -482,7 +484,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '<div class="layui-form-item" >\n' +
-                            '    <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '    <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '    <div class="layui-input-block ' + item.name + '">\n' +
                             '    </div>\n' +
                             '  </div>';
@@ -492,7 +494,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '<div class="layui-form-item" ><input type="hidden" name="' + item.name + '" value="' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '">\n' +
-                            '    <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '    <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '    <div class="layui-input-block ' + item.name + '"><img src="' + (item.hasOwnProperty('viewUrl') ? item.viewUrl : '') + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '" style="margin:3px;border-radius:5px;max-width: ' + (item.hasOwnProperty('width') ? item.width : '300') + 'px;' + (values.hasOwnProperty(item.name) && values[item.name] != '' ? '' : 'display:none;') + '">\n' +
                             '    <button type="button" class="layui-btn layui-btn-primary" style="' + (values.hasOwnProperty(item.name) && values[item.name] != '' ? 'display:none;' : '') + '"><i class="layui-icon layui-icon-picture"></i>' + item.placeholder + '</button >\n' +
                             '    </div>\n' +
@@ -503,7 +505,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '<div class="layui-form-item" ><input type="hidden" name="' + item.name + '" value="' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '">\n' +
-                            '    <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '    <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '    <div class="layui-input-block ' + item.name + '">\n' +
                             '    <button type="button" class="layui-btn layui-btn-primary"><i class="layui-icon ' + (item.hasOwnProperty('icon') ? item.icon : 'layui-icon-file-b') + '"></i><span>' + item.placeholder + '</span></button >\n' +
                             '    </div>\n' +
@@ -514,7 +516,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '<div class="layui-form-item" ><input type="hidden" name="' + item.name + '" value="' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '">\n' +
-                            '    <label class="layui-form-label">' + item.title + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
+                            '    <label class="layui-form-label">' + item.title + required + ' ' + (item.hasOwnProperty("tips") ? '<span style="cursor: pointer;" class="tips-' + item.name + '"><i class="layui-icon" style="color:#cd9898;font-size: 14px;">&#xe607;</i></span>' : '') + '</label>\n' +
                             '    <div class="layui-input-block ' + item.name + '">\n' +
                             '       <div class="' + item.name + '"></div>' +
                             '    </div>\n' +
@@ -525,7 +527,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
-                            '            <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '            <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '            <div class="layui-input-block">\n' +
                             '                <input name="' + item.name + '" placeholder="' + item.placeholder + '" type="text" class="layui-input ' + item.name + '" value="' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '"/>' +
                             '            </div>\n' +
@@ -536,7 +538,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             break;
                         }
                         d += '        <div class="layui-form-item">\n' +
-                            '            <label class="layui-form-label">' + item.title + '</label>\n' +
+                            '            <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '            <div class="layui-input-block">\n' +
                             '                <span class="' + item.name + '"></span>' +
                             '            </div>\n' +

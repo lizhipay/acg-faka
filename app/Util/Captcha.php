@@ -82,8 +82,10 @@ class Captcha
      */
     public static function check(int $code, string $sessionName): bool
     {
-        //unset($_SESSION[$sessionName]);
         $_code = $_SESSION[$sessionName];
+        if ($code == 0) {
+            return false;
+        }
         if ($_code != $code) {
             return false;
         }

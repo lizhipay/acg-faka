@@ -399,18 +399,18 @@
             let modal = (values = {}) => {
                 cao.popup('/admin/api/commodity/save', [
                     {title: "商品图标", name: "cover", type: "image", placeholder: "请选择图片(推荐64*64)"},
-                    {title: "商品名称", name: "name", type: "input", placeholder: "商品名称"},
-                    {title: "商品说明", name: "description", type: "editor", placeholder: "商品说明"},
+                    {title: "商品名称", name: "name", type: "input", placeholder: "商品名称", required: true},
+                    {title: "商品说明", name: "description", type: "editor", placeholder: "商品说明", required: true},
                     {
                         title: "商品分类",
                         name: "category_id",
                         type: "select",
                         dict: "category->owner=0,id,name",
-                        placeholder: "请选择分类"
+                        placeholder: "请选择分类", required: true
                     },
                     {title: "成本价", name: "factory_price", type: "input", default: 0.00},
-                    {title: "商品单价", name: "price", type: "input", placeholder: "商品单价(未登录游客购买价)"},
-                    {title: "会员价", name: "user_price", type: "input", placeholder: "会员价(登录注册后购买的价格)"},
+                    {title: "商品单价", name: "price", type: "input", placeholder: "商品单价(未登录游客购买价)", required: true},
+                    {title: "会员价", name: "user_price", type: "input", placeholder: "会员价(登录注册后购买的价格)", required: true},
                     {
                         title: "禁用折扣",
                         name: "level_disable",
@@ -456,6 +456,7 @@
                         placeholder: "请选择",
                         dict: [{id: 0, name: "自动发货"}, {id: 1, name: "手动发货/插件"}],
                         default: 0,
+                        required: true,
                         change: function (value) {
                             let d1 = cao.popupElement("delivery_message", "textarea", commodityUnqueId).parent().parent();
                             let d2 = cao.popupElement("delivery_auto_mode", "select", commodityUnqueId).parent().parent();
@@ -497,7 +498,8 @@
                         type: "select",
                         placeholder: "请选择",
                         dict: [{id: 0, name: "任意"}, {id: 1, name: "手机号"}, {id: 2, name: "邮箱"}, {id: 3, name: "QQ号"}],
-                        default: 0
+                        default: 0,
+                        required: true
                     },
                     {
                         title: "邮件发送",

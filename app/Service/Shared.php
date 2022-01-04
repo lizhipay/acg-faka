@@ -27,7 +27,7 @@ interface Shared
 
     /**
      * @param \App\Model\Shared $shared
-     * @param int $commodityId
+     * @param string $sharedCode
      * @param int $cardId
      * @param int $num
      * @return bool
@@ -45,7 +45,7 @@ interface Shared
     /**
      * 远程购买卡密
      * @param \App\Model\Shared $shared
-     * @param int $commodityId
+     * @param string $sharedCode
      * @param string $contact
      * @param int $num
      * @param int $cardId

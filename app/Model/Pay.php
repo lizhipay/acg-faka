@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $commodity
  * @property int $recharge
  * @property int $sort
+ * @property int $equipment
  * @property string $create_time
  * @property string $handle
  */
@@ -32,5 +33,5 @@ class Pay extends Model
     /**
      * @var array
      */
-    protected $casts = ['id' => 'integer', 'commodity' => 'integer', 'recharge' => 'integer', 'sort' => 'integer'];
+    protected $casts = ['id' => 'integer', 'commodity' => 'integer', 'recharge' => 'integer', 'sort' => 'integer', 'equipment' => 'integer'];
 }

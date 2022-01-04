@@ -32,8 +32,10 @@ class Client
      */
     public static function getUrl(): string
     {
-        if ($_SERVER["HTTPS"] == "on") {
+        if (strtolower((string)$_SERVER["HTTPS"]) == "on") {
             $_SERVER['REQUEST_SCHEME'] = "https";
+        } elseif (!isset($_SERVER['REQUEST_SCHEME'])) {
+            $_SERVER['REQUEST_SCHEME'] = "http";
         }
         return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'];
     }
@@ -62,5 +64,32 @@ class Client
             echo View::render("404.html", ["msg" => $message]);
         }
         exit;
+    }
+
+
+    /**
+     * 判断是否手机访问
+     * @return bool
+     */
+    public static function isMobile(): bool
+    {
+        if (isset($_SERVER['HTTP_X_WAP_PROFILE'])) {
+            return true;
+        }
+        if (isset($_SERVER['HTTP_VIA'])) {
+            return (bool)stristr($_SERVER['HTTP_VIA'], "wap");
+        }
+        if (isset($_SERVER['HTTP_USER_AGENT'])) {
+            $clientkeywords = array('nokia', 'sony', 'ericsson', 'mot', 'samsung', 'htc', 'sgh', 'lg', 'sharp', 'sie-', 'philips', 'panasonic', 'alcatel', 'lenovo', 'iphone', 'ipod', 'blackberry', 'meizu', 'android', 'netfront', 'symbian', 'ucweb', 'windowsce', 'palm', 'operamini', 'operamobi', 'openwave', 'nexusone', 'cldc', 'midp', 'wap', 'mobile', 'MicroMessenger');
+            if (preg_match("/(" . implode('|', $clientkeywords) . ")/i", strtolower($_SERVER['HTTP_USER_AGENT']))) {
+                return true;
+            }
+        }
+        if (isset ($_SERVER['HTTP_ACCEPT'])) {
+            if ((str_contains($_SERVER['HTTP_ACCEPT'], 'vnd.wap.wml')) && (!str_contains($_SERVER['HTTP_ACCEPT'], 'text/html') || (strpos($_SERVER['HTTP_ACCEPT'], 'vnd.wap.wml') < strpos($_SERVER['HTTP_ACCEPT'], 'text/html')))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

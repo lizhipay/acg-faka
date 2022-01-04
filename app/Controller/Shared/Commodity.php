@@ -127,7 +127,7 @@ class Commodity extends Shared
         }
         $_POST['commodity_id'] = $commodity->id;
 
-        return $this->json(200, 'success', $this->order->trade($this->getUser(), $this->getUserGroup()));
+        return $this->json(200, 'success', $this->order->trade($this->getUser(), $this->getUserGroup(), $_POST));
     }
 
     /**

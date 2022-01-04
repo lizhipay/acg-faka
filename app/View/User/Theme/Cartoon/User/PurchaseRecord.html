@@ -166,7 +166,7 @@
                     }
                     , {
                         field: 'leave_message', title: '商家留言', formatter: function (val, item) {
-                            if (item.status != 1) {
+                            if (item.status != 1 || !item.commodity.leave_message) {
                                 return "-";
                             }
                             return '<span style="padding: 5px;">' + item.commodity.leave_message + '</span>';

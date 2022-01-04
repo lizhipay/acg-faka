@@ -179,6 +179,14 @@ class Store extends Manage
                     $commodity->draft_premium = $item['draft_premium'];
                 }
 
+                //2022/01/05新增
+                $commodity->inventory_hidden = $item['inventory_hidden'];
+                $commodity->leave_message = $item['leave_message'];
+                $commodity->only_user = $item['only_user'];
+                $commodity->purchase_count = $item['purchase_count'];
+                $commodity->widget = $item['widget'];
+                $commodity->minimum = $item['minimum'];
+
                 $commodity->save();
                 $success++;
             } catch (\Exception $e) {

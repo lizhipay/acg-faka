@@ -39,7 +39,7 @@ class SharedService implements Shared
         $contents = $response->getBody()->getContents();
         $result = json_decode($contents, true);
         if ($result['code'] != 200) {
-            throw new JSONException($result['msg']);
+            throw new JSONException((string)$contents);
         }
         return (array)$result['data'];
     }

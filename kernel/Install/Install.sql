@@ -427,8 +427,16 @@ ALTER TABLE __PREFIX__commodity ADD `level_disable` tinyint UNSIGNED NOT NULL DE
 ALTER TABLE __PREFIX__commodity ADD `minimum` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '最低购买数量，0=无限制';
 ALTER TABLE __PREFIX__order ADD `widget` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '控件内容';
 ALTER TABLE __PREFIX__order ADD `rent` decimal(10, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '成本价';
+ALTER TABLE __PREFIX__order modify COLUMN `pay_url` VARCHAR(1024);
+
 ALTER TABLE __PREFIX__business_level ADD `supplier` tinyint UNSIGNED NOT NULL DEFAULT 1 COMMENT '供货商权限：0=关闭，1=启用';
 ALTER TABLE __PREFIX__coupon ADD `life` int UNSIGNED NOT NULL DEFAULT 1 COMMENT '卡密使用寿命';
 ALTER TABLE __PREFIX__coupon ADD `use_life` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '已使用次数';
+
+ALTER TABLE `__PREFIX__pay` ADD `equipment` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '设备：0=通用，1=手机，2=电脑';
+ALTER TABLE `__PREFIX__pay` ADD INDEX `commodity`(`commodity`) USING BTREE;
+ALTER TABLE `__PREFIX__pay` ADD INDEX `recharge`(`recharge`) USING BTREE;
+ALTER TABLE `__PREFIX__pay` ADD INDEX `sort`(`sort`) USING BTREE;
+ALTER TABLE `__PREFIX__pay` ADD INDEX `equipment`(`equipment`) USING BTREE;
 
 SET FOREIGN_KEY_CHECKS = 1;
