@@ -21,7 +21,7 @@ class Plugin extends Manage
     public function getPlugins(): array
     {
         $plugins = \Kernel\Util\Plugin::getPlugins(\Kernel\Util\Plugin::isCache());
-        $appStore = json_decode((string)file_get_contents(BASE_PATH . "/runtime/plugin/store.cache"), true);
+        $appStore = (array)json_decode((string)file_get_contents(BASE_PATH . "/runtime/plugin/store.cache"), true);
         $path = BASE_PATH . "/app/Plugin/";
         foreach ($plugins as $key => $plugin) {
             $plugins[$key]["id"] = $plugin[\App\Consts\Plugin::PLUGIN_NAME];
