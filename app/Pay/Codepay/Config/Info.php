@@ -3,13 +3,13 @@ declare (strict_types=1);
 
 return [
     'version' => '1.0.0',
-    'name' => '<b style="color: red;">[官方推荐]</b> 码支付',
+    'name' => '码支付',
     'author' => '荔枝',
-    'website' => '<a  style="color: green;" href="https://epay.losie.net" target="_blank">https://epay.losie.net</a>',
-    'description' => '<span style="color: green;">免挂机，免金额输入，客户付款直达你的收款账户。</span>',
+    'website' => '#',
+    'description' => '支持所有码支付程序。',
     'options' => [
         'alipay' => '支付宝',
-        'wxpay' => '微信'
+        'wxpay' => '微信',
     ],
     'callback' => [
         \App\Consts\Pay::IS_SIGN => true,

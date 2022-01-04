@@ -4,14 +4,12 @@ declare(strict_types=1);
 namespace App\Controller\User;
 
 
-use App\Consts\Hook;
 use App\Controller\Base\View\User;
 use App\Interceptor\UserVisitor;
 use App\Interceptor\Waf;
 use App\Model\Config;
 use App\Util\Client;
 use Kernel\Annotation\Interceptor;
-use Kernel\Util\Plugin;
 
 #[Interceptor([Waf::class, UserVisitor::class])]
 class Index extends User
@@ -47,13 +45,12 @@ class Index extends User
     public function query(): string
     {
         $tradeNo = (string)$_GET['tradeNo'];
-        $password = (string)$_GET['password'];
         $user = $this->getUser();
 
         if ($user) {
             Client::redirect("/user/personal/purchaseRecord" . ($tradeNo != "" ? "?tradeNo=" . $tradeNo : ""), "正在跳转..", 0);
         }
 
-        return $this->theme("订单查询", "QUERY", "Index/Query.html", ['user' => $user, 'tradeNo' => $tradeNo, 'password' => $password]);
+        return $this->theme("订单查询", "QUERY", "Index/Query.html", ['user' => $user, 'tradeNo' => $tradeNo]);
     }
 }
