@@ -13,7 +13,8 @@
             <div class="row g-5 g-xl-10">
                 <div class="col-xl-4">
                     <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8" style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
+                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
                         <!--begin::Body-->
                         <div class="card-body">
                             <span class="card-title fw-bolder text-muted text-hover-primary fs-4">订单数量</span>
@@ -25,7 +26,8 @@
                 </div>
                 <div class="col-xl-4">
                     <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8" style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
+                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
                         <!--begin::Body-->
                         <div class="card-body">
                             <span class="card-title fw-bolder text-muted text-hover-primary fs-4">订单金额</span>
@@ -37,7 +39,8 @@
                 </div>
                 <div class="col-xl-4">
                     <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8" style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
+                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
                         <!--begin::Body-->
                         <div class="card-body">
                             <span class="card-title fw-bolder text-muted text-hover-primary fs-4">手续费</span>
@@ -80,6 +83,123 @@
 </div>
 <!--end::Content-->
 
+<style>
+    .order-modal-table tr {
+        height: 24px;
+        line-height: 24px;
+    }
+
+    .order-modal-table tr td:nth-child(1) {
+        width: 60px;
+        font-weight: bolder;
+        color: #8b979c;
+    }
+
+    .order-modal-table tr td {
+        font-size: 14px;
+        display: inline-block;
+        margin-right: 20px;
+    }
+</style>
+
+<div style="display: none" class="order-modal">
+    <div style="padding: 10px;">
+        <table class="order-modal-table">
+            <tbody>
+            <tr>
+                <td>下单会员</td>
+                <td>[owner]</td>
+            </tr>
+
+            <tr>
+                <td>商品</td>
+                <td>[commodity_id]</td>
+            </tr>
+            <tr>
+                <td>订单号</td>
+                <td>[trade_no]</td>
+            </tr>
+            <tr>
+                <td>订单金额</td>
+                <td>[amount]</td>
+            </tr>
+            <tr>
+                <td>购买数量</td>
+                <td>[card_num]</td>
+            </tr>
+            <tr>
+                <td>预选卡密</td>
+                <td>[card_id]</td>
+            </tr>
+            <tr>
+                <td>支付方式</td>
+                <td>[pay_id]</td>
+            </tr>
+            <tr>
+                <td>下单时间</td>
+                <td>[create_time]</td>
+            </tr>
+            <tr>
+                <td>下单IP</td>
+                <td>[create_ip]</td>
+            </tr>
+            <tr>
+                <td>下单设备</td>
+                <td>[create_device]</td>
+            </tr>
+
+            <tr>
+                <td>支付状态</td>
+                <td>[status]</td>
+            </tr>
+            <tr>
+                <td>支付时间</td>
+                <td>[pay_time]</td>
+            </tr>
+            <tr>
+                <td>支付地址</td>
+                <td>[pay_url]</td>
+            </tr>
+
+            <tr>
+                <td>查询密码</td>
+                <td>[password]</td>
+            </tr>
+            <tr>
+                <td>联系方式</td>
+                <td>[contact]</td>
+            </tr>
+            <tr>
+                <td>发货状态</td>
+                <td>[delivery_status]</td>
+            </tr>
+            <tr>
+                <td>优惠卷</td>
+                <td>[coupon_id]</td>
+            </tr>
+            <tr>
+                <td>手续费</td>
+                <td>[cost]</td>
+            </tr>
+            <tr>
+                <td>推广者</td>
+                <td>[from]</td>
+            </tr>
+
+            <tr>
+                <td>订单成本</td>
+                <td>[rent]</td>
+            </tr>
+            <tr>
+                <td>商户</td>
+                <td>[user_id]</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
 <script>
 
     $(function () {
@@ -108,6 +228,40 @@
                 cache: false,//是否使用缓存
                 showToggle: false,//是否显示详细视图和列表视图的切换按钮
                 cardView: false,
+                detailView: true,
+                detailViewIcon: true,//3，隐藏图标列
+               // detailViewByClick: true,//4,隐藏图标列
+                detailFormatter: function (index, item, element) {
+                    let user = function (item) {
+                        if (!item.user) {
+                            return '<span class="badge badge-light-success user" style="cursor: pointer;" >系统</span>';
+                        }
+                        return '<span class="badge badge-light-dark user" style="cursor: pointer;" ><img src="' + item.user.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.user.username + '(' + item.user.id + ')</span>'
+                    }
+
+                    return $('.order-modal').html()
+                        .replace('[owner]', (item.owner ? '<span class="badge badge-light-dark"" ><img src="' + item.owner.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.owner.username + '(' + item.owner.id + ')</span>' : '<span class="badge badge-light-success">访客</span>'))
+                        .replace('[commodity_id]', item.commodity ? '<span class="badge badge-light">' + item.commodity.name + '</span>' : '-')
+                        .replace('[trade_no]', '<span class="badge badge-light">' + item.trade_no + '</span>')
+                        .replace('[amount]', '<span class="badge badge-light-success"><i class="fas fa-yen-sign text-success fs-10"></i> ' + item.amount + '</span>')
+                        .replace('[card_num]', '<span class="badge badge-light-dark">' + item.card_num + '</span>')
+                        .replace('[card_id]', item.card_id ? '<span class="badge badge-light-success">是</span>' : '<span class="badge badge-light-danger">否</span>')
+                        .replace('[pay_id]', item.pay ? '<span class="badge badge-light-primary"><img src="' + item.pay.icon + '"  style="width: 18px;border-radius: 100%;"/> ' + item.pay.name + '</span>' : '-')
+                        .replace('[create_time]', '<span class="badge badge-light">' + item.create_time + '</span>')
+                        .replace('[create_ip]', '<span class="badge badge-light">' + item.create_ip + '</span>')
+                        .replace('[create_device]', '<span class="badge badge-light-primary">' + create_device[item.create_device] + '</span>')
+                        .replace('[status]', status[item.status])
+                        .replace('[pay_time]', item.pay_time ? '<span class="badge badge-light">' + item.pay_time + '</span>' : '-')
+                        .replace('[pay_url]', '<a href="' + item.pay_url + '" target="_blank">' + item.pay_url + '</a>')
+                        .replace('[password]', item.password ? '<span class="badge badge-light">' + item.password + '</span>' : '-')
+                        .replace('[contact]', '<span class="badge badge-light">' + item.contact + '</span>')
+                        .replace('[delivery_status]', delivery_status[item.delivery_status])
+                        .replace('[coupon_id]', item.coupon ? '<span class="badge badge-light-primary">' + item.coupon.code + '</span>' : '-')
+                        .replace('[cost]', item.user ? '<span class="badge badge-light-primary"><i class="fas fa-yen-sign text-primary fs-10"></i> ' + item.cost + '</span>' : '-')
+                        .replace('[from]', item.promote ? '<span class="badge badge-light-dark"" ><img src="' + item.promote.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.promote.username + '(' + item.promote.id + ')</span>' : '-')
+                        .replace('[rent]', '<span class="badge badge-light-danger">' + item.rent + '</span>')
+                        .replace('[user_id]', user(item));
+                },
                 pagination: true,//是否显示分页
                 pageNumber: 1,//初始化显示第几页，默认第1页
                 singleSelect: false,//复选框只能选择一条记录

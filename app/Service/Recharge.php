@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Model\UserRecharge;
+
 /**
  * Interface Recharge
  * @package App\Service
@@ -22,6 +24,12 @@ interface Recharge
      * @return string
      */
     public function callback(string $handle, array $map): string;
+
+
+    /**
+     * @param \App\Model\UserRecharge $recharge
+     */
+    public function orderSuccess(UserRecharge $recharge): void;
 
     /**
      * @param float $amount

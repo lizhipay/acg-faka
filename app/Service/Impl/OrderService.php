@@ -481,7 +481,7 @@ class OrderService implements Order
 
         if ($shared) {
             //拉取远程平台的卡密发货
-            $order->secret = $this->shared->trade($shared, $commodity->shared_code, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, $order->password);
+            $order->secret = $this->shared->trade($shared, $commodity->shared_code, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, (string)$order->password);
             $order->delivery_status = 1;
         } else {
             //自动发货
@@ -644,17 +644,21 @@ class OrderService implements Order
      * @param int $cardId
      * @param int $num
      * @param string $coupon
-     * @param int $commodityId
+     * @param int|\App\Model\Commodity|null $commodityId
      * @return array
      * @throws \Kernel\Exception\JSONException
      */
-    #[ArrayShape(["amount" => "mixed", "price" => "float|int", "couponMoney" => "float|int"])] public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int $commodityId): array
+    #[ArrayShape(["amount" => "mixed", "price" => "float|int", "couponMoney" => "float|int"])] public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int|Commodity|null $commodityId): array
     {
         if ($num <= 0) {
             throw new JSONException("购买数量不能低于1个");
         }
-        //查询商品
-        $commodity = Commodity::query()->find($commodityId);
+
+        if ($commodityId instanceof Commodity) {
+            $commodity = $commodityId;
+        } else {
+            $commodity = Commodity::query()->find($commodityId);
+        }
 
         if (!$commodity) {
             throw new JSONException("商品不存在");

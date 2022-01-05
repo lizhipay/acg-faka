@@ -43,4 +43,9 @@ class UserRecharge extends Model
     {
         return $this->hasOne(User::class, "id", "user_id");
     }
+
+    public function pay(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Pay::class, "id", "pay_id");
+    }
 }

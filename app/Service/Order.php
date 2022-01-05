@@ -31,6 +31,7 @@ interface Order
     /**
      * @param \App\Model\User|null $user
      * @param \App\Model\UserGroup|null $userGroup
+     * @param array $map
      * @return array
      */
     public function trade(?User $user, ?UserGroup $userGroup, array $map): array;
@@ -39,12 +40,13 @@ interface Order
     /**
      * @param \App\Model\User|null $user
      * @param \App\Model\UserGroup|null $userGroup
+     * @param int $cardId
      * @param int $num
      * @param string $coupon
-     * @param int $commodityId
+     * @param int|\App\Model\Commodity|null $commodityId
      * @return array
      */
-    public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int $commodityId): array;
+    public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int|Commodity|null $commodityId): array;
 
     /**
      * @param string $handle

@@ -77,4 +77,10 @@ class Order extends Model
     {
         return $this->hasOne(User::class, "id", "from");
     }
+
+    //优惠卷
+    public function coupon(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Coupon::class, "id", "coupon_id");
+    }
 }

@@ -16,7 +16,22 @@ class User extends Manage
      */
     public function index(): string
     {
-        return $this->render("会员管理", "User/User.html");
+
+        $userCount = \App\Model\User::query()->count();
+        $businessCount = \App\Model\User::query()->whereNotNull("business_level")->count();
+        $balance = \App\Model\User::query()->sum("balance");
+        $recharge = \App\Model\User::query()->sum("recharge");
+        $coin = \App\Model\User::query()->sum("coin");
+        $totalCoin = \App\Model\User::query()->sum("total_coin");
+
+        return $this->render("会员管理", "User/User.html", [
+            "userCount" => $userCount,
+            "businessCount" => $businessCount,
+            "balance" => $balance,
+            "recharge" => $recharge,
+            "coin" => $coin,
+            "totalCoin" => $totalCoin
+        ]);
     }
 
 

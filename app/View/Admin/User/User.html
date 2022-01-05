@@ -9,22 +9,100 @@
     <div class="post d-flex flex-column-fluid" id="kt_post">
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
+            <!--begin::Row-->
+            <div class="row g-5 g-xl-10">
+                <div class="col-xl-2">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
+                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">总用户</span>
+                            <div class="fw-bolder fs-1 text-primary my-6">#{$userCount}</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+                <div class="col-xl-2">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
+                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">商家</span>
+                            <div class="fw-bolder fs-1 text-success my-6">#{$businessCount}</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+                <div class="col-xl-2">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
+                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">当前余额</span>
+                            <div class="fw-bolder fs-1 text-primary my-6">￥#{$balance}</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+                <div class="col-xl-2">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
+                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">总充值</span>
+                            <div class="fw-bolder fs-1 text-success my-6">#{$recharge}</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+                <div class="col-xl-2">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
+                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">当前硬币</span>
+                            <div class="fw-bolder fs-1 text-primary my-6">￥#{$coin}</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+                <div class="col-xl-2">
+                    <!--begin::Statistics Widget 1-->
+                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
+                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">总获得硬币</span>
+                            <div class="fw-bolder fs-1 text-success my-6">#{$totalCoin}</div>
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Statistics Widget 1-->
+                </div>
+            </div>
+            <!--end::Row-->
+
             <!--begin::Tables Widget 9-->
             <div class="card mb-5 mb-xl-8">
-                <!--begin::Header-->
-                <div class="card-header border-0 pt-5">
-                    <div class="card-toolbar">
+                <div class="card-body py-3 mt-3">
+                    <form class="search-query"></form>
+                    <div class="table-toolbar">
                         <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fas fa-trash"></i> 移除选中用户
                         </button>
                         <!--start::HOOK-->
                         #{hook(\App\Consts\Hook::ADMIN_VIEW_USER_TOOLBAR)}
                         <!--end::HOOK-->
                     </div>
-                </div>
-                <!--end::Header-->
-
-                <div class="card-body py-3">
-                    <form class="search-query"></form>
                     <table id="user" lay-filter="user"></table>
                 </div>
             </div>
@@ -69,11 +147,11 @@
             </tr>
             <tr>
                 <td>子域名</td>
-                <td><a href="[subdomain]" target="_blank">[subdomain]</a></td>
+                <td><a href="//[subdomain]" target="_blank">[subdomain]</a></td>
             </tr>
             <tr>
                 <td>绑定域名</td>
-                <td><a href="[topdomain]" target="_blank">[topdomain]</a></td>
+                <td><a href="//[topdomain]" target="_blank">[topdomain]</a></td>
             </tr>
             <tr>
                 <td>主站商品</td>
@@ -118,15 +196,25 @@
             var cao = layui.hex;
 
             let queryParams = null;
+            let settlement = [
+                '<span class="badge badge-light-primary"><i class="fab fa-alipay text-primary"></i> 支付宝</span>',
+                '<span class="badge badge-light-success"><i class="fab fa-weixin text-success"></i> 微信</span>'
+            ];
+
             table.bootstrapTable({
                 url: '/admin/api/user/data',//请求的url地址
                 method: "post",//请求方式
-                // striped:true,//是否显示行间隔色
-                pageSize: 15,//每页显示的数量
-                pageList: [15, 25, 50, 100],
+                //striped:true,//是否显示行间隔色
+                pageSize: 13,//每页显示的数量
+                pageList: [13, 25, 50, 100],
                 showRefresh: false,//是否显示刷新按钮
                 cache: false,//是否使用缓存
                 showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                showColumns: true,
+                toolbar: ".table-toolbar",
+                onColumnSwitch: function (field, checked) {
+                    cao.setColumnVisible('user', field, checked);
+                },
                 cardView: false,
                 pagination: true,//是否显示分页
                 pageNumber: 1,//初始化显示第几页，默认第1页
@@ -157,7 +245,10 @@
                     {checkbox: true}
                     , {field: 'id', title: 'ID', width: 80}
                     , {
-                        field: 'avatar', title: '用户名', formatter: function (val, item) {
+                        field: 'avatar',
+                        visible: cao.getColumnVisible('user', 'avatar'),
+                        title: '用户名',
+                        formatter: function (val, item) {
                             if (!item.avatar) {
                                 item.avatar = "/favicon.ico";
                             }
@@ -165,12 +256,27 @@
                         }
                     }
                     , {
-                        field: 'business_level', title: '他的店铺', formatter: function (val, item) {
+                        field: 'nicename',
+                        visible: cao.getColumnVisible('user', 'nicename', false),
+                        title: '真实姓名',
+                        formatter: function (val, item) {
+                            if (!item.nicename) {
+                                return '-';
+                            }
+                            return '<span class="badge badge-light">' + item.nicename + '</span> '
+                        }
+                    }
+                    , {
+                        field: 'business_level',
+                        visible: cao.getColumnVisible('user', 'business_level'),
+                        title: '他的店铺',
+                        formatter: function (val, item) {
                             if (!item.business_level) {
                                 return '-';
                             }
                             return '<span  class="badge badge-light business" style="cursor: pointer;"><img src="' + item.business_level.icon + '"  style="width: 16px;padding-bottom: 3px;"/> ' + item.business_level.name + '</span> '
-                        }, events: {
+                        },
+                        events: {
                             'click .business': function (event, value, row, index) {
                                 let map = row;
                                 let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
@@ -206,12 +312,18 @@
                         }
                     }
                     , {
-                        field: 'group', title: '会员等级', formatter: function (val, item) {
+                        field: 'group',
+                        title: '会员等级',
+                        visible: cao.getColumnVisible('user', 'group'),
+                        formatter: function (val, item) {
                             return '<img style="height: 32px;" src="' + item.group.icon + '" title="' + item.group.name + ' (减免:' + (item.group.discount * 100) + '%)">'
                         }
                     }
                     , {
-                        field: 'email', title: '邮箱', formatter: function (val, item) {
+                        field: 'email',
+                        visible: cao.getColumnVisible('user', 'email'),
+                        title: '邮箱',
+                        formatter: function (val, item) {
                             if (!item.email) {
                                 return "-";
                             }
@@ -219,7 +331,10 @@
                         }
                     }
                     , {
-                        field: 'phone', title: '手机号', formatter: function (val, item) {
+                        field: 'phone',
+                        visible: cao.getColumnVisible('user', 'phone'),
+                        title: '手机号',
+                        formatter: function (val, item) {
                             if (!item.phone) {
                                 return "-";
                             }
@@ -227,7 +342,10 @@
                         }
                     }
                     , {
-                        field: 'qq', title: 'QQ', formatter: function (val, item) {
+                        field: 'qq',
+                        visible: cao.getColumnVisible('user', 'qq'),
+                        title: 'QQ',
+                        formatter: function (val, item) {
                             if (!item.qq) {
                                 return "-";
                             }
@@ -235,7 +353,10 @@
                         }
                     }
                     , {
-                        field: 'balance', title: '余额', formatter: function (val, item) {
+                        field: 'balance',
+                        visible: cao.getColumnVisible('user', 'balance'),
+                        title: '余额',
+                        formatter: function (val, item) {
                             return '<span class="badge badge-light-primary recharge" style="cursor: pointer;" ><i class="fas fa-yen-sign text-primary fs-10"></i> ' + item.balance + '</span>'
                         },
                         events: {
@@ -246,23 +367,35 @@
                     }
 
                     , {
-                        field: 'recharge', title: '总充值', formatter: function (val, item) {
-                            return '<span class="badge badge-light-primary">' + item.recharge + '</span>'
+                        field: 'recharge',
+                        visible: cao.getColumnVisible('user', 'recharge'),
+                        title: '总充值',
+                        formatter: function (val, item) {
+                            return '<a class="badge badge-light-primary" href="/admin/recharge/order?userId=' + item.id + '" target="_blank">' + item.recharge + '</a>'
                         }
                     }
                     , {
-                        field: 'coin', title: '硬币', formatter: function (val, item) {
+                        field: 'coin',
+                        visible: cao.getColumnVisible('user', 'coin'),
+                        title: '硬币',
+                        formatter: function (val, item) {
                             return '<span class="badge badge-light-success"><i class="fas fa-yen-sign text-success fs-10"></i> ' + item.coin + '</span>'
                         }
                     }
                     , {
-                        field: 'total_coin', title: '总硬币', formatter: function (val, item) {
+                        field: 'total_coin',
+                        visible: cao.getColumnVisible('user', 'total_coin'),
+                        title: '总硬币',
+                        formatter: function (val, item) {
                             return '<span class="badge badge-light-success">' + item.total_coin + '</span>'
                         }
                     }
 
                     , {
-                        field: 'avatar', title: '上级', formatter: function (val, item) {
+                        field: 'parent',
+                        title: '上级',
+                        visible: cao.getColumnVisible('user', 'parent'),
+                        formatter: function (val, item) {
                             if (!item.parent) {
                                 return '-';
                             }
@@ -284,7 +417,110 @@
                         }
                     }
                     , {
-                        field: 'status', title: '状态', formatter: function (val, item) {
+                        field: 'create_time',
+                        visible: cao.getColumnVisible('user', 'create_time', false),
+                        title: '注册时间',
+                        formatter: function (val, item) {
+                            return '<span class="badge badge-light">' + item.create_time + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'login_time', visible: cao.getColumnVisible('user', 'login_time', false), title: '登录时间',
+                        formatter: function (val, item) {
+                            if (!item.login_time) {
+                                return '-';
+                            }
+                            return '<span class="badge badge-light">' + item.login_time + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'login_ip', visible: cao.getColumnVisible('user', 'login_ip', false), title: '登录IP',
+                        formatter: function (val, item) {
+                            if (!item.login_ip) {
+                                return '-';
+                            }
+                            return '<span class="badge badge-light">' + item.login_ip + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'last_login_time',
+                        visible: cao.getColumnVisible('user', 'last_login_time', false),
+                        title: '上次登录时间',
+                        formatter: function (val, item) {
+                            if (!item.last_login_time) {
+                                return '-';
+                            }
+                            return '<span class="badge badge-light">' + item.last_login_time + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'last_login_ip',
+                        visible: cao.getColumnVisible('user', 'last_login_ip', false),
+                        title: '上次登录IP',
+                        formatter: function (val, item) {
+                            if (!item.last_login_ip) {
+                                return '-';
+                            }
+                            return '<span class="badge badge-light">' + item.last_login_ip + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'alipay',
+                        visible: cao.getColumnVisible('user', 'alipay', false),
+                        title: '支付宝',
+                        formatter: function (val, item) {
+                            if (!item.alipay) {
+                                return '-';
+                            }
+                            return '<span class="badge badge-light-primary">' + item.alipay + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'wechat',
+                        visible: cao.getColumnVisible('user', 'wechat', false),
+                        title: '微信收款码',
+                        formatter: function (val, item) {
+                            if (!item.wechat) {
+                                return '-';
+                            }
+                            return '<span class="badge badge-light-success wxqrcode" style="cursor: pointer;">查看</span>';
+                        },
+                        events: {
+                            'click .wxqrcode': function (event, value, row, index) {
+                                let size = 200;
+                                layer.open({
+                                    type: 1,
+                                    title: false,
+                                    closeBtn: 0, //不显示关闭按钮
+                                    anim: 5,
+                                    area: [size + 'px', size + 'px'],
+                                    shadeClose: true, //开启遮罩关闭
+                                    content: '<div class="wxqrcode-' + row.id + '"></div>',
+                                    success: () => {
+                                        $('.wxqrcode-' + row.id).qrcode({
+                                            render: "canvas",
+                                            width: 200,
+                                            height: 200,
+                                            text: row.wechat
+                                        });
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    , {
+                        field: 'settlement',
+                        title: '自动结算方式',
+                        visible: cao.getColumnVisible('user', 'settlement', false),
+                        formatter: function (val, item) {
+                            return settlement[item.settlement];
+                        }
+                    }
+                    , {
+                        field: 'status',
+                        title: '状态',
+                        visible: cao.getColumnVisible('user', 'status'),
+                        formatter: function (val, item) {
                             if (item.status == 1) {
                                 return '<span class="badge badge-light-success">正常</span>';
                             }
@@ -296,6 +532,7 @@
                     <!--end::HOOK-->
                     {
                         field: 'operate',
+                        visible: cao.getColumnVisible('user', 'operate'),
                         title: '操作',
                         formatter: function (val, item) {
                             let html = '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-success btn-sm me-1 recharge"><i class="fas fa-comment-dollar text-success"></i></button> <button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fas fa-user-edit text-primary"></i></button> ';

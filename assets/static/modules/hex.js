@@ -1043,6 +1043,16 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                     break;
             }
             return element;
+        },
+        setColumnVisible(table, field, checked) {
+            localStorage.setItem(table + "_columnVisible_" + field, checked);
+        },
+        getColumnVisible(table, field, checked = true) {
+            let f = table + "_columnVisible_" + field;
+            if (!localStorage.hasOwnProperty(f)) {
+                return checked;
+            }
+            return localStorage.getItem(f) == "true";
         }
     }
 

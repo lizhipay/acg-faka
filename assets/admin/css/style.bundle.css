@@ -54644,7 +54644,6 @@ body {
 }
 
 
-
 .loader {
     color: #EEE;
     -webkit-animation: rotate 3.33334s infinite linear;
@@ -54679,6 +54678,7 @@ body {
         transform: translate(-50%, -50%) rotate(0deg);
     }
 }
+
 .dot {
     background-color: currentColor;
     border-radius: 50%;
@@ -54688,6 +54688,7 @@ body {
     width: 0.25em;
     vertical-align: top;
 }
+
 .dot::after {
     content: '';
     display: inline-block;
@@ -54699,6 +54700,7 @@ body {
     left: 0;
     top: 0;
 }
+
 .dot1::after {
     -webkit-animation: scaleH 1.66667s -1.25s infinite both linear;
     animation: scaleH 1.66667s -1.25s infinite both linear;
@@ -54712,6 +54714,7 @@ body {
     bottom: 0;
     left: 0;
 }
+
 .dot2::after {
     -webkit-animation: scaleV 1.66667s -1.25s infinite reverse both linear;
     animation: scaleV 1.66667s -1.25s infinite reverse both linear;
@@ -54725,6 +54728,7 @@ body {
     bottom: 0;
     right: 0;
 }
+
 .dot3::after {
     -webkit-animation: scaleH 1.66667s -1.66667s infinite reverse both linear;
     animation: scaleH 1.66667s -1.66667s infinite reverse both linear;
@@ -54738,6 +54742,7 @@ body {
     top: 0;
     right: 0;
 }
+
 .dot4::after {
     -webkit-animation: scaleV 1.66667s -0.83334s infinite both linear;
     animation: scaleV 1.66667s -0.83334s infinite both linear;
@@ -54812,6 +54817,7 @@ body {
         transform-origin: 0% 100%;
     }
 }
+
 @-webkit-keyframes scaleH {
     from {
         -webkit-transform: scale(0, 1);
@@ -54844,6 +54850,7 @@ body {
         transform-origin: 100% 0%;
     }
 }
+
 @keyframes scaleH {
     from {
         -webkit-transform: scale(0, 1);
@@ -54876,6 +54883,7 @@ body {
         transform-origin: 100% 0%;
     }
 }
+
 @-webkit-keyframes pulse {
     from {
         -webkit-transform: scale(0.1);
@@ -54890,6 +54898,7 @@ body {
         transform: scale(0.1);
     }
 }
+
 @keyframes pulse {
     from {
         -webkit-transform: scale(0.1);
@@ -54903,4 +54912,16 @@ body {
         -webkit-transform: scale(0.1);
         transform: scale(0.1);
     }
+}
+
+.bootstrap-table .fixed-table-toolbar .bs-bars, .bootstrap-table .fixed-table-toolbar .search, .bootstrap-table .fixed-table-toolbar .columns .bi-list-ul:before {
+    content: "过滤字段" !important;
+    font-weight: bolder !important;
+    color: rgb(157, 95, 192) !important;
+}
+
+.bootstrap-table .fixed-table-toolbar .columns .dropdown-toggle  {
+    background: linear-gradient(to bottom, #fff4f478 0%, rgb(250 218 255 / 50%) 100%) !important;
+    padding: calc(0.55rem + 1px) calc(1.25rem + 1px) !important;
+    color: #6ba302 !important;
 }

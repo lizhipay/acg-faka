@@ -119,10 +119,32 @@ class Index extends User
             }
         }
 
-        $commodity = $commodity->where("status", 1)->orderBy("sort", "asc")->get(['id', 'name', 'cover', 'delivery_way', 'price', 'user_price', 'inventory_hidden']);
+        $commodity = $commodity->where("status", 1)->orderBy("sort", "asc")->get([
+            'id', 'name', 'cover',
+            'status', 'delivery_way', 'price',
+            'user_price', 'inventory_hidden',
+            'shared_id', 'shared_code',
+            'level_disable', 'level_price', 'lot_status', 'lot_config'
+        ]);
+
         $data = $commodity->toArray();
+        $user = $this->getUser();
+        $userGroup = $this->getUserGroup();
         foreach ($data as $key => $val) {
             $data[$key]['card_count'] = Card::query()->where("status", 0)->where("commodity_id", $val['id'])->count();
+            //如果登录后，则自动计算登录后的价格
+            if ($user) {
+                $tradeAmount = $this->order->getTradeAmount($user, $userGroup, 0, 1, "", $commodity[$key]);
+                $data[$key]['price'] = $tradeAmount['price'];
+                $data[$key]['user_price'] = $tradeAmount['price'];
+            }
+
+            unset(
+                $data[$key]['level_price'],
+                $data[$key]['level_disable'],
+                $data[$key]['lot_status'],
+                $data[$key]['lot_config']
+            );
         }
         return $this->json(200, "success", $data);
     }

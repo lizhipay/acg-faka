@@ -151,7 +151,9 @@ class RechargeService implements Recharge
                 throw new JSONException("amount error");
             }
 
-            $order->status = 1;
+            //订单更新
+            $this->orderSuccess($order);
+            /*$order->status = 1;
             $order->pay_time = Date::current();
             $order->option = null;
 
@@ -164,12 +166,36 @@ class RechargeService implements Recharge
                 if ($rechargeWelfareAmount > 0) {
                     Bill::create($user, $rechargeWelfareAmount, Bill::TYPE_ADD, "充值赠送", 0); //用户余额
                 }
-            }
+            }*/
 
-            $order->save();
         });
 
         return $callback['success'];
+    }
+
+
+    /**
+     * @param \App\Model\UserRecharge $recharge
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function orderSuccess(UserRecharge $recharge): void
+    {
+        $recharge->status = 1;
+        $recharge->pay_time = Date::current();
+        $recharge->option = null;
+
+        //充值
+        $user = $recharge->user;
+
+        if ($user) {
+            $rechargeWelfareAmount = $this->calcAmount($recharge->amount);
+            Bill::create($user, $recharge->amount, Bill::TYPE_ADD, "充值", 0); //用户余额
+            if ($rechargeWelfareAmount > 0) {
+                Bill::create($user, $rechargeWelfareAmount, Bill::TYPE_ADD, "充值赠送", 0); //用户余额
+            }
+        }
+
+        $recharge->save(); 
     }
 
 
@@ -201,4 +227,6 @@ class RechargeService implements Recharge
         }
         return (float)$price;
     }
+
+
 }
