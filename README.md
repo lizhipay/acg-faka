@@ -12,6 +12,7 @@
 ## 快速体验
 - 后台演示：[http://162.14.111.118:81/admin](http://162.14.111.118:81/admin)  账号：demo@demo.com 密码：123456
 - 前台演示：[http://162.14.111.118:81](http://162.14.111.118:81) 账号：为了明天美好而战斗 密码：123456
+- 文档地址：[https://faka.wiki](https://faka.wiki)
 
 ## 关于异次元发卡系统
 
@@ -63,68 +64,6 @@ location / {
 ```
 - 配置完成后，访问你的首页，即可开始安装。
 - 安装完成后，后台地址是：`https://你的域名/admin`
-## 版本更新记录
-<p>所有更新都支持手动升级，但是推荐你还是使用自动升级，如果你当前版本并不是最新版本的上个版本，那么你必须依次按照版本进行手动升级，直到最新版本为止。</p>
-<p style="color: red;">手动升级方法：下载升级包后，有两个文件夹，file文件夹里的文件复制到根目录覆盖替换即可，更新包里面的update.sql如果有内容，表示这个版本需要更新数据库某些地方，需要你手动复制到你的数据库执行一次。</p>
 
-
-- 2022/01/06：[0.5.9-beta.zip](https://download.acged.cc/faka/version/0.5.9-beta.zip)
-- 2022/01/05：[0.5.8-beta.zip](https://download.acged.cc/faka/version/0.5.8-beta.zip)
-- 2022/01/05：[0.5.7-beta.zip](https://download.acged.cc/faka/version/0.5.7-beta.zip)
-- 2022/01/04：[0.5.6-beta.zip](https://download.acged.cc/faka/version/0.5.6-beta.zip)
-- 2022/01/04：[0.5.5-beta.zip](https://download.acged.cc/faka/version/0.5.5-beta.zip)
-- 2022/01/04：[0.5.4-beta.zip](https://download.acged.cc/faka/version/0.5.4-beta.zip)
-- 2022/01/03：[0.5.3-beta.zip](https://download.acged.cc/faka/version/0.5.3-beta.zip)
-- 2022/01/02：[0.5.2-beta.zip](https://download.acged.cc/faka/version/0.5.2-beta.zip)
-- 2022/01/01：[0.5.1-beta.zip](https://download.acged.cc/faka/version/0.5.1-beta.zip)
-- 2022/01/01：[0.5.0-beta.zip](https://download.acged.cc/faka/version/0.5.0-beta.zip)
-- 2021/12/30：[0.4.9-beta.zip](https://download.acged.cc/faka/version/0.4.9-beta.zip)
-- 2021/12/30：[0.4.8-beta.zip](https://download.acged.cc/faka/version/0.4.8-beta.zip)
-- 2021/12/30：[0.4.7-beta.zip](https://download.acged.cc/faka/version/0.4.7-beta.zip)
-- 2021/12/30：[0.4.6-beta.zip](https://download.acged.cc/faka/version/0.4.6-beta.zip)
-- 2021/12/28：[0.4.5-beta.zip](https://download.acged.cc/faka/version/0.4.5-beta.zip)
-- 2021/12/26：[0.4.4-beta.zip](https://download.acged.cc/faka/version/0.4.4-beta.zip)
-- 2021/12/26：[0.4.3-beta.zip](https://download.acged.cc/faka/version/0.4.3-beta.zip)
-- 2021/12/26：[0.4.2-beta.zip](https://download.acged.cc/faka/version/0.4.2-beta.zip)
-- 2021/12/21：[0.4.1-beta.zip](https://download.acged.cc/faka/version/0.4.1-beta.zip)
-- 2021/12/20：[0.4.0-beta.zip](https://download.acged.cc/faka/version/0.4.0-beta.zip)
-- 2021/12/19：[0.3.9-beta.zip](https://download.acged.cc/faka/version/0.3.9-beta.zip)
-- 2021/12/16：[0.3.8-beta.zip](https://download.acged.cc/faka/version/0.3.8-beta.zip)
-- 2021/12/15：[0.3.7-beta.zip](https://download.acged.cc/faka/version/0.3.7-beta.zip)
-- 2021/12/14：[0.3.6-beta.zip](https://download.acged.cc/faka/version/0.3.6-beta.zip)
-- 2021/12/14：[0.3.5-beta.zip](https://download.acged.cc/faka/version/0.3.5-beta.zip)
-- 2021/12/14：[0.3.4-beta.zip](https://download.acged.cc/faka/version/0.3.4-beta.zip)
-- 2021/12/14：[0.3.3-beta.zip](https://download.acged.cc/faka/version/0.3.3-beta.zip)
-- 2021/12/12：[0.3.2-beta.zip](https://download.acged.cc/faka/version/0.3.2-beta.zip)
-- 2021/12/11：[0.3.1-beta.zip](https://download.acged.cc/faka/version/0.3.1-beta.zip)
-- 2021/12/11：[0.2.9-beta.zip](https://download.acged.cc/faka/version/0.2.9-beta.zip)
-- 2021/12/10：[0.2.8-beta.zip](https://download.acged.cc/faka/version/0.2.8-beta.zip)
-- 2021/12/09：[0.2.7-beta.zip](https://download.acged.cc/faka/version/0.2.7-beta.zip)
-- 2021/12/08：[0.2.6-beta.zip](https://download.acged.cc/faka/version/0.2.6-beta.zip)
-- 2021/12/07：[0.2.5-beta.zip](https://download.acged.cc/faka/version/0.2.5-beta.zip)
-- 2021/12/07：[0.2.4-beta.zip](https://download.acged.cc/faka/version/0.2.4-beta.zip)
-- 2021/12/07：[0.2.3-beta.zip](https://download.acged.cc/faka/version/0.2.3-beta.zip)
-- 2021/12/07：[0.2.2-beta.zip](https://download.acged.cc/faka/version/0.2.2-beta.zip)
-- 2021/12/07：[0.2.1-beta.zip](https://download.acged.cc/faka/version/0.2.1-beta.zip)
-- 2021/12/07：[0.2.0-beta.zip](https://download.acged.cc/faka/version/0.2.0-beta.zip)
-- 2021/12/06：[0.1.9-beta.zip](https://download.acged.cc/faka/version/0.1.9-beta.zip)
-- 2021/12/06：[0.1.8-beta.zip](https://download.acged.cc/faka/version/0.1.8-beta.zip)
-- 2021/12/06：[0.1.7-beta.zip](https://download.acged.cc/faka/version/0.1.7-beta.zip)
-- 2021/12/06：[0.1.6-beta.zip](https://download.acged.cc/faka/version/0.1.6-beta.zip)
-- 2021/12/06：[0.1.5-beta.zip](https://download.acged.cc/faka/version/0.1.5-beta.zip)
-- 2021/12/05：[0.1.4-beta.zip](https://download.acged.cc/faka/version/0.1.4-beta.zip)
-- 2021/12/04：[0.1.3-beta.zip](https://download.acged.cc/faka/version/0.1.3-beta.zip)
-- 2021/12/04：[0.1.2-beta.zip](https://download.acged.cc/faka/version/0.1.2-beta.zip)
-- 2021/12/03：[0.1.1-beta.zip](https://download.acged.cc/faka/version/0.1.1-beta.zip)
-- 2021/12/02：[0.1.0-beta.zip](https://download.acged.cc/faka/version/0.1.0-beta.zip)
-- 2021/11/30：[0.0.9-beta.zip](https://download.acged.cc/faka/version/0.0.9-beta.zip)
-- 2021/11/30：[0.0.8-beta.zip](https://download.acged.cc/faka/version/0.0.8-beta.zip)
-- 2021/11/29：[0.0.7-beta.zip](https://download.acged.cc/faka/version/0.0.7-beta.zip)
-- 2021/11/29：[0.0.6-beta.zip](https://download.acged.cc/faka/version/0.0.6-beta.zip)
-- 2021/11/28：[0.0.5-beta.zip](https://download.acged.cc/faka/version/0.0.5-beta.zip)
-- 2021/11/28：[0.0.4-beta.zip](https://download.acged.cc/faka/version/0.0.4-beta.zip)
-- 2021/11/28：[0.0.3-beta.zip](https://download.acged.cc/faka/version/0.0.3-beta.zip)
-- 2021/11/28：[0.0.2-beta.zip](https://download.acged.cc/faka/version/0.0.2-beta.zip)
-- 2021/11/27：发布0.0.1-beta测试版本。
 ## 更多支持
 - 交流QQ群：128215049
