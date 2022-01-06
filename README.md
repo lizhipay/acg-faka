@@ -1,45 +1,12 @@
 <br>
 <p align="center">
 <span>
-<svg xmlns="http://www.w3.org/2000/svg" width="90" height="20"><linearGradient id="a" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><rect rx="3" width="90" height="20" fill="#555"/><rect rx="3" x="37" width="53" height="20" fill="#4c1"/><path fill="#4c1" d="M37 0h4v20h-4z"/><rect rx="3" width="90" height="20" fill="url(#a)"/><g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11"><text x="19.5" y="15" fill="#010101" fill-opacity=".3">php</text><text x="19.5" y="14">php</text><text x="62.5" y="15" fill="#010101" fill-opacity=".3">>=8.0</text><text x="62.5" y="14">>=8.0</text></g></svg>
+<img src="https://raw.githubusercontent.com/lizhipay/acg-cdn/main/php.svg" alt="php8.0,8.1">
 </span>
 <span>
-<svg xmlns="http://www.w3.org/2000/svg" width="100" height="20">
-<linearGradient id="a" x2="0" y2="100%">
-<stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
-<stop offset="1" stop-opacity=".1"/>
-</linearGradient><rect rx="3" width="90" height="20" fill="#555"/>
-<rect rx="3" x="40" width="53" height="20" fill="#4c1"/>
-<path fill="#4c1" d="M40 0h4v20h-4z"/>
-<rect rx="3" width="90" height="20" fill="url(#a)"/>
-<g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
-<text x="19.5" y="15" fill="#010101" fill-opacity=".3">mysql</text>
-<text x="19.5" y="14">mysql</text>
-<text x="62.5" y="15" fill="#010101" fill-opacity=".3">>=5.6</text>
-<text x="62.5" y="14">>=5.6</text>
-</g>
-</svg>
+<img src="https://raw.githubusercontent.com/lizhipay/acg-cdn/main/mysql.svg" alt="mysql5.6+">
 </span>
-<span><svg xmlns="http://www.w3.org/2000/svg" width="76" height="20">
-    <linearGradient id="b" x2="0" y2="100%">
-        <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
-        <stop offset="1" stop-opacity=".1"/>
-    </linearGradient>
-    <mask id="a">
-        <rect width="76" height="20" rx="3" fill="#fff"/>
-    </mask>
-    <g mask="url(#a)">
-        <rect width="48" height="20" fill="#555"/>
-        <rect x="48" width="28" height="20" fill="#428F7E"/>
-        <rect width="76" height="20" fill="url(#b)"/>
-    </g>
-    <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
-        <text x="25" y="15" fill="#010101" fill-opacity=".3">license</text>
-        <text x="25" y="14">license</text>
-        <text x="61" y="15" fill="#010101" fill-opacity=".3">MIT</text>
-        <text x="61" y="14">MIT</text>
-    </g>
-</svg></span>
+<span><img src="https://raw.githubusercontent.com/lizhipay/acg-cdn/main/license.svg" alt="license"></span>
 </p>
 
 ## 快速体验
