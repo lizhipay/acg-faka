@@ -42,6 +42,20 @@ location / {
       }
 }
 ```
+- Windows IIS服务器环境，可以使用下面伪静态规则：
+```
+<rules>
+	<rule name="acg_rewrite" stopProcessing="true">
+		<match url="^(.*)$"/>
+		<conditions logicalGrouping="MatchAll">
+			<add input="{HTTP_HOST}" pattern="^(.*)$"/>
+			<add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true"/>
+			<add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true"/>
+		</conditions>
+		<action type="Rewrite" url="index.php?s={R:1}"/>
+	</rule>
+</rules>
+```
 - 配置完成后，访问你的首页，即可开始安装。
 - 安装完成后，后台地址是：`https://你的域名/admin`
 ## 版本更新记录
