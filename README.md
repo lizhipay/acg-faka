@@ -4,7 +4,7 @@
 <img src="https://raw.githubusercontent.com/lizhipay/acg-cdn/main/php.svg" alt="php8.0,8.1">
 </span>
 <span>
-<img src="https://raw.githubusercontent.com/lizhipay/acg-cdn/main/mysql.svg" alt="mysql5.6+">
+<img src="https://raw.githubusercontent.com/lizhipay/acg-cdn/main/mysql-version.svg" alt="mysql5.6+">
 </span>
 <span><img src="https://raw.githubusercontent.com/lizhipay/acg-cdn/main/license.svg" alt="license"></span>
 </p>
