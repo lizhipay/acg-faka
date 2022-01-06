@@ -1,12 +1,12 @@
 <br>
 <p align="center">
 <span>
-<img src="https://raw.githubusercontent.com/lizhipay/acg-cdn/main/php.svg" alt="php8.0,8.1">
+<img src="https://acged.cc/svg/php.svg" alt="php8.0,8.1">
 </span>
 <span>
-<img src="https://raw.githubusercontent.com/lizhipay/acg-cdn/main/mysql-version.svg" alt="mysql5.6+">
+<img src="https://acged.cc/svg/mysql-version.svg" alt="mysql5.6+">
 </span>
-<span><img src="https://raw.githubusercontent.com/lizhipay/acg-cdn/main/license.svg" alt="license"></span>
+<span><img src="https://acged.cc/svg/license.svg" alt="license"></span>
 </p>
 
 ## 快速体验
