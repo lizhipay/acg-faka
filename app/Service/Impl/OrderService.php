@@ -49,7 +49,7 @@ class OrderService implements Order
 
         //禁用任何折扣,直接计算
         if ($commodity->level_disable == 1) {
-            return $num * $price;
+            return (int)(($num * $price) * 100) / 100;
         }
 
         if ($group) {
@@ -89,7 +89,7 @@ class OrderService implements Order
             }
         }
 
-        return $num * $price;
+        return (int)(($num * $price) * 100) / 100;
     }
 
     /**
@@ -374,7 +374,7 @@ class OrderService implements Order
                     require($autoload);
                 }
                 $payObject = new $class;
-                $payObject->amount = (float)sprintf("%.2f", $order->amount);
+                $payObject->amount = (float)sprintf("%.2f", (int)($order->amount * 100) / 100);
                 $payObject->tradeNo = $order->trade_no;
                 $payObject->config = PayConfig::config($pay->handle);
                 $payObject->callbackUrl = Client::getUrl() . '/user/api/order/callback.' . $pay->handle;
@@ -701,6 +701,7 @@ class OrderService implements Order
             $amount = $amount - $code->money;
             $couponMoney = $code->money;
         }
-        return ["amount" => sprintf("%.2f", $amount), "price" => sprintf("%.2f", $price), "couponMoney" => sprintf("%.2f", $couponMoney)];
+ 
+        return ["amount" => sprintf("%.2f", (int)($amount * 100) / 100), "price" => sprintf("%.2f", (int)($price * 100) / 100), "couponMoney" => sprintf("%.2f", (int)($couponMoney * 100) / 100)];
     }
 }

@@ -26,7 +26,7 @@ abstract class Manage extends \App\Controller\Base\Manage
         try {
             $data['title'] = $title;
             $data['app']['version'] = \config("app")['version'];
- 
+
             $cfg = Config::list();
 
             foreach ($cfg as $k => $v) {
@@ -44,6 +44,8 @@ abstract class Manage extends \App\Controller\Base\Manage
                     3 => "夜班"
                 };
             }
+
+            $data['_store_initialize'] = file_exists(BASE_PATH . "/kernel/Plugin.php");
 
             return View::render('Admin/' . $template, $data);
         } catch (\SmartyException $e) {
