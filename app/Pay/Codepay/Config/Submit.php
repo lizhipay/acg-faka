@@ -6,8 +6,7 @@ return [
         "title" => "支付网关",
         "name" => "url",
         "type" => "input",
-        "placeholder" => "请求地址(如:https://xxx.com)",
-        "default" => "https://acgpay.losie.net"
+        "placeholder" => "请求地址(如:https://xxx.com)"
     ],
     [
         "title" => "商户ID",
