@@ -109,7 +109,13 @@ class Commodity extends Shared
             $count = Card::query()->where("commodity_id", $commodity->id)->where("status", 0)->count();
         }
 
-        return $this->json(200, "success", ['count' => $count, 'delivery_way' => $commodity->delivery_way, "draft_status" => $commodity->draft_status]);
+        return $this->json(200, "success", [
+            'count' => $count,
+            'delivery_way' => $commodity->delivery_way,
+            "draft_status" => $commodity->draft_status,
+            'price' => $commodity->price,
+            'user_price' => $commodity->user_price
+        ]);
     }
 
     /**

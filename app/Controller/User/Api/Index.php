@@ -158,7 +158,7 @@ class Index extends User
     {
         $commodity = Commodity::query()->with(['owner' => function (Relation $relation) {
             $relation->select(["id", "username", "avatar"]);
-        }])->find($commodityId, ["id", "name", "description", "only_user", "purchase_count", "category_id", "cover", "price", "user_price", "status", "owner", "delivery_way", "contact_type", "password_status", "level_price", "level_disable", "lot_status", "lot_config", "coupon", "shared_id", "shared_code", "seckill_status", "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden", "widget", "minimum"]);
+        }])->find($commodityId, ["id", "name", "description", "only_user", "purchase_count", "category_id", "cover", "price", "user_price", "status", "owner", "delivery_way", "contact_type", "password_status", "level_price", "level_disable", "lot_status", "lot_config", "coupon", "shared_id", "shared_code", "seckill_status", "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden", "widget", "minimum", "shared_sync"]);
 
         if (!$commodity) {
             throw new JSONException("商品不存在");
@@ -173,6 +173,19 @@ class Index extends User
             $commodity->card = $inventory['count'];
             $commodity->delivery_way = $inventory['delivery_way'];
             $commodity->draft_status = $inventory['draft_status'];
+            //同步远程平台价格
+            if ($commodity->shared_sync == 1) {
+                $new = Commodity::query()->find($commodity->id);
+                if ((float)$commodity->price != (float)$inventory['price']) {
+                    $new->price = (float)$inventory['price'];
+                    $commodity->price = $new->price;
+                }
+                if ((float)$commodity->user_price != (float)$inventory['user_price']) {
+                    $new->user_price = (float)$inventory['user_price'];
+                    $commodity->user_price = $new->user_price;
+                }
+                $new->save();
+            }
         } else if ($commodity->delivery_way == 0) {
             $commodity->card = Card::query()->where("commodity_id", $commodity->id)->where("status", 0)->count();
         }

@@ -31,11 +31,10 @@ class SharedService implements Shared
         $data = array_merge($data, ["app_id" => $appId, "app_key" => $appKey]);
         $data['sign'] = Str::generateSignature($data, $appKey);
         try {
-            $response = $this->http->post($url, ["form_params" => $data]);
+            $response = $this->http->post($url, ["form_params" => $data, "verify" => false]);
         } catch (\Exception $e) {
             throw new JSONException("连接失败");
         }
-
         $contents = $response->getBody()->getContents();
         $result = json_decode($contents, true);
         if ($result['code'] != 200) {

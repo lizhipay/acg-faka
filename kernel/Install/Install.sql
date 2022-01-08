@@ -425,6 +425,8 @@ ALTER TABLE __PREFIX__commodity ADD `widget` text CHARACTER SET utf8mb4 COLLATE 
 ALTER TABLE __PREFIX__commodity ADD `level_price` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '会员等级-定制价格';
 ALTER TABLE __PREFIX__commodity ADD `level_disable` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '禁用会员等级折扣，0=关闭，1=启用';
 ALTER TABLE __PREFIX__commodity ADD `minimum` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '最低购买数量，0=无限制';
+ALTER TABLE __PREFIX__commodity ADD `shared_sync` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '同步平台价格：0=关，1=开';
+
 ALTER TABLE __PREFIX__order ADD `widget` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '控件内容';
 ALTER TABLE __PREFIX__order ADD `rent` decimal(10, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '成本价';
 ALTER TABLE __PREFIX__order modify COLUMN `pay_url` VARCHAR(1024);

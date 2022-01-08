@@ -150,6 +150,16 @@ class Store extends Manage
                 $commodity->category_id = $categoryId;
                 $commodity->name = $item['name'];
                 $commodity->description = $item['description'];
+                //正则处理
+                preg_match_all('#<img src="(/.*?)"#', $commodity->description, $matchs);
+
+                $list = (array)$matchs[1];
+                if (count($list) > 0) {
+                    foreach ($list as $e) {
+                        $commodity->description = str_replace($e, $shared->domain . $e, $commodity->description);
+                    }
+                }
+
                 $commodity->cover = $shared->domain . $item['cover'];
                 $commodity->factory_price = $item['user_price'];
                 $commodity->price = $item['price'];

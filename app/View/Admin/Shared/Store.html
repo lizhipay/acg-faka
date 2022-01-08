@@ -1,5 +1,10 @@
 #{include file="../Header.html"}
-
+<style>
+    .layui-layer-page .layui-layer-content {
+        position: relative !important;
+        overflow: auto !important;
+    }
+</style>
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     <!--begin::Toolbar-->
@@ -190,8 +195,8 @@
                                         {title: "远程商品", name: "auth", type: "treeCheckbox", dict: res.data},
                                     ], res => {
                                         tableInstance.instance.reload();
-                                    }, [], "660px", false, mapItem.name + "-拉取商品到本地分类");
-                                }); 
+                                    }, [], ['660px', '768px'], false, mapItem.name + "-拉取商品到本地分类");
+                                });
                             }
                         }
                     }

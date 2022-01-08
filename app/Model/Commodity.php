@@ -43,6 +43,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $purchase_count
  * @property string $widget
  * @property int $minimum
+ * @property int $shared_sync
  */
 class Commodity extends Model
 {

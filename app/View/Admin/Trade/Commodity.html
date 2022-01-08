@@ -396,6 +396,23 @@
             }
 
             let commodityUnqueId = 0;
+            let modalAction = {
+                showShared(unqueId) {
+                    //共享平台
+                    cao.popupElement("shared_sync", "input", unqueId).parent().show();
+                    cao.popupElement("shared_code", "input", unqueId).parent().parent().show();
+                    cao.popupElement("delivery_way", "select", unqueId).parent().parent().hide();
+                    cao.popupElement("delivery_auto_mode", "select", unqueId).parent().parent().hide();
+                    cao.popupElement("delivery_message", "textarea", unqueId).parent().parent().hide();
+                },
+                hideShared(unqueId) {
+                    cao.popupElement("shared_sync", "input", unqueId).parent().hide();
+                    cao.popupElement("shared_code", "input", unqueId).parent().parent().hide();
+                    cao.popupElement("delivery_way", "select", unqueId).parent().parent().show();
+                    cao.popupElement("delivery_auto_mode", "select", unqueId).parent().parent().show();
+                    cao.popupElement("delivery_message", "textarea", unqueId).parent().parent().show();
+                }
+            }
             let modal = (values = {}) => {
                 cao.popup('/admin/api/commodity/save', [
                     {title: "商品图标", name: "cover", type: "image", placeholder: "请选择图片(推荐64*64)"},
@@ -437,18 +454,22 @@
                         placeholder: "本地自营(LOCAL)",
                         dict: "shared,id,name", change: function (value) {
                             let sharedCodeElement = cao.popupElement("shared_code", "input", commodityUnqueId).parent().parent();
-                            let d2 = cao.popupElement("delivery_way", "select", commodityUnqueId).parent().parent();
                             if (value == 0 || !value) {
-                                sharedCodeElement.hide();
-                                d2.show();
+                                modalAction.hideShared(commodityUnqueId);
                             } else {
                                 layer.msg("(´・ω・｀)请输入对方店铺共享商品的代码");
-                                sharedCodeElement.show();
-                                d2.hide();
+                                modalAction.showShared(commodityUnqueId);
                             }
                         }
                     },
                     {title: "共享代码", name: "shared_code", type: "input", placeholder: "请输入对方店铺共享商品的代码", hide: true},
+                    {
+                        title: "同步价格",
+                        name: "shared_sync",
+                        type: "switch",
+                        text: "开启",
+                        tips: "开启后，自动同步共享平台的价格，防止对方商品价格变动时，导致盈亏"
+                    },
                     {
                         title: "发货方式",
                         name: "delivery_way",
@@ -613,6 +634,7 @@
                     table.bootstrapTable('refresh', {silent: true});
                 }, values, ["720px", "720px"], false, "添加", unqueId => {
                     commodityUnqueId = unqueId;
+
                     //success
                     let d = cao.popupElement("draft_premium", "input", unqueId).parent().parent();
                     cao.popupElement("draft_status", "input", unqueId).val() == 1 ? d.show() : d.hide();
@@ -722,6 +744,13 @@
                             }
                         ]
                     });
+
+                    //共享平台
+                    if (cao.popupElement("shared_code", "input", unqueId).val() != "") {
+                        modalAction.showShared(unqueId);
+                    } else {
+                        modalAction.hideShared(unqueId);
+                    }
                 });
             }
 
