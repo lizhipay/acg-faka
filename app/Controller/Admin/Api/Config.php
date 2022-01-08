@@ -7,6 +7,7 @@ use App\Controller\Base\API\Manage;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
 use App\Service\Query;
+use App\Service\Sms;
 use App\Util\Date;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
@@ -24,7 +25,7 @@ class Config extends Manage
     private Query $query;
 
     #[Inject]
-    private AliSms $sms;
+    private Sms $sms;
 
     #[Inject]
     private PHPMailer $mailer;
@@ -145,25 +146,10 @@ class Config extends Manage
         return $this->json(200, '保存成功');
     }
 
-    /**
-     * @throws \Kernel\Exception\JSONException
-     */
+
     public function smsTest(): array
     {
-        $smsConfig = json_decode(\App\Model\Config::get("sms_config"), true);
-
-        $config = [
-            'access_key' => $smsConfig['accessKeyId'],
-            'access_secret' => $smsConfig['accessKeySecret'],
-            'sign_name' => $smsConfig['signName'],
-        ];
-
-        $response = $this->sms->sendSms($_POST['phone'], $smsConfig['templateCode'], ['code' => mt_rand(100000, 666666)], $config);
-
-        if ($response->Message != "OK") {
-            throw new JSONException($response->Message);
-        }
-
+        $this->sms->sendCaptcha($_POST['phone'], Sms::CAPTCHA_REGISTER);
         return $this->json(200, "短信发送成功");
     }
 

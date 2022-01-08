@@ -10,6 +10,14 @@ interface Sms
     const CAPTCHA_FORGET = 0x2;
     const CAPTCHA_BIND_NEW = 0x3;
 
+    /**
+     * @param array $smsConfig
+     * @param string $phone
+     * @param string $templateCode
+     * @param array $var
+     */
+    public function send(array $smsConfig, string $phone, string $templateCode, array $var = []): void;
+
 
     /**
      * @param string $phone
@@ -28,7 +36,7 @@ interface Sms
 
     /**
      * @param string $phone
-     * @param int $typel
+     * @param int $type
      */
     public function destroyCaptcha(string $phone, int $type): void;
 }
