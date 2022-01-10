@@ -412,8 +412,8 @@ let acg = {
         },
         //获取商品信息
         commodity(opt) {
+            acg.property.cache.raceId = "";
             acg.$get("/user/api/index/commodityDetail?commodityId=" + opt.commodityId, res => {
-                console.log(res);
                 typeof opt.begin === 'function' && opt.begin(res);
                 acg.property.cache.currentCommodityId = opt.commodityId;
                 opt.pay && $(opt.pay).show();
