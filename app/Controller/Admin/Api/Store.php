@@ -170,7 +170,6 @@ class Store extends Manage
                 $commodity->api_status = 0;
                 $commodity->code = strtoupper(Str::generateRandStr(16));
                 $commodity->delivery_way = $item['delivery_way'];
-                $commodity->delivery_message = $item['delivery_message'];
                 $commodity->contact_type = $item['contact_type'];
                 $commodity->password_status = $item['password_status'];
                 $commodity->sort = $item['sort'];
@@ -191,11 +190,11 @@ class Store extends Manage
 
                 //2022/01/05新增
                 $commodity->inventory_hidden = $item['inventory_hidden'];
-                $commodity->leave_message = $item['leave_message'];
                 $commodity->only_user = $item['only_user'];
                 $commodity->purchase_count = $item['purchase_count'];
                 $commodity->widget = $item['widget'];
                 $commodity->minimum = $item['minimum'];
+                $commodity->config = $item['config'];
 
                 $commodity->save();
                 $success++;

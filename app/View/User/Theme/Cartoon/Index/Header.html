@@ -7,7 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="keywords" content="#{$config.keywords}"/>
     <meta name="description" content="#{$config.description}"/>
-    <link href="/favicon.ico" rel="icon">
+    <link href="#{$favicon}" rel="icon">
     <link rel="stylesheet" href="/assets/static/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="/assets/static/font/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="/assets/static/css/i.css?v=#{$app.version}">
@@ -29,7 +29,7 @@
         <div class="container">
            <div class="navbar-brand">
                <a href="#{if $user}/user/dashboard/index#{else}/#{/if}">
-                   <img src="#{if $user.avatar}#{$user.avatar}#{else}/favicon.ico#{/if}" height="30px" style="border-radius: 50%;box-shadow: #f0d1d4 1px 1px 1px;">
+                   <img src="#{if $user.avatar}#{$user.avatar}#{else}#{$favicon}#{/if}" height="30px" style="border-radius: 50%;box-shadow: #f0d1d4 1px 1px 1px;">
                    #{if $user}<span style="position: relative;top: 4px;left: 3px;font-weight: bold;color: #ff9085c7;"> #{$user.username}  #{else} <span style="position: relative;top: 4px;left: 3px;font-weight: bold;color: #ff9085c7;">  #{$config.shop_name}  #{/if}
                </span></a>
                 #{if $user}

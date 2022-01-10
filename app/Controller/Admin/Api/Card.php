@@ -60,6 +60,7 @@ class Card extends Manage
     public function save(): array
     {
         $commodityId = (int)$_POST['commodity_id'];
+        $race = (string)$_POST['race'];
 
         if ($commodityId == 0) {
             throw new JSONException('(`･ω･´)请选择商品');
@@ -111,6 +112,11 @@ class Card extends Manage
             }
             $cardObj->secret = $cardr;
             $cardObj->create_time = $date;
+
+            if ($race){
+                $cardObj->race = $race;
+            }
+
             try {
                 $cardObj->save();
                 $success++;

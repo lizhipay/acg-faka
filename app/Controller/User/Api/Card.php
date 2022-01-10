@@ -57,6 +57,7 @@ class Card extends User
         $userId = $this->getUser()->id;
 
         $commodityId = (int)$_POST['commodity_id'];
+        $race = (string)$_POST['race'];
 
         if ($commodityId == 0) {
             throw new JSONException('(`･ω･´)请选择商品');
@@ -108,6 +109,10 @@ class Card extends User
             }
             $cardObj->secret = $cardr;
             $cardObj->create_time = $date;
+            if ($race){
+                $cardObj->race = $race;
+            }
+
             try {
                 $cardObj->save();
                 $success++;

@@ -30,16 +30,18 @@ interface Shared
      * @param string $sharedCode
      * @param int $cardId
      * @param int $num
+     * @param string $race
      * @return bool
      */
-    public function inventoryState(\App\Model\Shared $shared, string $sharedCode, int $cardId, int $num): bool;
+    public function inventoryState(\App\Model\Shared $shared, string $sharedCode, int $cardId, int $num, string $race): bool;
 
     /**
      * @param \App\Model\Shared $shared
      * @param string $sharedCode
+     * @param string $race
      * @return array
      */
-    public function inventory(\App\Model\Shared $shared, string $sharedCode): array;
+    public function inventory(\App\Model\Shared $shared, string $sharedCode, string $race = ""): array;
 
 
     /**
@@ -51,15 +53,18 @@ interface Shared
      * @param int $cardId
      * @param int $device
      * @param string $password
+     * @param string $race
      * @return string
      */
-    public function trade(\App\Model\Shared $shared, string $sharedCode, string $contact, int $num, int $cardId, int $device, string $password): string;
+    public function trade(\App\Model\Shared $shared, string $sharedCode, string $contact, int $num, int $cardId, int $device, string $password, string $race): string;
 
     /**
      * @param \App\Model\Shared $shared
      * @param string $sharedCode
+     * @param int $limit
      * @param int $page
+     * @param string $race
      * @return array
      */
-    public function draftCard(\App\Model\Shared $shared, string $sharedCode, int $page): array;
+    public function draftCard(\App\Model\Shared $shared, string $sharedCode, int $limit, int $page, string $race): array;
 }

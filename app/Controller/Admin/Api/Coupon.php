@@ -64,6 +64,7 @@ class Coupon extends Manage
         $money = (float)$_POST['money']; //金额
         $num = (int)$_POST['num']; //生成数量
         $life = (int)$_POST['life']; //可用次数
+        $race = $_POST['race'];
 
         if ($commodityId == 0) {
             throw new JSONException('ಠ_ಠ请选择商品');
@@ -98,6 +99,9 @@ class Coupon extends Manage
             $voucher->status = 0;
             $voucher->note = $note;
             $voucher->life = $life;
+            if ($race) {
+                $voucher->race = $race;
+            }
             try {
                 $voucher->save();
                 $success++;

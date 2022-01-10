@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $secret
  * @property string $note
  * @property int $status
+ * @property string $race
  */
 class Card extends Model
 {

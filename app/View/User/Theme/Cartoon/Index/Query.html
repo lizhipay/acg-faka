@@ -52,12 +52,18 @@
                     if (order.status === 1) {
                         status = '<span style="color: green;">已支付</span>';
                     }
+
+                    let race = "";
+                    if (order.race) {
+                        race = " ( <b style='color: #20b033;'>" + order.race + "</b> )";
+                    }
+
                     let html = '<div class="hr-top">\n' +
                         '                        <div style="font-size: 14px;">订单号：<b class="trade_no">' + order.trade_no + '</b></div>\n' +
                         '                        <div style="font-size: 14px;">下单金额：<b style="color: red;" class="amount">' + order.amount + '</b></div>\n' +
                         '                        <div style="font-size: 14px;">购买数量：<b style="color: blue;" class="buyNum">' + order.card_num + '</b></div>\n' +
                         '                        <div style="font-size: 14px;">下单时间：<b class="create_time">' + order.create_time + '</b></div>\n' +
-                        '                        <div style="font-size: 14px;">商品名称：<b class="commodity_name">' + order.commodity.name + '</b></div>\n' +
+                        '                        <div style="font-size: 14px;">商品名称：<b class="commodity_name">' + order.commodity.name + race + '</b></div>\n' +
                         '                        <div style="font-size: 14px;">支付方式：<b class="icon"><img src="' + order.pay.icon + '" height="16px"> ' + order.pay.name + '</b></div>\n' +
                         '                        <div style="font-size: 14px;">订单状态：<b class="status">' + status + '</b></div>\n' +
                         '                        <div style="font-size: 14px;' + (order.status == 1 ? '' : 'display: none;') + '" class="payDateView">支付时间：<b class="pay_date"\n' +
@@ -75,7 +81,7 @@
 
             });
             orderSuccess.show();
-  
+
             $('.getCard').click(function () {
                 let orderId = $(this).attr('data-id');
                 Pay.getSecret(orderId, $('.passId-' + orderId).val(), res => {

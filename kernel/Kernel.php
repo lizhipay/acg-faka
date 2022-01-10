@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-error_reporting(0);
+error_reporting(1);
 const BASE_PATH = __DIR__ . "/../";
 require(BASE_PATH . '/vendor/autoload.php');
 require("Helper.php");
@@ -11,7 +11,7 @@ session_start();
 try {
     if (!isset($_GET['s'])) {
         $_GET['s'] = "/user/index/index";
-    } elseif ($_GET['s'] == '/admin') {
+    } elseif (trim($_GET['s'], "/") == 'admin') {
         header('location:' . "/admin/authentication/login");
     }
 

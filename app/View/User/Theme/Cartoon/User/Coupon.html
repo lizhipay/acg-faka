@@ -113,6 +113,14 @@
                         }
                     }
                     , {
+                        field: 'race', title: '类别', formatter: function (val, item) {
+                            if (!item.race) {
+                                return "-";
+                            }
+                            return item.race;
+                        }
+                    }
+                    , {
                         field: 'expire_time', title: '到期时间', formatter: function (val, item) {
                             if (!item.expire_time) {
                                 return '<span class="acg-badge acg-badge-light-success">永久</span>';
@@ -184,6 +192,12 @@
                         dict: commodity(),
                         placeholder: "请选择商品",
                         search: true
+                    },
+                    {
+                        title: "商品类别",
+                        name: "race",
+                        type: "input",
+                        placeholder: "商品类别，一般你用不着，而且不懂不要乱填哦，想用请查看说明文档"
                     },
                     {
                         title: "备注信息",

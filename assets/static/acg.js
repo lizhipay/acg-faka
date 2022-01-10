@@ -26,7 +26,9 @@ let acg = {
             opera: /opera/.test(window.navigator.userAgent.toLowerCase()),
             safari: /safari/.test(window.navigator.userAgent.toLowerCase())
         },
-        cache: {},
+        cache: {
+            raceId: "",
+        },
         setting: {
             cache: 0,
             cache_expire: 0
@@ -276,7 +278,7 @@ let acg = {
             arrayToObject.pay_id = payId;
             arrayToObject.device = acg.Util.device();
             arrayToObject.from = localStorage.hasOwnProperty("from_id") ? localStorage.getItem("from_id") : 0;
-
+            arrayToObject.race = acg.property.cache.raceId;
             acg.API.trade({
                 data: arrayToObject,
                 success: res => {
@@ -302,7 +304,8 @@ let acg = {
                 num: opt.num,
                 cardId: opt.cardId,
                 coupon: opt.coupon,
-                commodityId: opt.commodityId
+                commodityId: opt.commodityId,
+                race: acg.property.cache.raceId
             }, res => {
                 typeof opt.success === 'function' && opt.success(res);
             }, opt.error);
@@ -326,6 +329,10 @@ let acg = {
                 commodityId: acg.property.cache.currentCommodityId,
                 success: res => {
                     $(instance).html("¥" + res.amount);
+                    $('.price').html("¥" + res.price);
+                    if (res.hasOwnProperty("card_count")) {
+                        $('.card_count').html(res.card_count);
+                    }
                 }
             });
         },
@@ -343,7 +350,7 @@ let acg = {
             }, opt.error, acg.property.setting.cache, acg.property.setting.cache_expire);
         },
         draftCard(opt) {
-            acg.$get("/user/api/index/card?commodityId=" + opt.commodityId + "&page=" + opt.page + "&limit=" + opt.limit, res => {
+            acg.$get("/user/api/index/card?commodityId=" + opt.commodityId + "&page=" + opt.page + "&limit=" + opt.limit + "&race=" + acg.property.cache.raceId, res => {
                 typeof opt.begin === 'function' && opt.begin(res);
 
                 if (res.data.length == 0) {
@@ -406,6 +413,7 @@ let acg = {
         //获取商品信息
         commodity(opt) {
             acg.$get("/user/api/index/commodityDetail?commodityId=" + opt.commodityId, res => {
+                console.log(res);
                 typeof opt.begin === 'function' && opt.begin(res);
                 acg.property.cache.currentCommodityId = opt.commodityId;
                 opt.pay && $(opt.pay).show();
@@ -429,12 +437,86 @@ let acg = {
                                 instance.html("在线发货").addClass("delivery_way_hand");
                             }
                             continue
+                        } else if (autoKey == "lot_status") {
+                            continue;
+                        } else if (autoKey == "race") {
+                            let lotHtml = $(opt.auto['lot_status']);
+                            if (res.hasOwnProperty('race') && res.race) {
+                                let content = instance.find("span");
+                                let raceIndex = 0;
+                                for (let key in res.race) {
+                                    if (raceIndex == 0) {
+                                        acg.property.cache.raceId = key;
+                                    }
+                                    content.append('<span data-id="' + key + '" class="race-click button-click ' + (raceIndex == 0 ? 'checked' : '') + '">' + key + '</span>');
+                                    raceIndex++;
+                                }
+                                let categoryWholesale = function () {
+                                    //批发渲染
+                                    let categoryWholesale = res.category_wholesale;
+                                    if (categoryWholesale && categoryWholesale.hasOwnProperty(acg.property.cache.raceId)) {
+                                        let rules = categoryWholesale[acg.property.cache.raceId];
+                                        let ws = [];
+                                        for (const ruleKey in rules) {
+                                            ws[ruleKey] = rules[ruleKey];
+                                        }
+                                        let x = '';
+                                        ws.forEach((money, num) => {
+                                            x += '<div class="lot_string">一次性购买' + num + '张，单价自动调整为：<b>¥' + money + '</b></div>';
+                                        });
+                                        if (ws.length > 0) {
+                                            lotHtml.html(x);
+                                            lotHtml.show();
+                                        } else {
+                                            lotHtml.hide();
+                                        }
+                                    } else {
+                                        lotHtml.hide();
+                                    }
+                                }
+                                categoryWholesale();
+                                $('.race-click').click(function () {
+                                    acg.property.cache.raceId = $(this).attr("data-id");
+                                    $('.race-click').removeClass("checked");
+                                    $(this).addClass("checked");
+                                    acg.API.tradeAmountPerform('.trade_amount');
+                                    if (acg.property.cache.draftStatus === true) {
+                                        $('input[name=card_id]:checked').prop("checked", false);
+                                        acg.API.draftCardPerform(opt.auto['draft_status'], res.id, 1, res.draft_premium);
+                                    }
+                                    categoryWholesale();
+                                });
+
+                                instance.show();
+                            } else {
+                                let wholesale = res.wholesale;
+                                if (wholesale && Object.keys(wholesale).length > 0) {
+                                    let ws = [];
+                                    for (const ruleKey in wholesale) {
+                                        ws[ruleKey] = wholesale[ruleKey];
+                                    }
+                                    let x = '';
+                                    ws.forEach((money, num) => {
+                                        x += '<div class="lot_string">一次性购买' + num + '张，单价自动调整为：<b>¥' + money + '</b></div>';
+                                    });
+                                    if (ws.length > 0) {
+                                        lotHtml.show();
+                                        lotHtml.html(x);
+                                    } else {
+                                        lotHtml.hide();
+                                    }
+                                } else {
+                                    lotHtml.hide();
+                                }
+                                instance.hide();
+                            }
+
+                            continue;
                         } else if (autoKey == "contact_type") {
                             if (res.login) {
                                 instance.parent().hide();
                                 continue;
                             }
-
                             let contactType = ["任意联系方式", "手机号", "邮箱", "QQ号"];
                             instance.attr("placeholder", "请输入您的" + contactType[value]);
                             continue;
@@ -461,28 +543,6 @@ let acg = {
                         } else if (autoKey == "password_status") {
                             //查询密码
                             (value == 0 || res.login) ? instance.hide() : instance.show();
-                            continue;
-                        } else if (autoKey == "lot_status") {
-                            if (value == 1) {
-                                let list = res.lot_config.trim().split("\n");
-                                let ws = [];
-                                list.forEach(item => {
-                                    let s = item.split('-');
-                                    if (s.length === 2) {
-                                        ws[s[0]] = s[1].trim("\r");
-                                    }
-                                });
-                                let x = '';
-                                ws.forEach((money, num) => {
-                                    x += '<li>一次性购买' + num + '张，单价自动调整为：<b>¥' + money + '</b></li>';
-                                });
-                                if (ws.length > 0) {
-                                    instance.html(x);
-                                }
-                                instance.show();
-                            } else {
-                                instance.hide();
-                            }
                             continue;
                         } else if (autoKey == "seckill_status") {
                             clearInterval(acg.property.cache.seckill);
@@ -577,7 +637,9 @@ let acg = {
                             if (res.draft_status == 1) {
                                 instance.show();
                                 acg.API.draftCardPerform(opt.auto[autoKey], res.id, 1, res.draft_premium);
+                                acg.property.cache.draftStatus = true;
                             } else {
+                                acg.property.cache.draftStatus = false;
                                 instance.hide();
                             }
                             continue;

@@ -230,7 +230,7 @@
                 cardView: false,
                 detailView: true,
                 detailViewIcon: true,//3，隐藏图标列
-               // detailViewByClick: true,//4,隐藏图标列
+                // detailViewByClick: true,//4,隐藏图标列
                 detailFormatter: function (index, item, element) {
                     let user = function (item) {
                         if (!item.user) {
@@ -322,7 +322,13 @@
                             if (!item.commodity) {
                                 return "-";
                             }
-                            return '<span class="badge badge-light">' + item.commodity.name + '</span>';
+                            let race = "";
+
+                            if (item.race) {
+                                race = " ( <b style='color: #20b033;'>" + item.race + "</b> )";
+                            }
+
+                            return '<span class="badge badge-light">' + item.commodity.name + '' + race + '</span>';
                         }
                     }
                     , {

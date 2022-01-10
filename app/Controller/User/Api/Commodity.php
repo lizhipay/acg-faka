@@ -13,6 +13,7 @@ use App\Interceptor\UserSession;
 use App\Interceptor\Waf;
 use App\Service\Query;
 use App\Util\Client;
+use App\Util\Ini;
 use App\Util\Str;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -101,18 +102,6 @@ class Commodity extends User
         }
 
 
-        if ($map['lot_status'] == 1) {
-            if (!$map['lot_config']) {
-                throw new JSONException("您开启了批发优惠，请填写详细的优惠规则哦(｡￫‿￩｡)");
-            }
-            $lotConfig = explode(PHP_EOL, trim(trim($map['lot_config']), PHP_EOL));
-            foreach ($lotConfig as $item) {
-                if (count(explode("-", $item)) != 2) {
-                    throw new JSONException("批发优惠规则填写有误，请认真填写(｡￫‿￩｡)");
-                }
-            }
-        }
-
         if ($map['seckill_status'] == 1) {
             if (!$map['seckill_start_time'] || !$map['seckill_end_time']) {
                 throw new JSONException("您开启了秒杀功能，所以请指定秒杀的开始时间和结束时间哦(｡￫‿￩｡)");
@@ -136,9 +125,14 @@ class Commodity extends User
             throw new JSONException("排序最高设置60000");
         }
 
+        //解析配置文件
+        if ($map['config']) {
+            Ini::toArray($map['config']);
+        }
+
         $createObjectEntity = new CreateObjectEntity();
         $createObjectEntity->setModel(\App\Model\Commodity::class);
-        $createObjectEntity->setMap($map, ["description", "delivery_message", "lot_config"]);
+        $createObjectEntity->setMap($map, ["description", "delivery_message", "config"]);
         $createObjectEntity->setCreateDate("create_time");
         $save = $this->query->createOrUpdateTemplate($createObjectEntity);
         if (!$save) {

@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $status
  * @property int $life
  * @property int $use_life
+ * @property string $race
  */
 class Coupon extends Model
 {

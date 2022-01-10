@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $trade_no
  * @property string $widget
  * @property float $rent
+ * @property string $race
  */
 class Order extends Model
 {

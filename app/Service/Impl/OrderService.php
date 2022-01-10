@@ -19,6 +19,7 @@ use App\Service\Order;
 use App\Service\Shared;
 use App\Util\Client;
 use App\Util\Date;
+use App\Util\Ini;
 use App\Util\PayConfig;
 use App\Util\Str;
 use Illuminate\Database\Capsule\Manager as DB;
@@ -40,46 +41,49 @@ class OrderService implements Order
      * @param int $num
      * @param \App\Model\Commodity $commodity
      * @param \App\Model\UserGroup|null $group
+     * @param string|null $race
      * @return float
+     * @throws \Kernel\Exception\JSONException
      */
-    public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group): float
+    public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group, ?string $race = null): float
     {
+        //解析配置文件
+        $this->parseConfig($commodity, $group, $owner, 1, $race);
         $price = $owner == 0 ? $commodity->price : $commodity->user_price;
-        $lotConfig = $commodity->lot_config;
 
         //禁用任何折扣,直接计算
         if ($commodity->level_disable == 1) {
             return (int)(($num * $price) * 100) / 100;
         }
 
-        if ($group) {
-            $levelPrice = (array)json_decode((string)$commodity->level_price, true);
-            $userDefinedPrice = array_key_exists($group->id, $levelPrice) ? $levelPrice[$group->id] : null;
-            if ($userDefinedPrice) {
-                $userDefinedAmount = (float)$userDefinedPrice['amount'];
+        $userDefinedConfig = Commodity::parseGroupConfig((string)$commodity->level_price, $group);
+
+        if ($userDefinedConfig) {
+            if ($userDefinedConfig['amount'] > 0 && !$commodity->race) {
                 //如果自定义价格成功，那么将覆盖其他价格
-                if ($userDefinedAmount > 0) {
-                    $price = $userDefinedAmount;
-                }
-                //如果自定义批发价格，将覆盖系统批发规则
-                $userDefinedLotConfig = trim((string)$userDefinedPrice['lot_config']);
-                if ($userDefinedLotConfig != "") {
-                    $lotConfig = $userDefinedLotConfig;
-                }
-            } else {
-                $price = $price - ($price * $group->discount);
+                $price = $userDefinedConfig['amount'];
             }
+        } elseif ($group) {
+            //如果没有对应的会员等级解析，那么就直接采用系统折扣
+            $price = $price - ($price * $group->discount);
         }
 
-        if ($commodity->lot_status == 1) {
-            $list = [];
-            $wholesales = explode(PHP_EOL, trim(trim((string)$lotConfig), PHP_EOL));
-            foreach ($wholesales as $item) {
-                $s = explode('-', $item);
-                if (count($s) == 2) {
-                    $list[$s[0]] = $s[1];
+        //判定是race还是普通订单
+        if (is_array($commodity->race)) {
+            if (array_key_exists((string)$race, (array)$commodity->category_wholesale)) {
+                //判定当前race是否可以折扣
+                $list = $commodity->category_wholesale[$race];
+                krsort($list);
+                foreach ($list as $k => $v) {
+                    if ($num >= $k) {
+                        $price = $v;
+                        break;
+                    }
                 }
             }
+        } else {
+            //普通订单，直接走批发
+            $list = (array)$commodity->wholesale;
             krsort($list);
             foreach ($list as $k => $v) {
                 if ($num >= $k) {
@@ -90,6 +94,72 @@ class OrderService implements Order
         }
 
         return (int)(($num * $price) * 100) / 100;
+    }
+
+
+    /**
+     * 解析配置
+     * @param \App\Model\Commodity $commodity
+     * @param \App\Model\UserGroup|null $group
+     * @param int $owner
+     * @param int $num
+     * @param string|null $race
+     * @return void
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function parseConfig(Commodity &$commodity, ?UserGroup $group, int $owner = 0, int $num = 1, ?string $race = null): void
+    {
+        $parseConfig = Ini::toArray((string)$commodity->config);
+        //用户组解析
+        $userDefinedConfig = Commodity::parseGroupConfig($commodity->level_price, $group);
+
+        if ($userDefinedConfig) {
+            if (key_exists("category", $userDefinedConfig['config'])) {
+                $parseConfig['category'] = $userDefinedConfig['config']['category'];
+            }
+
+            if (key_exists("wholesale", $userDefinedConfig['config'])) {
+                $parseConfig['wholesale'] = $userDefinedConfig['config']['wholesale'];
+            }
+
+            if (key_exists("category_wholesale", $userDefinedConfig['config'])) {
+                $parseConfig['category_wholesale'] = $userDefinedConfig['config']['category_wholesale'];
+            }
+        }
+
+        if (key_exists("category", $parseConfig)) {
+            $category = $parseConfig['category'];
+            //将类别数组存到对象中
+            $commodity->race = $category;
+            //判断是否传了指定的类别
+            if ($race) {
+                if (!key_exists($race, $category)) {
+                    throw new JSONException("商品种类不存在");
+                }
+                $commodity->price = $category[$race];
+                $commodity->user_price = $commodity->price;
+            } else {
+                $commodity->price = current($category);
+                $commodity->user_price = $commodity->price;
+            }
+        }
+
+        //判定批发配置是否配置，如果配置
+        if (key_exists("wholesale", $parseConfig)) {
+            $wholesale = $parseConfig['wholesale'];
+            if (!empty($wholesale)) {
+                //将全局批发配置写入到对象中
+                $commodity->wholesale = $wholesale;
+            }
+        }
+
+        if (key_exists("category_wholesale", $parseConfig)) {
+            $categoryWholesale = $parseConfig['category_wholesale'];
+            if (!empty($categoryWholesale)) {
+                //将商品种类批发配置写入到对象中
+                $commodity->category_wholesale = $categoryWholesale;
+            }
+        }
     }
 
     /**
@@ -126,6 +196,7 @@ class OrderService implements Order
         $coupon = (string)$map['coupon'];//优惠卷
         $from = (int)$map['from'];//推广人ID
         $owner = $user == null ? 0 : $user->id;
+        $race = (string)$map['race']; //2022/01/09 新增，商品种类功能
         #CFG end
 
         if ($commodityId == 0) {
@@ -214,13 +285,18 @@ class OrderService implements Order
         $shared = $commodity->shared; //获取商品的共享平台
 
         if ($shared) {
-            if (!$this->shared->inventoryState($shared, $commodity->shared_code, $cardId, $num)) {
+            if (!$this->shared->inventoryState($shared, $commodity->shared_code, $cardId, $num, $race)) {
                 throw new JSONException("库存不足");
             }
         } else {
             //自动发货，库存检测
             if ($commodity->delivery_way == 0) {
-                $count = Card::query()->where("commodity_id", $commodityId)->where("status", 0)->count();
+                $count = Card::query()->where("commodity_id", $commodityId)->where("status", 0);
+                if ($race) {
+                    $count = $count->where("race", $race);
+                }
+                $count = $count->count();
+
                 if ($count == 0 || $num > $count) {
                     throw new JSONException("库存不足");
                 }
@@ -234,8 +310,16 @@ class OrderService implements Order
             }
         }
 
+        //解析配置文件且注入对象
+        $commodityClone = clone $commodity;
+        $this->parseConfig($commodityClone, $userGroup, $owner, $num, $race);
+
+        if ($commodity->race && !key_exists($race, $commodity->race)) {
+            throw new JSONException("请选择商品种类");
+        }
+
         //计算订单基础价格
-        $amount = $this->calcAmount($owner, $num, $commodity, $userGroup);
+        $amount = $this->calcAmount($owner, $num, $commodity, $userGroup, $race);
 
         //判断预选费用
         $pay = Pay::query()->find($payId);
@@ -248,7 +332,7 @@ class OrderService implements Order
             throw new JSONException("当前支付方式已停用，请换个支付方式再进行支付");
         }
 
-        return Db::transaction(function () use ($user, $userGroup, $num, $contact, $device, $amount, $owner, $commodity, $pay, $cardId, $password, $coupon, $from, $widget) {
+        return Db::transaction(function () use ($user, $userGroup, $num, $contact, $device, $amount, $owner, $commodity, $pay, $cardId, $password, $coupon, $from, $widget, $race, $shared) {
             //生成联系方式
             if ($user) {
                 $contact = Str::generateContact($commodity->contact_type);
@@ -271,23 +355,39 @@ class OrderService implements Order
             $order->card_num = $num;
             $order->user_id = (int)$commodity->owner;
             $order->rent = $commodity->factory_price * $num; //成本价
+            if ($race) {
+                $order->race = $race;
+            }
+
             if ($from != 0 && $order->user_id != $from && $owner != $from) {
                 $order->from = $from;
             }
 
             if ($commodity->draft_status == 1 && $cardId != 0) {
-                $card = Card::query()->find($cardId);
-                if (!$card || $card->status != 0) {
-                    throw new JSONException("该卡已被他人抢走啦");
-                }
+                if ($shared) {
+                    //加钱
+                    $order->amount = $order->amount + $commodity->draft_premium;
+                    $order->card_id = $cardId;
+                } else {
+                    $card = Card::query();
 
-                if ($card->commodity_id != $commodity->id) {
-                    throw new JSONException("该卡密不属于这个商品，无法预选");
-                }
+                    if ($race) {
+                        $card = $card->where("race", $race);
+                    }
 
-                //加钱
-                $order->amount = $order->amount + $commodity->draft_premium;
-                $order->card_id = $cardId;
+                    $card = $card->find($cardId);
+
+                    if (!$card || $card->status != 0) {
+                        throw new JSONException("该卡已被他人抢走啦");
+                    }
+
+                    if ($card->commodity_id != $commodity->id) {
+                        throw new JSONException("该卡密不属于这个商品，无法预选" . $commodity->id);
+                    }
+                    //加钱
+                    $order->amount = $order->amount + $commodity->draft_premium;
+                    $order->card_id = $cardId;
+                }
             }
 
             if ($password != "") {
@@ -301,7 +401,12 @@ class OrderService implements Order
 
             //优惠卷
             if ($coupon != "") {
-                $voucher = Coupon::query()->where("code", $coupon)->first();
+                $voucher = Coupon::query()->where("code", $coupon);
+                if ($race) {
+                    $voucher = $voucher->where("race", $race);
+                }
+                $voucher = $voucher->first();
+
                 if (!$voucher) {
                     throw new JSONException("该优惠卷不存在");
                 }
@@ -481,7 +586,7 @@ class OrderService implements Order
 
         if ($shared) {
             //拉取远程平台的卡密发货
-            $order->secret = $this->shared->trade($shared, $commodity->shared_code, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, (string)$order->password);
+            $order->secret = $this->shared->trade($shared, $commodity->shared_code, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, (string)$order->password, (string)$order->race);
             $order->delivery_status = 1;
         } else {
             //自动发货
@@ -585,7 +690,14 @@ class OrderService implements Order
             1 => "rand()",
             2 => "id desc"
         };
-        $cards = Card::query()->where("commodity_id", $order->commodity_id)->orderByRaw($direction)->where("status", 0)->limit($order->card_num)->get();
+        $cards = Card::query()->where("commodity_id", $order->commodity_id)->orderByRaw($direction)->where("status", 0);
+        //判断订单是否存在类别
+        if ($order->race) {
+            $cards = $cards->where("race", $order->race);
+        }
+
+        $cards = $cards->limit($order->card_num)->get();
+
         if (count($cards) == $order->card_num) {
             $ids = [];
             $cardc = '';
@@ -645,10 +757,11 @@ class OrderService implements Order
      * @param int $num
      * @param string $coupon
      * @param int|\App\Model\Commodity|null $commodityId
+     * @param string|null $race
      * @return array
      * @throws \Kernel\Exception\JSONException
      */
-    #[ArrayShape(["amount" => "mixed", "price" => "float|int", "couponMoney" => "float|int"])] public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int|Commodity|null $commodityId): array
+    #[ArrayShape(["amount" => "mixed", "price" => "float|int", "couponMoney" => "float|int"])] public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int|Commodity|null $commodityId, ?string $race = null): array
     {
         if ($num <= 0) {
             throw new JSONException("购买数量不能低于1个");
@@ -667,6 +780,21 @@ class OrderService implements Order
             throw new JSONException("当前商品已停售");
         }
 
+        $data = [];
+
+        if ($commodity->delivery_way == 0 && ($commodity->shared_id == null || $commodity->shared_id == 0)) {
+            if ($race) {
+                $data['card_count'] = Card::query()->where("commodity_id", $commodity->id)->where("status", 0)->where("race", $race)->count();
+            }
+        } elseif ($commodity->shared_id != 0) {
+            //查远程平台的库存
+            $shared = \App\Model\Shared::query()->find($commodity->shared_id);
+            if ($shared) {
+                $inventory = $this->shared->inventory($shared, $commodity->shared_code, (string)$race);
+                $data['card_count'] = $inventory['count'];
+            }
+        }
+
         if ($cardId != 0 && $commodity->draft_status == 1) {
             $num = 1;
         }
@@ -675,7 +803,7 @@ class OrderService implements Order
         if ($user) {
             $ow = $user->id;
         }
-        $amount = $this->calcAmount($ow, $num, $commodity, $userGroup);
+        $amount = $this->calcAmount($ow, $num, $commodity, $userGroup, $race);
         if ($cardId != 0 && $commodity->draft_status == 1) {
             $amount = $amount + $commodity->draft_premium;
         }
@@ -684,7 +812,14 @@ class OrderService implements Order
         //优惠卷
         $price = $amount / $num;
         if ($coupon != "") {
-            $code = Coupon::query()->where("code", $coupon)->first();
+            $code = Coupon::query()->where("code", $coupon);
+
+            if ($race) {
+                $code = $code->where("race", $race);
+            }
+
+            $code = $code->first();
+
             if (!$code || $code->commodity_id != $commodityId) {
                 throw new JSONException("该优惠卷不存在或不属于该商品");
             }
@@ -701,7 +836,12 @@ class OrderService implements Order
             $amount = $amount - $code->money;
             $couponMoney = $code->money;
         }
- 
-        return ["amount" => sprintf("%.2f", (int)($amount * 100) / 100), "price" => sprintf("%.2f", (int)($price * 100) / 100), "couponMoney" => sprintf("%.2f", (int)($couponMoney * 100) / 100)];
+
+
+        $data ['amount'] = sprintf("%.2f", (int)($amount * 100) / 100);
+        $data ['price'] = sprintf("%.2f", (int)($price * 100) / 100);
+        $data ['couponMoney'] = sprintf("%.2f", (int)($couponMoney * 100) / 100);
+
+        return $data;
     }
 }

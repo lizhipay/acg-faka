@@ -152,8 +152,8 @@ var Pay = {
             typeof done === 'function' && done(data);
         });
     },
-    getDraftCard(commodityId, page, done) {
-        this.$get("/user/api/index/card?commodityId=" + commodityId + "&page=" + page, done);
+    getDraftCard(commodityId, page, race, done) {
+        this.$get("/user/api/index/card?commodityId=" + commodityId + "&page=" + page + "&race=" + race, done);
     },
     getPay(done) {
         let cacheKey = "pay";
@@ -169,12 +169,13 @@ var Pay = {
             typeof done === 'function' && done(data);
         });
     },
-    getTradeAmount(commodityId, coupon, cardId, num, done) {
+    getTradeAmount(commodityId, coupon, cardId, num, race, done) {
         this.$post("/user/api/index/tradeAmount", {
             num: num,
             cardId: cardId,
             coupon: coupon,
-            commodityId: commodityId
+            commodityId: commodityId,
+            race: race
         }, done);
     },
     trade(option, done, error) {

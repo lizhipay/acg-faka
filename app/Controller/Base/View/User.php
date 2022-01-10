@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Controller\Base\View;
 
-
 use App\Consts\Render;
 use App\Model\Business;
 use App\Model\Config;
@@ -55,6 +54,7 @@ abstract class User extends \App\Controller\Base\User
         try {
             $data['title'] = $title;
             $data['app']['version'] = \config("app")['version'];
+            $data['favicon'] = "/favicon.ico";
 
             $cfg = Config::list();
 
@@ -73,7 +73,11 @@ abstract class User extends \App\Controller\Base\User
                 if (!$data['from']) {
                     $data['from'] = $business->user_id;
                 }
+                $businessUser = $business->user;
 
+                if ($businessUser && $businessUser->avatar) {
+                    $data['favicon'] = $businessUser->avatar;
+                }
             }
 
             $defaultThemePath = "User/Theme/Cartoon/";

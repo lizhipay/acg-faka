@@ -133,8 +133,6 @@ CREATE TABLE `__PREFIX__commodity`  (
                                   `contact_type` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '联系方式：0=任意，1=手机，2=邮箱，3=QQ',
                                   `password_status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '订单密码：0=关闭，1=启用',
                                   `sort` smallint UNSIGNED NOT NULL DEFAULT 0 COMMENT '排序',
-                                  `lot_status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '开启批发：0=关闭，1=开启',
-                                  `lot_config` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '批发详细配置',
                                   `coupon` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '优惠卷：0=关闭，1=启用',
                                   `shared_id` int UNSIGNED NULL DEFAULT NULL COMMENT '共享平台ID',
                                   `shared_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '共享平台-商品代码',
@@ -157,7 +155,7 @@ CREATE TABLE `__PREFIX__commodity`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
 
 
-INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 1, 0, '', 1, NULL, '', 0, NULL, NULL, 0, 0.00, 0, NULL);
+INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 1, 1, NULL, '', 0, NULL, NULL, 0, 0.00, 0, NULL);
 
 DROP TABLE IF EXISTS `__PREFIX__config`;
 CREATE TABLE `__PREFIX__config`  (
@@ -426,19 +424,27 @@ ALTER TABLE __PREFIX__commodity ADD `level_price` text CHARACTER SET utf8 COLLAT
 ALTER TABLE __PREFIX__commodity ADD `level_disable` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '禁用会员等级折扣，0=关闭，1=启用';
 ALTER TABLE __PREFIX__commodity ADD `minimum` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '最低购买数量，0=无限制';
 ALTER TABLE __PREFIX__commodity ADD `shared_sync` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '同步平台价格：0=关，1=开';
+ALTER TABLE __PREFIX__commodity ADD `config` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '配置文件';
 
 ALTER TABLE __PREFIX__order ADD `widget` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '控件内容';
 ALTER TABLE __PREFIX__order ADD `rent` decimal(10, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '成本价';
 ALTER TABLE __PREFIX__order modify COLUMN `pay_url` VARCHAR(1024);
+ALTER TABLE __PREFIX__order ADD `race` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '商品种类';
 
 ALTER TABLE __PREFIX__business_level ADD `supplier` tinyint UNSIGNED NOT NULL DEFAULT 1 COMMENT '供货商权限：0=关闭，1=启用';
 ALTER TABLE __PREFIX__coupon ADD `life` int UNSIGNED NOT NULL DEFAULT 1 COMMENT '卡密使用寿命';
 ALTER TABLE __PREFIX__coupon ADD `use_life` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '已使用次数';
+ALTER TABLE __PREFIX__coupon ADD `race` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '商品类别';
+ALTER TABLE __PREFIX__coupon ADD INDEX `race`(`race`) USING BTREE;
 
 ALTER TABLE `__PREFIX__pay` ADD `equipment` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '设备：0=通用，1=手机，2=电脑';
 ALTER TABLE `__PREFIX__pay` ADD INDEX `commodity`(`commodity`) USING BTREE;
 ALTER TABLE `__PREFIX__pay` ADD INDEX `recharge`(`recharge`) USING BTREE;
 ALTER TABLE `__PREFIX__pay` ADD INDEX `sort`(`sort`) USING BTREE;
 ALTER TABLE `__PREFIX__pay` ADD INDEX `equipment`(`equipment`) USING BTREE;
+
+
+ALTER TABLE __PREFIX__card ADD `race` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '商品种类';
+ALTER TABLE __PREFIX__card ADD INDEX `race`(`race`) USING BTREE;
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -109,7 +109,14 @@
                             if (!item.commodity) {
                                 return "-";
                             }
-                            return '<span class="badge badge-light" style="cursor: pointer;" >' + item.commodity.name + '</span>';
+
+                            let race = "";
+
+                            if (item.race) {
+                                race = " ( <b style='color: #20b033;'>" + item.race + "</b> )";
+                            }
+
+                            return '<span class="badge badge-light" style="cursor: pointer;" >' + item.commodity.name + race + '</span>';
 
                         }
                     }
@@ -212,6 +219,12 @@
                         dict: "commodity->owner=0,id,name",
                         placeholder: "请选择商品",
                         search: true
+                    },
+                    {
+                        title: "商品类别",
+                        name: "race",
+                        type: "input",
+                        placeholder: "商品类别，一般你用不着，而且不懂不要乱填哦，想用请查看说明文档"
                     },
                     {
                         title: "备注信息",

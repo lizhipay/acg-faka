@@ -117,6 +117,10 @@
         '                                <input class="form-control round voucher" onchange="getTradeAmount()" name="coupon"\n' +
         '                                       placeholder="如果您有优惠卷可以填写优惠卷，没有可不填写">\n' +
         '                            </fieldset>\n' +
+        '                            <fieldset class="form-group race-view" style="display: none;">\n' +
+        '                                <label style="display: inline-block;">选择种类：</label>\n' +
+        '                                 <span class="race-list"></span>\n' +
+        '                            </fieldset>\n' +
         '                            <fieldset class="form-group">\n' +
         '                                <label>购买数量：</label>\n' +
         '                                <input class="form-control round buyNum" onchange="getTradeAmount()" name="num"\n' +
@@ -151,9 +155,11 @@
 
     let productInstance = $('#product');
     let globalCommodityId = 0;
+    let globalRaceId = "";
     let seckillPid = 0;
     let defaultCategory = "#{$categoryId}";
     let defaultCommodity = "#{$commodityId}";
+    let draftStatus = 0;
 
     //-----------------------------------获取分类------------------------------------------
     Pay.getCategory(list => {
@@ -205,7 +211,7 @@
     }
 
     function getDraftCard(commodityId, page) {
-        Pay.getDraftCard(commodityId, page, res => {
+        Pay.getDraftCard(commodityId, page, globalRaceId, res => {
             let next = res.current_page + 1;
             let prev = res.current_page - 1;
             if (next >= res.last_page) {
@@ -229,6 +235,7 @@
     }
 
     //-----------------------------------获取商品详情--------------------------------------
+
     function getCommodityInfo(obj, commodityId) {
         $('.shopInfoHtml').hide(150);
         $('.fadeInLeft').hide(150);
@@ -241,6 +248,7 @@
         globalCommodityId = commodityId;
         switchElement(obj);
         Pay.getCommodityDetail(commodityId, commodity => {
+            console.log(commodity);
             $('.service-qq').attr("href", "https://wpa.qq.com/msgrd?v=1&uin=" + commodity.service_qq);
             $('.service-url').attr("href", commodity.service_url);
 
@@ -389,35 +397,9 @@
                 $('.fieldset-password').show();
             }
 
-            if (commodity.lot_status === 1) {
-                let list = commodity.lot_config.trim().split("\n");
-
-                let ws = [];
-                list.forEach(item => {
-                    let s = item.split('-');
-                    if (s.length === 2) {
-                        ws[s[0]] = s[1].trim("\r");
-                    }
-                });
-
-                let x = '';
-                ws.forEach((money, num) => {
-                    x += '<div class="lot_string">一次性购买' + num + '张，单价自动调整为：<b>¥' + money + '</b></div>';
-                });
-                if (ws.length > 0) {
-                    $('.wholesale').show();
-                    $('.wholesaleHtml').html(x);
-                }
-            }
 
             if (commodity.coupon === 1) {
                 $('.voucher-view').show();
-            }
-
-            if (commodity.draft_status === 1) {
-                $('.specified').show(150);
-                $('.specified .card-title').html('自选加价:<b style="color: #eba0a0;font-weight: bold;">' + commodity.draft_premium + "元</b>");
-                getDraftCard(commodity.id, 1);
             }
 
             if (commodity.purchase_count > 0) {
@@ -451,6 +433,77 @@
             $('.captchaImage').click(function () {
                 captchaImage();
             });
+
+
+            //渲染商品种类
+            if (commodity.hasOwnProperty('race') && commodity.race) {
+                $('.race-view').show();
+                let raceIndex = 0;
+                for (let key in commodity.race) {
+                    if (raceIndex == 0) {
+                        globalRaceId = key;
+                    }
+                    $('.race-list').append('<span onclick="raceClick(this,\'' + key + '\')" class="race-click button-click ' + (raceIndex == 0 ? 'checked' : '') + '" style="padding: 0 8px;font-size: 14px;border-radius: 10px;">' + key + '</span>');
+                    raceIndex++;
+                }
+
+                let categoryWholesale = function () {
+                    //批发渲染
+                    let categoryWholesale = commodity.category_wholesale;
+                    if (categoryWholesale && categoryWholesale.hasOwnProperty(globalRaceId)) {
+                        let rules = categoryWholesale[globalRaceId];
+                        let ws = [];
+                        for (const ruleKey in rules) {
+                            ws[ruleKey] = rules[ruleKey];
+                        }
+                        let x = '';
+                        ws.forEach((money, num) => {
+                            x += '<div class="lot_string">一次性购买' + num + '张，单价自动调整为：<b>¥' + money + '</b></div>';
+                        });
+                        if (ws.length > 0) {
+                            $('.wholesale').show();
+                            $('.wholesaleHtml').html(x);
+                        } else {
+                            $('.wholesale').hide();
+                        }
+                    } else {
+                        $('.wholesale').hide();
+                    }
+                }
+
+                categoryWholesale();
+
+                $('.race-click').click(function () {
+                    categoryWholesale();
+                });
+            } else {
+                let wholesale = commodity.wholesale;
+                if (wholesale && Object.keys(wholesale).length > 0) {
+                    let ws = [];
+                    for (const ruleKey in wholesale) {
+                        ws[ruleKey] = wholesale[ruleKey];
+                    }
+                    let x = '';
+                    ws.forEach((money, num) => {
+                        x += '<div class="lot_string">一次性购买' + num + '张，单价自动调整为：<b>¥' + money + '</b></div>';
+                    });
+                    if (ws.length > 0) {
+                        $('.wholesale').show();
+                        $('.wholesaleHtml').html(x);
+                    } else {
+                        $('.wholesale').hide();
+                    }
+                }
+            }
+
+            if (commodity.draft_status === 1) {
+                draftStatus = 1;
+                $('.specified').show(150);
+                $('.specified .card-title').html('自选加价:<b style="color: #eba0a0;font-weight: bold;">' + commodity.draft_premium + "元</b>");
+                getDraftCard(commodity.id, 1);
+            } else {
+                draftStatus = 0;
+            }
         });
     }
 
@@ -466,8 +519,12 @@
         if (cardId === undefined) {
             cardId = 0;
         }
-        Pay.getTradeAmount(globalCommodityId, coupon, cardId, num, res => {
+        Pay.getTradeAmount(globalCommodityId, coupon, cardId, num, globalRaceId, res => {
             $('.payAmount').html("¥" + res.amount);
+            $('.price').html("¥" + res.price);
+            if (res.hasOwnProperty("card_count")) {
+                $('.card_count').html(res.card_count);
+            }
         });
     }
 
@@ -489,7 +546,7 @@
         arrayToObject.pay_id = payId;
         arrayToObject.device = Pay.device();
         arrayToObject.from = localStorage.hasOwnProperty("from_id") ? localStorage.getItem("from_id") : 0;
-
+        arrayToObject.race = globalRaceId;
         Pay.trade(arrayToObject, res => {
             captchaImage();
             if (res.secret == null) {
@@ -505,6 +562,15 @@
         }, () => {
             captchaImage();
         });
+    }
+
+    function raceClick(obj, id) {
+        switchElement(obj);
+        globalRaceId = id;
+        getTradeAmount();
+        if (draftStatus) {
+            getDraftCard(globalCommodityId, 1);
+        }
     }
 
 

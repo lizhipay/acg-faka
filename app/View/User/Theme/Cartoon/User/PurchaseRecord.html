@@ -112,7 +112,14 @@
                             if (!item.commodity) {
                                 return "-";
                             }
-                            return '<span class="acg-badge acg-badge-light">' + item.commodity.name + '</span>';
+
+                            let race = "";
+
+                            if (item.race) {
+                                race = " ( <b style='color: #20b033;'>" + item.race + "</b> )";
+                            }
+
+                            return '<span class="acg-badge acg-badge-light">' + item.commodity.name + race + '</span>';
                         }
                     }
                     , {

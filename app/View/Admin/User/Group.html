@@ -14,10 +14,10 @@
                 <!--begin::Header-->
                 <div class="card-header border-0 pt-5">
                     <div class="card-toolbar">
-                            <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i
+                        <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i
                                     class="fas fa-plus"></i>
-                                新增等级
-                            </button>
+                            新增等级
+                        </button>
                     </div>
                 </div>
                 <!--end::Header-->
@@ -46,7 +46,7 @@
                 method: "post",//请求方式
                 // striped:true,//是否显示行间隔色
                 pageSize: 17,//每页显示的数量
-                pageList:  [17, 25, 50, 100],
+                pageList: [17, 25, 50, 100],
                 showRefresh: false,//是否显示刷新按钮
                 cache: false,//是否使用缓存
                 showToggle: false,//是否显示详细视图和列表视图的切换按钮
@@ -104,7 +104,10 @@
                         title: '操作',
                         formatter: function (val, item) {
                             let html = '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fa fa-edit"></i></button> ';
-                            html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+
+                            if (item.id != 1) {
+                                html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+                            }
                             return html;
                         },
                         events: {               // 注册按钮组事件
@@ -145,7 +148,12 @@
                     },
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});
-                }, values);
+                }, values, '660px', false, '添加', uuid => {
+                    if (values.hasOwnProperty("id") && values.id == 1) {
+                        let d = cao.popupElement("recharge", "input", uuid).parent().parent();
+                        d.hide();
+                    }
+                });
             }
 
             $('.btn-app-create').click(function () {

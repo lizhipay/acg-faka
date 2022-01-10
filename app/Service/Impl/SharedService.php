@@ -53,18 +53,19 @@ class SharedService implements Shared
         return $this->post($shared->domain . "/shared/commodity/items", $shared->app_id, $shared->app_key);
     }
 
-    public function inventoryState(\App\Model\Shared $shared, string $sharedCode, int $cardId, int $num): bool
+    public function inventoryState(\App\Model\Shared $shared, string $sharedCode, int $cardId, int $num, string $race): bool
     {
         $this->post($shared->domain . "/shared/commodity/inventoryState", $shared->app_id, $shared->app_key, [
             "shared_code" => $sharedCode,
             "card_id" => $cardId,
-            "num" => $num
+            "num" => $num,
+            "race" => $race
         ]);
 
         return true;
     }
 
-    public function trade(\App\Model\Shared $shared, string $sharedCode, string $contact, int $num, int $cardId, int $device, string $password): string
+    public function trade(\App\Model\Shared $shared, string $sharedCode, string $contact, int $num, int $cardId, int $device, string $password, string $race): string
     {
         $trade = $this->post($shared->domain . "/shared/commodity/trade", $shared->app_id, $shared->app_key, [
             "shared_code" => $sharedCode,
@@ -72,7 +73,8 @@ class SharedService implements Shared
             "num" => $num,
             "card_id" => $cardId,
             "device" => $device,
-            "password" => $password
+            "password" => $password,
+            "race" => $race
         ]);
         return (string)$trade['secret'];
     }
@@ -80,16 +82,20 @@ class SharedService implements Shared
     /**
      * @param \App\Model\Shared $shared
      * @param string $sharedCode
+     * @param int $limit
      * @param int $page
+     * @param string $race
      * @return array
      * @throws \GuzzleHttp\Exception\GuzzleException
      * @throws \Kernel\Exception\JSONException
      */
-    public function draftCard(\App\Model\Shared $shared, string $sharedCode, int $page): array
+    public function draftCard(\App\Model\Shared $shared, string $sharedCode, int $limit, int $page, string $race): array
     {
         $card = $this->post($shared->domain . "/shared/commodity/draftCard", $shared->app_id, $shared->app_key, [
             "sharedCode" => $sharedCode,
-            "page" => $page
+            "page" => $page,
+            "race" => $race,
+            "limit" => $limit
         ]);
         return (array)$card;
     }
@@ -97,14 +103,16 @@ class SharedService implements Shared
     /**
      * @param \App\Model\Shared $shared
      * @param string $sharedCode
+     * @param string $race
      * @return array
      * @throws \GuzzleHttp\Exception\GuzzleException
      * @throws \Kernel\Exception\JSONException
      */
-    public function inventory(\App\Model\Shared $shared, string $sharedCode): array
+    public function inventory(\App\Model\Shared $shared, string $sharedCode, string $race = ""): array
     {
         $inventory = $this->post($shared->domain . "/shared/commodity/inventory", $shared->app_id, $shared->app_key, [
-            "sharedCode" => $sharedCode
+            "sharedCode" => $sharedCode,
+            "race" => $race
         ]);
         return (array)$inventory;
     }

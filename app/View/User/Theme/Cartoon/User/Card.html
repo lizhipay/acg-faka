@@ -17,17 +17,17 @@
                     </button>
 
                     <button type="button" class="layui-btn layui-btn-sm layui-btn-pink button-lock"><i
-                            class="layui-icon"
-                            style="position: relative;top: -2px;">&#xe673;</i>锁定选中卡密
+                                class="layui-icon"
+                                style="position: relative;top: -2px;">&#xe673;</i>锁定选中卡密
                     </button>
 
                     <button type="button" class="layui-btn layui-btn-sm layui-btn-pink button-unlock"><i
-                            class="layui-icon"
-                            style="position: relative;top: -2px;">&#xe672;</i>解锁选中卡密
+                                class="layui-icon"
+                                style="position: relative;top: -2px;">&#xe672;</i>解锁选中卡密
                     </button>
                     <button type="button" class="layui-btn layui-btn-sm layui-btn-pink button-export"><i
-                            class="layui-icon"
-                            style="position: relative;top: -2px;">&#xe67d;</i>导出筛选卡密
+                                class="layui-icon"
+                                style="position: relative;top: -2px;">&#xe67d;</i>导出筛选卡密
                     </button>
                 </div>
                 <form class="search-query"></form>
@@ -104,8 +104,16 @@
                             if (!item.commodity) {
                                 return "-";
                             }
-                            return  item.commodity.name  ;
+                            return item.commodity.name;
 
+                        }
+                    }
+                    , {
+                        field: 'race', title: '类别', formatter: function (val, item) {
+                            if (!item.race) {
+                                return "-";
+                            }
+                            return item.race;
                         }
                     }
                     , {field: 'create_time', title: '创建时间'}
@@ -163,7 +171,7 @@
                     }
                 ]
             });
-            
+
             let modal = (values = {}) => {
                 cao.popup('/user/api/card/save', [
                     {
@@ -173,6 +181,12 @@
                         dict: commodity(),
                         placeholder: "请选择商品",
                         search: true
+                    },
+                    {
+                        title: "商品类别",
+                        name: "race",
+                        type: "input",
+                        placeholder: "商品类别，一般你用不着，而且不懂不要乱填哦，想用请查看说明文档"
                     },
                     {
                         title: "备注信息",
@@ -203,7 +217,7 @@
                     },
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});
-                }, values, ["660px", "770px"], false, "添加", unqueId => {
+                }, values, ["660px", "820px"], false, "添加", unqueId => {
                     $('.draft-btn').click(function () {
                         let regx = $('.draft-input').val();
                         let cards = cao.popupElement("secret", "textarea", unqueId).val().trim();

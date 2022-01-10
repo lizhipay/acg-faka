@@ -4,7 +4,10 @@ declare(strict_types=1);
 namespace App\Model;
 
 
+use App\Plugin\CosmicAPI\Hook\Init;
+use App\Util\Ini;
 use Illuminate\Database\Eloquent\Model;
+use Kernel\Exception\JSONException;
 
 /**
  * @property int $id
@@ -25,9 +28,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $delivery_message
  * @property int $contact_type
  * @property int $sort
- * @property int $lot_status
  * @property int $password_status
- * @property string $lot_config
  * @property int $coupon
  * @property int $shared_id
  * @property string $shared_code
@@ -44,6 +45,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $widget
  * @property int $minimum
  * @property int $shared_sync
+ * @property string $config
  */
 class Commodity extends Model
 {
@@ -72,7 +74,6 @@ class Commodity extends Model
         'delivery_auto_mode' => 'integer',
         'contact_type' => 'integer',
         'sort' => 'integer',
-        'lot_status' => 'integer',
         'coupon' => 'integer',
         'shared_id' => 'integer',
         'seckill_status' => 'integer',
@@ -111,5 +112,34 @@ class Commodity extends Model
     public function order(): ?\Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Order::class, 'commodity_id', 'id');
+    }
+
+    /**
+     * 解析用户组配置
+     * @param string|null $config
+     * @param \App\Model\UserGroup|null $group
+     * @return array|null
+     * @throws \Kernel\Exception\JSONException
+     */
+    public static function parseGroupConfig(?string $config, ?UserGroup $group): ?array
+    {
+        if (!$group) {
+            return null;
+        }
+
+        $levelPrice = (array)json_decode((string)$config, true);
+
+        if (!array_key_exists($group->id, $levelPrice)) {
+            return null;
+        }
+
+        $var = $levelPrice[$group->id];
+
+
+        //解析自定义金额
+        $parse = [];
+        $parse['amount'] = (float)$var['amount'];
+        $parse['config'] = Ini::toArray((string)$var['config']);
+        return $parse;
     }
 }

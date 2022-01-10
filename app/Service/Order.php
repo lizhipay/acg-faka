@@ -16,9 +16,19 @@ interface Order
      * @param int $num
      * @param \App\Model\Commodity $commodity
      * @param \App\Model\UserGroup|null $group
+     * @param string|null $race
      * @return float
      */
-    public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group): float;
+    public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group, ?string $race = null): float;
+
+    /**
+     * @param \App\Model\Commodity $commodity
+     * @param \App\Model\UserGroup|null $group
+     * @param int $owner
+     * @param int $num
+     * @param string|null $race
+     */
+    public function parseConfig(Commodity &$commodity, ?UserGroup $group, int $owner = 0, int $num = 1, ?string $race = null): void;
 
     /**
      * @param \App\Model\Commodity $commodity
@@ -44,9 +54,10 @@ interface Order
      * @param int $num
      * @param string $coupon
      * @param int|\App\Model\Commodity|null $commodityId
+     * @param string|null $race
      * @return array
      */
-    public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int|Commodity|null $commodityId): array;
+    public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int|Commodity|null $commodityId, ?string $race = null): array;
 
     /**
      * @param string $handle

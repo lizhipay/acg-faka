@@ -65,6 +65,7 @@ class Coupon extends User
         $money = (float)$_POST['money']; //金额
         $num = (int)$_POST['num']; //生成数量
         $life = (int)$_POST['life']; //可用次数
+        $race = $_POST['race'];
 
         $userId = $this->getUser()->id;
         if ($commodityId == 0) {
@@ -100,6 +101,9 @@ class Coupon extends User
             $voucher->status = 0;
             $voucher->note = $note;
             $voucher->life = $life;
+            if ($race) {
+                $voucher->race = $race;
+            }
             try {
                 $voucher->save();
                 $success++;
