@@ -317,7 +317,8 @@
                         {id: 2, name: "锁定"},
                     ]
                 },
-                {title: "商品ID", name: "equal-commodity_id", type: "input"},
+                {title: "查询商品", name: "equal-commodity_id", type: "select", dict: "commodity,id,name", search: true},
+                {title: "商品类别", name: "equal-race", type: "input"},
                 {title: "会员ID，0=系统", name: "equal-owner", type: "input"},
             ], true, false);
         });

@@ -129,8 +129,9 @@ try {
         }
     }
 
+    hook(\App\Consts\Hook::CONTROLLER_CALL_BEFORE, $controllerInstance, $action);
     $result = call_user_func_array([$controllerInstance, $action], $params);
-
+    hook(\App\Consts\Hook::CONTROLLER_CALL_AFTER, $controllerInstance, $action, $result);
     hook(\App\Consts\Hook::HTTP_ROUTE_RESPONSE, trim($_GET['s'], "/"), $result);
 
     if ($result === null) {

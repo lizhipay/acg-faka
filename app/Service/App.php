@@ -12,7 +12,7 @@ interface App
     /**
      * 应用商店地址
      */
-    const APP_URL = "https://store.acged.cc";
+    const APP_URL = "https://store.acgshe.com";
 
     /**
      * @return array

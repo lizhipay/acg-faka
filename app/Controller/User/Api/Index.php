@@ -195,18 +195,16 @@ class Index extends User
 
         if (!$shared && $commodity->delivery_way == 0) {
             $commodity->card = Card::query()->where("commodity_id", $commodity->id)->where("status", 0);
-
             if ($commodity->race) {
                 foreach ($commodity->race as $key => $race) {
                     $commodity->card = $commodity->card->where("race", $key);
                     break;
                 }
             }
-
             $commodity->card = $commodity->card->count();
         }
 
-        if ($commodity->delivery_way == 0 && $commodity->card == 0) {
+        if ($commodity->delivery_way == 0 && $commodity->card == 0 && !$commodity->race) {
             throw new JSONException("库存不足");
         }
 

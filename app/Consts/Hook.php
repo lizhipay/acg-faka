@@ -11,12 +11,24 @@ interface Hook
 {
     //挂载点 app\View\Admin\Footer.html -> 放js的地方
     const ADMIN_VIEW_FOOTER = 0x1;
+    //后台全局body
+    const ADMIN_VIEW_BODY = 0x10001;
     //挂载点 app\View\Admin\Header.html -> 放css连接的地方
     const ADMIN_VIEW_HEADER = 0x2;
     //挂载点 app\View\Admin\Header.html -> 左边菜单栏
     const ADMIN_VIEW_MENU = 0x3;
     //挂载点 app\View\Admin\Header.html -> 应用商店旁边
     const ADMIN_VIEW_NAV = 0x4;
+
+    //后台会员管理页面header
+    const ADMIN_VIEW_USER_HEADER = 0x10002;
+    //挂载点 app\View\Admin\User\User.html -> 底部代码，可以写一些JS逻辑
+    const ADMIN_VIEW_USER_FOOTER = 0x9;
+    //挂载点 app\View\Admin\User\User.html -> 按钮区域，可以加一些按钮
+    const ADMIN_VIEW_USER_TOOLBAR = 0x10;
+    //挂载点 app\View\Admin\User\User.html -> 数据表格
+    const ADMIN_VIEW_USER_TABLE = 0x8;
+
 
     //挂载点 app\View\Admin\Trade\Commodity.html -> 数据表格
     const ADMIN_VIEW_COMMODITY_TABLE = 0x5;
@@ -25,12 +37,6 @@ interface Hook
     //挂载点 app\View\Admin\Trade\Commodity.html -> 按钮区域，可以加一些按钮
     const ADMIN_VIEW_COMMODITY_TOOLBAR = 0x7;
 
-    //挂载点 app\View\Admin\User\User.html -> 数据表格
-    const ADMIN_VIEW_USER_TABLE = 0x8;
-    //挂载点 app\View\Admin\User\User.html -> 底部代码，可以写一些JS逻辑
-    const ADMIN_VIEW_USER_FOOTER = 0x9;
-    //挂载点 app\View\Admin\User\User.html -> 按钮区域，可以加一些按钮
-    const ADMIN_VIEW_USER_TOOLBAR = 0x10;
 
     //挂载点 app\View\Admin\Trade\Order.html -> 数据表格
     const ADMIN_VIEW_ORDER_TABLE = 0x11;
@@ -69,6 +75,11 @@ interface Hook
     //核心初始化完成
     const KERNEL_INIT = 0x30;
 
+    //控制器被调用之前，传参：控制器名称，调用方法
+    const CONTROLLER_CALL_BEFORE = 0x31;
+
+    //控制器被调用之后，传参：控制器名称，调用方法，返回值
+    const CONTROLLER_CALL_AFTER = 0X32;
 
     //登录页面，第三方登录扩展按钮
     const USER_VIEW_AUTH_LOGIN_BUTTON = 0x41;
@@ -85,12 +96,8 @@ interface Hook
     //用户前台中的添加商品表单
     const USER_VIEW_COMMODITY_POST = 0x46;
 
-
     //在HTTP请求后，在返还给用户之前，拿到的返回数据
     const HTTP_ROUTE_RESPONSE = 0x47;
-
-
-    //-----------------------------MY
 
     //挂载点 app\View\User\* -> INDEX -> 头部
     const USER_VIEW_INDEX_HEADER = 0x10001;
@@ -98,5 +105,6 @@ interface Hook
     const USER_VIEW_INDEX_BODY = 0x10003;
     //挂载点 app\View\User\* -> INDEX -> 底部
     const USER_VIEW_INDEX_FOOTER = 0x10004;
+
 
 }

@@ -444,6 +444,8 @@ let acg = {
                             if (res.hasOwnProperty('race') && res.race) {
                                 let content = instance.find("span");
                                 let raceIndex = 0;
+                                content.html("");
+                                acg.property.cache.raceId = "";
                                 for (let key in res.race) {
                                     if (raceIndex == 0) {
                                         acg.property.cache.raceId = key;
