@@ -89,9 +89,10 @@ class Plugin
     /**
      * @param string $pluginName
      * @param int $state
+     * @param mixed ...$args
      * @throws \ReflectionException
      */
-    public static function runHookState(string $pluginName, int $state): void
+    public static function runHookState(string $pluginName, int $state, mixed ...$args): void
     {
         //扫描目标目录文件
         $path = BASE_PATH . "/app/Plugin/{$pluginName}/Hook/";
@@ -110,7 +111,7 @@ class Plugin
                         $arguments = $attribute->getArguments();
                         if ($attribute->newInstance() instanceof \Kernel\Annotation\Plugin) {
                             if ($arguments['state'] == $state) {
-                                call_user_func([new $namespace, $method->getName()]);
+                                call_user_func_array([new $namespace, $method->getName()], $args);
                             }
                         }
                     }

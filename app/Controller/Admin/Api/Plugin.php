@@ -10,6 +10,7 @@ use App\Interceptor\Waf;
 use App\Util\Opcache;
 use App\Util\Theme;
 use Kernel\Annotation\Interceptor;
+use Kernel\Annotation\Post;
 use Kernel\Exception\JSONException;
 
 #[Interceptor([Waf::class, ManageSession::class], Interceptor::TYPE_API)]
@@ -53,6 +54,7 @@ class Plugin extends Manage
         unset($map['id']);
 
         hook(Hook::ADMIN_API_PLUGIN_SAVE_CONFIG, $id, $map);//12/09-重写HOOK逻辑
+        \Kernel\Util\Plugin::runHookState($id, \Kernel\Annotation\Plugin::SAVE_CONFIG, $id, $map);//2022/01/12新增插件保存配置逻辑，无需启用插件也可以hook
 
         //   $map = array_merge($map, (array));
         $plugin = \Kernel\Util\Plugin::getPlugin($id, false);
@@ -102,4 +104,26 @@ class Plugin extends Manage
         setConfig($config, BASE_PATH . "/app/View/User/Theme/{$id}/Setting.php");
         return $this->json(200, '模板设置已生效');
     }
+
+    /**
+     * 获取插件日志
+     * @param string $handle
+     * @return array
+     */
+    public function getPluginLog(#[Post] string $handle): array
+    {
+        $pluginLog = \App\Util\Plugin::getPluginLog($handle);
+        return $this->json(200, 'success', ['log' => $pluginLog]);
+    }
+
+    /**
+     * @param string $handle
+     * @return array
+     */
+    public function ClearPluginLog(#[Post] string $handle): array
+    {
+        \App\Util\Plugin::ClearPluginLog($handle);
+        return $this->json(200, 'success');
+    }
+
 }

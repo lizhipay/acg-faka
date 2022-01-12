@@ -127,7 +127,7 @@
                         field: 'operate',
                         title: '操作',
                         formatter: function (val, item) {
-                            let html = "";
+                            let html = '<a  class="badge badge-light text-success log" style="cursor: pointer;"><i class="far fa-clipboard text-success"></i> 日志</a> ';
                             if (item.PLUGIN_CONFIG && item.PLUGIN_CONFIG.STATUS == 1) {
                                 html += '<a style="cursor: pointer;"  class="badge badge-light text-danger disable"><i class="fa fa-stop-circle text-danger"></i> 停用</a>';
                             } else {
@@ -162,6 +162,43 @@
                                         $('.plugin-state[data-id=' + row.id + ']').removeClass("badge-light-danger").addClass("badge-light-success").html("已启动");
                                     }
                                     layer.msg(res.msg);
+                                });
+                            },
+                            'click .log': function (event, value, row, index) {
+                                let mapItem = row;
+                                console.log(mapItem)
+                                $.post('/admin/api/plugin/getPluginLog', {handle: mapItem.id}, res => {
+                                    if (res.code != 200) {
+                                        layer.msg(res.msg);
+                                        return;
+                                    }
+                                    layer.open({
+                                        type: 1,
+                                        shade: 0.4,
+                                        shadeClose: true, //开启遮罩关闭
+                                        title: '<i class="fas fa-robot" style="color: #f16a8b;"></i> 日志', //不显示标题
+                                        btn: ["清空日志", "关闭"],
+                                        content: '<textarea class="log-textarea" style="width: 100%;height: 100%;border: none;color: grey;padding: 5px;">' + res.data.log + '</textarea>',
+                                        area: cao.isPc() ? ["860px", "660px"] : ["100%", "100%"],
+                                        maxmin: true,
+                                        yes: (index, layero) => {
+                                            $.post('/admin/api/plugin/ClearPluginLog', {handle: mapItem.id}, res => {
+                                                layer.msg("日志已清空");
+                                            });
+                                        },
+                                        success: (layero, index) => {
+                                            this.timer = setInterval(() => {
+                                                $.post('/admin/api/plugin/getPluginLog', {handle: mapItem.id}, res => {
+                                                    if (res.data.log != $('.log-textarea').html()) {
+                                                        $('.log-textarea').html(res.data.log);
+                                                    }
+                                                });
+                                            }, 1500);
+                                        },
+                                        end: () => {
+                                            clearInterval(this.timer);
+                                        }
+                                    });
                                 });
                             }
                         }

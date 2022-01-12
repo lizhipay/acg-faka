@@ -112,7 +112,13 @@
                         field: 'operate',
                         title: '操作',
                         formatter: function (val, item) {
-                            return '<a  class="badge badge-light text-success log" style="cursor: pointer;"><i class="far fa-clipboard text-success"></i> 日志</a> <a style="cursor: pointer;"  class="badge badge-light text-success edit"><i class="fa fa-cog text-success"></i> 配置</a>';
+                            let html = '<a  class="badge badge-light text-success log" style="cursor: pointer;"><i class="far fa-clipboard text-success"></i> 日志</a>';
+
+                            if (item.hasOwnProperty('submit') && item.submit.length > 0) { 
+                                html += ' <a style="cursor: pointer;"  class="badge badge-light text-success edit"><i class="fa fa-cog text-success"></i> 配置</a>';
+                            }
+
+                            return html;
                         },
                         events: {
                             'click .edit': function (event, value, row, index) {

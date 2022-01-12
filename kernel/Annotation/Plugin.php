@@ -12,6 +12,7 @@ class Plugin
     const UNINSTALL = 0x3;
     const INSTALL = 0x4;
     const UPGRADE = 0x5;
+    const SAVE_CONFIG = 0x6;
 
     /**
      * @var int

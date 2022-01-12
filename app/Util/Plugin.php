@@ -161,4 +161,35 @@ class Plugin
         $config[$key] = urldecode((string)$value);
         setConfig($config, BASE_PATH . '/app/Plugin/' . $pluginName . '/Config/Config.php');
     }
+
+
+    /**
+     * @param string $pluginName
+     * @return string
+     */
+    public static function getPluginLog(string $pluginName): string
+    {
+        $path = BASE_PATH . '/app/Plugin/' . $pluginName . '/runtime.log';
+        return (string)file_get_contents($path);
+    }
+
+    /**
+     * @param string $pluginName
+     * @return bool
+     */
+    public static function ClearPluginLog(string $pluginName): bool
+    {
+        $path = BASE_PATH . '/app/Plugin/' . $pluginName . '/runtime.log';
+        return unlink($path);
+    }
+
+    /**
+     * @param string $pluginName
+     * @param string $message
+     */
+    public static function log(string $pluginName, string $message): void
+    {
+        $path = BASE_PATH . '/app/Plugin/' . $pluginName . '/runtime.log';
+        file_put_contents($path, "[" . Date::current() . "]:" . $message . PHP_EOL, FILE_APPEND);
+    }
 }

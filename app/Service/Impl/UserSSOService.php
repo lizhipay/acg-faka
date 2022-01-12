@@ -23,6 +23,6 @@ class UserSSOService implements UserSSO
         $user->login_ip = Client::getAddress();
         $user->save();
         $_SESSION[\App\Consts\User::SESSION] = $user->toArray();
-        hook(\App\Consts\Hook::USER_API_AUTH_LOGIN_AFTER);
+        hook(\App\Consts\Hook::USER_API_AUTH_LOGIN_AFTER, $user);
     }
 }
