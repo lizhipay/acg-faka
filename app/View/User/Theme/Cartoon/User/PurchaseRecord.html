@@ -173,6 +173,10 @@
                     }
                     , {
                         field: 'leave_message', title: '商家留言', formatter: function (val, item) {
+                            if (!item.commodity) {
+                                return "-";
+                            }
+
                             if (item.status != 1 || !item.commodity.leave_message) {
                                 return "-";
                             }

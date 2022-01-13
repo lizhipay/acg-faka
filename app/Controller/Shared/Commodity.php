@@ -27,6 +27,9 @@ class Commodity extends Shared
     #[Inject]
     private Query $query;
 
+    #[Inject]
+    private \App\Service\Shared $shared;
+
     /**
      * @return array
      */
@@ -56,7 +59,7 @@ class Commodity extends Shared
         $sharedCode = (string)$_POST['shared_code'];//商品CODE
         $cardId = (int)$_POST['card_id'];//预选的卡号ID
         $num = (int)$_POST['num']; //购买数量
-        $race = (int)$_POST['race']; //类别
+        $race = (string)$_POST['race']; //类别
 
         if ($sharedCode == "") {
             throw new JSONException("商品代码不能为空");
@@ -69,6 +72,16 @@ class Commodity extends Shared
         if ($commodity->status != 1) {
             throw new JSONException("当前商品已停售");
         }
+
+        $shared = $commodity->shared;
+        //如果是套娃，直接拉远程服务器数据
+        if ($shared) {
+            if (!$this->shared->inventoryState($shared, $commodity->shared_code, $cardId, $num, $race)) {
+                throw new JSONException("库存不足");
+            }
+            return $this->json(200, "success");
+        }
+
         //预选卡密
         if ($commodity->draft_status == 1 && $cardId != 0) {
             $card = Card::query()->find($cardId);
@@ -123,6 +136,14 @@ class Commodity extends Shared
 
         $count = 0;
 
+        $shared = $commodity->shared;
+
+        //如果是套娃，直接拉远程服务器数据
+        if ($shared) {
+            $inventory = $this->shared->inventory($shared, $commodity->shared_code, $race);
+            return $this->json(200, "success", $inventory);
+        }
+
         if ($commodity->delivery_way == 0) {
             $count = Card::query()->where("commodity_id", $commodity->id)->where("status", 0);
             $parseConfig = Ini::toArray((string)$commodity->config);
@@ -164,13 +185,13 @@ class Commodity extends Shared
             throw new JSONException("商品不存在");
         }
         $_POST['commodity_id'] = $commodity->id;
-
         return $this->json(200, 'success', $this->order->trade($this->getUser(), $this->getUserGroup(), $_POST));
     }
 
     /**
      * @param string $sharedCode
      * @param int $page
+     * @param int $limit
      * @param string $race
      * @return array
      * @throws \Kernel\Exception\JSONException
@@ -178,16 +199,26 @@ class Commodity extends Shared
     public function draftCard(#[Post] string $sharedCode, #[Post] int $page, #[Post] int $limit, #[Post] string $race): array
     {
         $commodity = \App\Model\Commodity::query()->where("code", $sharedCode)->first();
+
         if (!$commodity) {
             throw new JSONException("商品不存在");
         }
+
         if ($commodity->status != 1) {
             throw new JSONException("该商品暂未上架");
         }
+
         if ($commodity->draft_status != 1) {
             throw new JSONException("该商品不支持预选");
         }
 
+        $shared = $commodity->shared;
+
+        //如果是套娃，直接拉远程服务器数据
+        if ($shared) {
+            $draftCard = $this->shared->draftCard($shared, $commodity->shared_code, $limit, $page, $race);
+            return $this->json(200, "success", $draftCard);
+        }
 
         //解析配置文件
         $parseConfig = Ini::toArray((string)$commodity->config);

@@ -13,7 +13,6 @@ use App\Model\Shared;
 use App\Service\Query;
 use App\Util\Date;
 use App\Util\Str;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
@@ -173,7 +172,6 @@ class Store extends Manage
                 $commodity->contact_type = $item['contact_type'];
                 $commodity->password_status = $item['password_status'];
                 $commodity->sort = $item['sort'];
-                $commodity->lot_status = 0;
                 $commodity->coupon = 0;
                 $commodity->shared_id = $storeId;
                 $commodity->shared_code = $item['code'];
@@ -205,7 +203,6 @@ class Store extends Manage
 
         return $this->json(200, "拉取结束，总数量：{$count}，成功：{$success}，失败：{$error}");
     }
-
 
     /**
      * @return array
