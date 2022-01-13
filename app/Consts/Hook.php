@@ -107,4 +107,20 @@ interface Hook
     const USER_VIEW_INDEX_FOOTER = 0x10004;
 
 
+    //前台获取商品列表，传入数组 array $data 指针
+    const USER_API_INDEX_COMMODITY_LIST = 0x50;
+    //前台获取商品详细信息 传入商品的数组 array $data 指针
+    const USER_API_INDEX_COMMODITY_DETAIL_INFO = 0x51;
+    //前台下单之前，计算完订单金额，传入计算的值 array $result 指针地址
+    const USER_API_INDEX_TRADE_CALC_AMOUNT = 0x52;
+    //前台获取完支付列表，传入 支付列表 array $list 指针地址
+    const USER_API_INDEX_PAY_LIST = 0x53;
+
+    //前台查询订单后，获取到的订单列表，传入列表数据指针地址 array $list
+    const USER_API_INDEX_QUERY_LIST = 0x54;
+    //前台查询订单里面，查询卡密信息触发，传入整个订单对象 Order $order
+    const USER_API_INDEX_QUERY_SECRET = 0x55;
+    //用户进到订单页面中，获取到订单列表，传入列表指针地址 array $list
+    const USER_API_PURCHASE_RECORD_LIST = 0x56;
+
 }

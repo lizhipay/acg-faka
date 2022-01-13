@@ -135,7 +135,15 @@ class Index extends User
             $data[$key]['card_count'] = Card::query()->where("status", 0)->where("commodity_id", $val['id'])->count();
             //如果登录后，则自动计算登录后的价格
             if ($user) {
-                $tradeAmount = $this->order->getTradeAmount($user, $userGroup, 0, 1, "", $commodity[$key]);
+                $tradeAmount = $this->order->getTradeAmount(
+                    user: $user,
+                    userGroup: $userGroup,
+                    cardId: 0,
+                    num: 1,
+                    coupon: "",
+                    commodityId: $commodity[$key],
+                    disableShared: true
+                );
                 $data[$key]['price'] = $tradeAmount['price'];
                 $data[$key]['user_price'] = $tradeAmount['price'];
             }
@@ -145,6 +153,7 @@ class Index extends User
                 $data[$key]['level_disable']
             );
         }
+        hook(\App\Consts\Hook::USER_API_INDEX_COMMODITY_LIST, $data);
         return $this->json(200, "success", $data);
     }
 
@@ -231,7 +240,7 @@ class Index extends User
         //获取网站是否需要验证码
         $array['trade_captcha'] = (int)Config::get("trade_verification");
 
-
+        hook(\App\Consts\Hook::USER_API_INDEX_COMMODITY_DETAIL_INFO, $array);
         return $this->json(200, 'success', $array);
     }
 
@@ -292,11 +301,14 @@ class Index extends User
      * @param int $cardId
      * @param string $coupon
      * @param int $commodityId
+     * @param string $race
      * @return array
      */
     public function tradeAmount(#[Post] int $num, #[Post] int $cardId, #[Post] string $coupon, #[Post] int $commodityId, #[Post] string $race): array
     {
-        return $this->json(200, "success", $this->order->getTradeAmount($this->getUser(), $this->getUserGroup(), $cardId, $num, $coupon, $commodityId, $race));
+        $result = $this->order->getTradeAmount($this->getUser(), $this->getUserGroup(), $cardId, $num, $coupon, $commodityId, $race);
+        hook(\App\Consts\Hook::USER_API_INDEX_TRADE_CALC_AMOUNT, $result);
+        return $this->json(200, "success", $result);
     }
 
 
@@ -315,6 +327,8 @@ class Index extends User
         $let = "(`equipment`=0 or `equipment`={$equipment})";
 
         $pay = Pay::query()->orderBy("sort", "asc")->where("commodity", 1)->whereRaw($let)->get(['id', 'name', 'icon', 'handle'])->toArray();
+
+        hook(\App\Consts\Hook::USER_API_INDEX_PAY_LIST, $pay);
         return $this->json(200, 'success', $pay);
     }
 
@@ -389,6 +403,7 @@ class Index extends User
             }
         }
 
+        hook(\App\Consts\Hook::USER_API_INDEX_QUERY_LIST, $orderArray);
         //回显订单信息
         return $this->json(200, 'success', $orderArray);
     }
@@ -420,6 +435,7 @@ class Index extends User
             $widget = null;
         }
 
+        hook(\App\Consts\Hook::USER_API_INDEX_QUERY_SECRET, $order);
         return $this->json(200, 'success', ['secret' => $order->secret, 'widget' => $widget]);
     }
 }

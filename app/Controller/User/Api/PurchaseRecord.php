@@ -42,6 +42,8 @@ class PurchaseRecord extends User
         $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
         $json = $this->json(200, null, $data['data']);
         $json['count'] = $data['total'];
+
+        hook(\App\Consts\Hook::USER_API_PURCHASE_RECORD_LIST, $data['data']);
         return $json;
     }
 

@@ -15,7 +15,7 @@ class Commodity extends User
 {
     /**
      * @return string
-     * @throws \Kernel\Exception\ViewException
+     * @throws \Kernel\Exception\ViewException|\ReflectionException
      */
     public function index(): string
     {

@@ -141,6 +141,7 @@ class Plugin
         }
 
         if (!$cache) {
+            Opcache::invalidate($path);
             return (array)require($path);
         }
 
@@ -151,13 +152,13 @@ class Plugin
      * @param string $pluginName
      * @param string $key
      * @param string $value
-     * @param bool $cli
+     * @param bool $cache
      * @throws \Kernel\Exception\JSONException
      */
     public static function setConfig(string $pluginName, string $key, string $value, bool $cache = true): void
     {
         unlink(BASE_PATH . "/runtime/plugin/plugin.cache");
-        $config = self::getConfig($pluginName, $cache);
+        $config = self::getConfig($pluginName, false);
         $config[$key] = urldecode((string)$value);
         setConfig($config, BASE_PATH . '/app/Plugin/' . $pluginName . '/Config/Config.php');
     }

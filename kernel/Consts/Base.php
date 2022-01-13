@@ -8,4 +8,5 @@ interface Base
 {
     const ROUTE = "URL_LOCAL_ROUTE";
     const LOCK = "LOCK";
+    const OPCACHE = "ZEND_OPCACHE";
 }

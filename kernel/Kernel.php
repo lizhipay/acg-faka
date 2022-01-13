@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-error_reporting(1);
+error_reporting(0);
 const BASE_PATH = __DIR__ . "/../";
 require(BASE_PATH . '/vendor/autoload.php');
 require("Helper.php");
@@ -18,6 +18,7 @@ try {
     $s = explode("/", trim((string)$_GET['s'], '/'));
     \Kernel\Util\Context::set(\Kernel\Consts\Base::ROUTE, "/" . implode("/", $s));
     \Kernel\Util\Context::set(\Kernel\Consts\Base::LOCK, (string)file_get_contents(BASE_PATH . "/kernel/Install/Lock"));
+    \Kernel\Util\Context::set(\Kernel\Consts\Base::OPCACHE, extension_loaded("Zend OPcache") || extension_loaded("opcache"));
     $count = count($s);
     $controller = "App\\Controller";
     $ends = end($s);

@@ -761,7 +761,7 @@ class OrderService implements Order
      * @return array
      * @throws \Kernel\Exception\JSONException
      */
-    #[ArrayShape(["amount" => "mixed", "price" => "float|int", "couponMoney" => "float|int"])] public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int|Commodity|null $commodityId, ?string $race = null): array
+    #[ArrayShape(["amount" => "mixed", "price" => "float|int", "couponMoney" => "float|int"])] public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int|Commodity|null $commodityId, ?string $race = null, bool $disableShared = false): array
     {
         if ($num <= 0) {
             throw new JSONException("购买数量不能低于1个");
@@ -789,7 +789,7 @@ class OrderService implements Order
         } elseif ($commodity->shared_id != 0) {
             //查远程平台的库存
             $shared = \App\Model\Shared::query()->find($commodity->shared_id);
-            if ($shared) {
+            if ($shared && !$disableShared) {
                 $inventory = $this->shared->inventory($shared, $commodity->shared_code, (string)$race);
                 $data['card_count'] = $inventory['count'];
             }

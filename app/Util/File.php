@@ -61,11 +61,14 @@ class File
     /**
      * 缓存文件
      * @param string $path
+     * @param bool $cli
      * @return mixed
      */
     public static function codeLoad(string $path, bool $cli = false): mixed
     {
+
         if ($cli) {
+            Opcache::invalidate($path);
             return require($path);
         }
 

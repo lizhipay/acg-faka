@@ -55,9 +55,10 @@ interface Order
      * @param string $coupon
      * @param int|\App\Model\Commodity|null $commodityId
      * @param string|null $race
+     * @param bool $disableShared
      * @return array
      */
-    public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int|Commodity|null $commodityId, ?string $race = null): array;
+    public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int|Commodity|null $commodityId, ?string $race = null, bool $disableShared = false): array;
 
     /**
      * @param string $handle

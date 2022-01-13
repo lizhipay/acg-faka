@@ -18,7 +18,7 @@ class Opcache
      */
     public static function reset(): void
     {
-        if (extension_loaded("Zend OPcache") || extension_loaded("opcache")) {
+        if (\Kernel\Util\Context::get(\Kernel\Consts\Base::OPCACHE)) {
             opcache_reset();
         }
     }
@@ -29,7 +29,7 @@ class Opcache
      */
     public static function invalidate(string ...$file): void
     {
-        if (extension_loaded("Zend OPcache") || extension_loaded("opcache")) {
+        if (\Kernel\Util\Context::get(\Kernel\Consts\Base::OPCACHE)) {
             foreach ($file as $f) {
                 opcache_invalidate($f, true);
             }
