@@ -107,12 +107,18 @@ abstract class User extends \App\Controller\Base\User
             if ($config['info']['RENDER'] == Render::ENGINE_SMARTY || $system) {
                 return View::render($path, $data);
             } elseif ($config['info']['RENDER'] == Render::ENGINE_PHP) {
+                ob_start();
                 require(BASE_PATH . '/app/View/' . $path);
-                return "";
+                $result = ob_get_contents();
+                ob_end_clean();
+                hook(\App\Consts\Hook::RENDER_VIEW, $result);
+                return $result;
             }
         } catch (\SmartyException $e) {
             throw new ViewException($e->getMessage());
         }
+
+        return "";
     }
 
 

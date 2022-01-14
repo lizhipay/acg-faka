@@ -81,6 +81,9 @@ interface Hook
     //控制器被调用之后，传参：控制器名称，调用方法，返回值
     const CONTROLLER_CALL_AFTER = 0X32;
 
+    //渲染视图 ，传视图raw的指针地址
+    const RENDER_VIEW = 0x33;
+
     //登录页面，第三方登录扩展按钮
     const USER_VIEW_AUTH_LOGIN_BUTTON = 0x41;
     //注册页面，第三方登录按钮扩展
@@ -122,5 +125,6 @@ interface Hook
     const USER_API_INDEX_QUERY_SECRET = 0x55;
     //用户进到订单页面中，获取到订单列表，传入列表指针地址 array $list
     const USER_API_PURCHASE_RECORD_LIST = 0x56;
+
 
 }

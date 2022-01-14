@@ -159,30 +159,32 @@ class Plugin
     /**
      * @param int $point
      * @param mixed ...$args
-     * @return false|mixed
+     * @return void|mixed
      * @throws \ReflectionException
      */
-    public static function hook(int $point, mixed ...$args)
+    public static function hook(int $point, mixed &...$args)
     {
-        $list = self::$container[$point];
-        foreach ($list as $item) {
-            \Kernel\Util\Plugin::$currentPluginName = $item['pluginName'];
-            $instance = new $item['namespace'];
-            $ref = new \ReflectionClass($instance);
-            $reflectionProperties = $ref->getProperties();
-            foreach ($reflectionProperties as $property) {
-                $reflectionProperty = new \ReflectionProperty($instance, $property->getName());
-                $reflectionPropertiesAttributes = $reflectionProperty->getAttributes();
-                foreach ($reflectionPropertiesAttributes as $reflectionAttribute) {
-                    $ins = $reflectionAttribute->newInstance();
-                    if ($ins instanceof \Kernel\Annotation\Inject) {
-                        di($instance);
+        if (Context::get(\Kernel\Consts\Base::STORE_STATUS)) {
+            $list = _Point($point);
+            foreach ($list as $item) {
+                \Kernel\Util\Plugin::$currentPluginName = $item['pluginName'];
+                $instance = _Instance($item);
+                $ref = new \ReflectionClass($instance);
+                $reflectionProperties = $ref->getProperties();
+                foreach ($reflectionProperties as $property) {
+                    $reflectionProperty = new \ReflectionProperty($instance, $property->getName());
+                    $reflectionPropertiesAttributes = $reflectionProperty->getAttributes();
+                    foreach ($reflectionPropertiesAttributes as $reflectionAttribute) {
+                        $ins = $reflectionAttribute->newInstance();
+                        if ($ins instanceof \Kernel\Annotation\Inject) {
+                            di($instance);
+                        }
                     }
                 }
-            }
-            $result = call_user_func_array([$instance, $item['method']], $args);
-            if ($result) {
-                return $result;
+                $result = call_user_func_array([$instance, $item['method']], $args);
+                if ($result) {
+                    return $result;
+                }
             }
         }
     }

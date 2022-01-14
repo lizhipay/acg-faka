@@ -11,6 +11,7 @@ class View
      * @param array $data
      * @param string $dir
      * @return string
+     * @throws \SmartyException
      */
     public static function render(string $template, array $data = [], string $dir = BASE_PATH . '/app/View'): string
     {
@@ -23,7 +24,8 @@ class View
         foreach ($data as $key => $item) {
             $engine->assign($key, $item);
         }
-        //$engine->display($template);
-        return $engine->fetch($template);
+        $result = $engine->fetch($template);
+        hook(\App\Consts\Hook::RENDER_VIEW, $result);
+        return $result;
     }
 }

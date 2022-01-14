@@ -19,6 +19,7 @@ try {
     \Kernel\Util\Context::set(\Kernel\Consts\Base::ROUTE, "/" . implode("/", $s));
     \Kernel\Util\Context::set(\Kernel\Consts\Base::LOCK, (string)file_get_contents(BASE_PATH . "/kernel/Install/Lock"));
     \Kernel\Util\Context::set(\Kernel\Consts\Base::OPCACHE, extension_loaded("Zend OPcache") || extension_loaded("opcache"));
+    \Kernel\Util\Context::set(\Kernel\Consts\Base::STORE_STATUS, file_exists(BASE_PATH . "/kernel/Plugin.php"));
     $count = count($s);
     $controller = "App\\Controller";
     $ends = end($s);
@@ -55,13 +56,8 @@ try {
     // 启动Eloquent
     $capsule->bootEloquent();
 
-    //模板库
-    if (file_exists(BASE_PATH . "/kernel/Theme.php")) {
-        require("Theme.php");
-    }
-
     //插件库
-    if (file_exists(BASE_PATH . "/kernel/Plugin.php")) {
+    if (\Kernel\Util\Context::get(\Kernel\Consts\Base::STORE_STATUS)) {
         require("Plugin.php");
         //插件初始化
         \Kernel\Util\Plugin::scan();

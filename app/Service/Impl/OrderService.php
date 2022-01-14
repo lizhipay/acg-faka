@@ -335,7 +335,7 @@ class OrderService implements Order
         return Db::transaction(function () use ($user, $userGroup, $num, $contact, $device, $amount, $owner, $commodity, $pay, $cardId, $password, $coupon, $from, $widget, $race, $shared) {
             //生成联系方式
             if ($user) {
-                $contact = Str::generateContact($commodity->contact_type);
+                $contact = "-";
             }
 
             $date = Date::current();
@@ -649,7 +649,7 @@ class OrderService implements Order
 
         $order->save();
 
-        if ($commodity->contact_type == 2 && $commodity->send_email == 1) {
+        if ($commodity->contact_type == 2 && $commodity->send_email == 1 && $order->owner == 0) {
             try {
                 $this->email->send($order->contact, "【发货提醒】您购买的卡密发货啦", "您购买的卡密如下：" . $order->secret);
             } catch (\Exception | \Error $e) {

@@ -16,22 +16,22 @@
                     <div class="card-toolbar">
                         <button class="btn btn-sm btn-light-primary me-3 plugin-btn" data-type="-1">全部</button>
                         <button class="btn btn-sm btn-light-dark me-3 plugin-btn" data-type="0"><i
-                                class="fas fa-plug"></i>通用扩展
+                                    class="fas fa-plug"></i>通用扩展
                         </button>
                         <button class="btn btn-sm btn-light-dark me-3 plugin-btn" data-type="1"><i
-                                class="fab fa-amazon-pay"></i>支付扩展
+                                    class="fab fa-amazon-pay"></i>支付扩展
                         </button>
                         <button class="btn btn-sm btn-light-dark me-3 plugin-btn" data-type="2"><i
-                                class="fab fa-slideshare"></i>网站模板
+                                    class="fab fa-slideshare"></i>网站模板
                         </button>
                         <button class="btn btn-sm btn-light-dark me-3 plugin-btn" data-type="3"><i
-                                class="fab fa-themeco"></i>专业版插件
+                                    class="fab fa-themeco"></i>专业版插件
                         </button>
                         <button class="btn btn-sm btn-light-dark me-3 plugin-btn" data-type="4"><i
-                                class="far fa-building"></i>企业版插件
+                                    class="far fa-building"></i>企业版插件
                         </button>
                         <button class="btn btn-sm btn-light-danger me-3 update-pro" style="display: none;"><i
-                                class="fab fa-vuejs"></i>开通专业版/企业版(免费使用所有插件)
+                                    class="fab fa-vuejs"></i>开通专业版/企业版(免费使用所有插件)
                         </button>
                     </div>
                 </div>
@@ -382,6 +382,9 @@
                     ,
                     {
                         field: 'user', title: '开发商', formatter: function (val, item) {
+                            if (item.user.official == 1) {
+                                return '<span class="badge badge-light-success">官方</span>';
+                            }
                             return '<span class="badge badge-light">' + item.user.username + '</span>';
                         }
                     }

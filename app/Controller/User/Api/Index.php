@@ -365,7 +365,7 @@ class Index extends User
         if ($keywords) {
             $order = Order::query()->where("trade_no", trim($keywords))->with(['pay', 'commodity' => $callback, 'user' => $userCallback])->get($filed);
             if (count($order) == 0) {
-                $order = Order::query()->where("contact", trim($keywords))->with(['pay', 'commodity' => $callback, 'user' => $userCallback])->orderBy("id", "desc")->limit(10)->get($filed);
+                $order = Order::query()->where("owner", 0)->where("contact", trim($keywords))->with(['pay', 'commodity' => $callback, 'user' => $userCallback])->orderBy("id", "desc")->limit(10)->get($filed);
             }
         } else {
             $user = $this->getUser();
@@ -393,8 +393,6 @@ class Index extends User
                 $order[$key]->business_username = "官方自营";
                 $order[$key]->business_avatar = "/favicon.ico";
             }
-
-
         }
 
         $orderArray = $order->toArray();
