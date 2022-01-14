@@ -188,10 +188,17 @@ class Index extends User
                     $new->price = (float)$inventory['price'];
                     $commodity->price = $new->price;
                 }
+
                 if ((float)$commodity->user_price != (float)$inventory['user_price']) {
                     $new->user_price = (float)$inventory['user_price'];
                     $commodity->user_price = $new->user_price;
                 }
+
+                if ($new->config != $inventory['config']) {
+                    $new->config = $inventory['config'];
+                    $commodity->config = $new->config;
+                }
+
                 $new->save();
             }
         }

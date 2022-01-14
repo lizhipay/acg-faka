@@ -2480,6 +2480,8 @@ body .fly-user-main {
 
     .site-mobile .fly-user-main > .layui-nav {
         left: 0;
+        position: fixed;
+        top: 75px;
     }
 
     .site-mobile .site-mobile-shade {

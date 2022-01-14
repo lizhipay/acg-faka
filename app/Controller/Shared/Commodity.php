@@ -167,7 +167,8 @@ class Commodity extends Shared
             'delivery_way' => $commodity->delivery_way,
             "draft_status" => $commodity->draft_status,
             'price' => $commodity->price,
-            'user_price' => $commodity->user_price
+            'user_price' => $commodity->user_price,
+            "config" => $commodity->config
         ]);
     }
 

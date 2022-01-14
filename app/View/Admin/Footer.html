@@ -52,16 +52,16 @@
     }
 </style>
 <script>
-    $(document).pjax('a[target!=_blank]', '#pjax-container', {fragment: '#pjax-container',timeout: 8000}); //#wrap为刷新的id
-    $(document).on('pjax:send', function() {
+    $(document).pjax('a[target!=_blank]', '#pjax-container', {fragment: '#pjax-container', timeout: 8000}); //#wrap为刷新的id
+    $(document).on('pjax:send', function () {
         $(".loading").css("display", "block");
     });
 
-    $(document).on('pjax:complete', function() {
+    $(document).on('pjax:complete', function () {
         $(".loading").css("display", "none");
     });
 
-    $("a[target!=_blank]").click(function(){
+    $("a[target!=_blank]").click(function () {
         $('a[target!=_blank]').removeClass("active");
         $(this).addClass("active");
     });
@@ -90,7 +90,8 @@
                             '                <div class="layui-timeline-content layui-text">\n' +
                             '                    <h3 class="layui-timeline-title" style="color: ' + (item.version == res.data.local ? '#2fcf94' : '#f98ee7') + ';font-weight: bold;">v' + item.version + (item.version == res.data.local ? '◂' : '') + '</h3>\n' +
                             '                    <p>' + item.content + '</p>\n' +
-                            '                <p style="margin-top: 10px;color: #79b39b;font-size: 12px;">' + item.update_date + '</p></div>\n' +
+                            '                <p style="margin-top: 10px;color: #867d00;font-size: 12px;">更新朔源：<a href="' + item.update_url + '" target="_blank">update.zip</a></p>\n' +
+                            '                <p style="color: #79b39b;font-size: 12px;">' + item.update_date + '</p></div>\n' +
                             '            </li>';
 
                         $('.version-list').append(html);
@@ -150,11 +151,11 @@
 
 
             $.get("/admin/api/app/getUpdateNum", res => {
-                if (res.code != 200){
+                if (res.code != 200) {
                     return;
                 }
 
-                if (res.data.count > 0){
+                if (res.data.count > 0) {
                     $('.update-num').html(res.data.count + "个更新");
                 }
 
@@ -166,12 +167,16 @@
 </script>
 <!--end::Javascript-->
 
-<div class="loading" style="background: #00000033;width: 100%;height: 100%;position: fixed;z-index: 9999999;overflow: hidden;display: none;">
+<div class="loading"
+     style="background: #00000033;width: 100%;height: 100%;position: fixed;z-index: 9999999;overflow: hidden;display: none;">
     <div class="loader">
         <div class="dot dot1"></div><!--
-  --><div class="dot dot2"></div><!--
-  --><div class="dot dot3"></div><!--
-  --><div class="dot dot4"></div>
+  -->
+        <div class="dot dot2"></div><!--
+  -->
+        <div class="dot dot3"></div><!--
+  -->
+        <div class="dot dot4"></div>
     </div>
 </div>
 <!--start::HOOK-->

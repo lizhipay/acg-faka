@@ -54920,8 +54920,34 @@ body {
     color: rgb(157, 95, 192) !important;
 }
 
-.bootstrap-table .fixed-table-toolbar .columns .dropdown-toggle  {
+.bootstrap-table .fixed-table-toolbar .columns .dropdown-toggle {
     background: linear-gradient(to bottom, #fff4f478 0%, rgb(250 218 255 / 50%) 100%) !important;
     padding: calc(0.55rem + 1px) calc(1.25rem + 1px) !important;
     color: #6ba302 !important;
+}
+
+.layui-tips-skin .layui-layer-content {
+    background: linear-gradient(to bottom right, #ffffff, #e4e3fffa) !important;
+    color: #0b2e13 !important;
+    border-radius: 20px !important;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+
+}
+
+.layui-tips-skin .layui-layer-content .layui-layer-TipsG {
+    transform:rotate(90deg);
+    right: -16px;
+    top: 16px;
+    border-bottom-color: #ee87ef80 !important;
+}
+
+.btn-badge {
+    display: inline-block;
+    padding: 0.5em 0.85em;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+    vertical-align: baseline;
+    border-radius: 0.475rem;
 }

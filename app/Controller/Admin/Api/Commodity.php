@@ -40,7 +40,9 @@ class Commodity extends Manage
         $queryTemplateEntity->setWhere($map);
         $queryTemplateEntity->setOrder('sort', 'asc');
         $queryTemplateEntity->setWith(['shared', 'category', 'owner' => function (Relation $relation) {
-            $relation->select(["id", "username", "avatar"]);
+            $relation->with(['business' => function (Relation $relation) {
+                $relation->select(['id', 'user_id', 'subdomain', 'topdomain']);
+            }])->select(["id", "username", "avatar"]);
         }]);
         $queryTemplateEntity->setWithCount(['card as card_count' => function (Builder $builder) {
             $builder->where("status", 0);
@@ -68,8 +70,20 @@ class Commodity extends Manage
 
         $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
 
+        $clientUrl = Client::getUrl();
         foreach ($data['data'] as $key => $val) {
-            $data['data'][$key]['share_url'] = Client::getUrl() . "?code=" . urlencode(base64_encode("a={$val['category_id']}&b={$val['id']}"));
+            $url = $clientUrl;
+            if ($val['owner'] && $val['owner']['business']) {
+
+                if ($val['owner']['business']['subdomain']) {
+                    $url = "http://" . $val['owner']['business']['subdomain'];
+                }
+
+                if ($val['owner']['business']['topdomain']) {
+                    $url = "http://" . $val['owner']['business']['topdomain'];
+                }
+            }
+            $data['data'][$key]['share_url'] = $url . "?code=" . urlencode(base64_encode("a={$val['category_id']}&b={$val['id']}"));
         }
 
         $json = $this->json(200, null, $data['data']);
@@ -158,5 +172,16 @@ class Commodity extends Manage
             throw new JSONException("没有移除任何数据");
         }
         return $this->json(200, '（＾∀＾）移除成功');
+    }
+
+    /**
+     * @return array
+     */
+    public function status(): array
+    {
+        $list = (array)$_POST['list'];
+        $status = (int)$_POST['status'];
+        \App\Model\Commodity::query()->whereIn('id', $list)->update(['status' => $status]);
+        return $this->json(200, '商品状态已经更新');
     }
 }

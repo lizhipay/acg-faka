@@ -470,7 +470,7 @@ pre {
 }
 
 .fly-nav {
-   text-align: center;
+    text-align: center;
 }
 
 .fly-nav-avatar cite {
@@ -2326,7 +2326,7 @@ body .fly-user-main {
 
 @media screen and (max-width: 768px) {
     .fly-logo .user-logo-title {
-       display: none;
+        display: none;
     }
 
     .fly-main {
@@ -2475,6 +2475,8 @@ body .fly-user-main {
 
     .site-mobile .fly-user-main > .layui-nav {
         left: 0;
+        position: fixed;
+        top: 75px;
     }
 
     .site-mobile .site-mobile-shade {
@@ -2906,7 +2908,7 @@ body .fly-user-main {
     background-color: #F1FAFF;
 }
 
-.acg-badge-button{
+.acg-badge-button {
     cursor: pointer;
 }
 
