@@ -707,6 +707,7 @@ select.form-control:focus::-ms-value {
     text-decoration: none
 }
 
+
 .navbar-nav {
     display: flex;
     -webkit-flex-direction: column;
@@ -804,7 +805,8 @@ select.form-control:focus::-ms-value {
 }
 
 .card-title {
-    margin-bottom: .75rem
+    margin-bottom: .75rem;
+    font-weight: bolder !important;
 }
 
 .card-header {
@@ -1042,9 +1044,10 @@ p {
 .card {
     border: 0;
     margin: 15px 0;
-    -webkit-box-shadow: 0 6px 0 0 rgba(0, 0, 0, .01), 0 15px 32px 0 rgba(0, 0, 0, .06);
-    box-shadow: 0 6px 0 0 rgba(0, 0, 0, .01), 0 15px 32px 0 rgba(0, 0, 0, .06);
-    border-radius: 8px
+    -webkit-box-shadow: 0 6px 0 0 rgb(0 0 0 / 1%), 0 15px 32px 0 #eda9c324;
+    box-shadow: 0 6px 0 0 rgb(0 0 0 / 1%), 0 15px 32px 0 #eda9c324;
+    border-radius: 20px;
+
 }
 
 .card .card-header {
@@ -1228,8 +1231,8 @@ a {
     z-index: 4;
     background-color: #FFF;
     padding: .5rem 1.5rem;
-    -webkit-box-shadow: 0 6px 0 0 rgba(0, 0, 0, .01), 0 15px 32px 0 rgba(0, 0, 0, .06);
-    box-shadow: 0 6px 0 0 rgba(0, 0, 0, .01), 0 15px 32px 0 rgba(0, 0, 0, .06)
+    -webkit-box-shadow: 0 6px 0 0 rgb(0 0 0 / 1%), 0 15px 32px 0 #ea6af50f;
+    box-shadow: 0 6px 0 0 rgb(0 0 0 / 1%), 0 15px 32px 0 #ea6af50f;
 }
 
 .navbar.navbar-light .nav-link {
@@ -1243,7 +1246,7 @@ a {
 .card-header {
     padding-top: 10px !important;
     padding-bottom: 10px !important;
-    border-bottom: 1px solid #efefef !important;
+    border-bottom: 1px dashed #efefef !important;
 }
 
 .card-title {
@@ -1265,7 +1268,7 @@ a {
 
 .button-click {
     position: relative;
-    border-radius: 2px;
+    border-radius: 10px;
     border: 1px solid transparent;
     display: inline-block;
     -webkit-user-select: none;
@@ -1277,16 +1280,17 @@ a {
     margin: 0 12px 8px 0;
     -webkit-transition: all .3s ease;
     transition: all .3s ease;
-    -webkit-box-shadow: 0 1px 4px 0 rgba(0, 0, 0, .2);
-    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, .2);
+    -webkit-box-shadow: 0 1px 4px 0 #ff99e899;
+    box-shadow: 0 1px 4px 0 #ff99e899;
+    font-weight: bolder;
 }
 
 .checked {
-    border: 1px solid #03a9f4
+    border: 1px dashed #3effb8;
 }
 
 .button-click:hover {
-    border: 1px solid rgba(3, 169, 244, 0.48)
+    border: 1px dashed #3effb8;
 }
 
 .hr-top {

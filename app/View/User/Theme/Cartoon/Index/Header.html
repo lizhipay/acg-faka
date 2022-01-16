@@ -7,7 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="keywords" content="#{$config.keywords}"/>
     <meta name="description" content="#{$config.description}"/>
-    <link href="#{$favicon}" rel="icon">
+    <link href="#{$favicon}?v=#{$app.version}" rel="icon">
     <link rel="stylesheet" href="/assets/static/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="/assets/static/font/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="/assets/static/css/i.css?v=#{$app.version}">
@@ -30,16 +30,16 @@
            <div class="navbar-brand">
                <a href="#{if $user}/user/dashboard/index#{else}/#{/if}">
                    <img src="#{if $user.avatar}#{$user.avatar}#{else}#{$favicon}#{/if}" height="30px" style="border-radius: 50%;box-shadow: #f0d1d4 1px 1px 1px;">
-                   #{if $user}<span style="position: relative;top: 4px;left: 3px;font-weight: bold;color: #ff9085c7;"> #{$user.username}  #{else} <span style="position: relative;top: 4px;left: 3px;font-weight: bold;color: #ff9085c7;">  #{$config.shop_name}  #{/if}
+                   #{if $user}<span style="position: relative;top: 4px;left: 3px;font-weight: bold;color: #1396558a;"> #{$user.username}  #{else} <span style="position: relative;top: 4px;left: 3px;font-weight: bold;color: #1396558a;">  #{$config.shop_name}  #{/if}
                </span></a>
                 #{if $user}
                <a href="/user/dashboard/index"><span style="position: relative;top: 4px;left: 10px;font-size: 14px;font-weight: bold;color: #7be7bfd9;"><i class="fa fa-yen"></i>#{$user.balance}</span></a>
                #{else}  <a href="/user/authentication/login?goto=/"><span style="position: relative;top: 4px;left: 10px;font-size: 18px;color: #79b9fbbd;font-weight: bold;"><i class="fa fa-sign-in"></i> 登录</span></a> #{/if}
            </div>
             <div class="row">
-                <a class="nav-link" href="/"><i class="fa fa-shopping-bag"></i> 购买商品</a>
-                <a class="nav-link" href="/user/index/query"><i class="fa fa-window-maximize"></i> 查询订单</a>
-            #{if $config.service_url}<a class="nav-link" href="#{$config.service_url}" target="_blank"><i class="fa fa-user-plus"></i> 联系客服</a>#{/if}
+                <a class="nav-link" href="/" style="font-weight: bolder;"><i class="fa fa-shopping-cart" aria-hidden="true"></i>  购物</a>
+                <a class="nav-link" href="/user/index/query"  style="font-weight: bolder;"><i class="fa fa-search-plus" aria-hidden="true"></i> 查订单</a>
+            #{if $config.service_url}<a class="nav-link" href="#{$config.service_url}" target="_blank"  style="font-weight: bolder;"><i class="fa fa-twitch" aria-hidden="true"></i> 在线客服</a>#{/if}
             </div>
             <!--<div class="navbar-collapse">
                 <ul class="navbar-nav mr-auto"></ul>
