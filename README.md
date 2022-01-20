@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://faka.wiki/">
-    <img src="https://avatars.githubusercontent.com/u/68234346" width="120" height="120" style="border-radius: 20px;" alt="异次元店铺系统">
+    <img src="https://acged.cc/svg/logo.png" width="120" height="120" style="border-radius: 20px;" alt="异次元店铺系统">
   </a>
 </p>
 
@@ -74,3 +74,4 @@ location / {
 
 ## 更多支持
 - 交流QQ群：128215049
+- [Telegram](https://t.me/acgshop)
