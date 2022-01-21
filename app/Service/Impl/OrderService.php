@@ -604,9 +604,11 @@ class OrderService implements Order
         $merchant = $order->user;
         if ($merchant) {
             //获取返佣比例
-            $userGroup = UserGroup::get($merchant->recharge);
-            $order->cost = $order->amount * $userGroup->cost; //手续费
-            Bill::create($merchant, $order->amount - $order->cost, Bill::TYPE_ADD, "商品出售[$order->trade_no]", 1);
+            $businessLevel = $merchant->businessLevel;
+            if ($businessLevel) {
+                $order->cost = $order->amount * $businessLevel->cost; //手续费
+                Bill::create($merchant, $order->amount - $order->cost, Bill::TYPE_ADD, "商品出售[$order->trade_no]", 1);
+            }
         }
 
         //真 · 返佣
