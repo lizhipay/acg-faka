@@ -32,6 +32,7 @@ class Commodity extends Shared
 
     /**
      * @return array
+     * @throws \Kernel\Exception\JSONException
      */
     public function items(): array
     {
@@ -41,10 +42,19 @@ class Commodity extends Shared
 
         $list = $items->toArray();
 
+        $userGroup = $this->getUserGroup();
+
         foreach ($list as $key => $item) {
             foreach ($item['children'] as $index => $child) {
+                $parseGroupConfig = \App\Model\Commodity::parseGroupConfig($child['level_price'], $userGroup);
+                if ($child['hide'] == 1 && (!$parseGroupConfig || !isset($parseGroupConfig['show']) || $parseGroupConfig['show'] != 1)) {
+                    unset($list[$key]['children'][$index]);
+                    continue;
+                }
                 unset($list[$key]['children'][$index]['leave_message'], $list[$key]['children'][$index]['delivery_message']);
             }
+            //重组
+            $list[$key]['children'] = array_values($list[$key]['children']);
         }
 
         return $this->json(200, 'success', $list);

@@ -425,6 +425,7 @@ ALTER TABLE __PREFIX__commodity ADD `level_disable` tinyint UNSIGNED NOT NULL DE
 ALTER TABLE __PREFIX__commodity ADD `minimum` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '最低购买数量，0=无限制';
 ALTER TABLE __PREFIX__commodity ADD `shared_sync` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '同步平台价格：0=关，1=开';
 ALTER TABLE __PREFIX__commodity ADD `config` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '配置文件';
+ALTER TABLE __PREFIX__commodity ADD `hide` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '隐藏：1=隐藏，0=不隐藏';
 
 ALTER TABLE __PREFIX__order ADD `widget` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '控件内容';
 ALTER TABLE __PREFIX__order ADD `rent` decimal(10, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '成本价';
@@ -443,8 +444,9 @@ ALTER TABLE `__PREFIX__pay` ADD INDEX `recharge`(`recharge`) USING BTREE;
 ALTER TABLE `__PREFIX__pay` ADD INDEX `sort`(`sort`) USING BTREE;
 ALTER TABLE `__PREFIX__pay` ADD INDEX `equipment`(`equipment`) USING BTREE;
 
-
 ALTER TABLE __PREFIX__card ADD `race` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '商品种类';
 ALTER TABLE __PREFIX__card ADD INDEX `race`(`race`) USING BTREE;
 
+ALTER TABLE __PREFIX__category ADD `hide` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '隐藏：1=隐藏，0=不隐藏';
+ALTER TABLE __PREFIX__category ADD `user_level_config` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '会员配置';
 SET FOREIGN_KEY_CHECKS = 1;

@@ -343,6 +343,10 @@
                 <td>API对接</td>
                 <td>[api_status]</td>
             </tr>
+            <tr>
+                <td>商品显示</td>
+                <td>[hide]</td>
+            </tr>
             </tbody>
         </table>
     </div>
@@ -443,6 +447,12 @@
                     }
                     return '<span class="badge badge-light-danger">已关闭</span>';
                 },
+                hide(item) {
+                    if (item.hide == 0) {
+                        return '<span class="badge badge-light-success"><i class="fas fa-eye text-success"></i> 显示</span>';
+                    }
+                    return '<span class="badge badge-light"><i class="fas fa-eye-slash"></i> 隐藏</span>';
+                },
                 inventoryHidden(item) {
                     if (item.draft_status == 1) {
                         return '<span class="badge badge-light-success">是</span>';
@@ -542,6 +552,7 @@
                                     .replace('[delivery_way]', action.deliveryWay(item))
                                     .replace('[card_success_count]', '<span class="badge badge-light text-primary">' + item.card_success_count + '</span>')
                                     .replace('[api_status]', action.apiStatus(item))
+                                    .replace('[hide]', action.hide(item))
                                 , this, {
                                     tips: [4, '#501536'],
                                     skin: 'layui-tips-skin',
@@ -718,6 +729,7 @@
                 if (levelPriceWidgetJson.hasOwnProperty(values.id)) {
                     values.amount = levelPriceWidgetJson[values.id].amount;
                     values.config = levelPriceWidgetJson[values.id].config;
+                    values.show = levelPriceWidgetJson[values.id].show;
                 }
 
                 cao.popup((res, index) => {
@@ -740,6 +752,7 @@
                         levelPriceWidgetJson[res.id]["config"] = res.config;
                     }
 
+                    levelPriceWidgetJson[res.id]["show"] = res.show;
                     levelPriceWidget.val(encodeURIComponent(JSON.stringify(levelPriceWidgetJson)));
                     layer.close(index);
                 }, [
@@ -747,7 +760,15 @@
                         title: "单价",
                         name: "amount",
                         type: "input",
-                        placeholder: "请输入单价，仅针对普通商品"
+                        placeholder: "请输入单价，仅针对普通商品",
+                        tips: "如果你使用了《商品种类配置》，那么这个单价就算设置了也会失效。"
+                    },
+                    {
+                        title: "显示商品",
+                        name: "show",
+                        type: "switch",
+                        text: "是",
+                        tips: "当这个商品被隐藏时，你可以通过这个选项来对当前会员等级进行显示"
                     },
                     {
                         title: "配置参数",
@@ -802,13 +823,21 @@
                         tips: "如果禁用会员等级后，那么登录用户购买该商品将无法应用会员折扣，不包含会员价。"
                     },
                     {
-                        title: "会员定价",
+                        title: "隐藏商品",
+                        name: "hide",
+                        type: "switch",
+                        text: "是",
+                        default: 0,
+                        tips: "隐藏商品后，游客将看不见该商品，但你可以通过下面的《会员配置》来进行对指定的会员等级显示。"
+                    },
+                    {
+                        title: "会员配置",
                         name: "level_price",
                         type: "textarea",
                         hide: true
                     },
                     {
-                        title: "会员定价",
+                        title: "会员配置",
                         name: "level_price_table",
                         type: "explain",
                         placeholder: '<div class="level_price_div"><table class="level_price_table"></table></div>'

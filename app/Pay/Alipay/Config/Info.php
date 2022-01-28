@@ -2,7 +2,7 @@
 declare (strict_types=1);
 
 return [
-    'version' => '1.0.0',
+    'version' => '1.0.1',
     'name' => '支付宝-官方',
     'author' => '荔枝',
     'website' => 'https://www.alipay.com',

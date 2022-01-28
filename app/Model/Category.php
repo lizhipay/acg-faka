@@ -13,7 +13,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $create_time
  * @property int $owner
  * @property string $icon
- * @property int; $status
+ * @property int $status
+ * @property int $hide
  */
 class Category extends Model
 {
@@ -48,4 +49,22 @@ class Category extends Model
     {
         return $this->hasMany(Commodity::class, "category_id", "id");
     }
+
+
+    /**
+     * @param \App\Model\UserGroup|null $group
+     * @return array|null
+     */
+    public function getLevelConfig(?UserGroup $group): ?array
+    {
+        if (!$group) {
+            return null;
+        }
+        $decode = (array)json_decode((string)$this->attributes['user_level_config'], true);
+        if (!array_key_exists($group->id, $decode)) {
+            return null;
+        }
+        return (array)$decode[$group->id];
+    }
+
 }

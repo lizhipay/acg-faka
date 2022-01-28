@@ -15,6 +15,7 @@ use App\Model\Order;
 use App\Model\Pay;
 use App\Service\Query;
 use App\Service\Shared;
+use App\Service\Shop;
 use App\Util\Client;
 use App\Util\Ini;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,41 +38,16 @@ class Index extends User
     #[Inject]
     private \App\Service\Order $order;
 
+    #[Inject]
+    private Shop $shop;
+
 
     /**
      * @return array
-     * @throws JSONException
      */
     public function data(): array
     {
-        $category = \App\Model\Category::query()->withCount(['children as commodity_count' => function (Builder $builder) {
-            $builder->where("status", 1);
-        }])->where("status", 1)->orderBy("sort", "asc");
-        $bus = \App\Model\Business::get(Client::getDomain());
-        if ($bus) {
-            //商家
-            if ($bus->master_display == 0) {
-                $category = $category->where("owner", $bus->user_id);
-            } else {
-                $category = $category->whereRaw("(`owner`=0 or `owner`={$bus->user_id})");
-            }
-        } else {
-            //主站
-            if (Config::get("substation_display") == 1) {
-                //显示商家
-                $list = (array)json_decode(Config::get("substation_display_list"), true);
-                $let = "(`owner`=0 or ";
-                foreach ($list as $userId) {
-                    // $category = $category->orWhere("owner", "=", $userId);
-                    $let .= "`owner`={$userId} or ";
-                }
-                $let = trim(trim($let), "or") . ")";
-                $category = $category->whereRaw($let);
-            } else {
-                $category = $category->where("owner", 0);
-            }
-        }
-        $category = $category->get()->toArray();
+        $category = $this->shop->getCategory($this->getUserGroup());
         return $this->json(200, "success", $category);
     }
 
@@ -125,13 +101,21 @@ class Index extends User
             'status', 'delivery_way', 'price',
             'user_price', 'inventory_hidden',
             'shared_id', 'shared_code',
-            'level_disable', 'level_price'
+            'level_disable', 'level_price', 'hide'
         ]);
 
         $data = $commodity->toArray();
         $user = $this->getUser();
         $userGroup = $this->getUserGroup();
+        //最终的商品数据遍历
         foreach ($data as $key => $val) {
+            $parseGroupConfig = Commodity::parseGroupConfig($val['level_price'], $userGroup);
+            if ($val['hide'] == 1 && (!$parseGroupConfig || !isset($parseGroupConfig['show']) || $parseGroupConfig['show'] != 1)) {
+                //隐藏商品
+                unset($data[$key]);
+                continue;
+            }
+
             $data[$key]['card_count'] = Card::query()->where("status", 0)->where("commodity_id", $val['id'])->count();
             //如果登录后，则自动计算登录后的价格
             if ($user) {
@@ -153,6 +137,8 @@ class Index extends User
                 $data[$key]['level_disable']
             );
         }
+
+        $data = array_values($data);
         hook(\App\Consts\Hook::USER_API_INDEX_COMMODITY_LIST, $data);
         return $this->json(200, "success", $data);
     }

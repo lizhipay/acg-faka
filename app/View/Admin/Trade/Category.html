@@ -1,4 +1,24 @@
 #{include file="../Header.html"}
+<style>
+    .layui-layer-page .layui-layer-content {
+        position: relative !important;
+        overflow: auto !important;
+    }
+
+    .user_level_div .bootstrap-table {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .user_level_div .bootstrap-table .fixed-table-toolbar::after {
+        clear: none !important;
+        display: none;
+    }
+
+    .user_level_div .bootstrap-table .fixed-table-container {
+        clear: none !important;
+    }
+</style>
 
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
@@ -84,40 +104,9 @@
                 columns: [
                     {checkbox: true}
                     , {
-                        field: 'icon', title: '图标',  formatter: function (val, item) {
-                            if (!item.icon) {
-                                return "-";
-                            }
-                            return '<img src="' + item.icon + '"  style="width: 24px;"/>'
-                        }
-                    }
-                    , {field: 'name', title: '分类名称'}
-                    , {
-                        field: 'status', title: '状态', formatter: function (val, item) {
-                            if (item.status == 1) {
-                                return '<span class="badge badge-light-success"><i class="fas fa-signal" style="color: #43ff43;"></i></span>';
-                            }
-                            return '<span class="badge badge-light-danger"><i class="fas fa-store-alt-slash"></i></span>';
-                        }
-                    }
-                    , {field: 'sort', title: '排序(越小越前)'}
-                    , {
-                        field: 'share_url', title: '推广链接',  formatter: function (val, item) {
-                            return '<span  class="badge badge-light clipboard clipboard-' + item.id + '" data-clipboard-text="' + item.share_url + '" style="cursor: pointer;">复制</span>';
-                        }
-                        , events: {
-                            'click .clipboard': function (event, value, row, index) {
-                                let clipboard = new ClipboardJS(".clipboard-" + row.id);
-                                clipboard.on('success', function (e) {
-                                    layer.msg("分享链接已经复制成功了，赶快发给好友吧！");
-                                });
-                            }
-                        }
-                    }
-                    , {
-                        field: 'owner', title: '所属者',  formatter: function (val, item) {
+                        field: 'owner', title: '创建者', formatter: function (val, item) {
                             if (!item.owner) {
-                                return '<span class="badge badge-light-success owner" style="cursor: pointer;" >SYSTEM</span>';
+                                return '<span class="badge badge-light-success owner" style="cursor: pointer;" >主站自营</span>';
                             }
                             return '<span class="badge badge-light-dark owner" style="cursor: pointer;" ><img src="' + item.owner.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.owner.username + '(' + item.owner.id + ')</span>'
                         }, events: {
@@ -130,6 +119,49 @@
                                     query: {"equal-owner": id}
                                 });
                             }
+                        }
+                    }
+                    , {
+                        field: 'icon', title: '分类', formatter: function (val, item) {
+                            let icon = item.icon;
+
+                            if (!item.icon) {
+                                icon = '/favicon.ico';
+                            }
+
+                            return '<span class="btn-badge badge-light" style="cursor: pointer;" ><img src="' + icon + '"  style="width: 18px;border-radius: 100%;"/> ' + item.name + '</span>'
+                        }
+                    }
+                    , {field: 'sort', title: '排序(越小越前)'}
+                    , {
+                        field: 'share_url', title: '推广链接', formatter: function (val, item) {
+                            return '<span  class="badge badge-light clipboard clipboard-' + item.id + '" data-clipboard-text="' + item.share_url + '" style="cursor: pointer;">复制</span>';
+                        }
+                        , events: {
+                            'click .clipboard': function (event, value, row, index) {
+                                let clipboard = new ClipboardJS(".clipboard-" + row.id);
+                                clipboard.on('success', function (e) {
+                                    layer.msg("分享链接已经复制成功了，赶快发给好友吧！");
+                                });
+                            }
+                        }
+                    }
+
+
+                    , {
+                        field: 'hide', title: '显示', formatter: function (val, item) {
+                            if (item.hide == 0) {
+                                return '<span class="badge badge-light-success"><i class="fas fa-eye text-success"></i> 显示</span>';
+                            }
+                            return '<span class="badge badge-light"><i class="fas fa-eye-slash"></i> 隐藏</span>';
+                        }
+                    }
+                    , {
+                        field: 'status', title: '状态', formatter: function (val, item) {
+                            if (item.status == 1) {
+                                return '<span class="badge badge-light-success"><i class="fas fa-play-circle text-success"></i> 启用</span>';
+                            }
+                            return '<span class="badge badge-light-danger"><i class="fas fa-stop-circle text-danger"></i> 未启用</span>';
                         }
                     }
                     , {
@@ -178,13 +210,133 @@
 
             let modal = (values = {}) => {
                 cao.popup('/admin/api/category/save', [
-                    {title: "分类图标", name: "icon", type: "image", placeholder: "请选择图片(推荐64*64)"},
+                    {title: "分类图标", name: "icon", type: "image", placeholder: "请选择图片(推荐64*64)", width: 100},
                     {title: "分类名称", name: "name", type: "input", placeholder: "请输入分类名称"},
                     {title: "分类排序", name: "sort", type: "input", placeholder: "值越小，排名越靠前哦~"},
+                    {
+                        title: "隐藏分类",
+                        name: "hide",
+                        type: "switch",
+                        text: "是",
+                        default: 0,
+                        tips: "隐藏分类后，游客将看不见该分类，但你可以通过下面的《会员配置》来进行对指定的会员等级显示。"
+                    },
+                    {
+                        title: "会员配置",
+                        name: "user_level_config",
+                        type: "textarea",
+                        hide: true
+                    },
+                    {
+                        title: "会员配置",
+                        name: "user_level_config_table",
+                        type: "explain",
+                        placeholder: '<div class="user_level_div"><table class="user_level_table"></table></div>'
+                    },
                     {title: "状态", name: "status", type: "switch", text: "启用"},
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});
-                }, values);
+                }, values, ["720px", "780px"], false, "添加", unqueId => {
+                    let queryParamsLevel = null;
+
+
+                    let userLevelConfig = cao.popupElement("user_level_config", "textarea", unqueId);
+                    userLevelConfig.parent().parent().hide();
+
+
+                    $('.user_level_table').bootstrapTable({
+                        url: '/admin/api/group/data',//请求的url地址
+                        method: "post",//请求方式
+                        // striped:true,//是否显示行间隔色
+                        pageSize: 500,//每页显示的数量
+                        showRefresh: false,//是否显示刷新按钮
+                        cache: false,//是否使用缓存
+                        showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                        cardView: false,
+                        pagination: false,//是否显示分页
+                        pageNumber: 1,//初始化显示第几页，默认第1页
+                        singleSelect: false,//复选框只能选择一条记录
+                        sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                        contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                        dataType: "json",//接收的数据类型
+                        queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                        queryParams: function (params) {
+                            params.page = (params.offset / params.limit) + 1;
+                            if (queryParamsLevel) {
+                                for (const key in params) {
+                                    queryParamsLevel[key] = params[key];
+                                }
+                            } else {
+                                queryParamsLevel = params;
+                            }
+                            return queryParamsLevel;
+                        },
+                        //回调函数
+                        responseHandler: function (res) {
+                            return {
+                                "total": res.count,
+                                "rows": res.data
+                            }
+                        },
+                        columns: [
+                            {
+                                field: "icon", title: "LOGO", formatter: function (val, item) {
+                                    if (!item.icon) {
+                                        return "-";
+                                    }
+                                    return '<img src="' + item.icon + '"  style="height: 32px;"/>';
+                                }
+                            },
+                            {
+                                field: "name", title: "等级", formatter: function (val, item) {
+                                    return '<span class="badge badge-light">' + item.name + '</span>'
+                                }
+                            },
+                            {
+                                field: 'operate',
+                                title: '配置',
+                                formatter: function (val, item) {
+                                    return '<span class="config-btn" style="cursor: pointer"><i class="fas fa-cog text-primary"></i></span>';
+                                },
+                                events: {
+                                    'click .config-btn': function (event, value, row, index) {
+                                        userLevelModal(row, userLevelConfig);
+                                    }
+                                }
+                            }
+                        ]
+                    });
+                });
+            }
+
+            let userLevelModal = (values = {}, userLevelConfig) => {
+                let userLevelConfigJson = {};
+                try {
+                    userLevelConfigJson = JSON.parse(decodeURIComponent(userLevelConfig.val()));
+                } catch (e) {
+                }
+
+                if (userLevelConfigJson.hasOwnProperty(values.id)) {
+                    values.show = userLevelConfigJson[values.id].show;
+                }
+
+                cao.popup((res, index) => {
+                    //初始化
+                    userLevelConfigJson[res.id] = {};
+                    userLevelConfigJson[res.id]["show"] = parseInt(res.show);
+                    userLevelConfig.val(encodeURIComponent(JSON.stringify(userLevelConfigJson)));
+                    layer.close(index);
+                }, [
+                    {
+                        title: "显示分类",
+                        name: "show",
+                        type: "switch",
+                        text: "是",
+                        tips: "当某个分类被隐藏时，你可以通过这个选项开对某个会员等级进行显示。"
+                    }
+                ], res => {
+                    table.bootstrapTable('refresh', {silent: true});
+                }, values, "460px", false, values.name + ' - 配置');
             }
 
             $('.btn-app-create').click(function () {

@@ -45,6 +45,7 @@ use Kernel\Exception\JSONException;
  * @property string $widget
  * @property int $minimum
  * @property int $shared_sync
+ * @property int $hide
  * @property string $config
  */
 class Commodity extends Model
@@ -68,6 +69,7 @@ class Commodity extends Model
         'price' => 'float',
         'user_price' => 'float',
         'status' => 'integer',
+        'hide' => 'integer',
         'owner' => 'integer',
         'integral' => 'integer',
         'delivery_way' => 'integer',
@@ -140,6 +142,7 @@ class Commodity extends Model
         $parse = [];
         $parse['amount'] = (float)$var['amount'];
         $parse['config'] = Ini::toArray((string)$var['config']);
+        $parse['show'] = (int)$var['show'];
         return $parse;
     }
 }

@@ -17,4 +17,5 @@ return [
     \App\Service\Recharge::class => \App\Service\Impl\RechargeService::class,
     \App\Service\Cash::class => \App\Service\Impl\CashService::class,
     \App\Service\App::class => \App\Service\Impl\AppService::class,
+    \App\Service\Shop::class => \App\Service\Impl\ShopService::class,
 ];
