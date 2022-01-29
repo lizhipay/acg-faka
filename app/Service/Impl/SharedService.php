@@ -65,9 +65,10 @@ class SharedService implements Shared
         return true;
     }
 
-    public function trade(\App\Model\Shared $shared, string $sharedCode, string $contact, int $num, int $cardId, int $device, string $password, string $race): string
+    public function trade(\App\Model\Shared $shared, string $sharedCode, string $contact, int $num, int $cardId, int $device, string $password, string $race, ?string $widget): string
     {
-        $trade = $this->post($shared->domain . "/shared/commodity/trade", $shared->app_id, $shared->app_key, [
+        $wg = (array)json_decode((string)$widget, true);
+        $post = [
             "shared_code" => $sharedCode,
             "contact" => $contact,
             "num" => $num,
@@ -75,7 +76,13 @@ class SharedService implements Shared
             "device" => $device,
             "password" => $password,
             "race" => $race
-        ]);
+        ];
+
+        foreach ($wg as $key => $item) {
+            $post[$key] = $item['value'];
+        }
+
+        $trade = $this->post($shared->domain . "/shared/commodity/trade", $shared->app_id, $shared->app_key, $post);
         return (string)$trade['secret'];
     }
 

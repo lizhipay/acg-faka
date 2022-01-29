@@ -56,7 +56,7 @@ interface Shared
      * @param string $race
      * @return string
      */
-    public function trade(\App\Model\Shared $shared, string $sharedCode, string $contact, int $num, int $cardId, int $device, string $password, string $race): string;
+    public function trade(\App\Model\Shared $shared, string $sharedCode, string $contact, int $num, int $cardId, int $device, string $password, string $race, ?string $widget): string;
 
     /**
      * @param \App\Model\Shared $shared

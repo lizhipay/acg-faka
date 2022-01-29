@@ -586,7 +586,7 @@ class OrderService implements Order
 
         if ($shared) {
             //拉取远程平台的卡密发货
-            $order->secret = $this->shared->trade($shared, $commodity->shared_code, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, (string)$order->password, (string)$order->race);
+            $order->secret = $this->shared->trade($shared, $commodity->shared_code, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, (string)$order->password, (string)$order->race, $order->widget);
             $order->delivery_status = 1;
         } else {
             //自动发货
