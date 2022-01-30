@@ -1,10 +1,14 @@
 {
   "name": "lizhipay/acg-faka",
-  "description": "个人发卡源码，发卡系统，二次元发卡系统，二次元发卡源码，发卡程序，动漫发卡，PHP发卡源码",
+  "description": "一款基于php8开发的原生虚拟发卡系统、个人店铺系统！",
   "keywords": [
     "lizhipay",
     "acg-shop",
-    "faka"
+    "faka",
+    "个人发卡",
+    "发卡",
+    "店铺",
+    "网店"
   ],
   "license": "MIT",
   "authors": [
@@ -30,8 +34,7 @@
     "ext-gd": "*",
     "khanamiryan/qrcode-detector-decoder": "1.0.5.2",
     "ext-zip": "*",
-    "ext-curl": "*",
-    "ext-redis": "*"
+    "ext-curl": "*"
   },
   "autoload": {
     "psr-4": {
