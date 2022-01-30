@@ -1,5 +1,6 @@
 {
   "name": "lizhipay/acg-faka",
+  "type" : "project",
   "description": "一款基于php8开发的原生虚拟发卡系统、个人店铺系统！",
   "keywords": [
     "lizhipay",
