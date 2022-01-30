@@ -1,6 +1,6 @@
 {
   "name": "lizhipay/acg-faka",
-  "type" : "project",
+  "type": "project",
   "description": "一款基于php8开发的原生虚拟发卡系统、个人店铺系统！",
   "keywords": [
     "lizhipay",
@@ -20,6 +20,11 @@
       "role": "Developer"
     }
   ],
+  "support": {
+    "docs": "https://faka.wiki",
+    "issues": "https://github.com/lizhipay/acg-faka/issues",
+    "source": "https://github.com/lizhipay/acg-faka"
+  },
   "require": {
     "php": ">=8.0.0",
     "smarty/smarty": "~3.1",
