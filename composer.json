@@ -48,7 +48,7 @@
     "ext-pdo": "Required to use MySQL Client.",
     "ext-pdo_mysql": "Required to use MySQL Client.",
     "ext-zip": "Required to use Install."
-  }, 
+  },
   "autoload": {
     "psr-4": {
       "App\\": "app/",
