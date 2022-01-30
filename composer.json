@@ -1,15 +1,16 @@
 {
-  "name": "chunxi/acg-faka",
+  "name": "lizhipay/acg-faka",
   "description": "个人发卡源码，发卡系统，二次元发卡系统，二次元发卡源码，发卡程序，动漫发卡，PHP发卡源码",
   "keywords": [
-    "chunxi",
-    "cx"
+    "lizhipay",
+    "acg-shop",
+    "faka"
   ],
   "license": "MIT",
   "authors": [
     {
-      "name": "chunxi",
-      "email": "i@acg.sb",
+      "name": "lizhipay",
+      "email": "acged@aliyun.com",
       "homepage": "https://github.com/lizhipay/acg-faka",
       "role": "Developer"
     }
