@@ -25,7 +25,7 @@
     "issues": "https://github.com/lizhipay/acg-faka/issues",
     "source": "https://github.com/lizhipay/acg-faka"
   },
-  "require": { 
+  "require": {
     "php": ">=8.0.0",
     "smarty/smarty": "~3.1",
     "illuminate/database": "^7.19",
