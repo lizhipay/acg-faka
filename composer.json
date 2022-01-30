@@ -42,6 +42,13 @@
     "ext-zip": "*",
     "ext-curl": "*"
   },
+  "suggest": {
+    "ext-openssl": "Required to use Encryption.",
+    "ext-json": "Required to use JSON.",
+    "ext-pdo": "Required to use MySQL Client.",
+    "ext-pdo_mysql": "Required to use MySQL Client.",
+    "ext-zip": "Required to use Install."
+  }, 
   "autoload": {
     "psr-4": {
       "App\\": "app/",
