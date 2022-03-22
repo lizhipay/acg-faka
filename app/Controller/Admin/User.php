@@ -6,6 +6,7 @@ namespace App\Controller\Admin;
 
 use App\Controller\Base\View\Manage;
 use App\Interceptor\ManageSession;
+use App\Model\UserRecharge;
 use Kernel\Annotation\Interceptor;
 
 #[Interceptor(ManageSession::class)]
@@ -20,7 +21,7 @@ class User extends Manage
         $userCount = \App\Model\User::query()->count();
         $businessCount = \App\Model\User::query()->whereNotNull("business_level")->count();
         $balance = \App\Model\User::query()->sum("balance");
-        $recharge = \App\Model\User::query()->sum("recharge");
+        $recharge = UserRecharge::query()->where("status", 1)->sum("amount");
         $coin = \App\Model\User::query()->sum("coin");
         $totalCoin = \App\Model\User::query()->sum("total_coin");
 

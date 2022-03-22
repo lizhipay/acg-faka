@@ -182,7 +182,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                             let selectInstance = $(elem + ' select[name=' + item.name + ']');
                             this.getDict(item.dict, res => {
                                 res.data.forEach(s => {
-                                    selectInstance.append(' <option value="' + s.id + '"  ' + (values.hasOwnProperty(item.name) ? (values[item.name] === s.id ? 'selected' : '') : '') + '>' + s.name + '</option>');
+                                    selectInstance.append(' <option value="' + s.id + '"  ' + (values.hasOwnProperty(item.name) ? (values[item.name] === s.id ? 'selected' : '') : '') + '>' + s.name.replace(/(<([^>]+)>)/ig, "") + '</option>');
                                 });
                                 form.render();
                             });
@@ -656,7 +656,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                     let instance = $('.hex-modal-' + unqueId + ' .' + item.name);
                                     this.getDict(item.dict, res => {
                                         res.data.forEach(s => {
-                                            instance.append(' <option value="' + s.id + '"  ' + (values.hasOwnProperty(item.name) ? (values[item.name] == s.id ? 'selected' : '') : '') + '>' + s.name + '</option>');
+                                            instance.append(' <option value="' + s.id + '"  ' + (values.hasOwnProperty(item.name) ? (values[item.name] == s.id ? 'selected' : '') : '') + '>' + s.name.replace(/(<([^>]+)>)/ig, "") + '</option>');
                                         });
                                         form.render();
                                     });

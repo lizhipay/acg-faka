@@ -654,7 +654,7 @@ class OrderService implements Order
         if ($commodity->contact_type == 2 && $commodity->send_email == 1 && $order->owner == 0) {
             try {
                 $this->email->send($order->contact, "【发货提醒】您购买的卡密发货啦", "您购买的卡密如下：" . $order->secret);
-            } catch (\Exception | \Error $e) {
+            } catch (\Exception|\Error $e) {
             }
         }
 
@@ -746,6 +746,12 @@ class OrderService implements Order
             if ($order->amount != $callback['amount']) {
                 PayConfig::log($handle, "CALLBACK", "订单金额不匹配，接受数据：" . $json);
                 throw new JSONException("amount error");
+            }
+            //第三方支付订单成功，累计充值
+            if ($order->owner != 0 && $owner = User::query()->find($order->owner)) {
+                //累计充值
+                $owner->recharge = $owner->recharge + $order->amount;
+                $owner->save();
             }
             $this->orderSuccess($order);
         });
