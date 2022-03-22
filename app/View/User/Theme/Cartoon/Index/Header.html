@@ -40,6 +40,9 @@
                 <a class="nav-link" href="/" style="font-weight: bolder;"><i class="fa fa-shopping-cart" aria-hidden="true"></i>  购物</a>
                 <a class="nav-link" href="/user/index/query"  style="font-weight: bolder;"><i class="fa fa-search-plus" aria-hidden="true"></i> 查订单</a>
             #{if $config.service_url}<a class="nav-link" href="#{$config.service_url}" target="_blank"  style="font-weight: bolder;"><i class="fa fa-twitch" aria-hidden="true"></i> 在线客服</a>#{/if}
+                #{foreach hook(\App\Consts\Hook::USER_VIEW_HEADER_NAV) as $item}
+                    <a class="nav-link" href="#{$item.url}" style="font-weight: bolder;" target="#{$item.target}"><i class="#{$item.icon}" aria-hidden="true"></i>  #{$item.name}</a>
+                #{/foreach}
             </div>
             <!--<div class="navbar-collapse">
                 <ul class="navbar-nav mr-auto"></ul>

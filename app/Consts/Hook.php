@@ -127,4 +127,14 @@ interface Hook
     const USER_API_PURCHASE_RECORD_LIST = 0x56;
 
 
+    // 挂载点：app\View\User\Theme\Cartoon\Common\Nav.html  左侧菜单
+    const USER_VIEW_MENU = 0x57;
+
+
+    //挂载点：app\View\User\Theme\Cartoon\Header.html 头部NAV，返回数组信息
+    const USER_VIEW_HEADER_NAV = 0x88;
+
+    //挂载点：订单查询里面的详细信息订单号后面的小尾巴
+    const USER_VIEW_QUERY_TRADE_NO = 0x89;
+
 }

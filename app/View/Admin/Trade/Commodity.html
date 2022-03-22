@@ -679,17 +679,26 @@
                         field: 'operate',
                         title: '操作',
                         formatter: function (val, item) {
-                            let html = '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit"><i class="fa fa-edit"></i></button> ';
+                            let html = '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit" title="编辑"><i class="fa fa-edit"></i></button> ';
                             if (item.status == 0) {
-                                html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 start"><i class="fa fa-play" style="color: #61ff61;"></i></button> ';
+                                html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 start" title="上架"><i class="fa fa-play" style="color: #61ff61;"></i></button> ';
                             } else {
-                                html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 stop"><i class="fa fa-pause" style="color: #fdbea7;"></i></button> ';
+                                html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 stop" title="下架"><i class="fa fa-pause" style="color: #fdbea7;"></i></button> ';
                             }
-                            html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del"><i class="fas fa-trash"></i></button> ';
+                            html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 clone" title="克隆商品"><i class="fas fa-clone"></i></button> ';
+                            html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del" title="删除"><i class="fas fa-trash"></i></button> ';
                             return html;
                         },
                         events: {
                             'click .edit': function (event, value, row, index) {
+                                modal(row);
+                            },
+                            'click .clone': function (event, value, row, index) {
+                                delete row.id;
+                                delete row.shared_code;
+                                delete row.code;
+                                delete row.shared_id;
+                                delete row.shared;
                                 modal(row);
                             },
                             'click .del': function (event, value, row, index) {

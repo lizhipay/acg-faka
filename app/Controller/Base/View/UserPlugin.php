@@ -7,6 +7,7 @@ namespace App\Controller\Base\View;
 use App\Model\Business;
 use App\Model\Config;
 use App\Util\Client;
+use App\Util\Theme;
 use Kernel\Exception\ViewException;
 use Kernel\Util\View;
 
@@ -17,14 +18,15 @@ use Kernel\Util\View;
 abstract class UserPlugin extends \App\Controller\Base\User
 {
     /**
-     * @param string $title
+     * @param string|null $title
      * @param string $template
      * @param array $data
      * @param bool $controller
      * @return string
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
+     * @throws \ReflectionException
      */
-    public function render(string $title, string $template, array $data = [], bool $controller = false): string
+    public function render(?string $title, string $template, array $data = [], bool $controller = false): string
     {
         try {
             $data['title'] = $title;
@@ -45,6 +47,8 @@ abstract class UserPlugin extends \App\Controller\Base\User
                 $data['user'] = $user;
                 $data['group'] = $this->getUserGroup()->toArray();
             }
+            $data['setting'] = Theme::getConfig("Cartoon")["setting"];
+            $data['default_view_path'] = BASE_PATH . '/app/View/User/Theme/Cartoon/';
             return View::render($template, $data, BASE_PATH . "/app/Plugin/" . ($controller ? \Kernel\Util\Plugin::$currentControllerPluginName : \Kernel\Util\Plugin::$currentPluginName) . "/View");
         } catch (\SmartyException $e) {
             throw new ViewException($e->getMessage());

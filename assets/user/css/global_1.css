@@ -1686,7 +1686,7 @@ body .fly-user-main {
 }
 
 .fly-user-main > .fly-panel {
-    min-height: 575px;
+    min-height: 768px;
     margin: 0 0 10px 215px;
     background-color: rgba(255, 255, 255, 0.85);
     -webkit-box-shadow: 0 6px 0 0 rgba(0, 0, 0, .01), 0 15px 32px 0 rgba(0, 0, 0, .06);

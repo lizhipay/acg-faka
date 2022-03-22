@@ -59,7 +59,7 @@
                     }
 
                     let html = '<div class="hr-top">\n' +
-                        '                        <div style="font-size: 14px;">订单号：<b class="trade_no">' + order.trade_no + '</b></div>\n' +
+                        '                        <div style="font-size: 14px;">订单号：<b class="trade_no">' + order.trade_no + '</b>  #{hook(\App\Consts\Hook::USER_VIEW_QUERY_TRADE_NO)}</div>\n' +
                         '                        <div style="font-size: 14px;">下单金额：<b style="color: red;" class="amount">' + order.amount + '</b></div>\n' +
                         '                        <div style="font-size: 14px;">购买数量：<b style="color: blue;" class="buyNum">' + order.card_num + '</b></div>\n' +
                         '                        <div style="font-size: 14px;">下单时间：<b class="create_time">' + order.create_time + '</b></div>\n' +
