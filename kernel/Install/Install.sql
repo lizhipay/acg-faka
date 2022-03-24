@@ -136,6 +136,7 @@ CREATE TABLE `__PREFIX__commodity`  (
                                   `coupon` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '优惠卷：0=关闭，1=启用',
                                   `shared_id` int UNSIGNED NULL DEFAULT NULL COMMENT '共享平台ID',
                                   `shared_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '共享平台-商品代码',
+                                  `shared_premium` float(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '商品加价',
                                   `seckill_status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '商品秒杀：0=关闭，1=开启',
                                   `seckill_start_time` datetime NULL DEFAULT NULL COMMENT '秒杀开始时间',
                                   `seckill_end_time` datetime NULL DEFAULT NULL COMMENT '秒杀结束时间',
@@ -155,7 +156,7 @@ CREATE TABLE `__PREFIX__commodity`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
 
 
-INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 1, 1, NULL, '', 0, NULL, NULL, 0, 0.00, 0, NULL);
+INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 1, 1, NULL, '', 0.00, 0, NULL, NULL, 0, 0.00, 0, NULL);
 
 DROP TABLE IF EXISTS `__PREFIX__config`;
 CREATE TABLE `__PREFIX__config`  (
@@ -268,7 +269,7 @@ CREATE TABLE `__PREFIX__order`  (
                               `create_device` tinyint UNSIGNED NOT NULL COMMENT '下单设备：0=电脑,1=安卓,2=IOS,3=IPAD',
                               `pay_time` datetime NULL DEFAULT NULL COMMENT '支付时间',
                               `status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '订单状态：0=未支付，1=已支付',
-                              `secret` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '卡密信息',
+                              `secret` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '卡密信息',
                               `password` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '查询密码',
                               `contact` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '联系方式',
                               `delivery_status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '发货状态：0=未发货，1=已发货',

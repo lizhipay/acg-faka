@@ -2,5 +2,5 @@
 declare (strict_types=1);
 
 return [
-    'version' => '0.7.5-beta',
+    'version' => '0.7.6-beta',
 ];

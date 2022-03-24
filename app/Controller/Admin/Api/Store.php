@@ -118,7 +118,7 @@ class Store extends Manage
         $items = $this->shared->items($shared);
 
         foreach ($items as $key => $item) {
-            $items[$key]['disabled'] = true;
+            $items[$key]['id'] = 0;
         }
         return $this->json(200, 'success', $items);
     }
@@ -131,7 +131,7 @@ class Store extends Manage
         $categoryId = (int)$_POST['category_id'];
         $storeId = (int)$_POST['store_id'];
         $items = (array)$_POST['items'];
-
+        $premium = (float)$_POST['premium']; // 加价金额
         $shared = Shared::query()->find($storeId);
 
         if (!$shared) {
@@ -161,8 +161,8 @@ class Store extends Manage
 
                 $commodity->cover = $shared->domain . $item['cover'];
                 $commodity->factory_price = $item['user_price'];
-                $commodity->price = $item['price'];
-                $commodity->user_price = $item['price'];
+                $commodity->price = $item['price'] + $premium;
+                $commodity->user_price = $item['price'] + $premium;
                 $commodity->status = 0;
                 $commodity->owner = 0;
                 $commodity->create_time = $date;
@@ -175,6 +175,7 @@ class Store extends Manage
                 $commodity->coupon = 0;
                 $commodity->shared_id = $storeId;
                 $commodity->shared_code = $item['code'];
+                $commodity->shared_premium = $premium;
                 $commodity->seckill_status = $item['seckill_status'];
                 if ($commodity->seckill_status == 1) {
                     $commodity->seckill_start_time = $item['seckill_start_time'];

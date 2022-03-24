@@ -170,6 +170,9 @@
                                         result.items = [];
 
                                         result.auth.forEach(itemId => {
+                                            if (parseInt(itemId) == 0) {
+                                                return;
+                                            }
                                             let item = items[itemId];
                                             result.items.push(item);
                                         });
@@ -193,6 +196,12 @@
                                             placeholder: "请选择分类"
                                         },
                                         {title: "远程商品", name: "auth", type: "treeCheckbox", dict: res.data},
+                                        {
+                                            title: "集体加价",
+                                            name: "premium",
+                                            type: "input",
+                                            placeholder: "集体加价/元，届时可在每个商品中修改单独的加价，不加价可不填写"
+                                        },
                                     ], res => {
                                         tableInstance.instance.reload();
                                     }, [], ['660px', '768px'], false, mapItem.name + "-拉取商品到本地分类");

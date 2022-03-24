@@ -152,7 +152,7 @@ class Index extends User
     {
         $commodity = Commodity::query()->with(['owner' => function (Relation $relation) {
             $relation->select(["id", "username", "avatar"]);
-        }])->find($commodityId, ["id", "name", "description", "only_user", "purchase_count", "category_id", "cover", "price", "user_price", "status", "owner", "delivery_way", "contact_type", "password_status", "level_price", "level_disable", "coupon", "shared_id", "shared_code", "seckill_status", "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden", "widget", "minimum", "shared_sync", "config"]);
+        }])->find($commodityId, ["id", "name", "description", "only_user", "purchase_count", "category_id", "cover", "price", "user_price", "status", "owner", "delivery_way", "contact_type", "password_status", "level_price", "level_disable", "coupon", "shared_id", "shared_code", "shared_premium", "seckill_status", "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden", "widget", "minimum", "shared_sync", "config"]);
 
         if (!$commodity) {
             throw new JSONException("商品不存在");
@@ -170,13 +170,14 @@ class Index extends User
             //同步远程平台价格
             if ($commodity->shared_sync == 1) {
                 $new = Commodity::query()->find($commodity->id);
-                if ((float)$commodity->price != (float)$inventory['price']) {
-                    $new->price = (float)$inventory['price'];
+
+                if (($commodity->price - $commodity->shared_premium) != (float)$inventory['price']) {
+                    $new->price = (float)$inventory['price'] + $commodity->shared_premium;
                     $commodity->price = $new->price;
                 }
 
-                if ((float)$commodity->user_price != (float)$inventory['user_price']) {
-                    $new->user_price = (float)$inventory['user_price'];
+                if (($commodity->user_price - $commodity->shared_premium) != (float)$inventory['user_price']) {
+                    $new->user_price = (float)$inventory['user_price'] + $commodity->shared_premium;
                     $commodity->user_price = $new->user_price;
                 }
 
@@ -184,7 +185,7 @@ class Index extends User
                     $new->config = $inventory['config'];
                     $commodity->config = $new->config;
                 }
-
+   
                 $new->save();
             }
         }

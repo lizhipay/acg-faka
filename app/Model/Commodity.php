@@ -32,6 +32,7 @@ use Kernel\Exception\JSONException;
  * @property int $coupon
  * @property int $shared_id
  * @property string $shared_code
+ * @property float $shared_premium
  * @property int $seckill_status
  * @property int $api_status
  * @property int $draft_status
@@ -68,6 +69,7 @@ class Commodity extends Model
         'factory_price' => 'float',
         'price' => 'float',
         'user_price' => 'float',
+        'shared_premium' => 'float',
         'status' => 'integer',
         'hide' => 'integer',
         'owner' => 'integer',
