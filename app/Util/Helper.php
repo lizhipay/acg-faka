@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Util;
 
+use Kernel\Exception\JSONException;
+
 /**
  * 助手
  */
@@ -23,12 +25,20 @@ class Helper
      */
     const TYPE_THEME = 2;
 
-    /*
+
+    /**
      * 获取主题目录所在的URL地址
+     * @throws \ReflectionException
+     * @throws JSONException
      */
     public static function themeUrl(string $path, bool $debug = false): string
     {
-        $theme = \App\Model\Config::get("user_theme");
+        $mobile = \App\Model\Config::get("user_mobile_theme");
+        $pc = \App\Model\Config::get("user_theme");
+        $theme = Client::isMobile() ? $mobile : $pc;
+        if ($theme == "0") {
+            $theme = $pc;
+        }
         return "/app/View/User/Theme/" . $theme . "/{$path}?v=" . Theme::getConfig($theme)["info"]["VERSION"] . (!$debug ? "" : "&debug=" . Str::generateRandStr(16));
     }
 

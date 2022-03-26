@@ -69,7 +69,7 @@
                                     </div>
                                     <!--end::Image input-->
                                     <!--begin::Hint-->
-                                    <div class="form-text">支持文件格式: png, jpg, jpeg, ico.</div>
+                                    <div class="form-text">支持文件格式: png, jpg, jpeg, ico，更换后，记得强制刷新浏览器，否则你看到的还是缓存。</div>
                                     <!--end::Hint-->
                                 </div>
                                 <!--end::Col-->
@@ -79,7 +79,7 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">网站模板</label>
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">PC模板</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-6 fv-row">
@@ -97,6 +97,37 @@
                                 <div class="col-lg-2 fv-row">
                                     <!--begin::Input-->
                                     <button type="button" class="btn btn-light theme-setting"><i
+                                                class="fas fa-cogs"></i> 模板设置
+                                    </button>
+                                    <!--end::Input-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">手机模板</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-6 fv-row">
+                                    <!--begin::Input-->
+                                    <select name="user_mobile_theme"
+                                            class="form-select form-select-solid form-select-lg"
+                                            data-control="select2" data-hide-search="true">
+                                        <option value="0" #{if "0" == $config.user_mobile_theme}selected #{/if}>跟随PC模板
+                                        </option>
+                                        #{foreach $themes as $theme}
+                                            <option value="#{$theme.info.KEY}" #{if $theme.info.KEY== $config.user_mobile_theme}
+                                            selected #{/if}>#{$theme.info.NAME} (v#{$theme.info.VERSION})
+                                            </option>
+                                        #{/foreach}
+                                    </select>
+                                    <!--end::Input-->
+                                </div>
+                                <div class="col-lg-2 fv-row">
+                                    <!--begin::Input-->
+                                    <button type="button" class="btn btn-light theme-mobile-setting"><i
                                                 class="fas fa-cogs"></i> 模板设置
                                     </button>
                                     <!--end::Input-->
@@ -559,6 +590,15 @@
 
             $('.theme-setting').click(function () {
                 let userTheme = $('select[name=user_theme]').val();
+                modal(themes[userTheme]);
+            });
+
+            $('.theme-mobile-setting').click(function () {
+                let userTheme = $('select[name=user_mobile_theme]').val();
+                if (userTheme == 0) {
+                    layer.msg("没有模板可以设置哦，请不要瞎点(>_<)");
+                    return;
+                }
                 modal(themes[userTheme]);
             });
         });

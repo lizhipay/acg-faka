@@ -204,6 +204,7 @@ INSERT INTO `__PREFIX__config` VALUES (35, 'closed', '0');
 INSERT INTO `__PREFIX__config` VALUES (36, 'closed_message', '我们正在升级，请耐心等待完成。');
 INSERT INTO `__PREFIX__config` VALUES (37, 'recharge_min', '10');
 INSERT INTO `__PREFIX__config` VALUES (38, 'recharge_max', '1000');
+INSERT INTO `__PREFIX__config` VALUES (39, 'user_mobile_theme', '0');
 
 DROP TABLE IF EXISTS `__PREFIX__coupon`;
 CREATE TABLE `__PREFIX__coupon`  (

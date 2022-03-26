@@ -4,6 +4,7 @@ declare (strict_types=1);
 namespace App\Model;
 
 
+use App\Util\Context;
 use Illuminate\Database\Eloquent\Model;
 use Kernel\Exception\JSONException;
 
@@ -34,14 +35,25 @@ class Config extends Model
      * 为了方便，在这里直接静态get
      * @param string $key
      * @return string
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public static function get(string $key): string
     {
+
+        $cacheKey = "_DB_CONFIG_" . $key;
+        $cache = Context::get($cacheKey);
+
+        if ($cache) {
+            return (string)$cache;
+        }
+
         $cfg = Config::query()->where("key", $key)->first();
         if (!$cfg) {
             throw new JSONException("没有找到该配置选项");
         }
+
+        //存储
+        Context::set($cacheKey, $cfg->value);
         return (string)$cfg->value;
     }
 

@@ -61,7 +61,14 @@ abstract class User extends \App\Controller\Base\User
             foreach ($cfg as $k => $v) {
                 $data["config"][$k] = $v;
             }
-            $theme = $cfg['user_theme'];
+
+            $theme = Client::isMobile() ? $cfg['user_mobile_theme'] : $cfg['user_theme'];
+
+            if ($theme == "0") {
+                $theme = $cfg['user_theme'];
+            }
+            //模板静态路径
+            $data['static'] = "/app/View/User/Theme/" . $theme;
 
             $domain = Client::getDomain();
             $business = Business::query()->where("subdomain", $domain)->first() ?? Business::query()->where("topdomain", $domain)->first();

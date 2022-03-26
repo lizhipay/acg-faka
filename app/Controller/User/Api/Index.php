@@ -185,7 +185,7 @@ class Index extends User
                     $new->config = $inventory['config'];
                     $commodity->config = $new->config;
                 }
-   
+
                 $new->save();
             }
         }
@@ -340,7 +340,7 @@ class Index extends User
 
 
         $callback = function (Relation $relation) {
-            $relation->select(['id', 'name', 'password_status', 'leave_message']);
+            $relation->select(['id', 'name', 'cover', 'password_status', 'leave_message']);
         };
 
         $userCallback = function (Relation $relation) {

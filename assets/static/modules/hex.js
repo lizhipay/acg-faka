@@ -713,7 +713,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                             , 'theme': 'auth-skin-universal'
                                             , autowidth: true
                                             , openchecked: false
-                                            , autochecked: false
+                                            , autochecked: true
                                             , checkedKey: values.hasOwnProperty(item.name) ? values[item.name] : []
                                         });
                                     });
