@@ -174,4 +174,25 @@ class User extends Manage
 
         return $this->json(200, '（＾∀＾）移除成功');
     }
+
+    /**
+     * @throws JSONException
+     */
+    public function shopClosed(): array
+    {
+        $id = (int)$_POST['id'];
+
+        $user = \App\Model\User::query()->find($id);
+
+        if (!$user) {
+            throw new JSONException("商家不存在");
+        }
+
+        $user->business_level = null;
+        $user->save();
+
+        Business::query()->where("user_id", $id)->delete();
+
+        return $this->json(200, '（＾∀＾）关闭成功');
+    }
 }

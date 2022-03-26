@@ -60,9 +60,16 @@
     box-sizing: border-box;
 }
 
+@font-face {
+    font-family: HarmonyOS;
+    font-style: normal;
+    font-display: swap;
+    src: url(/assets/static/font/HarmonyOS_Sans_SC_Medium.subset.woff2) format('woff2')
+}
+
 body {
     margin: 0;
-    font-family: var(--bs-body-font-family);
+   /* font-family: var(--bs-body-font-family);*/
     font-size: var(--bs-body-font-size);
     font-weight: var(--bs-body-font-weight);
     line-height: var(--bs-body-line-height);
@@ -71,6 +78,7 @@ body {
     background-color: var(--bs-body-bg);
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    font-family: HarmonyOS !important;
 }
 
 hr {

@@ -277,7 +277,7 @@
                             if (!item.business_level) {
                                 return '-';
                             }
-                            return '<span  class="badge badge-light business" style="cursor: pointer;"><img src="' + item.business_level.icon + '"  style="width: 16px;padding-bottom: 3px;"/> ' + item.business_level.name + '</span> '
+                            return '<span  class="badge badge-light business" style="cursor: pointer;"><img src="' + item.business_level.icon + '"  style="width: 16px;padding-bottom: 3px;"/> ' + item.business_level.name + '</span> <span class="badge badge-light-danger business-close" style="cursor:pointer;">关闭</span>'
                         },
                         events: {
                             'click .business': function (event, value, row, index) {
@@ -309,6 +309,16 @@
                                             .replace("[month_order_amount]", res.data.month_order_amount)
                                             .replace("[total_order_amount]", res.data.total_order_amount)
                                         , area: cao.isPc() ? "420px" : ["100%", "100%"]
+                                    });
+                                });
+                            },
+                            'click .business-close': function (event, value, row, index) {
+                                layer.confirm('您确认要永久关闭该用户的店铺吗，这个操作无法恢复。', {
+                                    btn: ['确认', '取消']
+                                }, function () {
+                                    $.post('/admin/api/user/shopClosed', {id: row.id}, res => {
+                                        layer.msg(res.msg);
+                                        table.bootstrapTable('refresh', {silent: true});
                                     });
                                 });
                             }

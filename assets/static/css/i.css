@@ -20,9 +20,16 @@ img {
     padding: 5px;
 }
 
+@font-face {
+    font-family: HarmonyOS;
+    font-style: normal;
+    font-display: swap;
+    src: url(/assets/static/font/HarmonyOS_Sans_SC_Medium.subset.woff2) format('woff2')
+}
 
 body {
-    text-align: left
+    text-align: left;
+    font-family: HarmonyOS !important;
 }
 
 button, input {
