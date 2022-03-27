@@ -48,6 +48,24 @@ class Index extends User
     public function data(): array
     {
         $category = $this->shop->getCategory($this->getUserGroup());
+
+        $commodityRecommend = Config::get("commodity_recommend");
+
+        if ($commodityRecommend == 1) {
+            array_unshift($category, [
+                "id" => -10,
+                "name" => "<b style='color: #ef783b;'>" . Config::get("commodity_name") . "</b>",
+                "sort" => 1,
+                "create_time" => "-",
+                "owner" => 0,
+                "icon" => "/assets/static/images/recommend.png",
+                "status" => 1,
+                "hide" => 0,
+                "user_level_config" => null,
+                "commodity_count" => Commodity::query()->where("status", 1)->where("recommend", 1)->count(),
+            ]);
+        }
+
         return $this->json(200, "success", $category);
     }
 
@@ -64,7 +82,9 @@ class Index extends User
             $relation->select(['id']);
         }]);
 
-        if ($categoryId != 0) {
+        if ($categoryId == -10) {
+            $commodity = $commodity->where("recommend", 1);
+        } elseif ($categoryId != 0) {
             $commodity = $commodity->where("category_id", $categoryId);
         }
 

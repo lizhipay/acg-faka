@@ -144,6 +144,7 @@ CREATE TABLE `__PREFIX__commodity`  (
                                   `draft_premium` decimal(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '指定卡密购买时溢价',
                                   `inventory_hidden` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '隐藏库存：0=否，1=是',
                                   `leave_message` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '发货留言',
+                                  `recommend` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '推荐商品：0=否，1=是',
                                   PRIMARY KEY (`id`) USING BTREE,
                                   UNIQUE INDEX `code`(`code`) USING BTREE,
                                   INDEX `owner`(`owner`) USING BTREE,
@@ -152,7 +153,8 @@ CREATE TABLE `__PREFIX__commodity`  (
                                   INDEX `category_id`(`category_id`) USING BTREE,
                                   INDEX `shared_id`(`shared_id`) USING BTREE,
                                   INDEX `seckill_status`(`seckill_status`) USING BTREE,
-                                  INDEX `api_status`(`api_status`) USING BTREE
+                                  INDEX `api_status`(`api_status`) USING BTREE,
+                                  INDEX `recommend`(`recommend` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
 
 
@@ -205,6 +207,8 @@ INSERT INTO `__PREFIX__config` VALUES (36, 'closed_message', '我们正在升级
 INSERT INTO `__PREFIX__config` VALUES (37, 'recharge_min', '10');
 INSERT INTO `__PREFIX__config` VALUES (38, 'recharge_max', '1000');
 INSERT INTO `__PREFIX__config` VALUES (39, 'user_mobile_theme', '0');
+INSERT INTO `__PREFIX__config` VALUES (40, 'commodity_recommend', '0');
+INSERT INTO `__PREFIX__config` VALUES (41, 'commodity_name', '推荐');
 
 DROP TABLE IF EXISTS `__PREFIX__coupon`;
 CREATE TABLE `__PREFIX__coupon`  (

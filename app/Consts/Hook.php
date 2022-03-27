@@ -137,4 +137,10 @@ interface Hook
     //挂载点：订单查询里面的详细信息订单号后面的小尾巴
     const USER_VIEW_QUERY_TRADE_NO = 0x89;
 
+    //挂载点 app\View\User\* -> Common -> 头部
+    const USER_VIEW_HEADER = 0x128;
+    //挂载点 app\View\User\* -> Common -> 内容
+    const USER_VIEW_BODY = 0x129;
+    //挂载点 app\View\User\* -> Common -> 底部
+    const USER_VIEW_FOOTER = 0x130;
 }

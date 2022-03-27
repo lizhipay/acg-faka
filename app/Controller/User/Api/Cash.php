@@ -56,6 +56,10 @@ class Cash extends User
             }
         }
 
+        if ($cashCost == $amount) {
+            throw new JSONException("兑现金额必须高于手续费哦");
+        }
+
         $userId = $u->id;
         Db::transaction(function () use ($amount, $userId, $cashCost, $type) {
             $user = \App\Model\User::query()->find($userId);

@@ -74,6 +74,8 @@
                                 <!--begin::Label-->
                             </div>
                             <!--end::Input group-->
+
+
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -297,13 +299,46 @@
                                     <!--begin::Input-->
                                     <select name="default_category" class="form-select form-select-solid form-select-lg"
                                             data-control="select2" data-hide-search="true">
-                                        <option value="0" #{if $config.default_category == 0} selected #{/if}>不展开
-                                        </option>
+                                        <option value="0" #{if $config.default_category == 0} selected #{/if}>不展开</option>
+                                        <option value="-10" #{if $config.default_category == -10} selected #{/if}>推荐</option>
                                         #{foreach $category as $cate}
                                             <option value="#{$cate.id}" #{if $config.default_category == $cate.id} selected #{/if}>#{$cate.name}</option>
                                         #{/foreach}
                                     </select>
                                     <!--end::Input-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">首页商品推荐</label>
+                                <!--begin::Label-->
+                                <!--begin::Label-->
+                                <div class="col-lg-8 d-flex align-items-center">
+                                    <div class="form-check form-check-solid form-switch fv-row">
+                                        <input class="form-check-input w-45px h-30px" type="checkbox"
+                                               name="commodity_recommend"
+                                               value="1" #{if $config.commodity_recommend == 1} checked #{/if}/>
+                                        <label class="form-check-label"></label>
+                                    </div>
+                                </div>
+                                <!--begin::Label-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6">推荐分类名称</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="commodity_name"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="首页推荐分类名称" value="#{$config.commodity_name}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>

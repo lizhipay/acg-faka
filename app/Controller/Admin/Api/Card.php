@@ -71,6 +71,7 @@ class Card extends Manage
             throw new JSONException('(`･ω･´)请至少添加1条卡密信息哦');
         }
 
+        $cards = urldecode($cards);
         $cards = explode(PHP_EOL, $cards);
         $count = count($cards);
 
@@ -113,7 +114,7 @@ class Card extends Manage
             $cardObj->secret = $cardr;
             $cardObj->create_time = $date;
 
-            if ($race){
+            if ($race) {
                 $cardObj->race = $race;
             }
 

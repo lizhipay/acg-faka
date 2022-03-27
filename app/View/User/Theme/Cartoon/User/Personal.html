@@ -33,7 +33,7 @@
                         <div>
                             <div class="form-header">自动结算方式</div>
                             <div class="form-body" style="color: #ff9191;width: 320px;">
-                                <select name="settlement" >
+                                <select name="settlement">
                                     <option value="0" #{if $user.settlement == 0} selected #{/if}>支付宝</option>
                                     <option value="1" #{if $user.settlement == 1} selected #{/if}>微信</option>
                                 </select>
@@ -52,13 +52,13 @@
                                 <input type="file" class="wechat-input" style="display: none;">
                                 <input type="text" name="wechat" style="display: none;" value="">
                                 #{if $user.wechat == ''}
-                                <i class="layui-icon"
-                                   onclick="document.getElementsByClassName('wechat-input')[0].click()"
-                                   style="font-size: 32px;color: #0C84D1;cursor: pointer;">&#xe681;</i>
+                                    <i class="layui-icon wx_qrcode_temp"
+                                       onclick="document.getElementsByClassName('wechat-input')[0].click()"
+                                       style="font-size: 32px;color: #0C84D1;cursor: pointer;">&#xe681;</i>
                                 #{else}
-                                <!--  <img class="wechat-img" src="#{$user.wechat}" style="width: 100px;cursor: pointer;"   onclick="document.getElementsByClassName('wechat-input')[0].click()">-->
-                                <div class="wx_qrcode"
-                                     onclick="document.getElementsByClassName('wechat-input')[0].click()"></div>
+                                    <!--  <img class="wechat-img" src="#{$user.wechat}" style="width: 100px;cursor: pointer;"   onclick="document.getElementsByClassName('wechat-input')[0].click()">-->
+                                    <div class="wx_qrcode"
+                                         onclick="document.getElementsByClassName('wechat-input')[0].click()"></div>
                                 #{/if}
                             </div>
                         </div>
@@ -97,6 +97,8 @@
             User.upload(".wechat-input", res => {
                 $('input[name=wechat]').val(res.path);
                 $('.wx_qrcode').html('<img class="wechat-img" src="' + res.path + '" style="width: 100px;cursor: pointer;"   onclick="document.getElementsByClassName(\'wechat-input\')[0].click()">');
+                $('.wx_qrcode_temp').html('<img class="wechat-img" src="' + res.path + '" style="width: 100px;cursor: pointer;"   onclick="document.getElementsByClassName(\'wechat-input\')[0].click()">');
+                layer.msg("上传完成，需要保存才会生效哦");
             });
 
             $('.save-data').click(function () {
