@@ -158,7 +158,7 @@ CREATE TABLE `__PREFIX__commodity`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
 
 
-INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 1, 1, NULL, '', 0.00, 0, NULL, NULL, 0, 0.00, 0, NULL);
+INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 1, 1, NULL, '', 0.00, 0, NULL, NULL, 0, 0.00, 0, NULL, 0);
 
 DROP TABLE IF EXISTS `__PREFIX__config`;
 CREATE TABLE `__PREFIX__config`  (
