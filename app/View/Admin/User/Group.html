@@ -97,7 +97,7 @@
                     },
                     {
                         field: "discount", title: "会员折扣", formatter: function (val, item) {
-                            return '<span class="badge badge-light-primary">' + (item.discount * 100) + '%</span>'
+                            return '<span class="badge badge-light-primary">' + parseFloat(item.discount * 100).toFixed(2) + '%</span>'
                         }
                     }, {
                         field: 'operate',

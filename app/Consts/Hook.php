@@ -38,6 +38,14 @@ interface Hook
     const ADMIN_VIEW_COMMODITY_TOOLBAR = 0x7;
 
 
+    //后台分类页面的按钮
+    const ADMIN_VIEW_CATEGORY_TOOLBAR = 0x701;
+    //后台分类页面的横向表格
+    const ADMIN_VIEW_CATEGORY_TABLE = 0x702;
+    //后台分类页面提交的表格中
+    const ADMIN_VIEW_CATEGORY_POST = 0x703;
+
+
     //挂载点 app\View\Admin\Trade\Order.html -> 数据表格
     const ADMIN_VIEW_ORDER_TABLE = 0x11;
     //挂载点 app\View\Admin\Trade\Order.html -> 底部代码，可以写一些JS逻辑

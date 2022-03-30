@@ -604,6 +604,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                             type: paramsToJSONObject["type-" + item.name][index],
                                             regex: paramsToJSONObject["regex-" + item.name][index],
                                             error: paramsToJSONObject["error-" + item.name][index],
+                                            dict: paramsToJSONObject["dict-" + item.name][index]
                                         });
                                     }
                                 });
@@ -613,12 +614,13 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 delete paramsToJSONObject["regex-" + item.name];
                                 delete paramsToJSONObject["error-" + item.name];
                                 delete paramsToJSONObject["name-" + item.name];
+                                delete paramsToJSONObject["dict-" + item.name];
                                 paramsToJSONObject[item.name] = encodeURIComponent(JSON.stringify(json));
                                 break;
                         }
                     });
                     if (typeof url == "function") {
-                        url(paramsToJSONObject, index);
+                        url(paramsToJSONObject, index, unqueId);
                         return;
                     }
 
@@ -987,7 +989,13 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                         '<option ' + (opt.hasOwnProperty("type") && opt.type == "text" ? "selected" : "") + '  value="text">文本框(text)</option>' +
                                         '<option ' + (opt.hasOwnProperty("type") && opt.type == "password" ? "selected" : "") + ' value="password">密码框(password)</option>' +
                                         '<option ' + (opt.hasOwnProperty("type") && opt.type == "number" ? "selected" : "") + ' value="number">数字框(number)</option>' +
-                                        '</select></div> <div style="display: inline-block;margin-left: 2px;"><i class="layui-icon append-' + id + '" style="color: #23a148;cursor: pointer;font-size: 16px;font-weight: bold;">&#xe61f;</i> <i class="layui-icon del-' + id + '" style="color: #eb8181;cursor: pointer;font-size: 16px;font-weight: bold;">&#x1006;</i></div></div>';
+                                        '<option ' + (opt.hasOwnProperty("type") && opt.type == "select" ? "selected" : "") + ' value="select">下拉框(select)</option>' +
+                                        '<option ' + (opt.hasOwnProperty("type") && opt.type == "checkbox" ? "selected" : "") + ' value="checkbox">多选框(checkbox)</option>' +
+                                        '<option ' + (opt.hasOwnProperty("type") && opt.type == "radio" ? "selected" : "") + ' value="radio">单选框(radio)</option>' +
+                                        '<option ' + (opt.hasOwnProperty("type") && opt.type == "textarea" ? "selected" : "") + ' value="textarea">文本域(textarea)</option>' +
+                                        '</select></div> ' +
+                                        '<input value="' + (opt.hasOwnProperty("dict") ? opt.dict : "") + '" name="dict-' + item.name + '[]" type="text" placeholder="扩充数据" class="layui-input" style="width: 180px;display: inline-block;"> ' +
+                                        '<div style="display: inline-block;margin-left: 2px;"><i class="layui-icon append-' + id + '" style="color: #23a148;cursor: pointer;font-size: 16px;font-weight: bold;">&#xe61f;</i> <i class="layui-icon del-' + id + '" style="color: #eb8181;cursor: pointer;font-size: 16px;font-weight: bold;">&#x1006;</i></div></div>';
                                     return {id: id, html: html};
                                 }
 

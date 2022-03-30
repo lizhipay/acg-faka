@@ -66,20 +66,33 @@ class Index extends User
             ]);
         }
 
+        foreach ($category as $key => $item) {
+            if (!$item['icon']) {
+                $category[$key]['icon'] = '/favicon.ico';
+            }
+        }
+
         return $this->json(200, "success", $category);
     }
 
     /**
      * @param int $categoryId
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function commodity(#[Get] int $categoryId): array
     {
         $keywords = (string)$_GET['keywords'];
+        $limit = (int)$_GET['limit'];
+        $page = (int)$_GET['page'];
+
 
         $commodity = Commodity::query()->with(['shared' => function (Relation $relation) {
             $relation->select(['id']);
+        }, 'owner' => function (Relation $relation) {
+            $relation->select(["id", "username", "avatar"]);
+        }, 'category' => function (Relation $relation) {
+            $relation->select(["id", "name", "icon"]);
         }]);
 
         if ($categoryId == -10) {
@@ -116,15 +129,30 @@ class Index extends User
             }
         }
 
-        $commodity = $commodity->where("status", 1)->orderBy("sort", "asc")->get([
-            'id', 'name', 'cover',
-            'status', 'delivery_way', 'price',
-            'user_price', 'inventory_hidden',
-            'shared_id', 'shared_code',
-            'level_disable', 'level_price', 'hide'
-        ]);
+        $commodity = $commodity->where("status", 1)->orderBy("sort", "asc");
+        if ($limit == 0) {
+            $commodity = $commodity->get([
+                'id', 'name', 'cover',
+                'status', 'delivery_way', 'price',
+                'user_price', 'inventory_hidden',
+                'shared_id', 'shared_code',
+                'level_disable', 'level_price', 'hide', 'owner', "recommend", 'category_id'
+            ]);
+            $total = count($commodity);
+            $data = $commodity->toArray();
+        } else {
+            $commodity = $commodity->paginate($limit, [
+                'id', 'name', 'cover',
+                'status', 'delivery_way', 'price',
+                'user_price', 'inventory_hidden',
+                'shared_id', 'shared_code',
+                'level_disable', 'level_price', 'hide', 'owner', "recommend", 'category_id'
+            ], "", $page);
+            $total = $commodity->total();
+            $data = $commodity->toArray()['data'];
+        }
 
-        $data = $commodity->toArray();
+
         $user = $this->getUser();
         $userGroup = $this->getUserGroup();
         //最终的商品数据遍历
@@ -156,17 +184,23 @@ class Index extends User
                 $data[$key]['level_price'],
                 $data[$key]['level_disable']
             );
+
+            if (!$val['cover']) {
+                $data[$key]['cover'] = "/favicon.ico";
+            }
         }
 
         $data = array_values($data);
         hook(\App\Consts\Hook::USER_API_INDEX_COMMODITY_LIST, $data);
-        return $this->json(200, "success", $data);
+        $json = $this->json(200, "success", $data);
+        $json['total'] = $total;
+        return $json;
     }
 
     /**
      * @param int $commodityId
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function commodityDetail(#[Get] int $commodityId): array
     {
@@ -248,6 +282,10 @@ class Index extends User
             }
         }
 
+        if (!$array['cover']) {
+            $array['cover'] = "/favicon.ico";
+        }
+
         $array['share_url'] = Client::getUrl() . "?code=" . urlencode(base64_encode(($this->getUser() ? "from=" . $this->getUser()->id . "&" : "") . "a={$array['category_id']}&b={$array['id']}"));
         $array['login'] = (bool)$this->getUser();
 
@@ -263,7 +301,7 @@ class Index extends User
      * @param int $page
      * @param string $race
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function card(#[Get] int $commodityId, #[Get] int $page, #[Get] string $race): array
     {
@@ -350,7 +388,7 @@ class Index extends User
     /**
      * @param string $keywords
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function query(#[Post] string $keywords): array
     {
@@ -424,7 +462,7 @@ class Index extends User
      * @param int $orderId
      * @param string $password
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function secret(#[Post] int $orderId, #[Post] string $password): array
     {

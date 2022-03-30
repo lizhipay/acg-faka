@@ -37,8 +37,17 @@
                         <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i class="fas fa-plus"></i>
                             添加分类
                         </button>
+                        <button class="btn btn-sm btn-light-success start me-3"><i class="fas fa-cloud-upload-alt"></i>
+                            启用选中分类
+                        </button>
+                        <button class="btn btn-sm btn-light-dark stop me-3"><i class="fas fa-cloud-download-alt"></i>
+                            停用选中分类
+                        </button>
                         <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fas fa-trash"></i> 移除选中分类
                         </button>
+                        <!--start::HOOK-->
+                        #{hook(\App\Consts\Hook::ADMIN_VIEW_CATEGORY_TOOLBAR)}
+                        <!--end::HOOK-->
                     </div>
                 </div>
                 <!--end::Header-->
@@ -71,7 +80,7 @@
                 method: "post",//请求方式
                 // striped:true,//是否显示行间隔色
                 pageSize: 15,//每页显示的数量
-                pageList: [15, 25, 50, 100],
+                pageList: [15, 25, 50, 100, 500, 1000, 2000],
                 showRefresh: false,//是否显示刷新按钮
                 cache: false,//是否使用缓存
                 showToggle: false,//是否显示详细视图和列表视图的切换按钮
@@ -163,8 +172,11 @@
                             }
                             return '<span class="badge badge-light-danger"><i class="fas fa-stop-circle text-danger"></i> 未启用</span>';
                         }
-                    }
-                    , {
+                    },
+                    <!--start::HOOK-->
+                    #{hook(\App\Consts\Hook::ADMIN_VIEW_CATEGORY_TABLE)}
+                    <!--end::HOOK-->
+                    {
                         field: 'operate',
                         title: '操作',
                         formatter: function (val, item) {
@@ -234,6 +246,7 @@
                         placeholder: '<div class="user_level_div"><table class="user_level_table"></table></div>'
                     },
                     {title: "状态", name: "status", type: "switch", text: "启用"},
+                    #{hook(\App\Consts\Hook::ADMIN_VIEW_CATEGORY_POST)}
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});
                 }, values, ["720px", "780px"], false, "添加", unqueId => {
@@ -353,6 +366,39 @@
                     btn: ['确定', '取消']
                 }, function () {
                     $.post("/admin/api/category/del", {list: data}, res => {
+                        layer.msg(res.msg);
+                        table.bootstrapTable('refresh', {silent: true});
+                    });
+                });
+            });
+
+            $('.start').click(() => {
+                let data = cao.listObjectToArray(table.bootstrapTable('getSelections'));
+                if (data.length == 0) {
+                    layer.msg("请至少勾选1个分类进行操作！");
+                    return;
+                }
+
+                layer.confirm('您确定要启用选中的分类吗？', {
+                    btn: ['确定', '取消']
+                }, function () {
+                    $.post("/admin/api/category/status", {list: data, status: 1}, res => {
+                        layer.msg(res.msg);
+                        table.bootstrapTable('refresh', {silent: true});
+                    });
+                });
+            });
+
+            $('.stop').click(() => {
+                let data = cao.listObjectToArray(table.bootstrapTable('getSelections'));
+                if (data.length == 0) {
+                    layer.msg("请至少勾选1个分类进行操作！");
+                    return;
+                }
+                layer.confirm('您确定要停用选中的分类吗？', {
+                    btn: ['确定', '取消']
+                }, function () {
+                    $.post("/admin/api/category/status", {list: data, status: 0}, res => {
                         layer.msg(res.msg);
                         table.bootstrapTable('refresh', {silent: true});
                     });

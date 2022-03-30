@@ -1,12 +1,9 @@
 let acg = {
     setCache(key, value, expire = 0) {
         localStorage.setItem("cache_" + key, JSON.stringify({
-            data: value,
-            expire: expire,
-            time: Math.round(new Date().getTime() / 1000)
+            data: value, expire: expire, time: Math.round(new Date().getTime() / 1000)
         }));
-    },
-    getCache(key) {
+    }, getCache(key) {
         key = "cache_" + key;
         let item = localStorage.getItem(key);
         if (!item) {
@@ -18,23 +15,18 @@ let acg = {
             return null;
         }
         return item.data;
-    },
-    property: {
+    }, property: {
         Browser: {
             ie: /msie/.test(window.navigator.userAgent.toLowerCase()),
             moz: /gecko/.test(window.navigator.userAgent.toLowerCase()),
             opera: /opera/.test(window.navigator.userAgent.toLowerCase()),
             safari: /safari/.test(window.navigator.userAgent.toLowerCase())
+        }, cache: {
+            raceId: ""
+        }, setting: {
+            cache: 0, cache_expire: 0
         },
-        cache: {
-            raceId: "",
-        },
-        setting: {
-            cache: 0,
-            cache_expire: 0
-        },
-    },
-    loadScript(url, callback = null) {
+    }, loadScript(url, callback = null) {
         let _script = document.createElement('script');
         _script.setAttribute('type', 'text/javascript');
         _script.setAttribute('src', url);
@@ -52,8 +44,7 @@ let acg = {
         } else {
             typeof callback === 'function' && callback();
         }
-    },
-    getLangTime(start, end) {
+    }, getLangTime(start, end) {
         let seconds = 1000;
         let minutes = seconds * 60;
         let hours = minutes * 60;
@@ -68,13 +59,9 @@ let acg = {
         let diffMinutes = Math.floor((diff - (diffYears * 365 + diffDays) * days - diffHours * hours) / minutes);
         let diffSeconds = Math.floor((diff - (diffYears * 365 + diffDays) * days - diffHours * hours - diffMinutes * minutes) / seconds);
         return {
-            days: diffDays,
-            hours: diffHours,
-            minutes: diffMinutes,
-            seconds: diffSeconds,
+            days: diffDays, hours: diffHours, minutes: diffMinutes, seconds: diffSeconds,
         }
-    },
-    ready(fromId, callback) {
+    }, ready(fromId, callback) {
         let from = parseInt(fromId);
         if (from !== 0) {
             localStorage.setItem("from_id", from);
@@ -93,8 +80,7 @@ let acg = {
             acg.loadScript("/assets/static/clipboard.js", callback);
         });
         // });
-    },
-    $post(url, data, done, error = null, cache = 0, cache_expire = 0) {
+    }, $post(url, data, done, error = null, cache = 0, cache_expire = 0) {
         if (cache == 1) {
             let cacheRes = acg.getCache(url + encodeURIComponent(JSON.stringify(data)));
             if (cacheRes) {
@@ -116,10 +102,9 @@ let acg = {
                 acg.setCache(url + encodeURIComponent(JSON.stringify(data)), res.data, cache_expire);
             }
 
-            typeof done === 'function' && done(res.data);
+            typeof done === 'function' && done(res.data, res);
         });
-    },
-    $get(url, done, error = null, cache = 0, cache_expire = 0) {
+    }, $get(url, done, error = null, cache = 0, cache_expire = 0) {
         if (cache == 1) {
             let cacheRes = acg.getCache(url);
             if (cacheRes) {
@@ -140,10 +125,9 @@ let acg = {
                 acg.setCache(url, res.data, cache_expire);
             }
 
-            typeof done === 'function' && done(res.data);
+            typeof done === 'function' && done(res.data, res);
         });
-    },
-    Util: {
+    }, Util: {
         arrayToObject(serializeArray) {
             let paramsToJSONObject = {};
             serializeArray.forEach(item => {
@@ -158,12 +142,9 @@ let acg = {
                 }
             });
             return paramsToJSONObject;
-        },
-        isPc() {
+        }, isPc() {
             var userAgentInfo = navigator.userAgent;
-            var Agents = ["Android", "iPhone",
-                "SymbianOS", "Windows Phone",
-                "iPad", "iPod"];
+            var Agents = ["Android", "iPhone", "SymbianOS", "Windows Phone", "iPad", "iPod"];
             var flag = true;
             for (var v = 0; v < Agents.length; v++) {
                 if (userAgentInfo.indexOf(Agents[v]) > 0) {
@@ -172,43 +153,30 @@ let acg = {
                 }
             }
             return flag;
-        }
-        ,
-        isIphone() {
+        }, isIphone() {
             var ua = navigator.userAgent;
             var ipad = ua.match(/(iPad).*OS\s([\d_]+)/i), ipod = ua.match(/(iPod).*OS\s([\d_]+)/i);
             let result = !ipod && !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/i);
             return Boolean(result);
-        }
-        ,
-        isIpad() {
+        }, isIpad() {
             var ua = navigator.userAgent;
             var ipad = ua.match(/(iPad).*OS\s([\d_]+)/i);
             return Boolean(ipad);
-        }
-        ,
-        isAndroid() {
+        }, isAndroid() {
             var ua = navigator.userAgent;
             var android = ua.match(/(Android)\s+([\d.]+)/i);
             return Boolean(android);
-        }
-        ,
-        isMobile() {
+        }, isMobile() {
             return this.isAndroid() || this.isIphone();
-        }
-        ,
-        isAlipay() {
+        }, isAlipay() {
             var ua = navigator.userAgent;
             var alipay = ua.match(/(AlipayClient)/i);
             return Boolean(alipay);
-        }
-        ,
-        isWx() {
+        }, isWx() {
             var ua = navigator.userAgent;
             var wx = ua.match(/(MicroMessenger)/i);
             return Boolean(wx);
-        },
-        device() {
+        }, device() {
             let device = 0;
             if (this.isAndroid()) {
                 device = 1;
@@ -219,12 +187,10 @@ let acg = {
             }
             return device;
         }
-    },
-    API: {
+    }, API: {
         secret(opt) {
             acg.$post("/user/api/index/secret", {
-                orderId: opt.orderId,
-                password: opt.password
+                orderId: opt.orderId, password: opt.password
             }, res => {
                 typeof opt.begin === 'function' && opt.begin(res);
                 if (res.length == 0) {
@@ -234,8 +200,7 @@ let acg = {
                 typeof opt.success === 'function' && opt.success(res);
                 typeof opt.yes === 'function' && opt.yes(res);
             }, opt.error);
-        },
-        query(opt) {
+        }, query(opt) {
             acg.$post("/user/api/index/query", {
                 keywords: opt.keywords
             }, res => {
@@ -250,8 +215,7 @@ let acg = {
                 });
                 typeof opt.yes === 'function' && opt.yes(res);
             }, opt.error);
-        },
-        pay(opt) {
+        }, pay(opt) {
             acg.$get("/user/api/index/pay", res => {
                 if (res.length == 0) {
                     typeof opt.empty === 'function' && opt.empty(res);
@@ -262,11 +226,9 @@ let acg = {
                 });
                 typeof opt.yes === 'function' && opt.yes(res);
             }, opt.error, acg.property.setting.cache, acg.property.setting.cache_expire);
-        },
-        trade(opt) {
+        }, trade(opt) {
             acg.$post("/user/api/order/trade", opt.data, opt.success, opt.error);
-        },
-        tradePerform(payId) {
+        }, tradePerform(payId) {
             let cardId = $('input[name=card_id]:checked').val();
             if (cardId === undefined) {
                 cardId = 0;
@@ -280,8 +242,7 @@ let acg = {
             arrayToObject.from = localStorage.hasOwnProperty("from_id") ? localStorage.getItem("from_id") : 0;
             arrayToObject.race = acg.property.cache.raceId;
             acg.API.trade({
-                data: arrayToObject,
-                success: res => {
+                data: arrayToObject, success: res => {
                     if (res.secret == null) {
                         window.location.href = res.url;
                     } else {
@@ -293,13 +254,11 @@ let acg = {
                         });
                     }
                     acg.API.captcha(".captcha");
-                },
-                error: () => {
+                }, error: () => {
                     acg.API.captcha(".captcha");
                 }
             });
-        },
-        tradeAmount(opt) {
+        }, tradeAmount(opt) {
             acg.$post("/user/api/index/tradeAmount", {
                 num: opt.num,
                 cardId: opt.cardId,
@@ -310,8 +269,7 @@ let acg = {
                 typeof opt.success === 'function' && opt.success(res);
             }, opt.error);
 
-        },
-        tradeAmountPerform(instance) {
+        }, tradeAmountPerform(instance) {
             let num = $("input[name=num]").val();
             if (num <= 0) {
                 $("input[name=num]").val(1);
@@ -335,8 +293,7 @@ let acg = {
                     }
                 }
             });
-        },
-        //获取分类
+        }, //获取分类
         category(opt) {
             acg.$get("/user/api/index/data", res => {
                 if (res.length == 0) {
@@ -348,8 +305,7 @@ let acg = {
                 });
                 typeof opt.yes === 'function' && opt.yes();
             }, opt.error, acg.property.setting.cache, acg.property.setting.cache_expire);
-        },
-        draftCard(opt) {
+        }, draftCard(opt) {
             acg.$get("/user/api/index/card?commodityId=" + opt.commodityId + "&page=" + opt.page + "&limit=" + opt.limit + "&race=" + acg.property.cache.raceId, res => {
                 typeof opt.begin === 'function' && opt.begin(res);
 
@@ -363,13 +319,9 @@ let acg = {
                 });
                 typeof opt.yes === 'function' && opt.yes();
             }, opt.error);
-        },
-        draftCardPerform(instance, commodityId, page, draft_premium) {
+        }, draftCardPerform(instance, commodityId, page, draft_premium) {
             acg.API.draftCard({
-                commodityId: commodityId,
-                page: page,
-                limit: 5,
-                begin: res => {
+                commodityId: commodityId, page: page, limit: 5, begin: res => {
                     let next = res.current_page + 1;
                     let prev = res.current_page - 1;
                     if (next >= res.last_page) {
@@ -379,13 +331,11 @@ let acg = {
                         prev = 1;
                     }
                     $(instance).html('自选加价：<span class="draft_premium">￥' + draft_premium + '元</span><table><tbody class="draftCard"></tbody></table> <div style="margin-top: 5px;" class="page-button"><button ' + (res.current_page <= 1 ? 'disabled' : '') + ' type="button" onclick="acg.API.draftCardPerform(\'' + instance + '\',' + commodityId + ',' + prev + ',\'' + draft_premium + '\')">上一组</button> <button ' + (res.current_page >= res.last_page ? 'disabled' : '') + ' type="button" onclick="acg.API.draftCardPerform(\'' + instance + '\',' + commodityId + ',' + next + ',\'' + draft_premium + '\')">下一组</button></div>');
-                },
-                success: item => {
+                }, success: item => {
                     $(instance).find(".draftCard").append('<tr><td><label><input type="checkbox" onclick="acg.API.tradeAmountPerform(\'.trade_amount\')" onchange="acg.API.draftCardCheckbox(this)" name="card_id" value="' + item.id + '"> ' + item.draft + '</label></td></tr>');
                 }
             });
-        },
-        draftCardCheckbox(obj) {
+        }, draftCardCheckbox(obj) {
             let state = $(obj).prop("checked");
             $('input[name=card_id]:checked').prop("checked", false);
             if (state === true) {
@@ -393,13 +343,12 @@ let acg = {
             } else {
                 $(obj).prop("checked", false);
             }
-        },
-        //获取商品列表
+        }, //获取商品列表
         commoditys(opt) {
             if (opt.categoryId === "") {
                 return;
             }
-            acg.$get("/user/api/index/commodity?categoryId=" + opt.categoryId + (opt.keywords ? "&keywords=" + opt.keywords : ""), res => {
+            acg.$get("/user/api/index/commodity?categoryId=" + opt.categoryId + (opt.keywords ? "&keywords=" + opt.keywords : "") + (opt.limit ? "&limit=" + opt.limit : "") + (opt.page ? "&page=" + opt.page : ""), (res, row) => {
                 if (res.length == 0) {
                     typeof opt.empty === 'function' && opt.empty();
                     return;
@@ -408,7 +357,29 @@ let acg = {
                     typeof opt.success === 'function' && opt.success(item);
                 });
                 typeof opt.yes === 'function' && opt.yes();
+
+                if (opt.limit) {
+                    let totalPage = Math.ceil(row.total / opt.limit);
+                    //上一页
+                    typeof opt.prev === 'function' && opt.prev(totalPage, opt.page, opt.page <= 1 ? 1 : opt.page - 1);
+                    //分页
+                    typeof opt.pageRender === 'function' && this.getPage(opt.page, totalPage, opt.pageRender);
+                    //下一页
+                    typeof opt.next === 'function' && opt.next(totalPage, opt.page, opt.page >= totalPage ? totalPage : opt.page + 1);
+                }
+
             }, opt.error, acg.property.setting.cache, acg.property.setting.cache_expire);
+        },
+        getPage(page, totalPage, done = null) {
+            for (let i = 1; i <= totalPage; i++) {
+                if (i == 2 && page - 6 > 1) {
+                    i = page - 6;
+                } else if (i == page + 6 && page + 6 < totalPage) {
+                    i = totalPage - 1;
+                } else {
+                    typeof done === 'function' && done(totalPage, page, i);
+                }
+            }
         },
         //获取商品信息
         commodity(opt) {
@@ -650,7 +621,47 @@ let acg = {
                                 let parse = JSON.parse(res.widget);
                                 if (parse != null) {
                                     parse.forEach(widget => {
-                                        instance.append('<p>' + widget.cn + '：<input class="acg-input" type="' + widget.type + '" name="' + widget.name + '" placeholder="' + widget.placeholder + '"></p>');
+                                        if (widget.type == "text" || widget.type == "password" || widget.type == "number") {
+                                            instance.append('<p>' + widget.cn + '：<input class="acg-input" type="' + widget.type + '" name="' + widget.name + '" placeholder="' + widget.placeholder + '"></p>');
+                                        } else if (widget.type == "select") {
+                                            let html = '<p>' + widget.cn + '：<select name="' + widget.name + '" style="border-radius: 5px;border: 1px dashed #80b9f594;width:auto;height: auto;display: inline-block;padding: 0 0;"><option value="">' + widget.placeholder + '</option>';
+                                            let dict = widget.dict.split(",");
+                                            for (let i = 0; i < dict.length; i++) {
+                                                let sp = dict[i].split("=");
+                                                if (sp.length != 2) {
+                                                    continue;
+                                                }
+                                                html += '<option value="' + sp[1] + '">' + sp[0] + '</option>'
+                                            }
+                                            html += "</select></p>"
+                                            instance.append(html);
+                                        } else if (widget.type == "textarea") {
+                                            instance.append('<p><textarea name="' + widget.name + '" placeholder="' + widget.placeholder + '" style="border-radius: 5px;border: 1px dashed #80b9f594;width: 100%;height: 100px;"></textarea></p>');
+                                        } else if (widget.type == "checkbox") {
+                                            let html = '<p>' + widget.cn + '：';
+                                            let dict = widget.dict.split(",");
+                                            for (let i = 0; i < dict.length; i++) {
+                                                let sp = dict[i].split("=");
+                                                if (sp.length != 2) {
+                                                    continue;
+                                                }
+                                                html += '<label style="margin-right: 10px;"><input name="' + widget.name + '[]" type="checkbox" value="' + sp[1] + '"> ' + sp[0] + '</label>';
+                                            }
+                                            html += '</p>';
+                                            instance.append(html);
+                                        } else if (widget.type == "radio") {
+                                            let html = '<p>' + widget.cn + '：';
+                                            let dict = widget.dict.split(",");
+                                            for (let i = 0; i < dict.length; i++) {
+                                                let sp = dict[i].split("=");
+                                                if (sp.length != 2) {
+                                                    continue;
+                                                }
+                                                html += '<label style="margin-right: 10px;"><input name="' + widget.name + '" type="radio" value="' + sp[1] + '"> ' + sp[0] + '</label>';
+                                            }
+                                            html += '</p>';
+                                            instance.append(html);
+                                        }
                                     });
                                 } else {
                                     instance.hide();
@@ -673,12 +684,8 @@ let acg = {
                                         img.height = window.innerHeight * 0.9;
                                     }
                                     layer.open({
-                                        type: 1,
-                                        title: false,
-                                        closeBtn: 0, //不显示关闭按钮
-                                        anim: 5,
-                                        area: [img.width + "px", img.height + "px"],
-                                        shadeClose: true, //开启遮罩关闭
+                                        type: 1, title: false, closeBtn: 0, //不显示关闭按钮
+                                        anim: 5, area: [img.width + "px", img.height + "px"], shadeClose: true, //开启遮罩关闭
                                         content: '<img  src="' + imageUrl + '" style="border-radius: 20px;width:' + img.width + 'px;height:' + img.height + 'px">'
                                     });
                                 }
@@ -695,8 +702,7 @@ let acg = {
                 }
                 typeof opt.success === 'function' && opt.success(res);
             }, opt.error, acg.property.setting.cache, 10);
-        },
-        captcha(obj) {
+        }, captcha(obj) {
             $(obj).attr("src", "/user/captcha/image?action=trade&rand=" + Math.ceil(Math.random() * 10000000));
         }
     },

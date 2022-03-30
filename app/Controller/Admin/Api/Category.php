@@ -88,4 +88,15 @@ class Category extends Manage
         }
         return $this->json(200, '（＾∀＾）移除成功');
     }
+
+    /**
+     * @return array
+     */
+    public function status(): array
+    {
+        $list = (array)$_POST['list'];
+        $status = (int)$_POST['status'];
+        \App\Model\Category::query()->whereIn('id', $list)->update(['status' => $status]);
+        return $this->json(200, '分类状态已经更新');
+    }
 }

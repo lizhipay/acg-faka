@@ -411,10 +411,48 @@
                 let parse = JSON.parse(commodity.widget);
                 if (parse != null) {
                     parse.forEach(widget => {
-                        $('.widget').append(' <fieldset class="form-group">\n' +
-                            '                                <label style="display: inline-block;">' + widget.cn + '：</label>\n' +
-                            '                                <input type="' + widget.type + '" class="form-control round" name="' + widget.name + '" placeholder="' + widget.placeholder + '">\n' +
-                            '                            </fieldset>');
+                        if (widget.type == "text" || widget.type == "password" || widget.type == "number") {
+                            $('.widget').append('<fieldset class="form-group"><label style="display: inline-block;">' + widget.cn + '：</label><input type="' + widget.type + '" class="form-control round" name="' + widget.name + '" placeholder="' + widget.placeholder + '"></fieldset>');
+                        } else if (widget.type == "select") {
+                            let html = '<fieldset class="form-group"><label style="display: inline-block;">' + widget.cn + '：</label><select name="' + widget.name + '" style="border-radius: 5px;border: 1px dashed #80b9f594;width:auto;height: auto;display: inline-block;padding: 0 0;"><option value="">' + widget.placeholder + '</option>';
+                            let dict = widget.dict.split(",");
+                            for (let i = 0; i < dict.length; i++) {
+                                let sp = dict[i].split("=");
+                                if (sp.length != 2) {
+                                    continue;
+                                }
+                                html += '<option value="' + sp[1] + '">' + sp[0] + '</option>'
+                            }
+                            html += "</select></fieldset>"
+                            $('.widget').append(html);
+                        } else if (widget.type == "textarea") {
+                            $('.widget').append('<fieldset class="form-group"><textarea name="' + widget.name + '" placeholder="' + widget.placeholder + '" style="border-radius: 5px;border: 1px dashed #80b9f594;width: 100%;height: 100px;"></textarea></fieldset>');
+                        } else if (widget.type == "checkbox") {
+                            let html = '<fieldset class="form-group"><label style="display: inline-block;">' + widget.cn + '：</label>';
+                            let dict = widget.dict.split(",");
+                            for (let i = 0; i < dict.length; i++) {
+                                let sp = dict[i].split("=");
+                                if (sp.length != 2) {
+                                    continue;
+                                }
+                                html += '<label style="margin-right: 10px;"><input name="' + widget.name + '[]" type="checkbox" value="' + sp[1] + '"> ' + sp[0] + '</label>';
+                            }
+                            html += '</fieldset>';
+                            $('.widget').append(html);
+                        } else if (widget.type == "radio") {
+                            let html = '<fieldset class="form-group"><label style="display: inline-block;">' + widget.cn + '：</label>';
+                            let dict = widget.dict.split(",");
+                            for (let i = 0; i < dict.length; i++) {
+                                let sp = dict[i].split("=");
+                                if (sp.length != 2) {
+                                    continue;
+                                }
+                                html += '<label style="margin-right: 10px;"><input name="' + widget.name + '" type="radio" value="' + sp[1] + '"> ' + sp[0] + '</label>';
+                            }
+                            html += '</fieldset>';
+                            $('.widget').append(html);
+                        }
+
                     });
                 }
             }
