@@ -46,7 +46,7 @@ abstract class User extends \App\Controller\Base\User
      * @param string $default
      * @param array $data
      * @return string
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      * @throws \ReflectionException
      */
     public function theme(string $title, string $template, string $default, array $data = []): string
@@ -62,7 +62,16 @@ abstract class User extends \App\Controller\Base\User
                 $data["config"][$k] = $v;
             }
 
-            $theme = Client::isMobile() ? $cfg['user_mobile_theme'] : $cfg['user_theme'];
+            if (Client::isMobile()) {
+                $theme = $cfg['user_mobile_theme'];
+                if ($data['config']['background_mobile_url']) {
+                    $data['config']['background_url'] = $data['config']['background_mobile_url'];
+                }
+
+            } else {
+                $theme = $cfg['user_theme'];
+            }
+
 
             if ($theme == "0") {
                 $theme = $cfg['user_theme'];

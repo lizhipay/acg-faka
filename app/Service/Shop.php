@@ -9,7 +9,7 @@ interface Shop
 {
 
     /**
-     * @param \App\Model\UserGroup|null $group
+     * @param UserGroup|null $group
      * @return array
      */
     public function getCategory(?UserGroup $group): array;

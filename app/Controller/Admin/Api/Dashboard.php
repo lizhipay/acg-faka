@@ -72,7 +72,11 @@ class Dashboard extends \App\Controller\Base\API\Manage
         $data['recharge_amount'] = (clone $recharge)->where("status", 1)->sum("amount");
 
         //盈利
-        $data['rent'] = ((clone $order)->where("user_id", 0)->sum("amount") - (clone $order)->where("user_id", 0)->sum("rent")) + (float)$data['cost'];
+        $data['rent'] = (
+                (clone $order)->where("user_id", 0)->sum("amount") -
+                (clone $order)->where("user_id", 0)->sum("premium") -
+                (clone $order)->where("user_id", 0)->sum("rent"))
+            + (float)$data['cost'];
         $data['rent'] = sprintf("%.2f", $data['rent']);;
 
         return $this->json(200, 'success', $data);
@@ -118,7 +122,9 @@ class Dashboard extends \App\Controller\Base\API\Manage
             $series["cost"][] = sprintf("%.2f", $cost);
             //纯盈利
             $rent = \App\Model\Order::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->where("user_id", 0)->sum("rent");//主站成本
-            $profit = (\App\Model\Order::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->where("user_id", 0)->sum("amount") - $rent) + $cost;;
+            $premium = \App\Model\Order::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->where("user_id", 0)->sum("premium");//分站加价
+
+            $profit = (\App\Model\Order::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->where("user_id", 0)->sum("amount") - $premium - $rent) + $cost;;
             $series["profit"][] = sprintf("%.2f", $profit);
             //提现
             $cash = \App\Model\Cash::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->sum("amount");

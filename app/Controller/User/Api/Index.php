@@ -13,6 +13,7 @@ use App\Model\Commodity;
 use App\Model\Config;
 use App\Model\Order;
 use App\Model\Pay;
+use App\Model\UserCommodity;
 use App\Service\Query;
 use App\Service\Shared;
 use App\Service\Shop;
@@ -48,30 +49,6 @@ class Index extends User
     public function data(): array
     {
         $category = $this->shop->getCategory($this->getUserGroup());
-
-        $commodityRecommend = Config::get("commodity_recommend");
-
-        if ($commodityRecommend == 1) {
-            array_unshift($category, [
-                "id" => -10,
-                "name" => "<b style='color: #ef783b;'>" . Config::get("commodity_name") . "</b>",
-                "sort" => 1,
-                "create_time" => "-",
-                "owner" => 0,
-                "icon" => "/assets/static/images/recommend.png",
-                "status" => 1,
-                "hide" => 0,
-                "user_level_config" => null,
-                "commodity_count" => Commodity::query()->where("status", 1)->where("recommend", 1)->count(),
-            ]);
-        }
-
-        foreach ($category as $key => $item) {
-            if (!$item['icon']) {
-                $category[$key]['icon'] = '/favicon.ico';
-            }
-        }
-
         return $this->json(200, "success", $category);
     }
 
@@ -85,7 +62,6 @@ class Index extends User
         $keywords = (string)$_GET['keywords'];
         $limit = (int)$_GET['limit'];
         $page = (int)$_GET['page'];
-
 
         $commodity = Commodity::query()->with(['shared' => function (Relation $relation) {
             $relation->select(['id']);
@@ -106,12 +82,30 @@ class Index extends User
         }
 
         $bus = \App\Model\Business::get(Client::getDomain());
+        $userCommodityMap = []; //自定义名称的MAP
+        $master = true; //主站
+
         if ($bus) {
+            $master = false; // 否定主站
+
             //商家
             if ($bus->master_display == 0) {
                 $commodity = $commodity->where("owner", $bus->user_id);
             } else {
-                $commodity = $commodity->whereRaw("(`owner`=0 or `owner`={$bus->user_id})");
+                //查出所有自己定义的商品
+                $userCommodity = UserCommodity::query()->where("user_id", $bus->user_id)->get();
+                //隐藏的分类ID
+                $hideCommodity = [];
+
+                foreach ($userCommodity as $userComm) {
+                    if ($userComm->status == 0) {
+                        $hideCommodity[] = $userComm->commodity_id;
+                    } else {
+                        $userCommodityMap[$userComm->commodity_id] = $userComm;
+                    }
+                }
+
+                $commodity = $commodity->whereNotIn("id", $hideCommodity)->whereRaw("(`owner`=0 or `owner`={$bus->user_id})");
             }
         } else {
             //主站
@@ -188,6 +182,18 @@ class Index extends User
             if (!$val['cover']) {
                 $data[$key]['cover'] = "/favicon.ico";
             }
+
+            //分站自定义名称和价格
+            if (isset($userCommodityMap[$val['id']])) {
+                $var = $userCommodityMap[$val['id']];
+                if ($var->premium > 0) {
+                    $data[$key]['price'] += $var->premium;
+                    $data[$key]['user_price'] += $var->premium;
+                }
+                if ($var->name) {
+                    $data[$key]['name'] = $var->name;
+                }
+            }
         }
 
         $data = array_values($data);
@@ -206,14 +212,21 @@ class Index extends User
     {
         $commodity = Commodity::query()->with(['owner' => function (Relation $relation) {
             $relation->select(["id", "username", "avatar"]);
-        }])->find($commodityId, ["id", "name", "description", "only_user", "purchase_count", "category_id", "cover", "price", "user_price", "status", "owner", "delivery_way", "contact_type", "password_status", "level_price", "level_disable", "coupon", "shared_id", "shared_code", "shared_premium", "seckill_status", "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden", "widget", "minimum", "shared_sync", "config"]);
+        }])->find($commodityId, ["id", "name", "description",
+            "only_user", "purchase_count", "category_id", "cover", "price", "user_price",
+            "status", "owner", "delivery_way", "contact_type", "password_status", "level_price",
+            "level_disable", "coupon", "shared_id", "shared_code", "shared_premium", "shared_premium_type", "seckill_status",
+            "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden",
+            "widget", "minimum", "shared_sync", "config"]);
 
         if (!$commodity) {
             throw new JSONException("商品不存在");
         }
+
         if ($commodity->status != 1) {
             throw new JSONException("该商品暂未上架");
         }
+
         $shared = \App\Model\Shared::query()->find($commodity->shared_id);
 
         if ($shared) {
@@ -225,13 +238,16 @@ class Index extends User
             if ($commodity->shared_sync == 1) {
                 $new = Commodity::query()->find($commodity->id);
 
-                if (($commodity->price - $commodity->shared_premium) != (float)$inventory['price']) {
-                    $new->price = (float)$inventory['price'] + $commodity->shared_premium;
+                $_premium = $commodity->shared_premium_type == 0 ? $commodity->shared_premium : sprintf("%.2f", $commodity->shared_premium * (float)$inventory['price']);
+
+                if (($commodity->price - $_premium) != (float)$inventory['price']) {
+                    $new->price = (float)$inventory['price'] + $_premium;
                     $commodity->price = $new->price;
                 }
 
-                if (($commodity->user_price - $commodity->shared_premium) != (float)$inventory['user_price']) {
-                    $new->user_price = (float)$inventory['user_price'] + $commodity->shared_premium;
+                $_premium = $commodity->shared_premium_type == 0 ? $commodity->shared_premium : sprintf("%.2f", $commodity->shared_premium * (float)$inventory['user_price']);
+                if (($commodity->user_price - $_premium) != (float)$inventory['user_price']) {
+                    $new->user_price = (float)$inventory['user_price'] + $_premium;
                     $commodity->user_price = $new->user_price;
                 }
 
@@ -267,6 +283,19 @@ class Index extends User
 
         if ($userGroup) {
             $commodity->user_price = $this->order->calcAmount($this->getUser()->id, 1, $commodity, $userGroup);
+        }
+
+        $bus = \App\Model\Business::get(Client::getDomain());
+        if ($bus) {
+            if ($userCommodity = UserCommodity::getCustom($bus->user_id, $commodity->id)) {
+                $commodity->price += (float)$userCommodity->premium;
+                if (!$userGroup) {
+                    $commodity->user_price += (float)$userCommodity->premium;
+                }
+                if ($userCommodity->name) {
+                    $commodity->name = $userCommodity->name;
+                }
+            }
         }
 
         $commodity->service_url = Config::get("service_url");

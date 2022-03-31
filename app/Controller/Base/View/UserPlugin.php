@@ -34,6 +34,11 @@ abstract class UserPlugin extends \App\Controller\Base\User
             foreach ($cfg as $k => $v) {
                 $data["config"][$k] = $v;
             }
+
+            if (Client::isMobile() && $data['config']['background_mobile_url']) {
+                $data['config']['background_url'] = $data['config']['background_mobile_url'];
+            }
+
             $domain = Client::getDomain();
             $business = Business::query()->where("subdomain", $domain)->first() ?? Business::query()->where("topdomain", $domain)->first();
             if ($business) {

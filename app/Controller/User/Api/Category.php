@@ -10,6 +10,7 @@ use App\Entity\QueryTemplateEntity;
 use App\Interceptor\Business;
 use App\Interceptor\UserSession;
 use App\Interceptor\Waf;
+use App\Model\UserCategory;
 use App\Service\Query;
 use App\Util\Client;
 use Kernel\Annotation\Inject;

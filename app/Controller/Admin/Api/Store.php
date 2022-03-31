@@ -132,6 +132,10 @@ class Store extends Manage
         $storeId = (int)$_POST['store_id'];
         $items = (array)$_POST['items'];
         $premium = (float)$_POST['premium']; // 加价金额
+        $premiumType = (int)$_POST['premium_type']; // 加价模式
+        $sharedSync = (int)$_POST['shared_sync'] == 0 ? 0 : 1; // 主从同步
+        $shelves = (int)$_POST['shelves'] == 0 ? 0 : 1; // 立即上架
+
         $shared = Shared::query()->find($storeId);
 
         if (!$shared) {
@@ -159,11 +163,19 @@ class Store extends Manage
                     }
                 }
 
+                if ($premiumType == 0) {
+                    //普通加价
+                    $commodity->price = $item['price'] + $premium;
+                    $commodity->user_price = $item['price'] + $premium;
+                } else {
+                    //百分比加价
+                    $commodity->price = $item['price'] + ($premium * $item['price']);
+                    $commodity->user_price = $item['price'] + ($premium * $item['price']);
+                }
+
                 $commodity->cover = $shared->domain . $item['cover'];
                 $commodity->factory_price = $item['user_price'];
-                $commodity->price = $item['price'] + $premium;
-                $commodity->user_price = $item['price'] + $premium;
-                $commodity->status = 0;
+                $commodity->status = $shelves;
                 $commodity->owner = 0;
                 $commodity->create_time = $date;
                 $commodity->api_status = 0;
@@ -176,6 +188,8 @@ class Store extends Manage
                 $commodity->shared_id = $storeId;
                 $commodity->shared_code = $item['code'];
                 $commodity->shared_premium = $premium;
+                $commodity->shared_premium_type = $premiumType;
+                $commodity->shared_sync = $sharedSync;
                 $commodity->seckill_status = $item['seckill_status'];
                 if ($commodity->seckill_status == 1) {
                     $commodity->seckill_start_time = $item['seckill_start_time'];

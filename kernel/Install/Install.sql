@@ -137,6 +137,7 @@ CREATE TABLE `__PREFIX__commodity`  (
                                   `shared_id` int UNSIGNED NULL DEFAULT NULL COMMENT '共享平台ID',
                                   `shared_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '共享平台-商品代码',
                                   `shared_premium` float(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '商品加价',
+                                  `shared_premium_type` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '加价模式',
                                   `seckill_status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '商品秒杀：0=关闭，1=开启',
                                   `seckill_start_time` datetime NULL DEFAULT NULL COMMENT '秒杀开始时间',
                                   `seckill_end_time` datetime NULL DEFAULT NULL COMMENT '秒杀结束时间',
@@ -158,7 +159,7 @@ CREATE TABLE `__PREFIX__commodity`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
 
 
-INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 1, 1, NULL, '', 0.00, 0, NULL, NULL, 0, 0.00, 0, NULL, 0);
+INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 1, 1, NULL, '', 0.00, 0, 0, NULL, NULL, 0, 0.00, 0, NULL, 0);
 
 DROP TABLE IF EXISTS `__PREFIX__config`;
 CREATE TABLE `__PREFIX__config`  (
@@ -209,6 +210,7 @@ INSERT INTO `__PREFIX__config` VALUES (38, 'recharge_max', '1000');
 INSERT INTO `__PREFIX__config` VALUES (39, 'user_mobile_theme', '0');
 INSERT INTO `__PREFIX__config` VALUES (40, 'commodity_recommend', '0');
 INSERT INTO `__PREFIX__config` VALUES (41, 'commodity_name', '推荐');
+INSERT INTO `__PREFIX__config` VALUES (42, 'background_mobile_url', '');
 
 DROP TABLE IF EXISTS `__PREFIX__coupon`;
 CREATE TABLE `__PREFIX__coupon`  (
@@ -282,6 +284,7 @@ CREATE TABLE `__PREFIX__order`  (
                               `coupon_id` int UNSIGNED NULL DEFAULT NULL COMMENT '优惠卷id',
                               `cost` decimal(10, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '手续费',
                               `from` int UNSIGNED NULL DEFAULT NULL COMMENT '推广人id',
+                              `premium` decimal(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '加价',
                               PRIMARY KEY (`id`) USING BTREE,
                               UNIQUE INDEX `trade_no`(`trade_no`) USING BTREE,
                               INDEX `commodity_id`(`commodity_id`) USING BTREE,
@@ -421,6 +424,38 @@ CREATE TABLE `__PREFIX__user_recharge`  (
                                       CONSTRAINT `__PREFIX__user_recharge_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `__PREFIX__user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
+DROP TABLE IF EXISTS `__PREFIX__user_category`;
+CREATE TABLE `__PREFIX__user_category`  (
+                                      `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
+                                      `user_id` int UNSIGNED NOT NULL COMMENT '商家id',
+                                      `category_id` int UNSIGNED NOT NULL COMMENT '分类id',
+                                      `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '自定义分类名称',
+                                      `status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '状态：0=屏蔽，1=显示',
+                                      PRIMARY KEY (`id`) USING BTREE,
+                                      UNIQUE INDEX `user_id`(`user_id` ASC, `category_id` ASC) USING BTREE,
+                                      INDEX `status`(`status` ASC) USING BTREE,
+                                      INDEX `acg_user_category_ibfk_2`(`category_id` ASC) USING BTREE,
+                                      INDEX `user_id_2`(`user_id` ASC) USING BTREE,
+                                      CONSTRAINT `acg_user_category_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `acg_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+                                      CONSTRAINT `acg_user_category_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `acg_category` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+DROP TABLE IF EXISTS `__PREFIX__user_commodity`;
+CREATE TABLE `__PREFIX__user_commodity`  (
+                                       `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
+                                       `user_id` int UNSIGNED NOT NULL COMMENT '商家id',
+                                       `commodity_id` int UNSIGNED NOT NULL COMMENT '商品id',
+                                       `premium` float(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '商品加价',
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '自定义名称',
+  `status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '状态：0=隐藏，1=显示',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `user_id`(`user_id` ASC, `commodity_id` ASC) USING BTREE,
+  INDEX `commodity_id`(`commodity_id` ASC) USING BTREE,
+  INDEX `user_id_2`(`user_id` ASC) USING BTREE,
+  INDEX `status`(`status` ASC) USING BTREE,
+  CONSTRAINT `acg_user_commodity_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `acg_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `acg_user_commodity_ibfk_2` FOREIGN KEY (`commodity_id`) REFERENCES `acg_commodity` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 ALTER TABLE __PREFIX__commodity ADD send_email tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '发送邮件：0=否，1=是';
 ALTER TABLE __PREFIX__commodity ADD only_user tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '限制登录购买：0=否，1=是';

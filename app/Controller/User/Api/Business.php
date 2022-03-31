@@ -22,7 +22,7 @@ class Business extends User
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function purchase(): array
     {
@@ -67,7 +67,7 @@ class Business extends User
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function saveConfig(): array
     {
@@ -146,7 +146,7 @@ class Business extends User
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function unbind(): array
     {

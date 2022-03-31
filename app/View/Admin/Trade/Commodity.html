@@ -806,6 +806,9 @@
                     cao.popupElement("shared_sync", "input", unqueId).parent().show();
                     cao.popupElement("shared_code", "input", unqueId).parent().parent().show();
                     cao.popupElement("shared_premium", "input", unqueId).parent().parent().show();
+                    cao.popupElement("shared_premium_type", "input", unqueId).parent().parent().show();
+
+
                     cao.popupElement("delivery_way", "select", unqueId).parent().parent().hide();
                     cao.popupElement("delivery_auto_mode", "select", unqueId).parent().parent().hide();
                     cao.popupElement("delivery_message", "textarea", unqueId).parent().parent().hide();
@@ -814,6 +817,8 @@
                     cao.popupElement("shared_sync", "input", unqueId).parent().hide();
                     cao.popupElement("shared_code", "input", unqueId).parent().parent().hide();
                     cao.popupElement("shared_premium", "input", unqueId).parent().parent().hide();
+                    cao.popupElement("shared_premium_type", "input", unqueId).parent().parent().hide();
+
                     cao.popupElement("delivery_way", "select", unqueId).parent().parent().show();
                     cao.popupElement("delivery_auto_mode", "select", unqueId).parent().parent().show();
                     cao.popupElement("delivery_message", "textarea", unqueId).parent().parent().show();
@@ -829,7 +834,8 @@
                         name: "category_id",
                         type: "select",
                         dict: "category->owner=0,id,name",
-                        placeholder: "请选择分类", required: true
+                        placeholder: "请选择分类", required: true,
+                        search: true
                     },
                     {title: "成本价", name: "factory_price", type: "input", default: 0.00},
                     {title: "商品单价", name: "price", type: "input", placeholder: "商品单价(未登录游客购买价)", required: true},
@@ -885,6 +891,17 @@
                         }
                     },
                     {title: "共享代码", name: "shared_code", type: "input", placeholder: "请输入对方店铺共享商品的代码", hide: true},
+                    {
+                        title: "加价模式",
+                        name: "shared_premium_type",
+                        type: "radio",
+                        dict: [
+                            {id: 0, name: "普通金额加价"},
+                            {id: 1, name: "百分比加价"}
+                        ],
+                        default: 0,
+                        hide: true
+                    },
                     {
                         title: "自动加价",
                         name: "shared_premium",

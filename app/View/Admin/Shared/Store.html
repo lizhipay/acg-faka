@@ -195,13 +195,37 @@
                                             dict: "category,id,name",
                                             placeholder: "请选择分类"
                                         },
-                                        {title: "远程商品", name: "auth", type: "treeCheckbox", dict: res.data},
                                         {
-                                            title: "集体加价",
+                                            title: "价格主从同步",
+                                            name: "shared_sync",
+                                            type: "switch",
+                                            text: "启用",
+                                            tips: "开启后，会实时同步价格"
+                                        },
+                                        {
+                                            title: "立即上架",
+                                            name: "shelves",
+                                            type: "switch",
+                                            text: "立即上架",
+                                            tips: "开启后，入库完毕后会立即上架"
+                                        },
+                                        {
+                                            title: "加价模式",
+                                            name: "premium_type",
+                                            type: "radio",
+                                            dict: [
+                                                {id: 0, name: "普通金额加价"},
+                                                {id: 1, name: "百分比加价"}
+                                            ],
+                                            default: 0
+                                        },
+                                        {
+                                            title: "加价数额",
                                             name: "premium",
                                             type: "input",
-                                            placeholder: "集体加价/元，届时可在每个商品中修改单独的加价，不加价可不填写"
+                                            placeholder: "加价金额/百分比(小数代替)"
                                         },
+                                        {title: "远程商品", name: "auth", type: "treeCheckbox", dict: res.data}
                                     ], res => {
                                         tableInstance.instance.reload();
                                     }, [], ['660px', '768px'], false, mapItem.name + "-拉取商品到本地分类");

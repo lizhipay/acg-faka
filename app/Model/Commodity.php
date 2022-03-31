@@ -33,6 +33,7 @@ use Kernel\Exception\JSONException;
  * @property int $shared_id
  * @property string $shared_code
  * @property float $shared_premium
+ * @property int $shared_premium_type
  * @property int $seckill_status
  * @property int $api_status
  * @property int $draft_status

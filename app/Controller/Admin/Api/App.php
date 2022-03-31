@@ -117,12 +117,21 @@ class App extends Manage
         if (isset($_POST['type'])) {
             $type = (int)$_POST['type'];
         }
-        $plugins = $this->app->plugins([
+        $keywords = (string)$_POST['keywords'];
+
+        $data = [
             "type" => $type,
             "page" => (int)$_POST['page'],
             "limit" => (int)$_POST['limit'],
-            "group" => (int)$_POST['group'],
-        ]);
+            "group" => (int)$_POST['group']
+        ];
+
+        if ($keywords) {
+            $data['keywords'] = urldecode($keywords);
+        }
+
+        $plugins = $this->app->plugins($data);
+
         //判断自己是否安装
         $fileInit = false;
         foreach ($plugins['rows'] as $index => $plugin) {

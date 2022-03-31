@@ -139,7 +139,7 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">背景图床(支持http地址或者图床api)</label>
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">PC背景图片(支持http地址或者图床api)</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-6 fv-row">
@@ -160,6 +160,31 @@
                                 <!--end::Col-->
                             </div>
                             <!--end::Input group-->
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">手机背景图片</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-6 fv-row">
+                                    <input type="text" name="background_mobile_url"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="不设置则使用PC版配置" value="#{$config.background_mobile_url}"/>
+                                </div>
+                                <div class="col-lg-2 fv-row">
+                                    <!--begin::Input-->
+                                    <input type="file" class="background-mobile-upload" style="display: none;"
+                                           accept=".png, .jpg, .jpeg, .gif"/>
+                                    <button type="button" class="btn btn-light background-mb-upload"
+                                            onclick="document.getElementsByClassName('background-mobile-upload')[0].click();">
+                                        <i class="fas fa-cloud-upload-alt"></i> 上传图片
+                                    </button>
+                                    <!--end::Input-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -549,6 +574,35 @@
                         if (res.code == 200) {
                             layer.msg('背景图片上传成功，需要保存才会生效哦。');
                             $('input[name=background_url]').val(res.data.path);
+                        } else {
+                            layer.msg(res.msg);
+                        }
+                    },
+                    error: function (data) {
+                        layer.close(index);
+                        layer.msg('上传失败');
+                    }
+                });
+            });
+
+            $('.background-mobile-upload').change(function () {
+                let formdata = new FormData();
+                formdata.append("file", $(this)[0].files[0]);
+                let index = layer.load(1, {
+                    shade: [0.3, '#fff']
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "/admin/api/upload/handle",
+                    data: formdata,
+                    contentType: false, // 不设置内容类型
+                    processData: false, // 不处理数据
+                    dataType: "json",
+                    success: function (res) {
+                        layer.close(index);
+                        if (res.code == 200) {
+                            layer.msg('手机背景图片上传成功，需要保存才会生效哦。');
+                            $('input[name=background_mobile_url]').val(res.data.path);
                         } else {
                             layer.msg(res.msg);
                         }

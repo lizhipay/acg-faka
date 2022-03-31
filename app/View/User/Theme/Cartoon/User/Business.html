@@ -9,150 +9,212 @@
 
             <div class="content-body">
                 #{if !$business}
-                <blockquote class="elem-quote">
-                    您还没有开通店铺
-                </blockquote>
+                    <blockquote class="elem-quote">
+                        您还没有开通店铺
+                    </blockquote>
                 #{/if}
                 #{if $purchase == 1}
-                <blockquote class="elem-quote">
-                    升级您的店铺，享受更多权益
-                </blockquote>
+                    <blockquote class="elem-quote">
+                        升级您的店铺，享受更多权益
+                    </blockquote>
                 #{/if}
                 #{if !$business || $purchase == 1 && $business}
-                <form class="layui-form" action="">
-                    <div class="form-block">
-                        <div>
-                            <div class="form-header">请选择</div>
-                            <div class="form-body">
-                                #{foreach $level as $le}
-                                <a class="button-click" onclick="openLevel(this,#{$le.id})"
-                                   style="line-height: 22px;color: #db66ac;"> <img
-                                        src="#{$le.icon}" class="pay-icon" style="margin-top: -5px;"> <span
-                                        style="font-weight: bold;">#{$le.name}</span> <span style="font-weight: bold;">¥#{$le.price}</span>
-                                    <hr>
-                                    <div style="font-size: 12px;">
-                                        <p>分站功能：#{if $le.substation == 1}<i class="layui-icon" style="color: green;">&#xe605;</i>
-                                            #{else}<i class="layui-icon" style="color: red;">&#x1006;</i>#{/if}</p>
-                                        <p>分站返佣：#{$le.accrual*100}%</p>
-                                        <p>独立域名：#{if $le.top_domain == 1}<i class="layui-icon" style="color: green;">&#xe605;</i>
-                                            #{else}<i class="layui-icon" style="color: red;">&#x1006;</i>#{/if}</p>
-                                        <p>供货权限：#{if $le.supplier == 1}<i class="layui-icon" style="color: green;">&#xe605;</i>
-                                            #{else}<i class="layui-icon" style="color: red;">&#x1006;</i>#{/if}</p>
-                                        <p>供货手续费：#{if $le.supplier == 1}#{$le.cost*100}%#{else}-#{/if}</p>
-                                    </div>
-                                </a>
-                                #{/foreach}
-                            </div>
-                        </div>
-                        <div style="margin-top: 10px;">
-                            <blockquote class="elem-tips" style="font-size: 12px;">
-                                <p>• 分站返佣：当您开通分站店铺后，您在分站卖出去的主站商品，将会给您一定的佣金</p>
-                                <p>• 顶级域名：当您开通分站后，可以绑定属于您自己的顶级域名，而不是使用分配的子域名</p>
-                                <p>• 供货权限：可以建立自己的商品分类，以及添加自己的商品来进行售卖，主站也会帮你售卖。</p>
-                                <p>• 供货手续费：用作与您自主上架的商品，当成功出售时，系统将收取一定的手续费</p>
-                            </blockquote>
-
-                        </div>
-                        <div style="margin-top: 25px;">
-                            <button type="button" class="layui-btn layui-btn-pink payButton">#{if !$business}立即开通
-                                #{/if}#{if $purchase == 1}立即升级#{/if}
-                            </button>
-                            #{if $purchase == 1}<a href="/user/business/index" class="layui-btn layui-btn-pink">返回店铺</a>#{/if}
-                        </div>
-                    </div>
-                </form>
-                #{else}
-                #{if $user.businessLevel.substation == 1}
-                <blockquote class="elem-quote">
-                    当前商户等级：<img src="#{$user.businessLevel.icon}"
-                                style="height: 16px;margin-top: -4px;">#{$user.businessLevel.name}，分站返佣：#{$user.businessLevel.accrual*100}%，绑定独立域名：#{if
-                    $user.businessLevel.top_domain == 1}<b style="color: green;">✔</b>#{else}<b
-                        style="color: red;">✖</b>#{/if}，供货权限：#{if
-                    $user.businessLevel.supplier == 1}<b style="color: green;">✔</b>，供货手续费：#{$user.businessLevel.cost*100}%#{else}<b
-                        style="color: red;">✖</b>#{/if} #{if
-                    count($level) > 0} <a href="/user/business/index?purchase=1" style="color: #a372d7;font-weight: bold;margin-left: 10px;">我要升级，变得更强！</a>#{/if}
-                </blockquote>
-                <form class="layui-form form-data">
-                    <div>
-                        <div class="form-header">店铺名称</div>
-                        <div class="form-body"><input type="text" value="#{$business.shop_name}" name="shop_name"
-                                                      required autocomplete="off" placeholder="请输入店铺名称"
-                                                      class="layui-input" style="color: #ff9191;"></div>
-                    </div>
-                    <div>
-                        <div class="form-header">网站标题</div>
-                        <div class="form-body"><input type="text" value="#{$business.title}" name="title" required
-                                                      autocomplete="off" placeholder="用于显示浏览器标题" class="layui-input"
-                                                      style="color: #ff9191;"></div>
-                    </div>
-                    <div>
-                        <div class="form-header">店铺公告</div>
-                        <div class="form-body"><textarea type="text" name="notice" required autocomplete="off"
-                                                         placeholder="店铺公告" class="layui-textarea"
-                                                         style="color: #ff9191;">#{$business.notice}</textarea></div>
-                    </div>
-                    <div>
-                        <div class="form-header">显示主站商品</div>
-                        <div class="form-body"><input type="checkbox" name="master_display" title="开启" value="1" #{if
-                                                      $business.master_display== 1}checked#{/if}>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="form-header">客服QQ</div>
-                        <div class="form-body"><input type="text" value="#{$business.service_qq}" name="service_qq"
-                                                      required autocomplete="off" placeholder="售后客服QQ"
-                                                      class="layui-input" style="color: #ff9191;"></div>
-                    </div>
-                    <div>
-                        <div class="form-header">客服地址</div>
-                        <div class="form-body"><input type="text" value="#{$business.service_url}" name="service_url"
-                                                      required autocomplete="off" placeholder="网页客服地址"
-                                                      class="layui-input" style="color: #ff9191;"></div>
-                    </div>
-                    <div>
-                        <div class="form-header">子域名 #{if $business.subdomain} <b  style="color: green;">✔</b> <a style="color: #239c87;"
-                                href="javascript:void(0);" class="unbind-subdomain">解绑</a> #{/if}
-                        </div>
-                        <div class="form-body">
-                            <div class="layui-row" style="width: 400px;">
-                                <div class="layui-col-md5">
-                                    <input type="text" value="#{$business.subdomain}" name="subdomain" required
-                                           autocomplete="off" placeholder="前缀" class="layui-input"
-                                           style="color: #ff9191;" #{if $business.subdomain} disabled #{/if}>
-                                </div>
-                                <div class="layui-col-md7">
-                                    <select class="layui-select " name="suffix" #{if $business.subdomain} disabled #{/if}>
-                                    #{foreach $domain as $d}
-                                    <option value="#{$d}">.#{$d}</option>
+                    <form class="layui-form" action="">
+                        <div class="form-block">
+                            <div>
+                                <div class="form-header">请选择</div>
+                                <div class="form-body">
+                                    #{foreach $level as $le}
+                                        <a class="button-click" onclick="openLevel(this,#{$le.id})"
+                                           style="line-height: 22px;color: #db66ac;"> <img
+                                                    src="#{$le.icon}" class="pay-icon" style="margin-top: -5px;"> <span
+                                                    style="font-weight: bold;">#{$le.name}</span> <span
+                                                    style="font-weight: bold;">¥#{$le.price}</span>
+                                            <hr>
+                                            <div style="font-size: 12px;">
+                                                <p>分站功能：#{if $le.substation == 1}<i class="layui-icon"
+                                                                                    style="color: green;">&#xe605;</i>
+                                                    #{else}<i class="layui-icon" style="color: red;">&#x1006;</i>#{/if}
+                                                </p>
+                                                <p>分站返佣：#{$le.accrual*100}%</p>
+                                                <p>独立域名：#{if $le.top_domain == 1}<i class="layui-icon"
+                                                                                    style="color: green;">&#xe605;</i>
+                                                    #{else}<i class="layui-icon" style="color: red;">&#x1006;</i>#{/if}
+                                                </p>
+                                                <p>供货权限：#{if $le.supplier == 1}<i class="layui-icon"
+                                                                                  style="color: green;">&#xe605;</i>
+                                                    #{else}<i class="layui-icon" style="color: red;">&#x1006;</i>#{/if}
+                                                </p>
+                                                <p>供货手续费：#{if $le.supplier == 1}#{$le.cost*100}%#{else}-#{/if}</p>
+                                            </div>
+                                        </a>
                                     #{/foreach}
-                                    </select>
                                 </div>
                             </div>
-                        </div>
-                        #{if $user.businessLevel.top_domain == 1}
-                        <div>
-                            <div class="form-header">独立域名 #{if $business.topdomain} <a style="color: #239c87;"
-                                    href="javascript:void(0);" class="unbind-topdomain">解绑</a> [#{if gethostbyname($config.cname)
-                                == gethostbyname($business.topdomain)}<b style="color: green;">正常</b>#{else}<b
-                                        style="color: mediumvioletred;">未检测到解析</b>#{/if}] #{/if} <span
-                                        style="color: red;">CNAME解析地址：<b
-                                        style="color: green;">#{$config.cname}</b></span> </div>
-                            <div class="form-body"><input type="text" value="#{$business.topdomain}" name="topdomain"
-                                                          required autocomplete="off" placeholder="绑定独立域名"
-                                                          class="layui-input" style="width:260px;color: #ff9191;" #{if
-                                                          $business.topdomain} disabled #{/if}>
+                            <div style="margin-top: 10px;">
+                                <blockquote class="elem-tips" style="font-size: 12px;">
+                                    <p>• 分站返佣：当您开通分站店铺后，您在分站卖出去的主站商品，将会给您一定的佣金</p>
+                                    <p>• 顶级域名：当您开通分站后，可以绑定属于您自己的顶级域名，而不是使用分配的子域名</p>
+                                    <p>• 供货权限：可以建立自己的商品分类，以及添加自己的商品来进行售卖，主站也会帮你售卖。</p>
+                                    <p>• 供货手续费：用作与您自主上架的商品，当成功出售时，系统将收取一定的手续费</p>
+                                </blockquote>
+
+                            </div>
+                            <div style="margin-top: 25px;">
+                                <button type="button" class="layui-btn layui-btn-pink payButton">#{if !$business}立即开通
+                                    #{/if}#{if $purchase == 1}立即升级#{/if}
+                                </button>
+                                #{if $purchase == 1}
+                                    <a href="/user/business/index" class="layui-btn layui-btn-pink">返回店铺</a>
+                                #{/if}
                             </div>
                         </div>
-                        #{/if}
-                        <div style="margin-top: 25px;">
-                            <button type="button" class="layui-btn layui-btn-pink save-config">保存设置</button>
-                        </div>
-                </form>
+                    </form>
                 #{else}
-                <blockquote class="elem-quote">
-                    您当前商户等级暂不支持店铺功能，<a href="/user/business/index?purchase=1">立即升级</a>
-                </blockquote>
-                #{/if}
+                    #{if $user.businessLevel.substation == 1}
+                        <blockquote class="elem-quote">
+                            当前商户等级：<img src="#{$user.businessLevel.icon}"
+                                        style="height: 16px;margin-top: -4px;">#{$user.businessLevel.name}
+                            ，分站返佣：#{$user.businessLevel.accrual*100}%，绑定独立域名：#{if
+                            $user.businessLevel.top_domain == 1}<b style="color: green;">✔</b>#{else}<b
+                                style="color: red;">✖</b>#{/if}，供货权限：#{if
+                            $user.businessLevel.supplier == 1}<b
+                                style="color: green;">✔</b>，供货手续费：#{$user.businessLevel.cost*100}%#{else}<b
+                                style="color: red;">✖</b>#{/if} #{if
+                            count($level) > 0}
+                                <a href="/user/business/index?purchase=1"
+                                   style="color: #a372d7;font-weight: bold;margin-left: 10px;">我要升级，变得更强！</a>
+                            #{/if}
+                        </blockquote>
+                        <form class="layui-form form-data">
+                            <div>
+                                <div class="form-header">店铺名称</div>
+                                <div class="form-body"><input type="text" value="#{$business.shop_name}"
+                                                              name="shop_name"
+                                                              required autocomplete="off" placeholder="请输入店铺名称"
+                                                              class="layui-input" style="color: #ff9191;"></div>
+                            </div>
+                            <div>
+                                <div class="form-header">网站标题</div>
+                                <div class="form-body"><input type="text" value="#{$business.title}" name="title"
+                                                              required
+                                                              autocomplete="off" placeholder="用于显示浏览器标题"
+                                                              class="layui-input"
+                                                              style="color: #ff9191;"></div>
+                            </div>
+                            <div>
+                                <div class="form-header">店铺公告</div>
+                                <div class="form-body"><textarea type="text" name="notice" required autocomplete="off"
+                                                                 placeholder="店铺公告" class="layui-textarea"
+                                                                 style="color: #ff9191;">#{$business.notice}</textarea>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="form-header">显示主站商品[全局]</div>
+                                <div class="form-body"><input type="checkbox" name="master_display" title="开启" value="1"
+                                                              #{if
+                                                              $business.master_display== 1}checked#{/if}>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="form-header">主站分类
+                                    <span class="acg-badge acg-badge-light-success category-show" data-state="1"
+                                          style="cursor:pointer;">全部显示</span>
+                                    <span class="acg-badge acg-badge-light-red category-show" data-state="0"
+                                          style="cursor:pointer;">全部隐藏</span>
+                                </div>
+                                <div class="form-body">
+                                    <table id="master_category" lay-filter="master_category"></table>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="form-header">主站商品
+                                    <a id="commodity"></a>
+                                    <span class="acg-badge acg-badge-light-success commodity-show" data-state="1"
+                                          style="cursor:pointer;">全部显示</span>
+                                    <span class="acg-badge acg-badge-light-red commodity-show" data-state="0"
+                                          style="cursor:pointer;">全部隐藏</span>
+
+                                    <span class="acg-badge acg-badge-light-primary commodity-premium"
+                                          style="cursor:pointer;">加价</span>
+                                </div>
+                                <div class="form-body">
+                                    <table id="master_commodity" lay-filter="master_commodity"></table>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="form-header">客服QQ</div>
+                                <div class="form-body"><input type="text" value="#{$business.service_qq}"
+                                                              name="service_qq"
+                                                              required autocomplete="off" placeholder="售后客服QQ"
+                                                              class="layui-input" style="color: #ff9191;"></div>
+                            </div>
+                            <div>
+                                <div class="form-header">客服地址</div>
+                                <div class="form-body"><input type="text" value="#{$business.service_url}"
+                                                              name="service_url"
+                                                              required autocomplete="off" placeholder="网页客服地址"
+                                                              class="layui-input" style="color: #ff9191;"></div>
+                            </div>
+                            <div>
+                                <div class="form-header">子域名 #{if $business.subdomain}
+                                        <b style="color: green;">✔</b>
+                                        <a style="color: #239c87;"
+                                           href="javascript:void(0);" class="unbind-subdomain">解绑</a>
+                                    #{/if}
+                                </div>
+                                <div class="form-body">
+                                    <div class="layui-row" style="width: 400px;">
+                                        <div class="layui-col-md5">
+                                            <input type="text" value="#{$business.subdomain}" name="subdomain" required
+                                                   autocomplete="off" placeholder="前缀" class="layui-input"
+                                                   style="color: #ff9191;" #{if $business.subdomain} disabled #{/if}>
+                                        </div>
+                                        <div class="layui-col-md7">
+                                            <select class="layui-select "
+                                                    name="suffix" #{if $business.subdomain} disabled #{/if}>
+                                                #{foreach $domain as $d}
+                                                    <option value="#{$d}">.#{$d}</option>
+                                                #{/foreach}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                #{if $user.businessLevel.top_domain == 1}
+                                    <div>
+                                        <div class="form-header">独立域名 #{if $business.topdomain}
+                                                <a style="color: #239c87;"
+                                                   href="javascript:void(0);" class="unbind-topdomain">解绑</a>
+                                                [#{if gethostbyname($config.cname)
+                                                == gethostbyname($business.topdomain)}
+                                                    <b style="color: green;">正常</b>
+                                                #{else}
+                                                    <b
+                                                            style="color: mediumvioletred;">未检测到解析</b>
+                                                #{/if}] #{/if} <span
+                                                    style="color: red;">CNAME解析地址：<b
+                                                        style="color: green;">#{$config.cname}</b></span></div>
+                                        <div class="form-body"><input type="text" value="#{$business.topdomain}"
+                                                                      name="topdomain"
+                                                                      required autocomplete="off" placeholder="绑定独立域名"
+                                                                      class="layui-input"
+                                                                      style="width:260px;color: #ff9191;" #{if
+                                                    $business.topdomain} disabled #{/if}>
+                                        </div>
+                                    </div>
+                                #{/if}
+                                <div style="margin-top: 25px;">
+                                    <button type="button" class="layui-btn layui-btn-pink save-config">保存设置</button>
+                                </div>
+                        </form>
+                    #{else}
+                        <blockquote class="elem-quote">
+                            您当前商户等级暂不支持店铺功能，<a href="/user/business/index?purchase=1">立即升级</a>
+                        </blockquote>
+                    #{/if}
                 #{/if}
             </div>
         </div>
@@ -182,9 +244,18 @@
         })
     });
 
+
     $(function () {
-        layui.use(['form'], function () {
+        layui.use(['form', 'hex'], function () {
             var form = layui.form;
+            let table = $("#master_category");
+            let table2 = $("#master_commodity");
+            let cao = layui.hex;
+            let queryParams = null;
+            let globalCategoryId = 0;
+            let globalCategoryName = null;
+
+
             $('.unbind-subdomain').click(function () {
                 layer.confirm('您正在解绑子域名，解绑后，用户将无法再通过旧子域名访问您的店铺。', {
                     btn: ['解绑', '取消'],
@@ -211,6 +282,253 @@
                     })
                 });
             });
+
+
+            //####主站
+            let setCategory = (values = {}) => {
+                cao.popup('/user/api/master/setCategory', [
+                    {title: "cid", name: "category_id", type: "hidden"},
+                    {title: "自定义名称", name: "name", type: "input", placeholder: "自定义分类名称，不填写代表使用主站的"},
+                    {title: "状态", name: "status", type: "switch", text: "显示"}
+                ], res => {
+                    table.bootstrapTable('refresh', {silent: true});
+                }, values, "480px");
+            }
+            let setCommodity = (values = {}) => {
+                cao.popup('/user/api/master/setCommodity', [
+                    {title: "cid", name: "commodity_id", type: "hidden"},
+                    {title: "自定义名称", name: "name", type: "input", placeholder: "自定义商品名称，不填写代表使用主站的"},
+                    {title: "加价", name: "premium", type: "input", placeholder: "商品加价"},
+                    {title: "状态", name: "status", type: "switch", text: "显示"}
+                ], res => {
+                    table2.bootstrapTable('refresh', {silent: true});
+                }, values, "480px");
+            }
+
+            $('.commodity-show').click(function () {
+                let status = $(this).attr("data-state");
+                User.$post("/user/api/master/setCommodityAllStatus", {
+                    status: status,
+                    category_id: globalCategoryId
+                }, res => {
+                    layer.msg("已生效");
+                    table2.bootstrapTable('refresh', {silent: true});
+                });
+            });
+
+            $('.category-show').click(function () {
+                let status = $(this).attr("data-state");
+                User.$post("/user/api/master/setCategoryAllStatus", {status: status}, res => {
+                    layer.msg("已生效");
+                    table.bootstrapTable('refresh', {silent: true});
+                });
+            });
+
+            $('.commodity-premium').click(function () {
+                cao.popup('/user/api/master/setCommodityAllPremium', [
+                    {
+                        title: "加价模式", name: "mode", type: "radio", dict: [
+                            {id: 0, name: "普通金额加价"},
+                            {id: 1, name: "百分比加价"}
+                        ], default: 0
+                    },
+                    {title: "加价数量", name: "premium", type: "input", placeholder: "金额/百分比(小数代替)"},
+                    {title: "cid", name: "category_id", type: "hidden"}
+                ], res => {
+                    table2.bootstrapTable('refresh', {silent: true});
+                }, {category_id: globalCategoryId}, "480px", false, "加价" + (globalCategoryName ? " - <b style='color:red;'>仅分类：" + globalCategoryName + "</b>" : " - 全部"));
+            });
+
+            table.bootstrapTable({
+                url: '/user/api/master/category',//请求的url地址
+                method: "post",//请求方式
+                pageSize: 10,
+                showRefresh: false,//是否显示刷新按钮
+                cache: false,//是否使用缓存
+                showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                cardView: false,
+                pagination: true,//是否显示分页
+                pageNumber: 1,//初始化显示第几页，默认第1页
+                singleSelect: false,//复选框只能选择一条记录
+                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                dataType: "json",//接收的数据类型
+                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                queryParams: function (params) {
+                    params.page = (params.offset / params.limit) + 1;
+                    if (queryParams) {
+                        for (const key in params) {
+                            queryParams[key] = params[key];
+                        }
+                    } else {
+                        queryParams = params;
+                    }
+                    return queryParams;
+                },
+                //回调函数
+                responseHandler: function (res) {
+                    return {
+                        "total": res.count,
+                        "rows": res.data
+                    }
+                },
+                columns: [
+                    {field: 'name', title: '主站名称'}
+                    , {
+                        field: 'status', title: '状态', formatter: function (val, item) {
+                            if (!item.user_category || item.user_category.status == 1) {
+                                return '<span class="acg-badge acg-badge-light-success status" style="cursor:pointer;">显示</span>';
+                            }
+                            return '<span class="acg-badge acg-badge-light-red status" style="cursor:pointer;">隐藏</span>';
+                        }, events: {
+                            'click .status': function (event, value, row, index) {
+                                let values = row.user_category;
+
+                                if (!values) {
+                                    values = {id: 0, category_id: row.id};
+                                }
+
+                                User.$post("/user/api/master/setCategoryStatus", values, res => {
+                                    layer.msg("已生效");
+                                    table.bootstrapTable('refresh', {silent: true});
+                                });
+                            }
+                        }
+                    }
+
+                    , {
+                        field: 'user_name', title: '自定义名称', formatter: function (val, item) {
+                            if (!item.user_category || !item.user_category.name) {
+                                return '-';
+                            }
+                            return item.user_category.name;
+                        }
+                    }
+                    , {
+                        field: 'operate',
+                        title: '',
+                        formatter: function (val, item) {
+                            return '<a  class="acg-badge acg-badge-light-success acg-badge-button view-commodity" href="#commodity"><i class="layui-icon">&#xe656;</i> 查看商品</a> ' +
+                                '<span  class="acg-badge acg-badge-light-primary acg-badge-button setting"><i class="layui-icon">&#xe614;</i> 设置</span> ';
+                        },
+                        events: {
+                            'click .setting': function (event, value, row, index) {
+                                let values = row.user_category;
+
+                                if (!values) {
+                                    values = {category_id: row.id};
+                                }
+
+                                setCategory(values);
+                            },
+                            'click .view-commodity': function (event, value, row, index) {
+                                globalCategoryId = row.id;
+                                globalCategoryName = row.name;
+                                table2.bootstrapTable('refresh', {
+                                    silent: false,
+                                    pageNumber: 1,
+                                    query: {category_id: row.id}
+                                });
+                            }
+                        }
+                    }
+                ]
+            });
+            table2.bootstrapTable({
+                url: '/user/api/master/commodity',//请求的url地址
+                method: "post",//请求方式
+                pageSize: 10,
+                showRefresh: false,//是否显示刷新按钮
+                cache: false,//是否使用缓存
+                showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                cardView: false,
+                pagination: true,//是否显示分页
+                pageNumber: 1,//初始化显示第几页，默认第1页
+                singleSelect: false,//复选框只能选择一条记录
+                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                dataType: "json",//接收的数据类型
+                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                queryParams: function (params) {
+                    params.page = (params.offset / params.limit) + 1;
+                    if (queryParams) {
+                        for (const key in params) {
+                            queryParams[key] = params[key];
+                        }
+                    } else {
+                        queryParams = params;
+                    }
+                    return queryParams;
+                },
+                //回调函数
+                responseHandler: function (res) {
+                    return {
+                        "total": res.count,
+                        "rows": res.data
+                    }
+                },
+                columns: [
+                    {field: 'name', title: '名称'}
+                    , {field: 'price', title: '单价'}
+                    , {
+                        field: 'status', title: '状态', formatter: function (val, item) {
+                            if (!item.user_commodity || item.user_commodity.status == 1) {
+                                return '<span class="acg-badge acg-badge-light-success commodity-status" style="cursor:pointer;">显示</span>';
+                            }
+                            return '<span class="acg-badge acg-badge-light-red commodity-status" style="cursor:pointer;">隐藏</span>';
+                        }, events: {
+                            'click .commodity-status': function (event, value, row, index) {
+                                let values = row.user_commodity;
+
+                                if (!values) {
+                                    values = {id: 0, commodity_id: row.id};
+                                }
+
+                                User.$post("/user/api/master/setCommodityStatus", values, res => {
+                                    layer.msg("已生效");
+                                    table2.bootstrapTable('refresh', {silent: true});
+                                });
+                            }
+                        }
+                    }
+                    , {
+                        field: 'user_name', title: '自定义名称', formatter: function (val, item) {
+                            if (!item.user_commodity || !item.user_commodity.name) {
+                                return '-';
+                            }
+                            return item.user_commodity.name;
+                        }
+                    }
+                    , {
+                        field: 'premium', title: '加价', formatter: function (val, item) {
+                            if (!item.user_commodity || item.user_commodity.premium == 0) {
+                                return '-';
+                            }
+                            return item.user_commodity.premium;
+                        }
+                    }
+                    , {
+                        field: 'operate',
+                        title: '',
+                        formatter: function (val, item) {
+                            return '<span  class="acg-badge acg-badge-light-primary acg-badge-button c-setting"><i class="layui-icon">&#xe614;</i> 设置</span> ';
+                        },
+                        events: {
+                            'click .c-setting': function (event, value, row, index) {
+                                let values = row.user_commodity;
+
+                                if (!values) {
+                                    values = {commodity_id: row.id};
+                                }
+
+                                setCommodity(values);
+                            }
+                        }
+                    }
+                ]
+            });
+
+
         });
     });
 </script>

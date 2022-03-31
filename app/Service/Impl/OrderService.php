@@ -13,6 +13,7 @@ use App\Model\Coupon;
 use App\Model\OrderOption;
 use App\Model\Pay;
 use App\Model\User;
+use App\Model\UserCommodity;
 use App\Model\UserGroup;
 use App\Service\Email;
 use App\Service\Order;
@@ -39,21 +40,30 @@ class OrderService implements Order
     /**
      * @param int $owner
      * @param int $num
-     * @param \App\Model\Commodity $commodity
-     * @param \App\Model\UserGroup|null $group
+     * @param Commodity $commodity
+     * @param UserGroup|null $group
      * @param string|null $race
      * @return float
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group, ?string $race = null): float
     {
+        $premium = 0;
+        //检测分站价格
+        $bus = \App\Model\Business::get(Client::getDomain());
+        if ($bus) {
+            if ($userCommodity = UserCommodity::getCustom($bus->user_id, $commodity->id)) {
+                $premium = (float)$userCommodity->premium;
+            }
+        }
+
         //解析配置文件
         $this->parseConfig($commodity, $group, $owner, 1, $race);
         $price = $owner == 0 ? $commodity->price : $commodity->user_price;
 
         //禁用任何折扣,直接计算
         if ($commodity->level_disable == 1) {
-            return (int)(($num * $price) * 100) / 100;
+            return (int)(($num * ($price + $premium)) * 100) / 100;
         }
 
         $userDefinedConfig = Commodity::parseGroupConfig((string)$commodity->level_price, $group);
@@ -93,19 +103,20 @@ class OrderService implements Order
             }
         }
 
+        $price += $premium; //分站加价
         return (int)(($num * $price) * 100) / 100;
     }
 
 
     /**
      * 解析配置
-     * @param \App\Model\Commodity $commodity
-     * @param \App\Model\UserGroup|null $group
+     * @param Commodity $commodity
+     * @param UserGroup|null $group
      * @param int $owner
      * @param int $num
      * @param string|null $race
      * @return void
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function parseConfig(Commodity &$commodity, ?UserGroup $group, int $owner = 0, int $num = 1, ?string $race = null): void
     {
@@ -163,8 +174,8 @@ class OrderService implements Order
     }
 
     /**
-     * @param \App\Model\Commodity $commodity
-     * @param \App\Model\UserGroup|null $group
+     * @param Commodity $commodity
+     * @param UserGroup|null $group
      * @return array|null
      */
     public function userDefinedPrice(Commodity $commodity, ?UserGroup $group): ?array
@@ -178,10 +189,10 @@ class OrderService implements Order
 
     /**
      * @param \App\Model\User|null $user
-     * @param \App\Model\UserGroup|null $userGroup
+     * @param UserGroup|null $userGroup
      * @param array $map
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function trade(?User $user, ?UserGroup $userGroup, array $map): array
     {
@@ -361,6 +372,9 @@ class OrderService implements Order
 
             if ($from != 0 && $order->user_id != $from && $owner != $from) {
                 $order->from = $from;
+                if ($userCommodity = UserCommodity::getCustom($from, $commodity->id)) {
+                    $order->premium = $userCommodity->premium;
+                }
             }
 
             if ($commodity->draft_status == 1 && $cardId != 0) {
@@ -531,7 +545,7 @@ class OrderService implements Order
 
     /**
      * 初始化回调
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     #[ArrayShape(["trade_no" => "mixed", "amount" => "mixed", "success" => "mixed"])] public function callbackInitialize(string $handle, array $map): array
     {
@@ -616,7 +630,7 @@ class OrderService implements Order
         //100
         if ($promote_1) {
             $promoteRebateV1 = (float)Config::get("promote_rebate_v1");  //3级返佣 0.2
-            $rebate1 = $promoteRebateV1 * $order->amount;  //20.00
+            $rebate1 = $order->premium > 0 ? $order->premium : ($promoteRebateV1 * $order->amount);   //20.00
             if ($rebate1 >= 0.01) {
                 $promote_2 = $promote_1->parent; //获取上级
                 if (!$promote_2) {
@@ -665,7 +679,7 @@ class OrderService implements Order
     /**
      * 拉取本地卡密，需要事务环境执行
      * @param \App\Model\Order $order
-     * @param \App\Model\Commodity $commodity
+     * @param Commodity $commodity
      * @return string
      */
     private function pullCardForLocal(\App\Model\Order $order, Commodity $commodity): string
@@ -725,7 +739,7 @@ class OrderService implements Order
      * @param string $handle
      * @param array $map
      * @return string
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function callback(string $handle, array $map): string
     {
@@ -760,14 +774,14 @@ class OrderService implements Order
 
     /**
      * @param \App\Model\User|null $user
-     * @param \App\Model\UserGroup|null $userGroup
+     * @param UserGroup|null $userGroup
      * @param int $cardId
      * @param int $num
      * @param string $coupon
-     * @param int|\App\Model\Commodity|null $commodityId
+     * @param int|Commodity|null $commodityId
      * @param string|null $race
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     #[ArrayShape(["amount" => "mixed", "price" => "float|int", "couponMoney" => "float|int"])] public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int|Commodity|null $commodityId, ?string $race = null, bool $disableShared = false): array
     {
