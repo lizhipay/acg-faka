@@ -164,7 +164,7 @@ class Plugin
      */
     public static function hook(int $point, mixed &...$args)
     {
-        if (Context::get(\Kernel\Consts\Base::STORE_STATUS)) {
+        if (Context::get(\Kernel\Consts\Base::STORE_STATUS) && \Kernel\Util\Context::get(\Kernel\Consts\Base::IS_INSTALL)) {
             $list = _Point($point);
             foreach ($list as $item) {
                 \Kernel\Util\Plugin::$currentPluginName = $item['pluginName'];

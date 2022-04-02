@@ -18,8 +18,10 @@ try {
     $s = explode("/", trim((string)$_GET['s'], '/'));
     \Kernel\Util\Context::set(\Kernel\Consts\Base::ROUTE, "/" . implode("/", $s));
     \Kernel\Util\Context::set(\Kernel\Consts\Base::LOCK, (string)file_get_contents(BASE_PATH . "/kernel/Install/Lock"));
+    \Kernel\Util\Context::set(\Kernel\Consts\Base::IS_INSTALL, file_exists(BASE_PATH . '/kernel/Install/Lock'));
     \Kernel\Util\Context::set(\Kernel\Consts\Base::OPCACHE, extension_loaded("Zend OPcache") || extension_loaded("opcache"));
     \Kernel\Util\Context::set(\Kernel\Consts\Base::STORE_STATUS, file_exists(BASE_PATH . "/kernel/Plugin.php"));
+
     $count = count($s);
     $controller = "App\\Controller";
     $ends = end($s);
@@ -57,7 +59,7 @@ try {
     $capsule->bootEloquent();
 
     //插件库
-    if (\Kernel\Util\Context::get(\Kernel\Consts\Base::STORE_STATUS)) {
+    if (\Kernel\Util\Context::get(\Kernel\Consts\Base::STORE_STATUS) && \Kernel\Util\Context::get(\Kernel\Consts\Base::IS_INSTALL)) {
         require("Plugin.php");
         //插件初始化
         \Kernel\Util\Plugin::scan();
