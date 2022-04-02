@@ -74,7 +74,8 @@ class Plugin extends Manage
         foreach ($map as $k => $v) {
             $config[$k] = is_scalar($v) ? urldecode((string)$v) : $v;
         }
-        unlink(BASE_PATH . "/runtime/plugin/plugin.cache");
+
+        unlink(BASE_PATH . "/runtime/plugin/app.cache");
         setConfig($config, BASE_PATH . '/app/Plugin/' . $id . '/Config/Config.php');
 
         return $this->json(200, '配置已生效');

@@ -30,6 +30,7 @@ class Master extends User
         $map = [];
         $map['equal-status'] = 1;
         $map['equal-owner'] = 0;
+        $map['equal-hide'] = 0;
         $queryTemplateEntity = new QueryTemplateEntity();
         $queryTemplateEntity->setModel(\App\Model\Category::class);
         $queryTemplateEntity->setPaginate(true);
@@ -132,6 +133,8 @@ class Master extends User
         $map = [];
         $map['equal-status'] = 1;
         $map['equal-owner'] = 0;
+        $map['equal-hide'] = 0;
+
         $categoryId = (int)$_POST['category_id'];
 
         if ($categoryId) {

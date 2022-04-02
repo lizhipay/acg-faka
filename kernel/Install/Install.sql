@@ -225,6 +225,8 @@ CREATE TABLE `__PREFIX__coupon`  (
                                `status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '状态：0=未使用，1=已使用，2=锁定',
                                `trade_no` char(22) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '订单号',
                                `note` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '备注信息',
+                               `mode` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '抵扣模式',
+                               `category_id` int UNSIGNED NULL DEFAULT 0 COMMENT '商品分类ID',
                                PRIMARY KEY (`id`) USING BTREE,
                                UNIQUE INDEX `code`(`code`) USING BTREE,
                                INDEX `commodity_id`(`commodity_id`) USING BTREE,

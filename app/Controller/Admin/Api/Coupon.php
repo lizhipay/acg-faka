@@ -42,6 +42,9 @@ class Coupon extends Manage
             },
             'commodity' => function (Relation $relation) {
                 $relation->select(["id", "name"]);
+            },
+            'category' => function (Relation $relation) {
+                $relation->select(["id", "name"]);
             }
         ]);
         $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
@@ -60,15 +63,13 @@ class Coupon extends Manage
         $prefix = $_POST['prefix']; //卡密前缀
         $note = $_POST['note']; //备注信息
         $commodityId = (int)$_POST['commodity_id']; //商品ID
+        $categoryId = (int)$_POST['category_id']; //分类ID
         $expireTime = (string)$_POST['expire_time'];//到期时间
         $money = (float)$_POST['money']; //金额
         $num = (int)$_POST['num']; //生成数量
         $life = (int)$_POST['life']; //可用次数
+        $mode = (int)$_POST['mode']; //抵扣模式
         $race = $_POST['race'];
-
-        if ($commodityId == 0) {
-            throw new JSONException('ಠ_ಠ请选择商品');
-        }
 
         if ($money <= 0) {
             throw new JSONException("ಠ_ಠ请输入优惠卷价格");
@@ -90,6 +91,7 @@ class Coupon extends Manage
             $voucher = new \App\Model\Coupon();
             $voucher->code = $prefix . strtoupper(Str::generateRandStr(16));
             $voucher->commodity_id = $commodityId;
+            $voucher->category_id = $categoryId;
             $voucher->owner = 0;
             $voucher->create_time = $date;
             if ($expireTime != '') {
@@ -99,6 +101,7 @@ class Coupon extends Manage
             $voucher->status = 0;
             $voucher->note = $note;
             $voucher->life = $life;
+            $voucher->mode = $mode;
             if ($race) {
                 $voucher->race = $race;
             }

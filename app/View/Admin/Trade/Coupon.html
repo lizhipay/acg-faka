@@ -100,23 +100,36 @@
                         }, width: 200
                     }
                     , {
+                        field: 'mode', title: '抵扣模式', formatter: function (val, item) {
+                            if (item.mode == 0) {
+                                return '<span class="badge badge-light-success">金额</span>';
+                            }
+
+                            return '<span class="badge badge-light-primary">百分比</span>';
+                        }
+                    }
+                    , {
                         field: 'money', title: '面值', formatter: function (val, item) {
                             return '<span class="badge badge-light-success">' + item.money + '</span>';
                         }
                     }
                     , {
-                        field: 'commodity', title: '商品', formatter: function (val, item) {
-                            if (!item.commodity) {
-                                return "-";
+                        field: 'commodity', title: '抵扣范围', formatter: function (val, item) {
+                            if (!item.commodity && !item.category) {
+                                return '<span class="text-danger">全场通用</span>';
+                            }
+
+                            if (!item.commodity && item.category) {
+                                return '<span class="text-primary">[分类] </span>' + item.category.name;
                             }
 
                             let race = "";
 
                             if (item.race) {
-                                race = " ( <b style='color: #20b033;'>" + item.race + "</b> )";
+                                race = " (<span style='color: #20b033;'>" + item.race + "</span>)";
                             }
 
-                            return '<span class="badge badge-light" style="cursor: pointer;" >' + item.commodity.name + race + '</span>';
+                            return '<span class="text-success">[商品] </span>' + item.commodity.name + race;
 
                         }
                     }
@@ -210,6 +223,7 @@
             });
 
 
+            let couponUnqueId = 0;
             let modal = (values = {}) => {
                 cao.popup('/admin/api/coupon/save', [
                     {
@@ -217,7 +231,23 @@
                         name: "commodity_id",
                         type: "select",
                         dict: "commodity->owner=0,id,name",
-                        placeholder: "请选择商品",
+                        placeholder: "全场通用/选择商品分类",
+                        search: true,
+                        change: function (value) {
+                            let element = cao.popupElement("category_id", "select", couponUnqueId).parent().parent();
+                            if (value == 0 || !value) {
+                                element.show();
+                            } else {
+                                element.hide();
+                            }
+                        }
+                    },
+                    {
+                        title: "商品分类",
+                        name: "category_id",
+                        type: "select",
+                        dict: "category->owner=0,id,name",
+                        placeholder: "对商品分类下的所有商品进行折扣，不选则全场",
                         search: true
                     },
                     {
@@ -232,7 +262,23 @@
                         type: "input",
                         placeholder: "备注信息(可空)，方便查询某次生成的优惠卷"
                     },
-                    {title: "面值(金额)", name: "money", type: "input", placeholder: "请输入该优惠卷能够抵扣的金额"},
+                    {
+                        title: "抵扣模式",
+                        name: "mode",
+                        type: "radio",
+                        dict: [
+                            {
+                                id: 0,
+                                name: "金额抵扣"
+                            },
+                            {
+                                id: 1,
+                                name: "百分比抵扣(按照商品价格)"
+                            }
+                        ],
+                        default: 0
+                    },
+                    {title: "面值(金额/百分比)", name: "money", type: "input", placeholder: "金额或者百分比(小数代替范围：0~1)"},
                     {title: "过期时间", name: "expire_time", type: "date", placeholder: "过了该时间优惠卷自动失效，不填代表永不过期"},
                     {title: "可用次数", name: "life", type: "input", placeholder: "该优惠卷可以使用次数", default: "1"},
                     {title: "卷码前缀", name: "prefix", type: "input", placeholder: "请输入优惠卷代码前缀，可留空", default: "ACG"},
@@ -245,7 +291,9 @@
                         area: cao.isPc() ? ['420px', '660px'] : ["100%", "100%"],
                         content: '<textarea class="layui-input" style="padding: 15px;height: 100%;">' + res.data.code + '</textarea>'
                     });
-                }, values);
+                }, values, '720px', false, "添加", unqueId => {
+                    couponUnqueId = unqueId;
+                });
             }
 
             $('.btn-app-create').click(function () {

@@ -57,6 +57,7 @@ class Config extends Manage
             throw new JSONException("保存失败，请检查原因");
         }
 
+        unlink(BASE_PATH . "/runtime/plugin/app.cache");
         return $this->json(200, '保存成功');
     }
 

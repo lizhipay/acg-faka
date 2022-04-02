@@ -108,8 +108,8 @@ class Commodity extends Manage
                 throw new JSONException("商品名称不能为空哦(｡￫‿￩｡)");
             }
 
-            if ((float)$map['price'] <= 0 || (float)$map['user_price'] <= 0) {
-                throw new JSONException("商品单价不能低于0元或者免费哦(｡￫‿￩｡)");
+            if ((float)$map['price'] < 0 || (float)$map['user_price'] < 0) {
+                throw new JSONException("商品单价不能低于0元哦(｡￫‿￩｡)");
             }
 
             //--init

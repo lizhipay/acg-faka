@@ -17,17 +17,17 @@
                     </button>
 
                     <button type="button" class="layui-btn layui-btn-sm layui-btn-pink button-lock"><i
-                            class="layui-icon"
-                            style="position: relative;top: -2px;">&#xe673;</i>锁定选中优惠卷
+                                class="layui-icon"
+                                style="position: relative;top: -2px;">&#xe673;</i>锁定选中优惠卷
                     </button>
 
                     <button type="button" class="layui-btn layui-btn-sm layui-btn-pink button-unlock"><i
-                            class="layui-icon"
-                            style="position: relative;top: -2px;">&#xe672;</i>解锁选中优惠卷
+                                class="layui-icon"
+                                style="position: relative;top: -2px;">&#xe672;</i>解锁选中优惠卷
                     </button>
                     <button type="button" class="layui-btn layui-btn-sm layui-btn-pink button-export"><i
-                            class="layui-icon"
-                            style="position: relative;top: -2px;">&#xe67d;</i>导出筛选优惠卷
+                                class="layui-icon"
+                                style="position: relative;top: -2px;">&#xe67d;</i>导出筛选优惠卷
                     </button>
                 </div>
                 <form class="search-query"></form>
@@ -56,7 +56,22 @@
                 })
                 return dict;
             }
- 
+
+            var _category;
+            let category = function () {
+                if (!_category) {
+                    _category = User.$postSync("/user/api/category/data", {limit: 1000, page: 1});
+                }
+                let dict = [];
+                _category.forEach(item => {
+                    dict.push({id: item.id, name: item.name});
+                })
+                return dict;
+            }
+
+
+
+
             let queryParams = null;
             table.bootstrapTable({
                 url: '/user/api/coupon/data',//请求的url地址
@@ -96,7 +111,16 @@
                     , {
                         field: 'secret', title: '卷代码', formatter: function (val, item) {
                             return '<span class="acg-badge acg-badge-light">' + item.code + '</span>';
-                        }, width: 210
+                        }
+                    }
+                    , {
+                        field: 'mode', title: '抵扣模式', formatter: function (val, item) {
+                            if (item.mode == 0) {
+                                return '<span class="acg-badge acg-badge-light-success">金额</span>';
+                            }
+
+                            return '<span class="acg-badge acg-badge-light-primary">百分比</span>';
+                        }
                     }
                     , {
                         field: 'money', title: '面值', formatter: function (val, item) {
@@ -104,20 +128,23 @@
                         }
                     }
                     , {
-                        field: 'commodity', title: '商品', formatter: function (val, item) {
-                            if (!item.commodity) {
-                                return "-";
+                        field: 'commodity', title: '抵扣范围', formatter: function (val, item) {
+                            if (!item.commodity && !item.category) {
+                                return '<span style="color: red;">全场通用</span>';
                             }
-                            return '<span>' + item.commodity.name + '</span>';
 
-                        }
-                    }
-                    , {
-                        field: 'race', title: '类别', formatter: function (val, item) {
-                            if (!item.race) {
-                                return "-";
+                            if (!item.commodity && item.category) {
+                                return '<span style="color: blue;">[分类]</span>' + item.category.name;
                             }
-                            return item.race;
+
+                            let race = "";
+
+                            if (item.race) {
+                                race = " (<span style='color: #20b033;'>" + item.race + "</span>)";
+                            }
+
+                            return '<span style="color: green;">[商品]</span>' + item.commodity.name + race;
+
                         }
                     }
                     , {
@@ -183,6 +210,7 @@
                 ]
             });
 
+            let couponUnqueId = 0;
             let modal = (values = {}) => {
                 cao.popup('/user/api/coupon/save', [
                     {
@@ -190,7 +218,23 @@
                         name: "commodity_id",
                         type: "select",
                         dict: commodity(),
-                        placeholder: "请选择商品",
+                        placeholder: "全场通用/选择商品分类",
+                        search: true,
+                        change: function (value) {
+                            let element = cao.popupElement("category_id", "select", couponUnqueId).parent().parent();
+                            if (value == 0 || !value) {
+                                element.show();
+                            } else {
+                                element.hide();
+                            }
+                        }
+                    },
+                    {
+                        title: "商品分类",
+                        name: "category_id",
+                        type: "select",
+                        dict: category(),
+                        placeholder: "对商品分类下的所有商品进行折扣，不选则全场",
                         search: true
                     },
                     {
@@ -205,7 +249,23 @@
                         type: "input",
                         placeholder: "备注信息(可空)，方便查询某次生成的优惠卷"
                     },
-                    {title: "面值(金额)", name: "money", type: "input", placeholder: "请输入该优惠卷能够抵扣的金额"},
+                    {
+                        title: "抵扣模式",
+                        name: "mode",
+                        type: "radio",
+                        dict: [
+                            {
+                                id: 0,
+                                name: "金额抵扣"
+                            },
+                            {
+                                id: 1,
+                                name: "百分比抵扣(按照商品价格)"
+                            }
+                        ],
+                        default: 0
+                    },
+                    {title: "面值(金额/百分比)", name: "money", type: "input", placeholder: "金额或者百分比(小数代替范围：0~1)"},
                     {title: "过期时间", name: "expire_time", type: "date", placeholder: "过了该时间优惠卷自动失效，不填代表永不过期"},
                     {title: "可用次数", name: "life", type: "input", placeholder: "该优惠卷可以使用次数", default: "1"},
                     {title: "卷码前缀", name: "prefix", type: "input", placeholder: "请输入优惠卷代码前缀，可留空", default: "ACG"},
@@ -218,7 +278,9 @@
                         area: ['420px', '660px'],
                         content: '<textarea class="layui-input" style="padding: 15px;height: 100%;">' + res.data.code + '</textarea>'
                     });
-                }, values);
+                }, values, '720px', false, "添加", unqueId => {
+                    couponUnqueId = unqueId;
+                });
             }
 
             $('.button-add').click(function () {
@@ -292,6 +354,9 @@
                 },
                 {title: "商品ID", name: "equal-commodity_id", type: "input", width: 150}
             ], true, false);
+
+            commodity();
+            category();
         });
     });
 </script>

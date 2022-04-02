@@ -6,6 +6,8 @@ namespace App\Service\Impl;
 
 use App\Entity\PayEntity;
 use App\Model\Bill;
+use App\Model\Business;
+use App\Model\BusinessLevel;
 use App\Model\Card;
 use App\Model\Commodity;
 use App\Model\Config;
@@ -372,7 +374,7 @@ class OrderService implements Order
 
             if ($from != 0 && $order->user_id != $from && $owner != $from) {
                 $order->from = $from;
-                if ($userCommodity = UserCommodity::getCustom($from, $commodity->id)) {
+                if (($userCommodity = UserCommodity::getCustom($from, $commodity->id)) && Business::get(Client::getDomain())) {
                     $order->premium = $userCommodity->premium;
                 }
             }
@@ -384,7 +386,6 @@ class OrderService implements Order
                     $order->card_id = $cardId;
                 } else {
                     $card = Card::query();
-
                     if ($race) {
                         $card = $card->where("race", $race);
                     }
@@ -415,18 +416,29 @@ class OrderService implements Order
 
             //优惠卷
             if ($coupon != "") {
-                $voucher = Coupon::query()->where("code", $coupon);
-                if ($race) {
-                    $voucher = $voucher->where("race", $race);
-                }
-                $voucher = $voucher->first();
+                $voucher = Coupon::query()->where("code", $coupon)->first();
 
                 if (!$voucher) {
                     throw new JSONException("该优惠卷不存在");
                 }
 
-                if ($voucher->commodity_id != $commodity->id) {
+                if ($voucher->owner != $commodity->owner) {
+                    throw new JSONException("该优惠卷不存在");
+                }
+
+                if ($race && $voucher->commodity_id != 0) {
+                    if ($race != $voucher->race) {
+                        throw new JSONException("该优惠卷不能抵扣当前商品");
+                    }
+                }
+
+                if ($voucher->commodity_id != 0 && $voucher->commodity_id != $commodity->id) {
                     throw new JSONException("该优惠卷不属于该商品");
+                }
+
+                //判断该优惠卷是否有分类设定
+                if ($voucher->commodity_id == 0 && $voucher->category_id != 0 && $voucher->category_id != $commodity->category_id) {
+                    throw new JSONException("该优惠卷不能抵扣当前商品");
                 }
 
                 if ($voucher->status != 0) {
@@ -444,7 +456,7 @@ class OrderService implements Order
                 }
 
                 //进行优惠
-                $order->amount = $order->amount - $voucher->money;
+                $order->amount = $voucher->mode == 0 ? $order->amount - $voucher->money : $order->amount - ($order->amount * $voucher->money);
                 $voucher->service_time = $date;
                 $voucher->use_life = $voucher->use_life + 1;
                 $voucher->life = $voucher->life - 1;
@@ -460,80 +472,87 @@ class OrderService implements Order
 
             $secret = null;
 
-            if ($pay->handle == "#system") {
-                //余额购买
-                if ($owner == 0) {
-                    throw new JSONException("您未登录，请先登录后再使用余额支付");
-                }
-                $session = User::query()->find($owner);
-                if (!$session) {
-                    throw new JSONException("用户不存在");
-                }
-
-                if ($session->status != 1) {
-                    throw new JSONException("You have been banned");
-                }
-                $parent = $session->parent;
-                if ($parent && $order->user_id != $from) {
-                    $order->from = $parent->id;
-                }
-                //扣钱
-                Bill::create($session, $order->amount, Bill::TYPE_SUB, "商品下单[{$order->trade_no}]");
-                //发卡
+            if ($order->amount == 0) {
+                //免费赠送
                 $order->save();//先将订单保存下来
                 $secret = $this->orderSuccess($order); //提交订单并且获取到卡密信息
             } else {
-                //开始进行远程下单
-                $class = "\\App\\Pay\\{$pay->handle}\\Impl\\Pay";
-                if (!class_exists($class)) {
-                    throw new JSONException("该支付方式未实现接口，无法使用");
-                }
-                $autoload = BASE_PATH . '/app/Pay/' . $pay->handle . "/Vendor/autoload.php";
-                if (file_exists($autoload)) {
-                    require($autoload);
-                }
-                $payObject = new $class;
-                $payObject->amount = (float)sprintf("%.2f", (int)($order->amount * 100) / 100);
-                $payObject->tradeNo = $order->trade_no;
-                $payObject->config = PayConfig::config($pay->handle);
-                $payObject->callbackUrl = Client::getUrl() . '/user/api/order/callback.' . $pay->handle;
-
-                //判断如果登录
-                if ($owner == 0) {
-                    $payObject->returnUrl = Client::getUrl() . '/user/index/query?tradeNo=' . $order->trade_no;
-                } else {
-                    $payObject->returnUrl = Client::getUrl() . '/user/personal/purchaseRecord?tradeNo=' . $order->trade_no;
-                }
-
-                $payObject->clientIp = Client::getAddress();
-                $payObject->code = $pay->code;
-                $payObject->handle = $pay->handle;
-
-                $trade = $payObject->trade();
-                if ($trade instanceof PayEntity) {
-                    $order->pay_url = $trade->getUrl();
-                    switch ($trade->getType()) {
-                        case \App\Pay\Pay::TYPE_REDIRECT:
-                            $url = $order->pay_url;
-                            break;
-                        case \App\Pay\Pay::TYPE_LOCAL_RENDER:
-                            $base64 = urlencode(base64_encode('type=1&handle=' . $pay->handle . '&code=' . $pay->code . '&tradeNo=' . $order->trade_no));
-                            $url = '/user/pay/order.' . $base64;
-                            break;
-                        case \App\Pay\Pay::TYPE_SUBMIT:
-                            $base64 = urlencode(base64_encode('type=2&tradeNo=' . $order->trade_no));
-                            $url = '/user/pay/order.' . $base64;
-                            break;
+                if ($pay->handle == "#system") {
+                    //余额购买
+                    if ($owner == 0) {
+                        throw new JSONException("您未登录，请先登录后再使用余额支付");
                     }
-                    $order->save();
-                    $option = $trade->getOption();
-                    if (!empty($option)) {
-                        OrderOption::create($order->id, $trade->getOption());
+                    $session = User::query()->find($owner);
+                    if (!$session) {
+                        throw new JSONException("用户不存在");
                     }
+
+                    if ($session->status != 1) {
+                        throw new JSONException("You have been banned");
+                    }
+                    $parent = $session->parent;
+                    if ($parent && $order->user_id != $from) {
+                        $order->from = $parent->id;
+                    }
+                    //扣钱
+                    Bill::create($session, $order->amount, Bill::TYPE_SUB, "商品下单[{$order->trade_no}]");
+                    //发卡
+                    $order->save();//先将订单保存下来
+                    $secret = $this->orderSuccess($order); //提交订单并且获取到卡密信息
                 } else {
-                    throw new JSONException("支付方式未部署成功");
+                    //开始进行远程下单
+                    $class = "\\App\\Pay\\{$pay->handle}\\Impl\\Pay";
+                    if (!class_exists($class)) {
+                        throw new JSONException("该支付方式未实现接口，无法使用");
+                    }
+                    $autoload = BASE_PATH . '/app/Pay/' . $pay->handle . "/Vendor/autoload.php";
+                    if (file_exists($autoload)) {
+                        require($autoload);
+                    }
+                    $payObject = new $class;
+                    $payObject->amount = (float)sprintf("%.2f", (int)($order->amount * 100) / 100);
+                    $payObject->tradeNo = $order->trade_no;
+                    $payObject->config = PayConfig::config($pay->handle);
+                    $payObject->callbackUrl = Client::getUrl() . '/user/api/order/callback.' . $pay->handle;
+
+                    //判断如果登录
+                    if ($owner == 0) {
+                        $payObject->returnUrl = Client::getUrl() . '/user/index/query?tradeNo=' . $order->trade_no;
+                    } else {
+                        $payObject->returnUrl = Client::getUrl() . '/user/personal/purchaseRecord?tradeNo=' . $order->trade_no;
+                    }
+
+                    $payObject->clientIp = Client::getAddress();
+                    $payObject->code = $pay->code;
+                    $payObject->handle = $pay->handle;
+
+                    $trade = $payObject->trade();
+                    if ($trade instanceof PayEntity) {
+                        $order->pay_url = $trade->getUrl();
+                        switch ($trade->getType()) {
+                            case \App\Pay\Pay::TYPE_REDIRECT:
+                                $url = $order->pay_url;
+                                break;
+                            case \App\Pay\Pay::TYPE_LOCAL_RENDER:
+                                $base64 = urlencode(base64_encode('type=1&handle=' . $pay->handle . '&code=' . $pay->code . '&tradeNo=' . $order->trade_no));
+                                $url = '/user/pay/order.' . $base64;
+                                break;
+                            case \App\Pay\Pay::TYPE_SUBMIT:
+                                $base64 = urlencode(base64_encode('type=2&tradeNo=' . $order->trade_no));
+                                $url = '/user/pay/order.' . $base64;
+                                break;
+                        }
+                        $order->save();
+                        $option = $trade->getOption();
+                        if (!empty($option)) {
+                            OrderOption::create($order->id, $trade->getOption());
+                        }
+                    } else {
+                        throw new JSONException("支付方式未部署成功");
+                    }
                 }
             }
+
 
             $order->save();
 
@@ -627,35 +646,46 @@ class OrderService implements Order
 
         //真 · 返佣
         $promote_1 = $order->promote;
-        //100
+
         if ($promote_1) {
-            $promoteRebateV1 = (float)Config::get("promote_rebate_v1");  //3级返佣 0.2
-            $rebate1 = $order->premium > 0 ? $order->premium : ($promoteRebateV1 * $order->amount);   //20.00
-            if ($rebate1 >= 0.01) {
-                $promote_2 = $promote_1->parent; //获取上级
-                if (!$promote_2) {
-                    //没有上级，直接进行1级返佣
-                    Bill::create($promote_1, $rebate1, Bill::TYPE_ADD, "推广返佣", 1); //反20.00
-                } else {
-                    //出现上级，开始将返佣的钱继续拆分
-                    $promoteRebateV2 = (float)Config::get("promote_rebate_v2"); // 0.4
-                    $rebate2 = $promoteRebateV2 * $rebate1; //拿走属于第二级百分比返佣 8.00
-                    //先给上级返佣，这里拿掉上级的拿一份
-                    Bill::create($promote_1, $rebate1 - $rebate2, Bill::TYPE_ADD, "推广返佣", 1); // 20-8=12.00
-                    if ($rebate2 > 0.01) { // 8.00
-                        $promote_3 = $promote_2->parent; //获取第二级的上级
-                        if (!$promote_3) {
-                            //没有上级直接进行第二级返佣
-                            Bill::create($promote_2, $rebate2, Bill::TYPE_ADD, "推广返佣", 1); // 8.00
-                        } else {
-                            //出现上级，继续拆分剩下的佣金
-                            $promoteRebateV3 = (float)Config::get("promote_rebate_v3"); // 0.4
-                            $rebate3 = $promoteRebateV3 * $rebate2; // 8.00 * 0.4 = 3.2
-                            //先给上级反
-                            Bill::create($promote_2, $rebate2 - $rebate3, Bill::TYPE_ADD, "推广返佣", 1); // 8.00 - 3.2 = 4.8
-                            if ($rebate3 > 0.01) {
-                                Bill::create($promote_3, $rebate3, Bill::TYPE_ADD, "推广返佣", 1); // 3.2
-                                //返佣结束  3.2 + 4.8 + 12 = 20.00
+            //检测是否分站
+            $bus = BusinessLevel::query()->find((int)$promote_1->business_level);
+            if ($bus) {
+                //检测到商户等级，进行分站返佣算法
+                $rebate = ($bus->accrual * ($order->amount - $order->premium)) + $order->premium;   //20.00
+                if ($rebate >= 0.01) {
+                    Bill::create($promote_1, $rebate, Bill::TYPE_ADD, "分站返佣", 1);
+                }
+            } else {
+                //推广系统
+                $promoteRebateV1 = (float)Config::get("promote_rebate_v1");  //3级返佣 0.2
+                $rebate1 = $promoteRebateV1 * $order->amount;   //20.00
+                if ($rebate1 >= 0.01) {
+                    $promote_2 = $promote_1->parent; //获取上级
+                    if (!$promote_2) {
+                        //没有上级，直接进行1级返佣
+                        Bill::create($promote_1, $rebate1, Bill::TYPE_ADD, "推广返佣", 1); //反20.00
+                    } else {
+                        //出现上级，开始将返佣的钱继续拆分
+                        $promoteRebateV2 = (float)Config::get("promote_rebate_v2"); // 0.4
+                        $rebate2 = $promoteRebateV2 * $rebate1; //拿走属于第二级百分比返佣 8.00
+                        //先给上级返佣，这里拿掉上级的拿一份
+                        Bill::create($promote_1, $rebate1 - $rebate2, Bill::TYPE_ADD, "推广返佣", 1); // 20-8=12.00
+                        if ($rebate2 > 0.01) { // 8.00
+                            $promote_3 = $promote_2->parent; //获取第二级的上级
+                            if (!$promote_3) {
+                                //没有上级直接进行第二级返佣
+                                Bill::create($promote_2, $rebate2, Bill::TYPE_ADD, "推广返佣", 1); // 8.00
+                            } else {
+                                //出现上级，继续拆分剩下的佣金
+                                $promoteRebateV3 = (float)Config::get("promote_rebate_v3"); // 0.4
+                                $rebate3 = $promoteRebateV3 * $rebate2; // 8.00 * 0.4 = 3.2
+                                //先给上级反
+                                Bill::create($promote_2, $rebate2 - $rebate3, Bill::TYPE_ADD, "推广返佣", 1); // 8.00 - 3.2 = 4.8
+                                if ($rebate3 > 0.01) {
+                                    Bill::create($promote_3, $rebate3, Bill::TYPE_ADD, "推广返佣", 1); // 3.2
+                                    //返佣结束  3.2 + 4.8 + 12 = 20.00
+                                }
                             }
                         }
                     }
@@ -834,29 +864,48 @@ class OrderService implements Order
         //优惠卷
         $price = $amount / $num;
         if ($coupon != "") {
-            $code = Coupon::query()->where("code", $coupon);
+            $voucher = Coupon::query()->where("code", $coupon)->first();
 
-            if ($race) {
-                $code = $code->where("race", $race);
+            if (!$voucher) {
+                throw new JSONException("该优惠卷不存在");
             }
 
-            $code = $code->first();
+            if ($voucher->owner != $commodity->owner) {
+                throw new JSONException("该优惠卷不存在");
+            }
 
-            if (!$code || $code->commodity_id != $commodityId) {
-                throw new JSONException("该优惠卷不存在或不属于该商品");
+            if ($race && $voucher->commodity_id != 0) {
+                if ($race != $voucher->race) {
+                    throw new JSONException("该优惠卷不能抵扣当前商品");
+                }
             }
-            if ($code->status != 0) {
-                throw new JSONException("该优惠卷已被使用过了");
+
+            if ($voucher->commodity_id != 0 && $voucher->commodity_id != $commodity->id) {
+                throw new JSONException("该优惠卷不属于该商品");
             }
-            if ($code->money > $amount) {
-                throw new JSONException("该优惠卷抵扣的金额大于本次消费，无法使用该优惠卷进行抵扣");
+
+            //判断该优惠卷是否有分类设定
+            if ($voucher->commodity_id == 0 && $voucher->category_id != 0 && $voucher->category_id != $commodity->category_id) {
+                throw new JSONException("该优惠卷不能抵扣当前商品");
             }
-            if ($code->expire_time != null && strtotime($code->expire_time) < time()) {
+
+            if ($voucher->status != 0) {
+                throw new JSONException("该优惠卷已失效");
+            }
+
+            //检测过期时间
+            if ($voucher->expire_time != null && strtotime($voucher->expire_time) < time()) {
                 throw new JSONException("该优惠卷已过期");
             }
 
-            $amount = $amount - $code->money;
-            $couponMoney = $code->money;
+            //检测面额
+            if ($voucher->money >= $amount) {
+                throw new JSONException("该优惠卷面额大于订单金额");
+            }
+
+            $deduction = $voucher->mode == 0 ? $voucher->money : $amount * $voucher->money;
+            $amount = $amount - $deduction;
+            $couponMoney = $deduction;
         }
 
 

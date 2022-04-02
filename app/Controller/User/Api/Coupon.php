@@ -66,11 +66,10 @@ class Coupon extends User
         $num = (int)$_POST['num']; //生成数量
         $life = (int)$_POST['life']; //可用次数
         $race = $_POST['race'];
+        $mode = (int)$_POST['mode']; //抵扣模式
+        $categoryId = (int)$_POST['category_id']; //分类ID
 
         $userId = $this->getUser()->id;
-        if ($commodityId == 0) {
-            throw new JSONException('ಠ_ಠ请选择商品');
-        }
 
         if ($money <= 0) {
             throw new JSONException("ಠ_ಠ请输入优惠卷价格");
@@ -83,6 +82,16 @@ class Coupon extends User
         if ($num <= 0) {
             throw new JSONException("ಠ_ಠ最少也要生成1张优惠卷");
         }
+
+
+        if ($commodityId != 0 && !\App\Model\Commodity::query()->where("owner", $userId)->find($commodityId)) {
+            throw new JSONException("商品不存在");
+        }
+
+        if ($categoryId != 0 && !\App\Model\Category::query()->where("owner", $userId)->find($categoryId)) {
+            throw new JSONException("分类不存在");
+        }
+
         $date = Date::current();
         $success = 0;
         $error = 0;
@@ -92,6 +101,7 @@ class Coupon extends User
             $voucher = new \App\Model\Coupon();
             $voucher->code = $prefix . strtoupper(Str::generateRandStr(16));
             $voucher->commodity_id = $commodityId;
+            $voucher->category_id = $categoryId;
             $voucher->owner = $userId;
             $voucher->create_time = $date;
             if ($expireTime != '') {
@@ -101,6 +111,7 @@ class Coupon extends User
             $voucher->status = 0;
             $voucher->note = $note;
             $voucher->life = $life;
+            $voucher->mode = $mode;
             if ($race) {
                 $voucher->race = $race;
             }

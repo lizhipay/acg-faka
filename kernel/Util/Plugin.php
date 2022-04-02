@@ -204,6 +204,6 @@ class Plugin
      */
     public static function isCache(): bool
     {
-        return file_exists(BASE_PATH . "/runtime/plugin/plugin.cache");
+        return file_exists(BASE_PATH . "/runtime/plugin/app.cache");
     }
 }
