@@ -456,7 +456,7 @@ class OrderService implements Order
                 }
 
                 //进行优惠
-                $order->amount = $voucher->mode == 0 ? $order->amount - $voucher->money : $order->amount - ($order->amount * $voucher->money);
+                $order->amount = $voucher->mode == 0 ? $order->amount - $voucher->money : $order->amount - (($order->amount / $order->card_num) * $voucher->money);
                 $voucher->service_time = $date;
                 $voucher->use_life = $voucher->use_life + 1;
                 $voucher->life = $voucher->life - 1;
@@ -471,6 +471,7 @@ class OrderService implements Order
             }
 
             $secret = null;
+            $order->amount = (float)sprintf("%.2f", (int)($order->amount * 100) / 100);
 
             if ($order->amount == 0) {
                 //免费赠送
@@ -510,7 +511,7 @@ class OrderService implements Order
                         require($autoload);
                     }
                     $payObject = new $class;
-                    $payObject->amount = (float)sprintf("%.2f", (int)($order->amount * 100) / 100);
+                    $payObject->amount = $order->amount;
                     $payObject->tradeNo = $order->trade_no;
                     $payObject->config = PayConfig::config($pay->handle);
                     $payObject->callbackUrl = Client::getUrl() . '/user/api/order/callback.' . $pay->handle;
@@ -903,7 +904,7 @@ class OrderService implements Order
                 throw new JSONException("该优惠卷面额大于订单金额");
             }
 
-            $deduction = $voucher->mode == 0 ? $voucher->money : $amount * $voucher->money;
+            $deduction = $voucher->mode == 0 ? $voucher->money : $price * $voucher->money;
             $amount = $amount - $deduction;
             $couponMoney = $deduction;
         }

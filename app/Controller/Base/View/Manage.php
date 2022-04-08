@@ -27,6 +27,7 @@ abstract class Manage extends \App\Controller\Base\Manage
         try {
             $data['title'] = $title;
             $data['app']['version'] = \config("app")['version'];
+            $data['app']['server'] = (int)\config("store")['server'];
 
             $cfg = Config::list();
 

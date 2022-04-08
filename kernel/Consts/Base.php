@@ -5,7 +5,7 @@ namespace Kernel\Consts;
 
 
 interface Base
-{
+{ 
     const ROUTE = "URL_LOCAL_ROUTE";
     const LOCK = "LOCK";
     const IS_INSTALL = "IS_INSTALL";

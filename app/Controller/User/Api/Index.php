@@ -286,6 +286,7 @@ class Index extends User
         }
 
         $bus = \App\Model\Business::get(Client::getDomain());
+        //分站加价
         if ($bus) {
             if ($userCommodity = UserCommodity::getCustom($bus->user_id, $commodity->id)) {
                 $commodity->price += (float)$userCommodity->premium;
@@ -295,8 +296,17 @@ class Index extends User
                 if ($userCommodity->name) {
                     $commodity->name = $userCommodity->name;
                 }
+                //批发加价
+                if (is_array($commodity['wholesale'])) {
+                    $wholesales = [];
+                    foreach ($commodity->wholesale as $wkey => $wval) {
+                        $wholesales[$wkey] = (float)$wval + (float)$userCommodity->premium;
+                    }
+                    $commodity->setAttribute("wholesale", $wholesales);
+                }
             }
         }
+
 
         $commodity->service_url = Config::get("service_url");
         $commodity->service_qq = Config::get("service_qq");

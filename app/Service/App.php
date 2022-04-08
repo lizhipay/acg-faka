@@ -12,7 +12,10 @@ interface App
     /**
      * 应用商店地址
      */
-    const APP_URL = "https://store.acgshe.com";
+    const APP_URL = BASE_APP_SERVER;
+    const MAIN_SERVER = "https://store.acgshe.com";
+    const STANDBY_SERVER1 = "https://standby.acgshe.com";
+    const STANDBY_SERVER2 = "https://store.acgshop.net";
 
     /**
      * @return array

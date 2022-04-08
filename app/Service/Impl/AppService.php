@@ -338,6 +338,12 @@ class AppService implements App
                     SQL::import($sql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
                 }
 
+                //升级程序，防止sql等命令错误，通过php代码来执行sql，新增时间：2022/04/07
+                $ext = $zipPath . '/update.php';
+                if (file_exists($ext)) {
+                    require($ext);
+                }
+
                 //升级程序
                 try {
                     File::copyDirectory($zipPath . '/file', BASE_PATH);

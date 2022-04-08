@@ -160,6 +160,15 @@
                 }
 
             });
+
+            $('.app-server-select').change(function () {
+                let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+                $.post("/admin/api/app/setServer", {server: $(this).val()}, res => {
+                    layer.close(loaderIndex);
+                    layer.msg(res.msg);
+                    window.location.reload();
+                })
+            });
         });
     });
 

@@ -6,6 +6,7 @@ namespace App\Controller\Admin\Api;
 use App\Interceptor\ManageSession;
 use App\Interceptor\Waf;
 use App\Util\Helper;
+use App\Util\Opcache;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
@@ -89,6 +90,7 @@ class App extends Manage
             "app_id" => $register["id"],
             "app_key" => $register["key"],
         ], BASE_PATH . "/config/store.php");
+        Opcache::invalidate(BASE_PATH . "/config/store.php");
         return $this->json(200, "success");
     }
 
@@ -105,6 +107,7 @@ class App extends Manage
             "app_id" => $login["id"],
             "app_key" => $login["key"],
         ], BASE_PATH . "/config/store.php");
+        Opcache::invalidate(BASE_PATH . "/config/store.php");
         return $this->json(200, "success");
     }
 
@@ -379,5 +382,19 @@ class App extends Manage
     {
         $this->app->unbind((int)$_POST['auth_id']);
         return $this->json(200, "解绑成功");
+    }
+
+    /**
+     * @throws JSONException
+     */
+    public function setServer(): array
+    {
+        $server = (int)$_POST['server'];
+        $config = config("store");
+        $config['server'] = $server;
+        $path = BASE_PATH . "/config/store.php";
+        setConfig($config, $path);
+        Opcache::invalidate($path);
+        return $this->json(200, "线路切换成功");
     }
 }

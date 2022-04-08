@@ -536,9 +536,10 @@
                                     <div class="menu me-4 menu-lg-rounded menu-column menu-lg-row menu-state-bg menu-title-gray-700 menu-state-title-primary menu-state-icon-primary menu-state-bullet-primary menu-arrow-gray-400 fw-bold my-5 my-lg-0 align-items-stretch">
                                         <div class="menu-item me-lg-1 app-store"><a class="py-3 text-success fw-bold"
                                                                                     href="/admin/store/home"><i
-                                                        class="fab fa-app-store-ios fs-5 pt-1 text-success"></i> 应用商店
+                                                        class="fab fa-app-store-ios fs-5 pt-1 text-success"></i> 应用商店</a>
+                                                <select style="border: none;font-size: 12px;color: dodgerblue;background: rgba(255,255,255,0);" class="app-server-select"><option value="0" #{if $app.server == 0} selected #{/if}>国内线路-1</option><option value="1" #{if $app.server == 1} selected #{/if}>海外线路-1</option><option value="2" #{if $app.server == 2} selected #{/if}>海外线路-2</option></select>
                                                 <span style="color: red;" class="update-num"></span> <span
-                                                        class="store-text"></span></a></div>
+                                                        class="store-text"></span></div>
                                     </div>
                                 #{else}
                                     <div class="menu me-4 menu-lg-rounded menu-column menu-lg-row menu-state-bg menu-title-gray-700 menu-state-title-primary menu-state-icon-primary menu-state-bullet-primary menu-arrow-gray-400 fw-bold my-5 my-lg-0 align-items-stretch">
