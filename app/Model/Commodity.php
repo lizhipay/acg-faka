@@ -46,6 +46,7 @@ use Kernel\Exception\JSONException;
  * @property int $purchase_count
  * @property string $widget
  * @property int $minimum
+ * @property int $maximum
  * @property int $shared_sync
  * @property int $hide
  * @property string $config
@@ -92,6 +93,7 @@ class Commodity extends Model
         'only_user' => 'integer',
         'purchase_count' => 'integer',
         'minimum' => 'integer',
+        'maximum' => 'integer'
     ];
 
     public function owner(): ?\Illuminate\Database\Eloquent\Relations\HasOne

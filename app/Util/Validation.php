@@ -10,9 +10,9 @@ class Validation
      * @param string $username
      * @return bool
      */
-    public static function username(string $username): bool
+    public static function username(string $username, int $length = 6): bool
     {
-        if (mb_strlen($username) < 6) {
+        if (mb_strlen($username) < $length) {
             return false;
         }
         return true;

@@ -43,6 +43,7 @@ class Authentication extends User
         $registeredEmailVerification = (int)Config::get("registered_email_verification");
         $registeredPhoneVerification = (int)Config::get("registered_phone_verification");
         $registeredVerification = (int)Config::get("registered_verification");
+        $usernameLen = (int)Config::get("username_len");
 
         if ($registeredState == 0) {
             throw new JSONException("注册已关闭");
@@ -52,8 +53,8 @@ class Authentication extends User
             throw new JSONException("验证码错误");
         }
 
-        if (!isset($_POST['username']) || !Validation::username((string)$_POST['username'])) {
-            throw new JSONException("用户名最少6位");
+        if (!isset($_POST['username']) || !Validation::username((string)$_POST['username'], $usernameLen)) {
+            throw new JSONException("用户名最少{$usernameLen}位");
         }
         //user Model
         $user = new \App\Model\User();
@@ -263,10 +264,10 @@ class Authentication extends User
             throw new JSONException("验证码错误");
         }
 
-        if (!isset($_POST['username']) || !Validation::username((string)$_POST['username'])) {
-            throw new JSONException("用户名最少6位");
+        if (!isset($_POST['username'])) {
+            throw new JSONException("用户名输入错误");
         }
-
+ 
         //验证密码
         if (!isset($_POST['password']) || !Validation::password((string)$_POST['password'])) {
             throw new JSONException("密码错误");

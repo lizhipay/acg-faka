@@ -79,13 +79,19 @@ class Category extends Manage
      */
     public function del(): array
     {
+        $list = (array)$_POST['list'];
         $deleteBatchEntity = new DeleteBatchEntity();
         $deleteBatchEntity->setModel(\App\Model\Category::class);
-        $deleteBatchEntity->setList($_POST['list']);
+        $deleteBatchEntity->setList($list);
         $count = $this->query->deleteTemplate($deleteBatchEntity);
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }
+
+        foreach ($list as $id) {
+            \App\Model\Commodity::query()->where("category_id", $id)->delete();
+        }
+
         return $this->json(200, '（＾∀＾）移除成功');
     }
 

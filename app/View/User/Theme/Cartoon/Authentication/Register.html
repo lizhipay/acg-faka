@@ -225,7 +225,7 @@
                 $.post("/user/api/authentication/register", data, res => {
                     layer.close(loaderIndex);
                     if (res.code == 200) {
-                        window.location.href = "/user/dashboard/index";
+                        window.location.href = "/";
                     }
                     layer.msg(res.msg);
                 });

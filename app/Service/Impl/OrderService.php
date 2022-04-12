@@ -237,11 +237,15 @@ class OrderService implements Order
             }
         }
 
-        if ($commodity->minimum > 0) {
-            if ($num < $commodity->minimum) {
-                throw new JSONException("本商品最少购买{$commodity->minimum}个");
-            }
+
+        if ($commodity->minimum > 0 && $num < $commodity->minimum) {
+            throw new JSONException("本商品最少购买{$commodity->minimum}个");
         }
+
+        if ($commodity->maximum > 0 && $num > $commodity->maximum) {
+            throw new JSONException("本商品单次最多购买{$commodity->maximum}个");
+        }
+
 
         $widget = [];
 
@@ -652,11 +656,18 @@ class OrderService implements Order
             //检测是否分站
             $bus = BusinessLevel::query()->find((int)$promote_1->business_level);
             if ($bus) {
-                //检测到商户等级，进行分站返佣算法
-                $rebate = ($bus->accrual * ($order->amount - $order->premium)) + $order->premium;   //20.00
-                if ($rebate >= 0.01) {
-                    Bill::create($promote_1, $rebate, Bill::TYPE_ADD, "分站返佣", 1);
+                //查询该商户的拿货价
+                $calcAmount = $this->calcAmount($promote_1->id, $order->card_num, $commodity, UserGroup::get($promote_1->recharge), $order->race);
+                //计算差价
+                if ($order->amount > $calcAmount) {
+                    $rebate = $order->amount - $calcAmount; //差价
+                    $order->premium = $rebate;
+                    if ($rebate >= 0.01) {
+                        Bill::create($promote_1, $rebate, Bill::TYPE_ADD, "分站返佣", 1);
+                    }
                 }
+                //检测到商户等级，进行分站返佣算法 废弃
+                // $rebate = ($bus->accrual * ($order->amount - $order->premium)) + $order->premium;   //20.00
             } else {
                 //推广系统
                 $promoteRebateV1 = (float)Config::get("promote_rebate_v1");  //3级返佣 0.2
@@ -846,6 +857,15 @@ class OrderService implements Order
                 $inventory = $this->shared->inventory($shared, $commodity->shared_code, (string)$race);
                 $data['card_count'] = $inventory['count'];
             }
+        }
+
+        //检测限购数量
+        if ($commodity->minimum != 0 && $num < $commodity->minimum) {
+            throw new JSONException("本商品单次最少购买{$commodity->minimum}个");
+        }
+
+        if ($commodity->maximum != 0 && $num > $commodity->maximum) {
+            throw new JSONException("本商品单次最多购买{$commodity->maximum}个");
         }
 
         if ($cardId != 0 && $commodity->draft_status == 1) {

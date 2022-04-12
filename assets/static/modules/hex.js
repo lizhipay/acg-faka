@@ -558,6 +558,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                 type: 1,
                 shade: 0.3,
                 content: d,
+                skin: "layui-popup",
                 title: values.hasOwnProperty('id') && title == "添加" ? '修改' : title,
                 btn: ['确认', '取消'],
                 //  shadeClose: true,
@@ -1030,6 +1031,9 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                     }
                     //添加动漫人物
                     $('.layui-layer-page').append('<img src="/assets/admin/images/menu/left.png" style="position: absolute;height: 200px;top: 0px;left: -142px;"><img src="/assets/admin/images/menu/right.png" style="position: absolute;height: 200px;top: 0px;right: -142px;">');
+
+                    //处理PC
+                    typeof area == "string" && hex.popupAutoWindow();
                 }
             });
         },
@@ -1061,6 +1065,55 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                 return checked;
             }
             return localStorage.getItem(f) == "true";
+        },
+        popupAutoHeight() {
+            let height = 768;
+            let pageHeight = $('.layui-popup').height();
+            let top = ($(window).height() - height) / 2;
+            if (pageHeight > height) {
+                $('.layui-popup').css("top", top + "px");
+                $('.layui-popup .layui-layer-content').css("height", (height - 55) + "px");
+            } else {
+                let top2 = ($(window).height() - pageHeight) / 2;
+                $('.layui-popup').css("top", top2 + "px");
+            }
+        },
+        popupAutoWindow() {
+            if (hex.isPc()) {
+                hex.popupAutoHeight();
+                $('.layui-popup').bind('DOMNodeInserted', function (e) {
+                    hex.popupAutoHeight();
+                });
+                $('.layui-popup img').each(function () {
+                    this.onload = function () {
+                        hex.popupAutoHeight();
+                    }
+                });
+            }
+        },
+        $get(url, done, error = null) {
+            let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+            $.get(url, res => {
+                layer.close(loaderIndex);
+                if (res.code !== 200) {
+                    layer.msg(res.msg);
+                    typeof error === 'function' && error(res.data);
+                    return;
+                }
+                typeof done === 'function' && done(res.data);
+            });
+        },
+        $post(url, data, done, error = null) {
+            let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+            $.post(url, data, res => {
+                layer.close(loaderIndex);
+                if (res.code !== 200) {
+                    layer.msg(res.msg);
+                    typeof error === 'function' && error(res.data);
+                    return;
+                }
+                typeof done === 'function' && done(res.data);
+            });
         }
     }
 

@@ -687,12 +687,22 @@
                         field: 'operate',
                         title: '操作',
                         formatter: function (val, item) {
+
                             let html = '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 edit" title="编辑"><i class="fa fa-edit"></i></button> ';
+
+                            if (item.recommend == 0) {
+                                html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 like" title="上推荐"><i class="fa fa-star" style="color: #a8a5a5;"></i></button> ';
+                            } else {
+                                html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 unlike" title="取消推荐"><i class="fa fa-star" style="color: #e658ea;"></i></button> ';
+                            }
+
                             if (item.status == 0) {
                                 html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 start" title="上架"><i class="fa fa-play" style="color: #61ff61;"></i></button> ';
                             } else {
                                 html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 stop" title="下架"><i class="fa fa-pause" style="color: #fdbea7;"></i></button> ';
                             }
+
+
                             html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 clone" title="克隆商品"><i class="fas fa-clone"></i></button> ';
                             html += '<button type="button"  class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 del" title="删除"><i class="fas fa-trash"></i></button> ';
                             return html;
@@ -713,21 +723,33 @@
                                 layer.confirm('您正在移除该商品，无法恢复哦，是否要继续？', {
                                     btn: ['确认移除', '取消']
                                 }, function () {
-                                    $.post('/admin/api/commodity/del', {list: [row.id]}, res => {
+                                    cao.$post('/admin/api/commodity/del', {list: [row.id]}, res => {
                                         table.bootstrapTable('refresh', {silent: true});
-                                        layer.msg(res.msg);
+                                        layer.msg("删除成功");
                                     });
                                 });
                             },
                             'click .start': function (event, value, row, index) {
-                                $.post('/admin/api/commodity/save', {id: row.id, status: 1}, res => {
-                                    layer.msg(res.msg);
+                                cao.$post('/admin/api/commodity/save', {id: row.id, status: 1}, res => {
+                                    layer.msg("商品上架成功");
                                     table.bootstrapTable('refresh', {silent: true});
                                 });
                             },
                             'click .stop': function (event, value, row, index) {
-                                $.post('/admin/api/commodity/save', {id: row.id, status: 0}, res => {
-                                    layer.msg(res.msg);
+                                cao.$post('/admin/api/commodity/save', {id: row.id, status: 0}, res => {
+                                    layer.msg("商品下架成功");
+                                    table.bootstrapTable('refresh', {silent: true});
+                                });
+                            },
+                            'click .like': function (event, value, row, index) {
+                                cao.$post('/admin/api/commodity/save', {id: row.id, recommend: 1}, res => {
+                                    layer.msg("已推荐");
+                                    table.bootstrapTable('refresh', {silent: true});
+                                });
+                            },
+                            'click .unlike': function (event, value, row, index) {
+                                cao.$post('/admin/api/commodity/save', {id: row.id, recommend: 0}, res => {
+                                    layer.msg("已取消推荐");
                                     table.bootstrapTable('refresh', {silent: true});
                                 });
                             }
@@ -839,7 +861,13 @@
                     },
                     {title: "成本价", name: "factory_price", type: "input", default: 0.00},
                     {title: "商品单价", name: "price", type: "input", placeholder: "商品单价(未登录游客购买价)/0=免费", required: true},
-                    {title: "会员价", name: "user_price", type: "input", placeholder: "会员价(登录注册后购买的价格)/0=免费", required: true},
+                    {
+                        title: "会员价",
+                        name: "user_price",
+                        type: "input",
+                        placeholder: "会员价(登录注册后购买的价格)/0=免费",
+                        required: true
+                    },
                     {
                         title: "禁用折扣",
                         name: "level_disable",
@@ -988,7 +1016,13 @@
                         title: "最低购买数量",
                         name: "minimum",
                         type: "input",
-                        placeholder: "最低购买数量，0=不限制"
+                        placeholder: "单次最低购买数量，0=不限制，默认0"
+                    },
+                    {
+                        title: "最大购买数量",
+                        name: "maximum",
+                        type: "input",
+                        placeholder: "单次最大购买数量，0=不限制，默认0"
                     },
                     {title: "优惠卷", name: "coupon", type: "switch", text: "启用"},
                     {
@@ -1031,7 +1065,7 @@
                         tips: "用户必须登录后才能购买商品"
                     },
                     {
-                        title: "限购数量",
+                        title: "会员限购",
                         name: "purchase_count",
                         type: "input",
                         placeholder: "0代表不限制",

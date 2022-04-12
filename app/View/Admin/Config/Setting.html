@@ -1,5 +1,10 @@
 #{include file="../Header.html"}
-
+<style>
+    .layui-popup .layui-layer-content {
+        position: relative !important;
+        overflow: auto !important;
+    }
+</style>
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     <!--begin::Toolbar-->
@@ -373,6 +378,21 @@
                             </div>
                             <!--end::Input group-->
 
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6">注册用户名长度</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="number" name="username_len"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="请输入限制注册用户名长度" value="#{$config.username_len}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
 
                             <!--begin::Input group-->
                             <div class="row mb-6">
@@ -633,13 +653,7 @@
 
                 cao.popup('/admin/api/plugin/setThemeConfig', values.submit, res => {
                     window.location.reload();
-                }, values.setting, "660px", false, "模板设置", () => {
-                    if (cao.isPc()) {
-                        if ($('.layui-layer-page').height() > 768) {
-                            $('.layui-layer-content').css("height", "720px");
-                        }
-                    }
-                });
+                }, values.setting, "660px", false, "模板设置");
             }
 
             $('.theme-setting').click(function () {

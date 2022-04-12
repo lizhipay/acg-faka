@@ -211,6 +211,7 @@ INSERT INTO `__PREFIX__config` VALUES (39, 'user_mobile_theme', '0');
 INSERT INTO `__PREFIX__config` VALUES (40, 'commodity_recommend', '0');
 INSERT INTO `__PREFIX__config` VALUES (41, 'commodity_name', '推荐');
 INSERT INTO `__PREFIX__config` VALUES (42, 'background_mobile_url', '');
+INSERT INTO `__PREFIX__config` VALUES (43, 'username_len', '6');
 
 DROP TABLE IF EXISTS `__PREFIX__coupon`;
 CREATE TABLE `__PREFIX__coupon`  (
@@ -466,6 +467,7 @@ ALTER TABLE __PREFIX__commodity ADD `widget` text CHARACTER SET utf8mb4 COLLATE 
 ALTER TABLE __PREFIX__commodity ADD `level_price` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '会员等级-定制价格';
 ALTER TABLE __PREFIX__commodity ADD `level_disable` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '禁用会员等级折扣，0=关闭，1=启用';
 ALTER TABLE __PREFIX__commodity ADD `minimum` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '最低购买数量，0=无限制';
+ALTER TABLE __PREFIX__commodity ADD `maximum` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '最大购买数量，0=无限制';
 ALTER TABLE __PREFIX__commodity ADD `shared_sync` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '同步平台价格：0=关，1=开';
 ALTER TABLE __PREFIX__commodity ADD `config` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '配置文件';
 ALTER TABLE __PREFIX__commodity ADD `hide` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '隐藏：1=隐藏，0=不隐藏';

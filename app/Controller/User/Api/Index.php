@@ -74,6 +74,7 @@ class Index extends User
         if ($categoryId == -10) {
             $commodity = $commodity->where("recommend", 1);
         } elseif ($categoryId != 0) {
+            //检测分类是否启用
             $commodity = $commodity->where("category_id", $categoryId);
         }
 
@@ -149,10 +150,16 @@ class Index extends User
 
         $user = $this->getUser();
         $userGroup = $this->getUserGroup();
+        //取得分类
+        $category = $this->shop->getCategory($userGroup);
+        $cates = [];
+        foreach ($category as $cate) {
+            $cates[] = (string)$cate['id'];
+        }
         //最终的商品数据遍历
         foreach ($data as $key => $val) {
             $parseGroupConfig = Commodity::parseGroupConfig($val['level_price'], $userGroup);
-            if ($val['hide'] == 1 && (!$parseGroupConfig || !isset($parseGroupConfig['show']) || $parseGroupConfig['show'] != 1)) {
+            if (!in_array((string)$val['category_id'], $cates) || $val['hide'] == 1 && (!$parseGroupConfig || !isset($parseGroupConfig['show']) || $parseGroupConfig['show'] != 1)) {
                 //隐藏商品
                 unset($data[$key]);
                 continue;
@@ -217,7 +224,7 @@ class Index extends User
             "status", "owner", "delivery_way", "contact_type", "password_status", "level_price",
             "level_disable", "coupon", "shared_id", "shared_code", "shared_premium", "shared_premium_type", "seckill_status",
             "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden",
-            "widget", "minimum", "shared_sync", "config"]);
+            "widget", "minimum", "maximum", "shared_sync", "config"]);
 
         if (!$commodity) {
             throw new JSONException("商品不存在");

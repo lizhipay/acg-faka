@@ -21,6 +21,9 @@ class Master extends User
     #[Inject]
     private Query $query;
 
+    #[Inject]
+    private \App\Service\Order $order;
+
     /**
      * 获取主站分类
      * @return array
@@ -152,6 +155,8 @@ class Master extends User
         $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
         $array = $data['data'];
 
+        $user = $this->getUser();
+        $userGroup = $this->getUserGroup();
         foreach ($array as $index => $item) {
             $userCategory = UserCommodity::query()->where("user_id", $this->getUser()->id)->where("commodity_id", $item['id'])->first();
             if ($userCategory) {
@@ -159,6 +164,17 @@ class Master extends User
             } else {
                 $array[$index]['user_commodity'] = null;
             }
+            //计算拿货价
+            $tradeAmount = $this->order->getTradeAmount(
+                user: $user,
+                userGroup: $userGroup,
+                cardId: 0,
+                num: 1,
+                coupon: "",
+                commodityId: $item['id'],
+                disableShared: true
+            );
+            $array[$index]['user_price'] = $tradeAmount['price'];
         }
         $json = $this->json(200, null, $array);
         $json['count'] = $data['total'];
