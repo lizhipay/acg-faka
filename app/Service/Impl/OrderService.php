@@ -45,15 +45,17 @@ class OrderService implements Order
      * @param Commodity $commodity
      * @param UserGroup|null $group
      * @param string|null $race
+     * @param bool $disableSubstation
      * @return float
      * @throws JSONException
      */
-    public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group, ?string $race = null): float
+    public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group, ?string $race = null, bool $disableSubstation = false): float
     {
         $premium = 0;
+
         //检测分站价格
         $bus = \App\Model\Business::get(Client::getDomain());
-        if ($bus) {
+        if ($bus && !$disableSubstation) {
             if ($userCommodity = UserCommodity::getCustom($bus->user_id, $commodity->id)) {
                 $premium = (float)$userCommodity->premium;
             }
@@ -657,7 +659,7 @@ class OrderService implements Order
             $bus = BusinessLevel::query()->find((int)$promote_1->business_level);
             if ($bus) {
                 //查询该商户的拿货价
-                $calcAmount = $this->calcAmount($promote_1->id, $order->card_num, $commodity, UserGroup::get($promote_1->recharge), $order->race);
+                $calcAmount = $this->calcAmount($promote_1->id, $order->card_num, $commodity, UserGroup::get($promote_1->recharge), $order->race, true);
                 //计算差价
                 if ($order->amount > $calcAmount) {
                     $rebate = $order->amount - $calcAmount; //差价

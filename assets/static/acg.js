@@ -22,7 +22,7 @@ let acg = {
             opera: /opera/.test(window.navigator.userAgent.toLowerCase()),
             safari: /safari/.test(window.navigator.userAgent.toLowerCase())
         }, cache: {
-            raceId: ""
+            raceId: "", payHtml: ""
         }, setting: {
             cache: 0, cache_expire: 0
         },
@@ -695,9 +695,13 @@ let acg = {
                         instance.html(value);
                     }
                 }
-                if (!res.login) {
+                if (!res.login && opt.pay) {
+                    $('.need-login').remove();
                     if (res.only_user == 1 || res.purchase_count > 0) {
-                        opt.pay && $(opt.pay).html('<div class="need-login">该商品需要登录才能购买，<a href="/user/authentication/login?goto=' + res.share_url + '">现在登录</a></div>');
+                        $(opt.pay).hide();
+                        $(opt.pay).after('<div class="need-login">该商品需要登录才能购买，<a href="/user/authentication/login?goto=' + res.share_url + '">现在登录</a></div>');
+                    } else {
+                        $(opt.pay).show();
                     }
                 }
                 typeof opt.success === 'function' && opt.success(res);

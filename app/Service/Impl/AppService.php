@@ -342,6 +342,14 @@ class AppService implements App
                 $ext = $zipPath . '/update.php';
                 if (file_exists($ext)) {
                     require($ext);
+                    if (!class_exists("\Update")) {
+                        throw new JSONException("更新主类未装载成功，请重试");
+                    }
+                    $updateObj = new \Update();
+                    if (!method_exists($updateObj, "exec")) {
+                        throw new JSONException("更新子程序不存在，请重试");
+                    }
+                    $updateObj->exec();
                 }
 
                 //升级程序
