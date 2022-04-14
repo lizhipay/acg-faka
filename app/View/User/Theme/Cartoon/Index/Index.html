@@ -159,6 +159,7 @@
     let defaultCategory = "#{$categoryId}";
     let defaultCommodity = "#{$commodityId}";
     let draftStatus = 0;
+    let inventoryHidden = 0;
 
     //-----------------------------------获取分类------------------------------------------
     Pay.getCategory(list => {
@@ -361,15 +362,15 @@
                 $('.pay_type').hide();
             }
             #{/if}
-
+            inventoryHidden = commodity.inventory_hidden;
             if (commodity.delivery_way === 0) {
                 $('.cardType').html("自动发货").addClass("badge-success");
                 $('.kucunView').show();
                 if (commodity.inventory_hidden == 1) {
                     if (commodity.card <= 0) {
-                        $('.card_count').removeClass("badge-success").addClass("badge-dark").html("无");
+                        $('.card_count').removeClass("badge-success").addClass("badge-dark").html("已售罄");
                     } else if (commodity.card <= 5) {
-                        $('.card_count').removeClass("badge-success").addClass("badge-danger").html("马上卖完!");
+                        $('.card_count').removeClass("badge-success").addClass("badge-danger").html("即将售罄");
                     } else if (commodity.card <= 20) {
                         $('.card_count').removeClass("badge-success").addClass("badge-warning").html("一般");
                     } else if (commodity.card > 20) {
@@ -560,7 +561,20 @@
             $('.payAmount').html("¥" + res.amount);
             $('.price').html("¥" + res.price);
             if (res.hasOwnProperty("card_count")) {
-                $('.card_count').html(res.card_count);
+                let instance = $('.card_count');
+                if (inventoryHidden == 1) {
+                    if (res.card_count <= 0) {
+                        instance.removeClass("badge-success").addClass("badge-dark").html("已售罄");
+                    } else if (res.card_count <= 5) {
+                        instance.removeClass("badge-success").addClass("badge-danger").html("即将售罄");
+                    } else if (res.card_count <= 20) {
+                        instance.removeClass("badge-success").addClass("badge-warning").html("一般");
+                    } else if (res.card_count > 20) {
+                        instance.addClass("badge-success").html("充足");
+                    }
+                } else {
+                    instance.html(res.card_count);
+                }
             }
         });
     }

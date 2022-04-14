@@ -145,7 +145,6 @@ class Commodity extends Manage
             Ini::toArray($map['config']);
         }
 
-
         $createObjectEntity = new CreateObjectEntity();
         $createObjectEntity->setModel(\App\Model\Commodity::class);
         $createObjectEntity->setMap($map, ["description", "delivery_message", "shared_code", "config"]);
@@ -183,5 +182,24 @@ class Commodity extends Manage
         $status = (int)$_POST['status'];
         \App\Model\Commodity::query()->whereIn('id', $list)->update(['status' => $status]);
         return $this->json(200, '商品状态已经更新');
+    }
+
+
+    /**
+     * @return array
+     */
+    public function fastEnable(): array
+    {
+        $list = (array)explode(",", (string)$_POST['list']);
+        unset($_POST['list']);
+        foreach ($_POST as $key => $val) {
+            if ($val == 0) {
+                $_POST[$key] = 0;
+            } else {
+                $_POST[$key] = 1;
+            }
+        }
+        $update = \App\Model\Commodity::query()->whereIn('id', $list)->update($_POST);
+        return $this->json(200, '更新成功');
     }
 }

@@ -36,7 +36,7 @@
                                                                                     style="color: green;">&#xe605;</i>
                                                     #{else}<i class="layui-icon" style="color: red;">&#x1006;</i>#{/if}
                                                 </p>
-                                                <p>分站返佣：#{$le.accrual*100}%</p>
+                                                <p>分站返佣：<i class="layui-icon" style="color: green;">&#xe605;</i></p>
                                                 <p>独立域名：#{if $le.top_domain == 1}<i class="layui-icon"
                                                                                     style="color: green;">&#xe605;</i>
                                                     #{else}<i class="layui-icon" style="color: red;">&#x1006;</i>#{/if}
@@ -74,8 +74,7 @@
                     #{if $user.businessLevel.substation == 1}
                         <blockquote class="elem-quote">
                             当前商户等级：<img src="#{$user.businessLevel.icon}"
-                                        style="height: 16px;margin-top: -4px;">#{$user.businessLevel.name}
-                            ，分站返佣：#{$user.businessLevel.accrual*100}%，绑定独立域名：#{if
+                                        style="height: 16px;margin-top: -4px;">#{$user.businessLevel.name}，绑定独立域名：#{if
                             $user.businessLevel.top_domain == 1}<b style="color: green;">✔</b>#{else}<b
                                 style="color: red;">✖</b>#{/if}，供货权限：#{if
                             $user.businessLevel.supplier == 1}<b

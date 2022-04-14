@@ -212,6 +212,7 @@ INSERT INTO `__PREFIX__config` VALUES (40, 'commodity_recommend', '0');
 INSERT INTO `__PREFIX__config` VALUES (41, 'commodity_name', '推荐');
 INSERT INTO `__PREFIX__config` VALUES (42, 'background_mobile_url', '');
 INSERT INTO `__PREFIX__config` VALUES (43, 'username_len', '6');
+INSERT INTO `__PREFIX__config` VALUES (44, 'cash_type_balance', '0');
 
 DROP TABLE IF EXISTS `__PREFIX__coupon`;
 CREATE TABLE `__PREFIX__coupon`  (

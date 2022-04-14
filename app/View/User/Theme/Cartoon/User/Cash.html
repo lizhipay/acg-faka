@@ -34,6 +34,9 @@
                                 #{if $config.cash_type_wechat == 1} <a class="button-click" onclick="payClick(this,1)"
                                                                        style="line-height: 22px;color: #db66ac;"><img
                                     src="/assets/user/images/cash/wechat.png" class="pay-icon"> 微信</a> #{/if}
+                                #{if $config.cash_type_balance == 1} <a class="button-click" onclick="payClick(this,2)"
+                                                                       style="line-height: 22px;color: #db66ac;"><img
+                                    src="/assets/static/images/wallet.png" class="pay-icon"> 钱包余额(可直接消费)</a> #{/if}
                             </div>
                         </div>
 

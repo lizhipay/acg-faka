@@ -22,7 +22,7 @@ let acg = {
             opera: /opera/.test(window.navigator.userAgent.toLowerCase()),
             safari: /safari/.test(window.navigator.userAgent.toLowerCase())
         }, cache: {
-            raceId: "", payHtml: ""
+            raceId: "", payHtml: "", inventoryHidden: 0
         }, setting: {
             cache: 0, cache_expire: 0
         },
@@ -289,7 +289,20 @@ let acg = {
                     $(instance).html("¥" + res.amount);
                     $('.price').html("¥" + res.price);
                     if (res.hasOwnProperty("card_count")) {
-                        $('.card_count').html(res.card_count);
+                        let instance = $('.card_count');
+                        if (acg.property.cache.inventoryHidden == 1) {
+                            if (res.card_count <= 0) {
+                                instance.addClass("card_count_empty").html("已售罄");
+                            } else if (res.card_count <= 5) {
+                                instance.addClass("card_count_immediately").html("即将售罄");
+                            } else if (res.card_count <= 20) {
+                                instance.addClass("card_count_general").html("一般");
+                            } else if (res.card_count > 20) {
+                                instance.html("充足");
+                            }
+                        } else {
+                            instance.html(res.card_count);
+                        }
                     }
                 }
             });
@@ -562,6 +575,7 @@ let acg = {
                             }
                             continue;
                         } else if (autoKey == "card") {
+                            acg.property.cache.inventoryHidden = res.inventory_hidden;
                             if (res.delivery_way == 1 || res.shared) {
                                 instance.addClass("card_count_unknown").html("未知");
                                 continue;

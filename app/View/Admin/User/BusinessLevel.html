@@ -95,21 +95,8 @@
                         }
                     }
                     , {
-                        field: 'cost', title: '商品抽成', formatter: function (val, item) {
+                        field: 'cost', title: '供货商手续费', formatter: function (val, item) {
                             return '<span class="badge badge-light-primary">' + (item.cost * 100) + '%</span>'
-                        }
-                    }
-                    , {
-                        field: 'accrual', title: '分站提成', formatter: function (val, item) {
-                            return '<span class="badge badge-light-primary">' + (item.accrual * 100) + '%</span>'
-                        }
-                    }
-                    , {
-                        field: 'substation', title: '分站权限', formatter: function (val, item) {
-                            if (item.substation == 1) {
-                                return '<span class="badge badge-light-success">开启</span>'
-                            }
-                            return '<span class="badge badge-light-danger">关闭</span>'
                         }
                     }
                     , {
@@ -121,7 +108,15 @@
                         }
                     }
                     , {
-                        field: 'top_domain', title: '绑定域名', formatter: function (val, item) {
+                        field: 'substation', title: '分站权限', formatter: function (val, item) {
+                            if (item.substation == 1) {
+                                return '<span class="badge badge-light-success">开启</span>'
+                            }
+                            return '<span class="badge badge-light-danger">关闭</span>'
+                        }
+                    }
+                    , {
+                        field: 'top_domain', title: '绑定独立域名', formatter: function (val, item) {
                             if (item.top_domain == 1) {
                                 return '<span class="badge badge-light-success">开启</span>'
                             }
@@ -160,23 +155,16 @@
                     {title: "等级图标", name: "icon", type: "image", placeholder: "请选择图片", width: 50},
                     {title: "等级名称", name: "name", type: "input", placeholder: "请输入等级名称"},
                     {
-                        title: "商品抽成",
+                        title: "供货商手续费",
                         name: "cost",
                         type: "input",
                         placeholder: "请使用小数表达百分比",
-                        tips: "商户可以发布自己的商品，那么卖出的商品，就会通过这个费率被系统扣除一定的费用，类似手续费一样。"
-                    },
-                    {title: "分站权限", name: "substation", type: "switch", text: "开启", tips: "开启后，商户则拥有子站权限，可以使用子站功能。"},
-                    {
-                        title: "分站提成",
-                        name: "accrual",
-                        type: "input",
-                        placeholder: "请使用小数表达百分比",
-                        tips: "主站的商品被分站卖出去后，那么就会通过该费率返佣给该商户。"
+                        tips: "商户可以发布自己的商品，那么卖出的商品，就会通过这个费率被系统扣除一定的费用，也就是手续费。"
                     },
                     {title: "供货权限", name: "supplier", type: "switch", text: "开启", tips: "开启后，该等级的商户拥有供货权限。"},
+                    {title: "分站权限", name: "substation", type: "switch", text: "开启", tips: "开启后，商户则拥有子站权限，可以使用子站功能。"},
                     {
-                        title: "绑定域名",
+                        title: "绑定独立域名",
                         name: "top_domain",
                         type: "switch",
                         text: "开启",

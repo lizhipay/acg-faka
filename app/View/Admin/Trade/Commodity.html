@@ -127,6 +127,9 @@
                         <button class="btn btn-sm btn-light-dark delist me-3"><i class="fas fa-cloud-download-alt"></i>
                             下架选中商品
                         </button>
+                        <button class="btn btn-sm btn-light-primary handle me-3"><i class="fas fa-hand-paper"></i>
+                            一键操作选中商品
+                        </button>
                         <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fas fa-trash"></i> 移除选中商品
                         </button>
                         <!--start::HOOK-->
@@ -815,7 +818,13 @@
                         type: "textarea",
                         placeholder: "独立配置参数，不配置则继承商品",
                         height: 260
-                    }
+                    },
+                    {
+                        title: "",
+                        name: "explain",
+                        type: "explain",
+                        placeholder: "<b style='color: red;'>配置参数是一个强大又好用的功能，学习文档：<a href='https://faka.wiki/#/zh-cn/goods-config' target='_blank'>https://faka.wiki/#/zh-cn/goods-config</a></b>"
+                    },
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});
                 }, values, "460px", false, values.name + ' - 配置');
@@ -1295,8 +1304,8 @@
                 layer.confirm('您确定要删除已经选中的商品吗？这是不可恢复的操作！', {
                     btn: ['确定', '取消']
                 }, function () {
-                    $.post("/admin/api/commodity/del", {list: data}, res => {
-                        layer.msg(res.msg);
+                    cao.$post("/admin/api/commodity/del", {list: data}, res => {
+                        layer.msg("全部删除成功");
                         table.bootstrapTable('refresh', {silent: true});
                     });
                 });
@@ -1311,8 +1320,8 @@
                 layer.confirm('您确定要上架选中的商品吗？', {
                     btn: ['确定', '取消']
                 }, function () {
-                    $.post("/admin/api/commodity/status", {list: data, status: 1}, res => {
-                        layer.msg(res.msg);
+                    cao.$post("/admin/api/commodity/status", {list: data, status: 1}, res => {
+                        layer.msg("全部上架完成");
                         table.bootstrapTable('refresh', {silent: true});
                     });
                 });
@@ -1327,11 +1336,68 @@
                 layer.confirm('您确定要下架选中的商品吗？', {
                     btn: ['确定', '取消']
                 }, function () {
-                    $.post("/admin/api/commodity/status", {list: data, status: 0}, res => {
-                        layer.msg(res.msg);
+                    cao.$post("/admin/api/commodity/status", {list: data, status: 0}, res => {
+                        layer.msg("全部下架完成");
                         table.bootstrapTable('refresh', {silent: true});
                     });
                 });
+            });
+
+            $('.handle').click(() => {
+                let data = cao.listObjectToArray(table.bootstrapTable('getSelections'));
+                if (data.length == 0) {
+                    layer.msg("请至少勾选1个商品进行操作！");
+                    return;
+                }
+
+                let join = data.join(",");
+
+                cao.popup('/admin/api/commodity/fastEnable', [
+                    {
+                        title: "",
+                        name: "list",
+                        type: "hidden",
+                        default: join
+                    },
+                    {
+                        title: "启用API对接",
+                        name: "api_status",
+                        type: "switch",
+                        text: "启用"
+                    },
+                    {
+                        title: "下单密码",
+                        name: "password_status",
+                        type: "switch",
+                        text: "启用"
+                    },
+                    {
+                        title: "优惠卷",
+                        name: "coupon",
+                        type: "switch",
+                        text: "启用"
+                    },
+                    {
+                        title: "隐藏库存",
+                        name: "inventory_hidden",
+                        type: "switch",
+                        text: "启用"
+                    },
+                    {
+                        title: "推荐商品",
+                        name: "recommend",
+                        type: "switch",
+                        text: "启用"
+                    },
+                    {
+                        title: "说明",
+                        name: "explain",
+                        type: "explain",
+                        placeholder: "上面的每个选项都会被强制应用到选中的商品，无论你有没有启用。"
+                    }
+                ], res => {
+                    table.bootstrapTable('refresh', {silent: true});
+                }, {}, '420px', false, "一键操作选中商品");
             });
 
             cao.query('.search-query', table, [
