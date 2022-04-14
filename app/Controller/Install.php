@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Controller\Base\API\User;
 use App\Service\App;
 use App\Util\Client;
+use App\Util\Opcache;
 use App\Util\Str;
 use App\Util\Validation;
 use Kernel\Annotation\Inject;
@@ -125,12 +126,14 @@ class Install extends User
             'prefix' => $map['prefix']
         ], BASE_PATH . "/config/database.php");
 
+        Opcache::invalidate(BASE_PATH . "/config/database.php");
+
         unlink($sqlFile . ".tmp");
         file_put_contents(BASE_PATH . '/kernel/Install/Lock', "");
 
         try {
             $this->app->install();
-        } catch (\Exception | \Error $e) {
+        } catch (\Exception|\Error $e) {
         }
 
         return $this->json(200, '安装完成');
