@@ -48,7 +48,6 @@ class RechargeService implements Recharge
             throw new JSONException("单次最高充值{$rechargeMax}元");
         }
 
-
         $pay = Pay::query()->find($payId);
 
         if (!$pay) {
@@ -59,7 +58,15 @@ class RechargeService implements Recharge
             throw new JSONException("当前支付方式已停用");
         }
 
-        return Db::transaction(function () use ($user, $pay, $amount) {
+        //回调地址
+        $callbackDomain = trim(Config::get("callback_domain"), "/");
+        $clientDomain = Client::getUrl();
+
+        if (!$callbackDomain) {
+            $callbackDomain = $clientDomain;
+        }
+ 
+        return Db::transaction(function () use ($user, $pay, $amount, $callbackDomain, $clientDomain) {
             $order = new UserRecharge();
             $order->trade_no = Str::generateTradeNo();
             $order->user_id = $user->id;
@@ -82,8 +89,8 @@ class RechargeService implements Recharge
             $payObject->amount = (float)sprintf("%.2f", $order->amount);
             $payObject->tradeNo = $order->trade_no;
             $payObject->config = PayConfig::config($pay->handle);
-            $payObject->callbackUrl = Client::getUrl() . '/user/api/rechargeNotification/callback.' . $pay->handle;
-            $payObject->returnUrl = Client::getUrl() . '/user/recharge/index';
+            $payObject->callbackUrl = $callbackDomain . '/user/api/rechargeNotification/callback.' . $pay->handle;
+            $payObject->returnUrl = $clientDomain . '/user/recharge/index';
             $payObject->clientIp = $order->create_ip;
             $payObject->code = $pay->code;
             $payObject->handle = $pay->handle;
@@ -124,8 +131,8 @@ class RechargeService implements Recharge
     /**
      * @param string $handle
      * @param array $map
-     * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @return string
+     * @throws JSONException
      */
     public function callback(string $handle, array $map): string
     {
@@ -153,21 +160,6 @@ class RechargeService implements Recharge
 
             //订单更新
             $this->orderSuccess($order);
-            /*$order->status = 1;
-            $order->pay_time = Date::current();
-            $order->option = null;
-
-            //充值
-            $user = $order->user;
-
-            if ($user) {
-                $rechargeWelfareAmount = $this->calcAmount($order->amount);
-                Bill::create($user, $order->amount, Bill::TYPE_ADD, "充值", 0); //用户余额
-                if ($rechargeWelfareAmount > 0) {
-                    Bill::create($user, $rechargeWelfareAmount, Bill::TYPE_ADD, "充值赠送", 0); //用户余额
-                }
-            }*/
-
         });
 
         return $callback['success'];
@@ -195,7 +187,7 @@ class RechargeService implements Recharge
             }
         }
 
-        $recharge->save(); 
+        $recharge->save();
     }
 
 

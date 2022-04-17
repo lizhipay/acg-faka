@@ -25,6 +25,7 @@ use App\Util\Date;
 use App\Util\Ini;
 use App\Util\PayConfig;
 use App\Util\Str;
+use App\Util\Validation;
 use Illuminate\Database\Capsule\Manager as DB;
 use JetBrains\PhpStorm\ArrayShape;
 use Kernel\Annotation\Inject;
@@ -351,7 +352,15 @@ class OrderService implements Order
             throw new JSONException("当前支付方式已停用，请换个支付方式再进行支付");
         }
 
-        return Db::transaction(function () use ($user, $userGroup, $num, $contact, $device, $amount, $owner, $commodity, $pay, $cardId, $password, $coupon, $from, $widget, $race, $shared) {
+        //回调地址
+        $callbackDomain = trim(Config::get("callback_domain"), "/");
+        $clientDomain = Client::getUrl();
+
+        if (!$callbackDomain) {
+            $callbackDomain = $clientDomain;
+        }
+
+        return Db::transaction(function () use ($user, $userGroup, $num, $contact, $device, $amount, $owner, $commodity, $pay, $cardId, $password, $coupon, $from, $widget, $race, $shared, $callbackDomain, $clientDomain) {
             //生成联系方式
             if ($user) {
                 $contact = "-";
@@ -520,13 +529,14 @@ class OrderService implements Order
                     $payObject->amount = $order->amount;
                     $payObject->tradeNo = $order->trade_no;
                     $payObject->config = PayConfig::config($pay->handle);
-                    $payObject->callbackUrl = Client::getUrl() . '/user/api/order/callback.' . $pay->handle;
+
+                    $payObject->callbackUrl = $callbackDomain . '/user/api/order/callback.' . $pay->handle;
 
                     //判断如果登录
                     if ($owner == 0) {
-                        $payObject->returnUrl = Client::getUrl() . '/user/index/query?tradeNo=' . $order->trade_no;
+                        $payObject->returnUrl = $clientDomain . '/user/index/query?tradeNo=' . $order->trade_no;
                     } else {
-                        $payObject->returnUrl = Client::getUrl() . '/user/personal/purchaseRecord?tradeNo=' . $order->trade_no;
+                        $payObject->returnUrl = $clientDomain . '/user/personal/purchaseRecord?tradeNo=' . $order->trade_no;
                     }
 
                     $payObject->clientIp = Client::getAddress();

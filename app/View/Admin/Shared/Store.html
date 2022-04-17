@@ -182,7 +182,7 @@
                                         result.store_id = mapItem.id;
 
                                         let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
-                                        $.post('/admin/api/store/addItem', result, run => {
+                                        $.post('/admin/api/store/addItem?storeId=' + mapItem.id, result, run => {
                                             layer.close(loaderIndex);
                                             layer.closeAll();
                                             layer.msg(run.msg);

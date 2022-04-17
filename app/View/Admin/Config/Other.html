@@ -30,6 +30,22 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">自定义支付回调域名(<a
+                                            href="https://faka.wiki/#/zh-cn/setting-other" target="_blank" style="color: red;">详细教程</a>)</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="callback_domain"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="自定义支付回调域名，需要带http://" value="#{$config.callback_domain}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
                                 <label class="col-lg-4 col-form-label  fw-bold fs-6 required">主站域名配置(支持多域名,使用逗号分割)</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
@@ -306,8 +322,10 @@
                                     <!--begin::Input-->
                                     <select name="default_category" class="form-select form-select-solid form-select-lg"
                                             data-control="select2" data-hide-search="true">
-                                        <option value="0" #{if $config.default_category == 0} selected #{/if}>不展开</option>
-                                        <option value="-10" #{if $config.default_category == -10} selected #{/if}>推荐</option>
+                                        <option value="0" #{if $config.default_category == 0} selected #{/if}>不展开
+                                        </option>
+                                        <option value="-10" #{if $config.default_category == -10} selected #{/if}>推荐
+                                        </option>
                                         #{foreach $category as $cate}
                                             <option value="#{$cate.id}" #{if $config.default_category == $cate.id} selected #{/if}>#{$cate.name}</option>
                                         #{/foreach}

@@ -677,6 +677,12 @@
                 {title: "搜索应用..", name: "keywords", type: "input"},
             ], true, false);
 
+
+            $('.search-query').submit(function () {
+                $('.queryBtn').click();
+                return false;
+            });
+
         });
     });
 </script>

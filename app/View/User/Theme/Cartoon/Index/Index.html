@@ -248,7 +248,6 @@
         globalCommodityId = commodityId;
         switchElement(obj);
         Pay.getCommodityDetail(commodityId, commodity => {
-            console.log(commodity);
             $('.service-qq').attr("href", "https://wpa.qq.com/msgrd?v=1&uin=" + commodity.service_qq);
             $('.service-url').attr("href", commodity.service_url);
 
@@ -542,6 +541,10 @@
             } else {
                 draftStatus = 0;
             }
+
+            $('html,body').animate({
+                scrollTop: 9999
+            }, 'slow');
         });
     }
 

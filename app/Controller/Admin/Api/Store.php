@@ -129,7 +129,7 @@ class Store extends Manage
     public function addItem(): array
     {
         $categoryId = (int)$_POST['category_id'];
-        $storeId = (int)$_POST['store_id'];
+        $storeId = (int)$_GET['storeId'];
         $items = (array)$_POST['items'];
         $premium = (float)$_POST['premium']; // 加价金额
         $premiumType = (int)$_POST['premium_type']; // 加价模式
