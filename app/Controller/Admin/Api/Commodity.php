@@ -31,7 +31,7 @@ class Commodity extends Manage
      */
     public function data(): array
     {
-        $map = $_POST;
+        $map                 = $_POST;
         $queryTemplateEntity = new QueryTemplateEntity();
         $queryTemplateEntity->setModel(\App\Model\Commodity::class);
         $queryTemplateEntity->setLimit((int)$_POST['limit']);
@@ -86,7 +86,7 @@ class Commodity extends Manage
             $data['data'][$key]['share_url'] = $url . "?code=" . urlencode(base64_encode("a={$val['category_id']}&b={$val['id']}"));
         }
 
-        $json = $this->json(200, null, $data['data']);
+        $json          = $this->json(200, null, $data['data']);
         $json['count'] = $data['total'];
         return $json;
     }
@@ -114,7 +114,13 @@ class Commodity extends Manage
 
             //--init
             $map['owner'] = 0;
-            $map['code'] = strtoupper(Str::generateRandStr(16));
+            $map['code']  = strtoupper(Str::generateRandStr(16));
+        }
+
+        // 会员单价未填的情况下，则同步商品单价
+        if ($map['user_price'] === '') {
+
+            $map['user_price'] = $map['price'];
         }
 
         //如果选择了别人平台
@@ -178,7 +184,7 @@ class Commodity extends Manage
      */
     public function status(): array
     {
-        $list = (array)$_POST['list'];
+        $list   = (array)$_POST['list'];
         $status = (int)$_POST['status'];
         \App\Model\Commodity::query()->whereIn('id', $list)->update(['status' => $status]);
         return $this->json(200, '商品状态已经更新');
