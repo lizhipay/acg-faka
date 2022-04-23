@@ -152,10 +152,10 @@ class OrderService implements Order
                 if (!key_exists($race, $category)) {
                     throw new JSONException("商品种类不存在");
                 }
-                $commodity->price = $category[$race];
+                $commodity->price      = $category[$race];
                 $commodity->user_price = $commodity->price;
             } else {
-                $commodity->price = current($category);
+                $commodity->price      = current($category);
                 $commodity->user_price = $commodity->price;
             }
         }
@@ -203,16 +203,16 @@ class OrderService implements Order
     {
         #CFG begin
         $commodityId = (int)$map['commodity_id'];//商品ID
-        $contact = (string)$map['contact'];//联系方式
-        $num = (int)$map['num']; //购买数量
-        $cardId = (int)$map['card_id'];//预选的卡号ID
-        $payId = (int)$map['pay_id'];//支付方式id
-        $device = (int)$map['device'];//设备
-        $password = (string)$map['password'];//查单密码
-        $coupon = (string)$map['coupon'];//优惠卷
-        $from = (int)$map['from'];//推广人ID
-        $owner = $user == null ? 0 : $user->id;
-        $race = (string)$map['race']; //2022/01/09 新增，商品种类功能
+        $contact     = (string)$map['contact'];//联系方式
+        $num         = (int)$map['num']; //购买数量
+        $cardId      = (int)$map['card_id'];//预选的卡号ID
+        $payId       = (int)$map['pay_id'];//支付方式id
+        $device      = (int)$map['device'];//设备
+        $password    = (string)$map['password'];//查单密码
+        $coupon      = (string)$map['coupon'];//优惠卷
+        $from        = (int)$map['from'];//推广人ID
+        $owner       = $user == null ? 0 : $user->id;
+        $race        = (string)$map['race']; //2022/01/09 新增，商品种类功能
         #CFG end
 
         if ($commodityId == 0) {
@@ -263,7 +263,7 @@ class OrderService implements Order
                 }
                 $widget[$item['name']] = [
                     "value" => $map[$item['name']],
-                    "cn" => $item['cn']
+                    "cn"    => $item['cn']
                 ];
             }
         }
@@ -276,7 +276,7 @@ class OrderService implements Order
         }
 
         $regx = ['/^1[3456789]\d{9}$/', '/.*(.{2}@.*)$/i', '/[1-9]{1}[0-9]{4,11}/'];
-        $msg = ['手机', '邮箱', 'QQ号'];
+        $msg  = ['手机', '邮箱', 'QQ号'];
         //未登录才检测，登录后无需检测
         if (!$user) {
             if (mb_strlen($contact) < 3) {
@@ -354,7 +354,7 @@ class OrderService implements Order
 
         //回调地址
         $callbackDomain = trim(Config::get("callback_domain"), "/");
-        $clientDomain = Client::getUrl();
+        $clientDomain   = Client::getUrl();
 
         if (!$callbackDomain) {
             $callbackDomain = $clientDomain;
@@ -366,23 +366,23 @@ class OrderService implements Order
                 $contact = "-";
             }
 
-            $date = Date::current();
-            $order = new  \App\Model\Order();
-            $order->widget = $widget;
-            $order->owner = $owner;
-            $order->trade_no = Str::generateTradeNo();
-            $order->amount = $amount;
-            $order->commodity_id = $commodity->id;
-            $order->pay_id = $pay->id;
-            $order->create_time = $date;
-            $order->create_ip = Client::getAddress();
-            $order->create_device = $device;
-            $order->status = 0;
-            $order->contact = trim((string)$contact);
+            $date                   = Date::current();
+            $order                  = new  \App\Model\Order();
+            $order->widget          = $widget;
+            $order->owner           = $owner;
+            $order->trade_no        = Str::generateTradeNo();
+            $order->amount          = $amount;
+            $order->commodity_id    = $commodity->id;
+            $order->pay_id          = $pay->id;
+            $order->create_time     = $date;
+            $order->create_ip       = Client::getAddress();
+            $order->create_device   = $device;
+            $order->status          = 0;
+            $order->contact         = trim((string)$contact);
             $order->delivery_status = 0;
-            $order->card_num = $num;
-            $order->user_id = (int)$commodity->owner;
-            $order->rent = $commodity->factory_price * $num; //成本价
+            $order->card_num        = $num;
+            $order->user_id         = (int)$commodity->owner;
+            $order->rent            = $commodity->factory_price * $num; //成本价
             if ($race) {
                 $order->race = $race;
             }
@@ -397,7 +397,7 @@ class OrderService implements Order
             if ($commodity->draft_status == 1 && $cardId != 0) {
                 if ($shared) {
                     //加钱
-                    $order->amount = $order->amount + $commodity->draft_premium;
+                    $order->amount  = $order->amount + $commodity->draft_premium;
                     $order->card_id = $cardId;
                 } else {
                     $card = Card::query();
@@ -415,7 +415,7 @@ class OrderService implements Order
                         throw new JSONException("该卡密不属于这个商品，无法预选" . $commodity->id);
                     }
                     //加钱
-                    $order->amount = $order->amount + $commodity->draft_premium;
+                    $order->amount  = $order->amount + $commodity->draft_premium;
                     $order->card_id = $cardId;
                 }
             }
@@ -471,10 +471,10 @@ class OrderService implements Order
                 }
 
                 //进行优惠
-                $order->amount = $voucher->mode == 0 ? $order->amount - $voucher->money : $order->amount - (($order->amount / $order->card_num) * $voucher->money);
+                $order->amount         = $voucher->mode == 0 ? $order->amount - $voucher->money : $order->amount - (($order->amount / $order->card_num) * $voucher->money);
                 $voucher->service_time = $date;
-                $voucher->use_life = $voucher->use_life + 1;
-                $voucher->life = $voucher->life - 1;
+                $voucher->use_life     = $voucher->use_life + 1;
+                $voucher->life         = $voucher->life - 1;
 
                 if ($voucher->life <= 0) {
                     $voucher->status = 1;
@@ -485,7 +485,7 @@ class OrderService implements Order
                 $order->coupon_id = $voucher->id;
             }
 
-            $secret = null;
+            $secret        = null;
             $order->amount = (float)sprintf("%.2f", (int)($order->amount * 100) / 100);
 
             if ($order->amount == 0) {
@@ -525,10 +525,10 @@ class OrderService implements Order
                     if (file_exists($autoload)) {
                         require($autoload);
                     }
-                    $payObject = new $class;
-                    $payObject->amount = $order->amount;
+                    $payObject          = new $class;
+                    $payObject->amount  = $order->amount;
                     $payObject->tradeNo = $order->trade_no;
-                    $payObject->config = PayConfig::config($pay->handle);
+                    $payObject->config  = PayConfig::config($pay->handle);
 
                     $payObject->callbackUrl = $callbackDomain . '/user/api/order/callback.' . $pay->handle;
 
@@ -540,8 +540,8 @@ class OrderService implements Order
                     }
 
                     $payObject->clientIp = Client::getAddress();
-                    $payObject->code = $pay->code;
-                    $payObject->handle = $pay->handle;
+                    $payObject->code     = $pay->code;
+                    $payObject->handle   = $pay->handle;
 
                     $trade = $payObject->trade();
                     if ($trade instanceof PayEntity) {
@@ -552,11 +552,11 @@ class OrderService implements Order
                                 break;
                             case \App\Pay\Pay::TYPE_LOCAL_RENDER:
                                 $base64 = urlencode(base64_encode('type=1&handle=' . $pay->handle . '&code=' . $pay->code . '&tradeNo=' . $order->trade_no));
-                                $url = '/user/pay/order.' . $base64;
+                                $url    = '/user/pay/order.' . $base64;
                                 break;
                             case \App\Pay\Pay::TYPE_SUBMIT:
                                 $base64 = urlencode(base64_encode('type=2&tradeNo=' . $order->trade_no));
-                                $url = '/user/pay/order.' . $base64;
+                                $url    = '/user/pay/order.' . $base64;
                                 break;
                         }
                         $order->save();
@@ -585,10 +585,10 @@ class OrderService implements Order
      */
     #[ArrayShape(["trade_no" => "mixed", "amount" => "mixed", "success" => "mixed"])] public function callbackInitialize(string $handle, array $map): array
     {
-        $json = json_encode($map, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $payInfo = PayConfig::info($handle);
+        $json      = json_encode($map, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $payInfo   = PayConfig::info($handle);
         $payConfig = PayConfig::config($handle);
-        $callback = $payInfo['callback'];
+        $callback  = $payInfo['callback'];
 
         $autoload = BASE_PATH . '/app/Pay/' . $handle . "/Vendor/autoload.php";
         if (file_exists($autoload)) {
@@ -629,20 +629,20 @@ class OrderService implements Order
      */
     public function orderSuccess(\App\Model\Order $order): string
     {
-        $commodity = $order->commodity;
+        $commodity       = $order->commodity;
         $order->pay_time = Date::current();
-        $order->status = 1;
-        $shared = $commodity->shared; //获取商品的共享平台
+        $order->status   = 1;
+        $shared          = $commodity->shared; //获取商品的共享平台
 
         if ($shared) {
             //拉取远程平台的卡密发货
-            $order->secret = $this->shared->trade($shared, $commodity->shared_code, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, (string)$order->password, (string)$order->race, $order->widget);
+            $order->secret          = $this->shared->trade($shared, $commodity->shared_code, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, (string)$order->password, (string)$order->race, $order->widget);
             $order->delivery_status = 1;
         } else {
             //自动发货
             if ($commodity->delivery_way == 0) {
                 //拉取本地的卡密发货
-                $order->secret = $this->pullCardForLocal($order, $commodity);
+                $order->secret          = $this->pullCardForLocal($order, $commodity);
                 $order->delivery_status = 1;
             } else {
                 //手动发货
@@ -672,7 +672,7 @@ class OrderService implements Order
                 $calcAmount = $this->calcAmount($promote_1->id, $order->card_num, $commodity, UserGroup::get($promote_1->recharge), $order->race, true);
                 //计算差价
                 if ($order->amount > $calcAmount) {
-                    $rebate = $order->amount - $calcAmount; //差价
+                    $rebate         = $order->amount - $calcAmount; //差价
                     $order->premium = $rebate;
                     if ($rebate >= 0.01) {
                         Bill::create($promote_1, $rebate, Bill::TYPE_ADD, "分站返佣", 1);
@@ -683,7 +683,7 @@ class OrderService implements Order
             } else {
                 //推广系统
                 $promoteRebateV1 = (float)Config::get("promote_rebate_v1");  //3级返佣 0.2
-                $rebate1 = $promoteRebateV1 * $order->amount;   //20.00
+                $rebate1         = $promoteRebateV1 * $order->amount;   //20.00
                 if ($rebate1 >= 0.01) {
                     $promote_2 = $promote_1->parent; //获取上级
                     if (!$promote_2) {
@@ -692,7 +692,7 @@ class OrderService implements Order
                     } else {
                         //出现上级，开始将返佣的钱继续拆分
                         $promoteRebateV2 = (float)Config::get("promote_rebate_v2"); // 0.4
-                        $rebate2 = $promoteRebateV2 * $rebate1; //拿走属于第二级百分比返佣 8.00
+                        $rebate2         = $promoteRebateV2 * $rebate1; //拿走属于第二级百分比返佣 8.00
                         //先给上级返佣，这里拿掉上级的拿一份
                         Bill::create($promote_1, $rebate1 - $rebate2, Bill::TYPE_ADD, "推广返佣", 1); // 20-8=12.00
                         if ($rebate2 > 0.01) { // 8.00
@@ -703,7 +703,7 @@ class OrderService implements Order
                             } else {
                                 //出现上级，继续拆分剩下的佣金
                                 $promoteRebateV3 = (float)Config::get("promote_rebate_v3"); // 0.4
-                                $rebate3 = $promoteRebateV3 * $rebate2; // 8.00 * 0.4 = 3.2
+                                $rebate3         = $promoteRebateV3 * $rebate2; // 8.00 * 0.4 = 3.2
                                 //先给上级反
                                 Bill::create($promote_2, $rebate2 - $rebate3, Bill::TYPE_ADD, "推广返佣", 1); // 8.00 - 3.2 = 4.8
                                 if ($rebate3 > 0.01) {
@@ -745,10 +745,10 @@ class OrderService implements Order
         //指定预选卡密
         if ($draft) {
             if ($draft->status == 0) {
-                $secret = $draft->secret;
+                $secret               = $draft->secret;
                 $draft->purchase_time = $order->pay_time;
-                $draft->order_id = $order->id;
-                $draft->status = 1;
+                $draft->order_id      = $order->id;
+                $draft->status        = 1;
                 $draft->save();
             }
             return $secret;
@@ -760,7 +760,7 @@ class OrderService implements Order
             1 => "rand()",
             2 => "id desc"
         };
-        $cards = Card::query()->where("commodity_id", $order->commodity_id)->orderByRaw($direction)->where("status", 0);
+        $cards     = Card::query()->where("commodity_id", $order->commodity_id)->orderByRaw($direction)->where("status", 0);
         //判断订单是否存在类别
         if ($order->race) {
             $cards = $cards->where("race", $order->race);
@@ -769,7 +769,7 @@ class OrderService implements Order
         $cards = $cards->limit($order->card_num)->get();
 
         if (count($cards) == $order->card_num) {
-            $ids = [];
+            $ids   = [];
             $cardc = '';
             foreach ($cards as $card) {
                 $ids[] = $card->id;
@@ -798,7 +798,7 @@ class OrderService implements Order
     public function callback(string $handle, array $map): string
     {
         $callback = $this->callbackInitialize($handle, $map);
-        $json = json_encode($map, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $json     = json_encode($map, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
         DB::transaction(function () use ($handle, $map, $callback, $json) {
             //获取订单
@@ -834,10 +834,12 @@ class OrderService implements Order
      * @param string $coupon
      * @param int|Commodity|null $commodityId
      * @param string|null $race
+     * @param bool $disableShared
+     * @param bool $shoping
      * @return array
      * @throws JSONException
      */
-    #[ArrayShape(["amount" => "mixed", "price" => "float|int", "couponMoney" => "float|int"])] public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int|Commodity|null $commodityId, ?string $race = null, bool $disableShared = false): array
+    #[ArrayShape(["amount" => "mixed", "price" => "float|int", "couponMoney" => "float|int"])] public function getTradeAmount(?User $user, ?UserGroup $userGroup, int $cardId, int $num, string $coupon, int|Commodity|null $commodityId, ?string $race = null, bool $disableShared = false, bool $inShop = true): array
     {
         if ($num <= 0) {
             throw new JSONException("购买数量不能低于1个");
@@ -866,17 +868,17 @@ class OrderService implements Order
             //查远程平台的库存
             $shared = \App\Model\Shared::query()->find($commodity->shared_id);
             if ($shared && !$disableShared) {
-                $inventory = $this->shared->inventory($shared, $commodity->shared_code, (string)$race);
+                $inventory          = $this->shared->inventory($shared, $commodity->shared_code, (string)$race);
                 $data['card_count'] = $inventory['count'];
             }
         }
 
         //检测限购数量
-        if ($commodity->minimum != 0 && $num < $commodity->minimum) {
+        if ($inShop && $commodity->minimum != 0 && $num < $commodity->minimum) {
             throw new JSONException("本商品单次最少购买{$commodity->minimum}个");
         }
 
-        if ($commodity->maximum != 0 && $num > $commodity->maximum) {
+        if ($inShop && $commodity->maximum != 0 && $num > $commodity->maximum) {
             throw new JSONException("本商品单次最多购买{$commodity->maximum}个");
         }
 
@@ -936,14 +938,14 @@ class OrderService implements Order
                 throw new JSONException("该优惠卷面额大于订单金额");
             }
 
-            $deduction = $voucher->mode == 0 ? $voucher->money : $price * $voucher->money;
-            $amount = $amount - $deduction;
+            $deduction   = $voucher->mode == 0 ? $voucher->money : $price * $voucher->money;
+            $amount      = $amount - $deduction;
             $couponMoney = $deduction;
         }
 
 
-        $data ['amount'] = sprintf("%.2f", (int)($amount * 100) / 100);
-        $data ['price'] = sprintf("%.2f", (int)($price * 100) / 100);
+        $data ['amount']      = sprintf("%.2f", (int)($amount * 100) / 100);
+        $data ['price']       = sprintf("%.2f", (int)($price * 100) / 100);
         $data ['couponMoney'] = sprintf("%.2f", (int)($couponMoney * 100) / 100);
 
         return $data;

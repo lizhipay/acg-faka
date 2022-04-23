@@ -30,10 +30,10 @@ class Master extends User
      */
     public function category(): array
     {
-        $map = [];
+        $map                 = [];
         $map['equal-status'] = 1;
-        $map['equal-owner'] = 0;
-        $map['equal-hide'] = 0;
+        $map['equal-owner']  = 0;
+        $map['equal-hide']   = 0;
         $queryTemplateEntity = new QueryTemplateEntity();
         $queryTemplateEntity->setModel(\App\Model\Category::class);
         $queryTemplateEntity->setPaginate(true);
@@ -54,7 +54,7 @@ class Master extends User
             }
         }
 
-        $json = $this->json(200, null, $array);
+        $json          = $this->json(200, null, $array);
         $json['count'] = $data['total'];
         return $json;
     }
@@ -64,7 +64,7 @@ class Master extends User
      */
     public function setCategory(): array
     {
-        $map = $_POST;
+        $map            = $_POST;
         $map['user_id'] = $this->getUser()->id;
 
         if ($map['id'] != 0) {
@@ -88,15 +88,15 @@ class Master extends User
      */
     public function setCategoryStatus(): array
     {
-        $id = (int)$_POST['id'];
+        $id         = (int)$_POST['id'];
         $categoryId = (int)$_POST['category_id'];
-        $userId = $this->getUser()->id;
+        $userId     = $this->getUser()->id;
 
         if ($id == 0 || !($userCategory = UserCategory::query()->where("user_id", $userId)->find($id))) {
-            $userCategory = new UserCategory();
-            $userCategory->user_id = $userId;
+            $userCategory              = new UserCategory();
+            $userCategory->user_id     = $userId;
             $userCategory->category_id = $categoryId;
-            $userCategory->status = 0;
+            $userCategory->status      = 0;
             $userCategory->save();
             return $this->json(200, "已生效");
         }
@@ -111,16 +111,16 @@ class Master extends User
      */
     public function setCategoryAllStatus(): array
     {
-        $status = (int)$_POST['status'] == 0 ? 0 : 1;
+        $status   = (int)$_POST['status'] == 0 ? 0 : 1;
         $category = \App\Model\Category::query()->where("owner", 0)->where("status", 1)->get();
 
         $userId = $this->getUser()->id;
         foreach ($category as $item) {
             $userCategory = UserCategory::query()->where("user_id", $userId)->where("category_id", $item['id'])->first();
             if (!$userCategory) {
-                $userCategory = new UserCategory();
+                $userCategory              = new UserCategory();
                 $userCategory->category_id = $item['id'];
-                $userCategory->user_id = $userId;
+                $userCategory->user_id     = $userId;
             }
             $userCategory->status = $status;
             $userCategory->save();
@@ -133,10 +133,10 @@ class Master extends User
      */
     public function commodity(): array
     {
-        $map = [];
+        $map                 = [];
         $map['equal-status'] = 1;
-        $map['equal-owner'] = 0;
-        $map['equal-hide'] = 0;
+        $map['equal-owner']  = 0;
+        $map['equal-hide']   = 0;
 
         $categoryId = (int)$_POST['category_id'];
 
@@ -165,18 +165,19 @@ class Master extends User
                 $array[$index]['user_commodity'] = null;
             }
             //计算拿货价
-            $tradeAmount = $this->order->getTradeAmount(
+            $tradeAmount                 = $this->order->getTradeAmount(
                 user: $user,
                 userGroup: $userGroup,
                 cardId: 0,
                 num: 1,
                 coupon: "",
                 commodityId: $item['id'],
-                disableShared: true
+                disableShared: true,
+                inShop: false
             );
             $array[$index]['user_price'] = $tradeAmount['price'];
         }
-        $json = $this->json(200, null, $array);
+        $json          = $this->json(200, null, $array);
         $json['count'] = $data['total'];
         return $json;
     }
@@ -187,7 +188,7 @@ class Master extends User
      */
     public function setCommodity(): array
     {
-        $map = $_POST;
+        $map            = $_POST;
         $map['user_id'] = $this->getUser()->id;
         if ($map['id'] != 0) {
             if (!UserCommodity::query()->where("user_id", $map['user_id'])->find($map['id'])) {
@@ -209,15 +210,15 @@ class Master extends User
      */
     public function setCommodityStatus(): array
     {
-        $id = (int)$_POST['id'];
+        $id          = (int)$_POST['id'];
         $commodityId = (int)$_POST['commodity_id'];
-        $userId = $this->getUser()->id;
+        $userId      = $this->getUser()->id;
 
         if ($id == 0 || !($userCommodity = UserCommodity::query()->where("user_id", $userId)->find($id))) {
-            $userCommodity = new UserCommodity();
-            $userCommodity->user_id = $userId;
+            $userCommodity               = new UserCommodity();
+            $userCommodity->user_id      = $userId;
             $userCommodity->commodity_id = $commodityId;
-            $userCommodity->status = 0;
+            $userCommodity->status       = 0;
             $userCommodity->save();
             return $this->json(200, "已生效");
         }
@@ -233,9 +234,9 @@ class Master extends User
      */
     public function setCommodityAllStatus(): array
     {
-        $status = (int)$_POST['status'] == 0 ? 0 : 1;
+        $status     = (int)$_POST['status'] == 0 ? 0 : 1;
         $categoryId = (int)$_POST['category_id'];
-        $commodity = \App\Model\Commodity::query()->where("owner", 0)->where("status", 1);
+        $commodity  = \App\Model\Commodity::query()->where("owner", 0)->where("status", 1);
 
         if ($categoryId != 0) {
             $commodity->where("category_id", $categoryId);
@@ -247,9 +248,9 @@ class Master extends User
         foreach ($commodity as $item) {
             $userCommodity = UserCommodity::query()->where("user_id", $userId)->where("commodity_id", $item['id'])->first();
             if (!$userCommodity) {
-                $userCommodity = new UserCommodity();
+                $userCommodity               = new UserCommodity();
                 $userCommodity->commodity_id = $item['id'];
-                $userCommodity->user_id = $userId;
+                $userCommodity->user_id      = $userId;
             }
             $userCommodity->status = $status;
             $userCommodity->save();
@@ -263,9 +264,9 @@ class Master extends User
      */
     public function setCommodityAllPremium(): array
     {
-        $mode = (int)$_POST['mode'] == 0 ? 0 : 1;
+        $mode       = (int)$_POST['mode'] == 0 ? 0 : 1;
         $categoryId = (int)$_POST['category_id'];
-        $premium = (float)$_POST['premium'];
+        $premium    = (float)$_POST['premium'];
 
         $commodity = \App\Model\Commodity::query()->where("owner", 0)->where("status", 1);
 
@@ -274,13 +275,13 @@ class Master extends User
         }
 
         $commodity = $commodity->get();
-        $userId = $this->getUser()->id;
+        $userId    = $this->getUser()->id;
         foreach ($commodity as $item) {
             $userCommodity = UserCommodity::query()->where("user_id", $userId)->where("commodity_id", $item->id)->first();
             if (!$userCommodity) {
-                $userCommodity = new UserCommodity();
+                $userCommodity               = new UserCommodity();
                 $userCommodity->commodity_id = $item['id'];
-                $userCommodity->user_id = $userId;
+                $userCommodity->user_id      = $userId;
             }
 
             if ($mode == 0) {
