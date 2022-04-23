@@ -41,8 +41,8 @@ class Master extends User
         $queryTemplateEntity->setPage((int)$_POST['page']);
         $queryTemplateEntity->setWhere($map);
         $queryTemplateEntity->setOrder('sort', 'asc');
-        $queryTemplateEntity->setField(['id', 'name']);
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
+        $queryTemplateEntity->setField(['id', 'name', 'sort']);
+        $data  = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
         $array = $data['data'];
 
         foreach ($array as $index => $item) {
@@ -151,11 +151,11 @@ class Master extends User
         $queryTemplateEntity->setPage((int)$_POST['page']);
         $queryTemplateEntity->setWhere($map);
         $queryTemplateEntity->setOrder('sort', 'asc');
-        $queryTemplateEntity->setField(['id', 'name', 'price']);
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
+        $queryTemplateEntity->setField(['id', 'name', 'price', 'sort']);
+        $data  = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
         $array = $data['data'];
 
-        $user = $this->getUser();
+        $user      = $this->getUser();
         $userGroup = $this->getUserGroup();
         foreach ($array as $index => $item) {
             $userCategory = UserCommodity::query()->where("user_id", $this->getUser()->id)->where("commodity_id", $item['id'])->first();
