@@ -27,7 +27,7 @@ class Upload extends User
         if (!isset($_FILES['file'])) {
             throw new JSONException("请选择文件");
         }
-        $handle = $this->upload->handle($_FILES['file'], BASE_PATH . '/assets/cache/images', ['jpg', 'png', 'jpeg', 'ico', 'gif', 'ico', 'mp4'], 1024000);
+        $handle = $this->upload->handle($_FILES['file'], BASE_PATH . '/assets/cache/images', ['jpg', 'png', 'jpeg', 'ico', 'gif', 'ico', 'mp4', 'woff', 'woff2', 'ttf', 'otf'], 1024000);
         if (!is_array($handle)) {
             throw new JSONException($handle);
         }

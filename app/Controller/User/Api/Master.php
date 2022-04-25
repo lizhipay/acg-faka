@@ -151,30 +151,33 @@ class Master extends User
         $queryTemplateEntity->setPage((int)$_POST['page']);
         $queryTemplateEntity->setWhere($map);
         $queryTemplateEntity->setOrder('sort', 'asc');
-        $queryTemplateEntity->setField(['id', 'name', 'price']);
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-        $array = $data['data'];
+        $data = $this->query->findTemplateAll($queryTemplateEntity);
+
+
+        $items = $data->items();
+        $array = [];
 
         $user = $this->getUser();
         $userGroup = $this->getUserGroup();
-        foreach ($array as $index => $item) {
+        foreach ($items as $index => $item) {
             $userCategory = UserCommodity::query()->where("user_id", $this->getUser()->id)->where("commodity_id", $item['id'])->first();
             if ($userCategory) {
                 $array[$index]['user_commodity'] = $userCategory->toArray();
             } else {
                 $array[$index]['user_commodity'] = null;
             }
-            //计算拿货价
-            $tradeAmount = $this->order->getTradeAmount(
-                user: $user,
-                userGroup: $userGroup,
-                cardId: 0,
+            //计算拿货价，采用新的方式
+            $tradeAmount = $this->order->calcAmount(
+                owner: $user->id,
                 num: 1,
-                coupon: "",
-                commodityId: $item['id'],
-                disableShared: true
+                commodity: $item,
+                group: $userGroup,
+                disableSubstation: true
             );
-            $array[$index]['user_price'] = $tradeAmount['price'];
+            $array[$index]['user_price'] = $tradeAmount;
+            $array[$index]['price'] = $item->price;
+            $array[$index]['id'] = $item->id;
+            $array[$index]['name'] = $item->name;
         }
         $json = $this->json(200, null, $array);
         $json['count'] = $data['total'];

@@ -7,6 +7,7 @@ namespace App\Controller\Admin\Api;
 use App\Controller\Base\API\Manage;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
+use App\Model\ManageLog;
 use App\Service\Query;
 use App\Util\Date;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -72,6 +73,7 @@ class Cash extends Manage
             if ($status == 0) {
                 $cash->status = 1;
                 $cash->save();
+                ManageLog::log($this->getManage(), "通过了用户ID($cash->user_id)的提现");
             } else {
                 $cash->status = 2;
                 $cash->message = $message;
@@ -80,6 +82,7 @@ class Cash extends Manage
                 if ($user instanceof \App\Model\User) {
                     //驳回钱款
                     \App\Model\Bill::create($user, $cash->amount + (float)$cash->cost, \App\Model\Bill::TYPE_ADD, "兑现被拒绝", 1);
+                    ManageLog::log($this->getManage(), "驳回了用户($user->username)的提现");
                 }
             }
         });
@@ -96,6 +99,8 @@ class Cash extends Manage
     {
         $amount = (float)$_POST['amount'];
         $this->cash->settlement($amount);
+
+        ManageLog::log($this->getManage(), "进行了一键自动结算，金额：" . $amount);
         return $this->json(200, "结算完成");
     }
 

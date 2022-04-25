@@ -9,6 +9,7 @@ use App\Entity\CreateObjectEntity;
 use App\Entity\DeleteBatchEntity;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
+use App\Model\ManageLog;
 use App\Service\Query;
 use App\Util\Client;
 use App\Util\Date;
@@ -153,6 +154,8 @@ class Commodity extends Manage
         if (!$save) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
+
+        ManageLog::log($this->getManage(), "[修改/新增]商品");
         return $this->json(200, '（＾∀＾）保存成功');
     }
 
@@ -170,6 +173,8 @@ class Commodity extends Manage
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }
+
+        ManageLog::log($this->getManage(), "[删除]商品");
         return $this->json(200, '（＾∀＾）移除成功');
     }
 
@@ -181,6 +186,7 @@ class Commodity extends Manage
         $list = (array)$_POST['list'];
         $status = (int)$_POST['status'];
         \App\Model\Commodity::query()->whereIn('id', $list)->update(['status' => $status]);
+        ManageLog::log($this->getManage(), "[批量更新]商品启停状态");
         return $this->json(200, '商品状态已经更新');
     }
 
@@ -200,6 +206,8 @@ class Commodity extends Manage
             }
         }
         $update = \App\Model\Commodity::query()->whereIn('id', $list)->update($_POST);
+
+        ManageLog::log($this->getManage(), "[批量更新]商品状态");
         return $this->json(200, '更新成功');
     }
 }

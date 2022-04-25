@@ -220,6 +220,10 @@ if (!function_exists("getLocalRouter")) {
 if (!function_exists("feedback")) {
     function feedback(string $value)
     {
+        if ($value != "404 Not Found") {
+            debug($value);
+        }
+
         if (!DEBUG) {
             return View::render("404.html", ["msg" => "404 Not Found"]);
         }
@@ -244,5 +248,14 @@ if (!function_exists("getHookNum")) {
     function getHookNum(int $point): int
     {
         return Plugin::getHookNum($point);
+    }
+}
+
+
+if (!function_exists("debug")) {
+    function debug(string $message): void
+    {
+        $path = BASE_PATH . '/runtime.log';
+        file_put_contents($path, "[" . date("Y-m-d H:i:s", time()) . "]:" . $message . PHP_EOL, FILE_APPEND);
     }
 }

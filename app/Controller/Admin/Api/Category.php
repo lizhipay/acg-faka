@@ -9,6 +9,7 @@ use App\Entity\CreateObjectEntity;
 use App\Entity\DeleteBatchEntity;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
+use App\Model\ManageLog;
 use App\Service\Query;
 use App\Util\Client;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -69,6 +70,8 @@ class Category extends Manage
         if (!$save) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
+
+        ManageLog::log($this->getManage(), "[新增/修改]商品分类");
         return $this->json(200, '（＾∀＾）保存成功');
     }
 
@@ -92,6 +95,7 @@ class Category extends Manage
             \App\Model\Commodity::query()->where("category_id", $id)->delete();
         }
 
+        ManageLog::log($this->getManage(), "[删除]商品分类");
         return $this->json(200, '（＾∀＾）移除成功');
     }
 
@@ -103,6 +107,8 @@ class Category extends Manage
         $list = (array)$_POST['list'];
         $status = (int)$_POST['status'];
         \App\Model\Category::query()->whereIn('id', $list)->update(['status' => $status]);
+
+        ManageLog::log($this->getManage(), "[批量更新]商品分类状态，STATUS：" . $status);
         return $this->json(200, '分类状态已经更新');
     }
 }

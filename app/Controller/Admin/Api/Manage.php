@@ -9,6 +9,7 @@ use App\Entity\DeleteBatchEntity;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
 use App\Interceptor\Super;
+use App\Model\ManageLog;
 use App\Service\Query;
 use App\Util\Str;
 use App\Util\Validation;
@@ -89,6 +90,8 @@ class Manage extends \App\Controller\Base\API\Manage
         if (!$save) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
+
+        ManageLog::log($this->getManage(), "[新增/修改]管理员({$map['email']})");
         return $this->json(200, '（＾∀＾）保存成功');
     }
 
@@ -107,6 +110,8 @@ class Manage extends \App\Controller\Base\API\Manage
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }
+
+        ManageLog::log($this->getManage(), "删除了管理员");
         return $this->json(200, '（＾∀＾）移除成功');
     }
 
@@ -140,6 +145,7 @@ class Manage extends \App\Controller\Base\API\Manage
 
         $manage->save();
 
+        ManageLog::log($this->getManage(), "修改了密码");
         return $this->json(200, "修改成功");
     }
 }

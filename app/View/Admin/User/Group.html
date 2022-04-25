@@ -91,7 +91,7 @@
                         }
                     },
                     {
-                        field: "recharge", title: "累计充值", formatter: function (val, item) {
+                        field: "recharge", title: "所需元气", formatter: function (val, item) {
                             return '<span class="badge badge-light-success">' + item.recharge + '</span>'
                         }
                     },
@@ -140,11 +140,11 @@
                         tips: "当会员购买商品时，系统将会通过这个费率计算出给会员的优惠折扣，就和理发店办理VIP一样。"
                     },
                     {
-                        title: "累计充值",
+                        title: "累计元气",
                         name: "recharge",
                         type: "input",
-                        placeholder: "请输入累计充值",
-                        tips: "当会员充值累计达到这个金额时，将会自动升级为该会员等级。"
+                        placeholder: "请输入累计元气",
+                        tips: "当会员元气累计达到这个数量时，将会自动升级为该会员等级，元气=充值/消费1:1获得"
                     },
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});

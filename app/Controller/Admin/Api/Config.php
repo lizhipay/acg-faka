@@ -6,6 +6,7 @@ namespace App\Controller\Admin\Api;
 use App\Controller\Base\API\Manage;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
+use App\Model\ManageLog;
 use App\Service\Query;
 use App\Service\Sms;
 use App\Util\Date;
@@ -57,6 +58,7 @@ class Config extends Manage
             throw new JSONException("保存失败，请检查原因");
         }
 
+        ManageLog::log($this->getManage(), "修改了网站设置");
         unlink(BASE_PATH . "/runtime/plugin/app.cache");
         return $this->json(200, '保存成功');
     }
@@ -93,6 +95,7 @@ class Config extends Manage
             throw new JSONException("保存失败，请检查原因");
         }
 
+        ManageLog::log($this->getManage(), "修改了其他设置");
         return $this->json(200, '保存成功');
     }
 
@@ -117,6 +120,8 @@ class Config extends Manage
                 $list = array_values($list);
             }
         }
+
+        ManageLog::log($this->getManage(), "修改了子站显示列表");
         CFG::put("substation_display_list", json_encode($list));
         return $this->json(200, "成功", $list);
     }
@@ -131,6 +136,8 @@ class Config extends Manage
         } catch (\Exception $e) {
             throw new JSONException("保存失败，请检查原因");
         }
+
+        ManageLog::log($this->getManage(), "修改了短信配置");
         return $this->json(200, '保存成功');
     }
 
@@ -144,6 +151,8 @@ class Config extends Manage
         } catch (\Exception $e) {
             throw new JSONException("保存失败，请检查原因");
         }
+
+        ManageLog::log($this->getManage(), "修改了邮件配置");
         return $this->json(200, '保存成功');
     }
 
@@ -151,6 +160,8 @@ class Config extends Manage
     public function smsTest(): array
     {
         $this->sms->sendCaptcha($_POST['phone'], Sms::CAPTCHA_REGISTER);
+
+        ManageLog::log($this->getManage(), "测试了短信发送");
         return $this->json(200, "短信发送成功");
     }
 
@@ -185,6 +196,7 @@ class Config extends Manage
             throw new JSONException("发送失败");
         }
 
+        ManageLog::log($this->getManage(), "测试了邮件发送");
         return $this->json(200, "成功!");
     }
 

@@ -1,4 +1,10 @@
 #{include file="../Header.html"}
+<style>
+    .layui-layer-page .layui-layer-content {
+        position: relative !important;
+        overflow: auto !important;
+    }
+</style>
 
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
@@ -40,6 +46,43 @@
         layui.use(['hex'], function () {
             let table = $("#pay-plugin");
             var cao = layui.hex;
+
+            let pluginUpdate = {
+                items: null,
+                updateNum: 0,
+                init() {
+                    if (!this.items) {
+                        let items = localStorage.getItem("pluginVersions");
+                        if (items) {
+                            this.items = JSON.parse(items);
+                        } else {
+                            this.items = {};
+                        }
+                    }
+                },
+                getPlugin(key) {
+                    this.init();
+                    if (!this.items || !this.items.hasOwnProperty(key)) {
+                        return null;
+                    }
+                    return this.items[key];
+                },
+                renderButton(key, version) {
+                    let plugin = this.getPlugin(key);
+                    if (!plugin) {
+                        return "";
+                    }
+                    if (version != plugin.version) {
+                        this.updateNum++;
+
+                        $('#updateNum').html('<b style="color:red;">[' + this.updateNum + ']个插件需要更新</b>');
+
+                        return ' <span style="cursor: pointer;" class="badge badge-light-success updatePlugin">更新->' + plugin.version + '</span>';
+                    }
+                    return "";
+                }
+            }
+
             let queryParams = null;
             table.bootstrapTable({
                 url: '/admin/api/pay/getPlugins',//请求的url地址
@@ -90,8 +133,37 @@
                         }
                     }
                     , {
-                        field: 'version', title: '版本号', formatter: function (val, item) {
-                            return '<span class="badge badge-light">' + item.info.version + '</span>';
+                        field: 'version', title: '<span id="updateNum">版本号</span>', formatter: function (val, item) {
+                            return '<span class="badge badge-light">' + item.info.version + '</span>' + pluginUpdate.renderButton(item.id, item.info.version);
+                        }
+                        ,
+                        events: {
+                            'click .updatePlugin': function (event, value, row, index) {
+                                let plugin = pluginUpdate.getPlugin(row.id);
+
+                                if (!plugin) {
+                                    layer.msg("初始化更新失败，请刷新页面重试");
+                                    return;
+                                }
+
+                                layer.confirm(plugin.update_content.replace(/\n/, "<br>"), {
+                                    btn: ['立即更新', '取消'],
+                                    title: "更新插件 -> " + '<span style="color: red;">' + row.info.name + '</span>'
+                                }, function () {
+                                    let layIndex = layer.load(1, {shade: [0.3, '#fff']});
+                                    $.post('/admin/api/app/upgrade', {
+                                        plugin_key: row.id,
+                                        type: plugin.type,
+                                        plugin_id: plugin.id
+                                    }, res => {
+                                        layer.close(layIndex);
+                                        layer.msg(res.msg);
+                                        if (res.code == 200) {
+                                            window.location.reload();
+                                        }
+                                    });
+                                });
+                            }
                         }
                     }
                     , {

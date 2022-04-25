@@ -11,6 +11,7 @@ use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
 use App\Model\Bill;
 use App\Model\Business;
+use App\Model\ManageLog;
 use App\Model\UserGroup;
 use App\Service\Query;
 use App\Util\Date;
@@ -101,6 +102,8 @@ class User extends Manage
         if (!$save) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
+
+        ManageLog::log($this->getManage(), "修改了会员($user->username)的信息。");
         return $this->json(200, '（＾∀＾）保存成功');
     }
 
@@ -124,6 +127,7 @@ class User extends Manage
         }
 
         Bill::create($user, (float)$map['amount'], (int)$map['action'], $map['log'], 0, (bool)$map['total']);
+        ManageLog::log($this->getManage(), "为会员($user->username)进行了余额/硬币变动操作，详情查看账变明细");
         return $this->json(200, "操作成功");
     }
 
@@ -172,6 +176,7 @@ class User extends Manage
             Business::query()->where("user_id", $id)->delete();
         }
 
+        ManageLog::log($this->getManage(), "删除了会员，共计删除：" . count($list));
         return $this->json(200, '（＾∀＾）移除成功');
     }
 
@@ -192,7 +197,27 @@ class User extends Manage
         $user->save();
 
         Business::query()->where("user_id", $id)->delete();
-
+        ManageLog::log($this->getManage(), "关闭了会员($user->username)的店铺");
         return $this->json(200, '（＾∀＾）关闭成功');
+    }
+
+    /**
+     * @throws JSONException
+     */
+    public function fastUpdateUserGroup(): array
+    {
+        $list = (array)explode(",", (string)$_POST['list']);
+        $group = UserGroup::query()->find((int)$_POST['group_id']);
+
+        if (!$group) {
+            throw new JSONException("请选择会员等级再进行操作！");
+        }
+
+        $update = \App\Model\User::query()->whereIn('id', $list)->update([
+            "recharge" => $group->recharge
+        ]);
+
+        ManageLog::log($this->getManage(), "批量操作了会员的等级");
+        return $this->json(200, '更新成功');
     }
 }

@@ -9,7 +9,8 @@ require("Helper.php");
 define("BASE_APP_SERVER", match ((int)config("store")['server']) {
     0 => App\Service\App::MAIN_SERVER,
     1 => App\Service\App::STANDBY_SERVER1,
-    2 => App\Service\App::STANDBY_SERVER2
+    2 => App\Service\App::STANDBY_SERVER2,
+    3 => App\Service\App::GENERAL_SERVER
 });
 //session
 session_name("ACG-SHOP");

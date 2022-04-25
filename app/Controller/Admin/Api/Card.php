@@ -9,6 +9,7 @@ use App\Entity\CreateObjectEntity;
 use App\Entity\DeleteBatchEntity;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
+use App\Model\ManageLog;
 use App\Service\Query;
 use App\Util\Date;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -126,6 +127,8 @@ class Card extends Manage
             }
         }
 
+
+        ManageLog::log($this->getManage(), "[导入卡密]共计导入:{$count}张卡密，成功:{$success}张，失败：{$error}张");
         return $this->json(200, "共计导入:{$count}张卡密，成功:{$success}张，失败：{$error}张");
     }
 
@@ -143,6 +146,8 @@ class Card extends Manage
         if (!$save) {
             throw new JSONException("保存失败");
         }
+
+        ManageLog::log($this->getManage(), "[修改卡密]编辑了卡密信息");
         return $this->json(200, '（＾∀＾）保存成功');
     }
 
@@ -153,6 +158,8 @@ class Card extends Manage
     {
         $list = (array)$_POST['list'];
         \App\Model\Card::query()->whereIn('id', $list)->whereRaw("status!=1")->update(['status' => 2]);
+
+        ManageLog::log($this->getManage(), "[锁定卡密]批量锁定了卡密信息，共计：" . count($list));
         return $this->json(200, '锁定成功');
     }
 
@@ -163,6 +170,7 @@ class Card extends Manage
     {
         $list = (array)$_POST['list'];
         \App\Model\Card::query()->whereIn('id', $list)->whereRaw("status!=1")->update(['status' => 0]);
+        ManageLog::log($this->getManage(), "[解锁卡密]批量解锁了卡密信息，共计：" . count($list));
         return $this->json(200, '解锁成功');
     }
 
@@ -179,6 +187,8 @@ class Card extends Manage
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }
+
+        ManageLog::log($this->getManage(), "[批量删除]批量删除了卡密，共计：" . count($_POST['list']));
         return $this->json(200, '（＾∀＾）移除成功');
     }
 
@@ -235,6 +245,7 @@ class Card extends Manage
             }
         }
 
+        ManageLog::log($this->getManage(), "[卡密导出]导出卡密，共计：" . count($data));
         header('Content-Type:application/octet-stream');
         header('Content-Transfer-Encoding:binary');
         header('Content-Disposition:attachment; filename=卡密导出(' . count($data) . ')-' . Date::current() . '.txt');
