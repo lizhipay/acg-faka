@@ -511,7 +511,7 @@ CREATE TABLE `__PREFIX__manage_log`  (
                                          `content` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '日志内容',
                                          `create_time` datetime NOT NULL COMMENT '创建时间',
                                          `create_ip` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'IP地址',
-                                         `ua` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '浏览器UA',
+                                         `ua` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '浏览器UA',
                                          `risk` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '风险：0=正常，1=异常',
                                          PRIMARY KEY (`id`) USING BTREE,
                                          INDEX `create_ip`(`create_ip`) USING BTREE,
