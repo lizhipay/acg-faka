@@ -6,6 +6,7 @@ namespace App\Controller\Admin\Api;
 use App\Controller\Base\API\Manage;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
+use App\Model\ManageLog;
 use App\Model\UserRecharge;
 use App\Service\Query;
 use App\Service\Recharge;
@@ -73,6 +74,8 @@ class RechargeOrder extends Manage
         }
 
         $this->recharge->orderSuccess($order);
+
+        ManageLog::log($this->getManage(), "充值订单->手动补单，订单号：{$order->trade_no}");
         return $this->json(200, "已手动确认");
     }
 
@@ -85,6 +88,8 @@ class RechargeOrder extends Manage
         \App\Model\UserRecharge::query()
             ->where("create_time", "<", date("Y-m-d H:i:s", time() - 1800))
             ->where("status", 0)->delete();
+
+        ManageLog::log($this->getManage(), "充值订单->一键清理无用订单");
         return $this->json(200, '（＾∀＾）清理完成');
     }
 }

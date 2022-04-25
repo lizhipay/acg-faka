@@ -86,6 +86,11 @@
                 <td>手续费</td>
                 <td>[cost]</td>
             </tr>
+
+            <tr>
+                <td>控件</td>
+                <td>[widget]</td>
+            </tr>
             </tbody>
         </table>
     </div>
@@ -219,6 +224,17 @@
                                 if (map.status == 1) {
                                     deliveryHtml += ((map.delivery_status == 0 && map.status == 1) ? " <a data-id='" + map.id + "' class='delivery-card' style='cursor: pointer;color: #0B7CC5;'>发货</a>" : " <a data-id='" + map.id + "' class='view-card' style='cursor: pointer;color: #0B7CC5;'>查看</a>");
                                 }
+
+                                let parse = JSON.parse(map.widget);
+
+                                let widget = "";
+                                if (parse) {
+                                    for (const parseKey in parse) {
+                                        widget += parse[parseKey].cn + "：" + parse[parseKey].value + "<br>";
+                                    }
+                                }
+
+
                                 layer.open({
                                     type: 1,
                                     title: '<i class="layui-icon">&#xe600;</i> MORE',
@@ -236,8 +252,9 @@
                                         .replace("[cost]", '<b style="color: #40b0de;">' + map.cost + '</b>')
                                         .replace("[create_device]", create_device[map.create_device])
                                         .replace("[pay_time]", map.pay_time ? map.pay_time : "-")
+                                        .replace("[widget]", widget)
                                     ,
-                                    area: cao.isPc() ? "420px" :  ['100%', '100%'],
+                                    area: cao.isPc() ? "420px" : ['100%', '100%'],
                                     shadeClose: true,
                                     success: () => {
                                         $('.delivery-card').click(function () {

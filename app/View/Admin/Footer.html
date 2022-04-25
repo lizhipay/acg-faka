@@ -150,16 +150,13 @@
             });
 
 
-            $.get("/admin/api/app/getUpdateNum", res => {
+            $.get("/admin/api/app/getUpdates", res => {
                 if (res.code != 200) {
                     return;
                 }
 
-                if (res.data.count > 0) {
-                    $('.update-num').html(res.data.count + "个更新");
-                }
-
-            });
+                localStorage.setItem("pluginVersions", JSON.stringify(res.data));
+            }); //无感请求插件更新列表
 
             $('.app-server-select').change(function () {
                 let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});

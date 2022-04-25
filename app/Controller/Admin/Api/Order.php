@@ -9,6 +9,7 @@ use App\Entity\CreateObjectEntity;
 use App\Entity\DeleteBatchEntity;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
+use App\Model\ManageLog;
 use App\Service\Query;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
@@ -86,6 +87,8 @@ class Order extends Manage
         if (!$save) {
             throw new JSONException("发货失败");
         }
+
+        ManageLog::log($this->getManage(), "[手动发货]({$map['id']})修改了发货信息");
         return $this->json(200, '（＾∀＾）发货成功');
     }
 
@@ -98,6 +101,8 @@ class Order extends Manage
         \App\Model\Order::query()
             ->where("create_time", "<", date("Y-m-d H:i:s", time() - 1800))
             ->where("status", 0)->delete();
+
+        ManageLog::log($this->getManage(), "进行了一键清理无用商品订单操作");
         return $this->json(200, '（＾∀＾）清理完成');
     }
 }

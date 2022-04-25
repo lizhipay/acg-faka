@@ -9,6 +9,7 @@ use App\Entity\CreateObjectEntity;
 use App\Entity\DeleteBatchEntity;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
+use App\Model\ManageLog;
 use App\Service\Query;
 use App\Util\Date;
 use App\Util\Str;
@@ -114,6 +115,7 @@ class Coupon extends Manage
             }
         }
 
+        ManageLog::log($this->getManage(), "[生成优惠卷]成功:{$success}张，失败：{$error}张");
         return $this->json(200, "生成完毕，成功:{$success}张，失败：{$error}张", ["code" => $codes, "success" => $success, "error" => $error]);
     }
 
@@ -131,6 +133,8 @@ class Coupon extends Manage
         if (!$save) {
             throw new JSONException("保存失败");
         }
+
+        ManageLog::log($this->getManage(), "[修改优惠卷]编辑了优惠卷信息");
         return $this->json(200, '（＾∀＾）保存成功');
     }
 
@@ -142,6 +146,8 @@ class Coupon extends Manage
     {
         $list = (array)$_POST['list'];
         \App\Model\Coupon::query()->whereIn('id', $list)->whereRaw("status!=1")->update(['status' => 2]);
+
+        ManageLog::log($this->getManage(), "[锁定优惠卷]批量锁定了优惠卷，共计：" . count($list));
         return $this->json(200, '锁定成功');
     }
 
@@ -152,6 +158,8 @@ class Coupon extends Manage
     {
         $list = (array)$_POST['list'];
         \App\Model\Coupon::query()->whereIn('id', $list)->whereRaw("status!=1")->update(['status' => 0]);
+
+        ManageLog::log($this->getManage(), "[解锁优惠卷]批量解锁了优惠卷，共计：" . count($list));
         return $this->json(200, '解锁成功');
     }
 
@@ -169,6 +177,8 @@ class Coupon extends Manage
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }
+
+        ManageLog::log($this->getManage(), "[批量删除]批量删除了优惠卷，共计：" . count($_POST['list']));
         return $this->json(200, '（＾∀＾）移除成功');
     }
 
@@ -188,6 +198,8 @@ class Coupon extends Manage
         foreach ($data as $d) {
             $card .= $d->code . PHP_EOL;
         }
+
+        ManageLog::log($this->getManage(), "[优惠卷导出]导出优惠卷，共计：" . count($data));
         header('Content-Type:application/octet-stream');
         header('Content-Transfer-Encoding:binary');
         header('Content-Disposition:attachment; filename=优惠卷导出(' . count($data) . ')-' . Date::current() . '.txt');

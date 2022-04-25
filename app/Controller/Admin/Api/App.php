@@ -5,6 +5,7 @@ namespace App\Controller\Admin\Api;
 
 use App\Interceptor\ManageSession;
 use App\Interceptor\Waf;
+use App\Model\ManageLog;
 use App\Util\Helper;
 use App\Util\Opcache;
 use Kernel\Annotation\Inject;
@@ -178,9 +179,16 @@ class App extends Manage
 
     /**
      * @return array
+     * @throws JSONException
      */
-    public function getUpdateNum(): array
+    public function getUpdates(): array
     {
+        $file = BASE_PATH . "/runtime/plugin/store.cache";
+
+        $filectime = filectime($file);
+        if ($filectime + 120 > time()) {
+            throw new JSONException("CACHE HIT");
+        }
 
         $plugins = $this->app->plugins([
             "type" => -1,
@@ -189,10 +197,8 @@ class App extends Manage
             "group" => 0,
         ]);
 
-        $update = 0;
-
         //appStroe缓存
-        $appStore = json_decode((string)file_get_contents(BASE_PATH . "/runtime/plugin/store.cache"), true);
+        $appStore = (array)json_decode((string)file_get_contents($file), true);
 
         foreach ($plugins['rows'] as $plugin) {
             $info = Helper::isInstall($plugin['plugin_key'], (int)$plugin['type']);
@@ -201,27 +207,29 @@ class App extends Manage
                 continue;
             }
 
-            $versionKey = match ((int)$plugin['type']) {
-                0 => \App\Consts\Plugin::VERSION,
-                1 => "version",
-                2 => "VERSION"
-            };
-
-            if ($info[$versionKey] != $plugin['version']) {
-                $update++;
-            }
-
             $appStore[$plugin['plugin_key']] = [
                 "icon" => $plugin['icon'],
-                "name" => $plugin['plugin_name']
+                "name" => $plugin['plugin_name'],
+                "version" => $plugin['version'],
+                "update_content" => $plugin['update_content'],
+                "id" => $plugin['id'],
+                "type" => $plugin['type']
             ];
         }
-        file_put_contents(BASE_PATH . "/runtime/plugin/store.cache", json_encode($appStore));
 
-        $json = $this->json(200, "ok", ['count' => $update]);
-        return $json;
+        file_put_contents($file, json_encode($appStore));
+        return $this->json(200, "ok", $appStore);
     }
 
+    /**
+     * @return array
+     */
+    public function delUpdates(): array
+    {
+        $file = BASE_PATH . "/runtime/plugin/store.cache";
+        unlink($file);
+        return $this->json(200, "ok");
+    }
 
     /**
      * @return array
@@ -238,6 +246,7 @@ class App extends Manage
     public function install(): array
     {
         $this->app->installPlugin((string)$_POST['plugin_key'], (int)$_POST['type'], (int)$_POST['plugin_id']);
+        ManageLog::log($this->getManage(), "安装了应用({$_POST['plugin_key']})");
         return $this->json(200, "安装完成");
     }
 
@@ -247,6 +256,7 @@ class App extends Manage
     public function upgrade(): array
     {
         $this->app->updatePlugin((string)$_POST['plugin_key'], (int)$_POST['type'], (int)$_POST['plugin_id']);
+        ManageLog::log($this->getManage(), "更新了应用({$_POST['plugin_key']})");
         return $this->json(200, "更新完成");
     }
 
@@ -265,6 +275,8 @@ class App extends Manage
         }
 
         $this->app->uninstallPlugin($pluginKey, $type);
+
+        ManageLog::log($this->getManage(), "卸载了应用({$pluginKey})");
         return $this->json(200, "卸载完成");
     }
 

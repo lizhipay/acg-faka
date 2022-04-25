@@ -10,6 +10,7 @@ use App\Entity\DeleteBatchEntity;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
 use App\Interceptor\Waf;
+use App\Model\ManageLog;
 use App\Service\Query;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
@@ -65,6 +66,8 @@ class Pay extends Manage
         if (!$save) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
+
+        ManageLog::log($this->getManage(), "[修改/新增]支付接口");
         return $this->json(200, '（＾∀＾）保存成功');
     }
 
@@ -85,6 +88,8 @@ class Pay extends Manage
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }
+
+        ManageLog::log($this->getManage(), "[删除]支付接口，共计：" . count($_POST['list']));
         return $this->json(200, '（＾∀＾）移除成功');
     }
 
@@ -125,11 +130,12 @@ class Pay extends Manage
     public function ClearPluginLog(#[Post] string $handle): array
     {
         $this->pay->ClearPluginLog($handle);
+        ManageLog::log($this->getManage(), "清空了支付插件({$handle})的日志");
         return $this->json(200, 'success');
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function setPluginConfig(): array
     {
@@ -143,6 +149,8 @@ class Pay extends Manage
         $id = $map['id'];
         unset($map['id']);
         setConfig($map, BASE_PATH . '/app/Pay/' . $id . '/Config/Config.php');
+
+        ManageLog::log($this->getManage(), "修改了支付插件({$id})的配置信息");
         return $this->json(200, '修改成功');
     }
 }

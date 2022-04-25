@@ -100,6 +100,9 @@
                 <div class="card-body py-3 mt-3">
                     <form class="search-query"></form>
                     <div class="table-toolbar">
+                        <button class="btn btn-sm btn-light-primary handle me-3"><i class="fas fa-hand-paper"></i>
+                            修改会员等级
+                        </button>
                         <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fas fa-trash"></i> 移除选中用户
                         </button>
                         <!--start::HOOK-->
@@ -382,7 +385,7 @@
                     , {
                         field: 'recharge',
                         visible: cao.getColumnVisible('user', 'recharge'),
-                        title: '总充值',
+                        title: '元气',
                         formatter: function (val, item) {
                             return '<a class="badge badge-light-primary" href="/admin/recharge/order?userId=' + item.id + '" target="_blank">' + item.recharge + '</a>'
                         }
@@ -612,7 +615,7 @@
                         dict: "business_level,id,name",
                         placeholder: "暂未开通"
                     },
-                    {title: "累计充值", name: "recharge", type: "input", placeholder: "可以修改累计充值让用户达到理想等级"},
+                    {title: "元气", name: "recharge", type: "input", placeholder: "可以修改元气让用户达到理想等级"},
                     {title: "状态", name: "status", type: "switch", text: "正常"},
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});
@@ -629,7 +632,7 @@
                     },
                     {title: "金额", name: "amount", type: "input", placeholder: "请输入金额"},
                     {title: "原因", name: "log", type: "input", placeholder: "请输入原因"},
-                    {title: "充值累计", name: "total", type: "switch", text: "是", default: 1},
+                    {title: "元气累计", name: "total", type: "switch", text: "是", default: 1},
 
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});
@@ -656,6 +659,36 @@
                     });
                 });
             });
+
+
+            $('.handle').click(() => {
+                let data = cao.listObjectToArray(table.bootstrapTable('getSelections'));
+                if (data.length == 0) {
+                    layer.msg("请至少勾选1个会员进行操作！");
+                    return;
+                }
+
+                let join = data.join(",");
+
+                cao.popup('/admin/api/user/fastUpdateUserGroup', [
+                    {
+                        title: "",
+                        name: "list",
+                        type: "hidden",
+                        default: join
+                    },
+                    {
+                        title: "会员等级",
+                        name: "group_id",
+                        type: "select",
+                        dict: "user_group,id,name",
+                        placeholder: "请选择"
+                    }
+                ], res => {
+                    table.bootstrapTable('refresh', {silent: true});
+                }, {}, '520px', false, "一键操作选中商品");
+            });
+
 
             cao.query('.search-query', table, [
                 {title: "ID", name: "search-id", type: "input"},

@@ -503,4 +503,23 @@ CREATE TABLE `__PREFIX__user_recharge`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 
+DROP TABLE IF EXISTS `__PREFIX__manage_log`;
+CREATE TABLE `__PREFIX__manage_log`  (
+                                         `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
+                                         `email` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '管理员邮箱',
+                                         `nickname` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '管理员呢称',
+                                         `content` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '日志内容',
+                                         `create_time` datetime NOT NULL COMMENT '创建时间',
+                                         `create_ip` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'IP地址',
+                                         `ua` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '浏览器UA',
+                                         `risk` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '风险：0=正常，1=异常',
+                                         PRIMARY KEY (`id`) USING BTREE,
+                                         INDEX `create_ip`(`create_ip`) USING BTREE,
+                                         INDEX `create_time`(`create_time`) USING BTREE,
+                                         INDEX `risk`(`risk`) USING BTREE,
+                                         INDEX `email`(`email`) USING BTREE,
+                                         INDEX `nickname`(`nickname`) USING BTREE,
+                                         INDEX `content`(`content`) USING BTREE
+) ENGINE = MyISAM CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
 SET FOREIGN_KEY_CHECKS = 1;

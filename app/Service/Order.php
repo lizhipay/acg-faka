@@ -14,16 +14,17 @@ interface Order
     /**
      * @param int $owner
      * @param int $num
-     * @param \App\Model\Commodity $commodity
-     * @param \App\Model\UserGroup|null $group
+     * @param Commodity $commodity
+     * @param UserGroup|null $group
      * @param string|null $race
+     * @param bool $disableSubstation
      * @return float
      */
-    public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group, ?string $race = null): float;
+    public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group, ?string $race = null, bool $disableSubstation = false): float;
 
     /**
-     * @param \App\Model\Commodity $commodity
-     * @param \App\Model\UserGroup|null $group
+     * @param Commodity $commodity
+     * @param UserGroup|null $group
      * @param int $owner
      * @param int $num
      * @param string|null $race
@@ -31,16 +32,16 @@ interface Order
     public function parseConfig(Commodity &$commodity, ?UserGroup $group, int $owner = 0, int $num = 1, ?string $race = null): void;
 
     /**
-     * @param \App\Model\Commodity $commodity
-     * @param \App\Model\UserGroup|null $group
+     * @param Commodity $commodity
+     * @param UserGroup|null $group
      * @return array|null
      */
     public function userDefinedPrice(Commodity $commodity, ?UserGroup $group): ?array;
 
 
     /**
-     * @param \App\Model\User|null $user
-     * @param \App\Model\UserGroup|null $userGroup
+     * @param User|null $user
+     * @param UserGroup|null $userGroup
      * @param array $map
      * @return array
      */
@@ -48,12 +49,12 @@ interface Order
 
 
     /**
-     * @param \App\Model\User|null $user
-     * @param \App\Model\UserGroup|null $userGroup
+     * @param User|null $user
+     * @param UserGroup|null $userGroup
      * @param int $cardId
      * @param int $num
      * @param string $coupon
-     * @param int|\App\Model\Commodity|null $commodityId
+     * @param int|Commodity|null $commodityId
      * @param string|null $race
      * @param bool $disableShared
      * @return array

@@ -9,6 +9,7 @@ use App\Entity\CreateObjectEntity;
 use App\Entity\DeleteBatchEntity;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
+use App\Model\ManageLog;
 use App\Model\Shared;
 use App\Service\Query;
 use App\Util\Date;
@@ -81,6 +82,8 @@ class Store extends Manage
         if (!$save) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
+
+        ManageLog::log($this->getManage(), "[修改/新增]共享店铺");
         return $this->json(200, '（＾∀＾）保存成功');
     }
 
@@ -216,6 +219,8 @@ class Store extends Manage
             }
         }
 
+
+        ManageLog::log($this->getManage(), "[店铺共享]进行了克隆商品({$shared->name})，总数量：{$count}，成功：{$success}，失败：{$error}");
         return $this->json(200, "拉取结束，总数量：{$count}，成功：{$success}，失败：{$error}");
     }
 
@@ -232,6 +237,8 @@ class Store extends Manage
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }
+
+        ManageLog::log($this->getManage(), "[店铺共享]删除操作，共计：" . count($_POST['list']));
         return $this->json(200, '（＾∀＾）移除成功');
     }
 }

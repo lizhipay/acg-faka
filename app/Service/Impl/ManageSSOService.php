@@ -5,9 +5,10 @@ namespace App\Service\Impl;
 
 
 use App\Model\Manage;
+use App\Model\ManageLog;
 use App\Service\ManageSSO;
-use App\Util\Date;
 use App\Util\Client;
+use App\Util\Date;
 use App\Util\Str;
 use Kernel\Exception\JSONException;
 
@@ -52,6 +53,7 @@ class ManageSSOService implements ManageSSO
         $manage->login_ip = Client::getAddress();
         $manage->save();
 
+        ManageLog::log($manage, "登录了后台");
         $_SESSION["MANAGE_USER"] = $manage->toArray();
         return ["username" => $manage->email, "avatar" => $manage->avatar];
     }

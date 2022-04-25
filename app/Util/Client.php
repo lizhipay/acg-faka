@@ -27,6 +27,14 @@ class Client
     }
 
     /**
+     * @return string
+     */
+    public static function getUserAgent(): string
+    {
+        return (string)$_SERVER['HTTP_USER_AGENT'];
+    }
+
+    /**
      * 获取URL地址
      * @return string
      */

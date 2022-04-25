@@ -9,7 +9,7 @@
 
             <div class="content-body">
                 <blockquote class="elem-quote">
-                    累计充值：<b style="color: #0C84D1;">¥#{$user.recharge}</b>，您当前用户等级：<b
+                    当前元气：<b style="color: #0C84D1;">#{$user.recharge}</b>，您当前用户等级：<b
                             style="color: #0C84D1;">#{$user.group.name}</b>，购物时可以享受：<b
                             style="color: #0C84D1;">#{$user.group.discount*100}%折扣</b>
                     #{if $groupNext}，升级到
@@ -34,7 +34,7 @@
                         #{/if}
                         <div>
                             <div class="form-header">金额 <span
-                                        style="color: #63b584;font-size: 14px;">当前余额:#{$user.balance}</span></div>
+                                        style="color: #63b584;font-size: 14px;">当前余额:￥#{$user.balance}</span></div>
                             <div class="form-body"><input type="text" name="amount" required lay-verify="required"
                                                           value="#{if $config.recharge_min == 0}10#{else}#{$config.recharge_min}#{/if}" autocomplete="off" class="layui-input"
                                                           style="width: 150px;color: #ff9191;"></div>
@@ -48,15 +48,14 @@
                             <button type="button" class="layui-btn layui-btn-pink payButton">立即充值</button>
                         </div>
 
-
                         <div>
-                            <div class="form-header">会员等级划分</div>
+                            <div class="form-header">修炼等级划分（<span style="color: #0a53be;">说明：充值/消费可获得元气，比例1:1</span>）</div>
                             <div class="form-body">
                                 <table class="layui-table">
                                     <thead>
                                     <tr>
                                         <td>等级</td>
-                                        <td>累计充值</td>
+                                        <td>所需元气</td>
                                         <td>购物折扣</td>
                                     </tr>
                                     </thead>
@@ -64,7 +63,7 @@
                                     #{foreach $groups as $g}
                                         <tr>
                                             <td><img src="#{$g.icon}" style="height: 32px;"> <span class="layui-badge layui-bg-gray">#{$g.name}</span></td>
-                                            <td style="color: #f68b8b;font-weight: bolder;">￥#{$g.recharge}</td>
+                                            <td style="color: #f68b8b;font-weight: bolder;">#{$g.recharge}</td>
                                             <td>#{$g.discount*100}%</td>
                                         </tr>
                                     #{/foreach}

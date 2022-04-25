@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @property int $id
  * @property string $email
+ * @property string $nickname
  * @property string $password
  * @property string $security_password
  * @property string $avatar

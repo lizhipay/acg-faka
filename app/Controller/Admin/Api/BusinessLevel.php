@@ -9,6 +9,7 @@ use App\Entity\CreateObjectEntity;
 use App\Entity\DeleteBatchEntity;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
+use App\Model\ManageLog;
 use App\Service\Query;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
@@ -54,6 +55,8 @@ class BusinessLevel extends Manage
         if (!$save) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
+
+        ManageLog::log($this->getManage(), "[新增/修改]商户等级");
         return $this->json(200, '（＾∀＾）保存成功');
     }
 
@@ -71,6 +74,8 @@ class BusinessLevel extends Manage
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }
+
+        ManageLog::log($this->getManage(), "[删除]商户等级");
         return $this->json(200, '（＾∀＾）移除成功');
     }
 }

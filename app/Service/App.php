@@ -16,6 +16,7 @@ interface App
     const MAIN_SERVER = "https://store.acgshe.com";
     const STANDBY_SERVER1 = "https://standby.acgshe.com";
     const STANDBY_SERVER2 = "https://store.acgshop.net";
+    const GENERAL_SERVER = "https://general.acgshe.com";
 
     /**
      * @return array

@@ -73,8 +73,9 @@ class OrderService implements Order
 
         $userDefinedConfig = Commodity::parseGroupConfig((string)$commodity->level_price, $group);
 
-        if ($userDefinedConfig) {
-            if ($userDefinedConfig['amount'] > 0 && !$commodity->race) {
+
+        if ($userDefinedConfig && $userDefinedConfig['amount'] > 0) {
+            if (!$commodity->race) {
                 //如果自定义价格成功，那么将覆盖其他价格
                 $price = $userDefinedConfig['amount'];
             }
@@ -193,7 +194,7 @@ class OrderService implements Order
     }
 
     /**
-     * @param \App\Model\User|null $user
+     * @param User|null $user
      * @param UserGroup|null $userGroup
      * @param array $map
      * @return array
@@ -827,7 +828,7 @@ class OrderService implements Order
     }
 
     /**
-     * @param \App\Model\User|null $user
+     * @param User|null $user
      * @param UserGroup|null $userGroup
      * @param int $cardId
      * @param int $num
