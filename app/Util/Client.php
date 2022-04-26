@@ -31,7 +31,12 @@ class Client
      */
     public static function getUserAgent(): string
     {
-        return (string)$_SERVER['HTTP_USER_AGENT'];
+
+        if (preg_match("/Chrome/i", (string)$_SERVER['HTTP_USER_AGENT'])) {
+            return "Chrome";
+        }
+
+        return "None";
     }
 
     /**

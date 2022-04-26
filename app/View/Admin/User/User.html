@@ -1,8 +1,13 @@
 #{include file="../Header.html"}
+<style>
+    .layui-popup .layui-layer-content {
+        position: relative !important;
+        overflow: auto !important;
+    }
+</style>
 <!--start::HOOK-->
 #{hook(\App\Consts\Hook::ADMIN_VIEW_USER_HEADER)}
 <!--end::HOOK-->
-
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     <!--begin::Toolbar-->

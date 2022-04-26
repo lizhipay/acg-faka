@@ -493,8 +493,9 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                         if (edit === true && item.edit === false) {
                             break;
                         }
+                        let imageStorageBtn = window.location.pathname.search("/admin/") === -1 ? '<b style="cursor:pointer;" class="images-' + item.name + '"><i class="layui-icon" style="color: green;">&#xe64a;</i></b>' : '<b style="cursor:pointer;" class="images-' + item.name + '"><i class="fas fa-images text-success"></i></b>';
                         d += '<div class="layui-form-item" ><input type="hidden" name="' + item.name + '" value="' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '">\n' +
-                            '    <label class="layui-form-label">' + item.title + required + '</label>\n' +
+                            '    <label class="layui-form-label">' + item.title + required + ' ' + imageStorageBtn + '</label>\n' +
                             '    <div class="layui-input-block ' + item.name + '"><img src="' + (item.hasOwnProperty('viewUrl') ? item.viewUrl : '') + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '" style="margin:3px;border-radius:5px;max-width: ' + (item.hasOwnProperty('width') ? item.width : '300') + 'px;' + (values.hasOwnProperty(item.name) && values[item.name] != '' ? '' : 'display:none;') + '">\n' +
                             '    <button type="button" class="layui-btn layui-btn-primary" style="' + (values.hasOwnProperty(item.name) && values[item.name] != '' ? 'display:none;' : '') + '"><i class="layui-icon layui-icon-picture"></i>' + item.placeholder + '</button >\n' +
                             '    </div>\n' +
@@ -767,6 +768,114 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                         layer.msg(percent);
                                     }
                                 };
+
+
+                                let imageStorageUrl = window.location.pathname.search("/admin/") === -1 ? '/user/api/upload/images' : '/admin/api/upload/images';
+                                let imageStoragePath = window.location.pathname.search("/admin/") === -1 ? '' : '/assets/cache/images/';
+                                $('.hex-modal-' + unqueId + ' .images-' + item.name).click(() => {
+                                    layer.open({
+                                        offset: 'r',
+                                        type: 1,
+                                        skin: 'layui-popup',
+                                        area: this.isPc() ? ['420px', '720px'] : ["100%", "100%"],
+                                        content: '<div style="margin: 10px;padding:0 10px 10px 10px;border-radius:20px;background: #fff;"><table class="image-storage-' + unqueId + item.name + '"></table></div>',
+                                        title: "图库",
+                                        success: (lay, layIndex) => {
+                                            let storageTable = $('.image-storage-' + unqueId + item.name);
+                                            storageTable.bootstrapTable({
+                                                url: imageStorageUrl,//请求的url地址
+                                                method: "post",//请求方式
+                                                pageSize: 10,
+                                                showRefresh: false,//是否显示刷新按钮
+                                                cache: false,//是否使用缓存
+                                                showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                                                cardView: false,
+                                                pagination: true,//是否显示分页
+                                                pageNumber: 1,//初始化显示第几页，默认第1页
+                                                singleSelect: false,//复选框只能选择一条记录
+                                                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
+                                                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                                                dataType: "json",//接收的数据类型
+                                                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                                                queryParams: function (params) {
+                                                    params.page = (params.offset / params.limit) + 1;
+                                                    return params;
+                                                },
+                                                //回调函数
+                                                responseHandler: function (res) {
+                                                    return {
+                                                        "total": res.count,
+                                                        "rows": res.data
+                                                    }
+                                                },
+                                                columns: [
+                                                    {
+                                                        field: 'image',
+                                                        title: '',
+                                                        formatter: function (val, img) {
+                                                            return '<img class="preview" src="' + imageStoragePath + img + '" alt="预览图" style="height: 100px;cursor: pointer;border-radius: 10px;">';
+                                                        },
+                                                        events: {
+                                                            'click .preview': function (event, value, imageUrl, index) {
+                                                                imageUrl = imageStoragePath + imageUrl;
+                                                                let img = new Image()
+                                                                img.src = imageUrl;
+                                                                img.onload = function () {
+                                                                    if (img.width >= window.innerWidth) {
+                                                                        img.width = window.innerWidth * 0.9;
+                                                                    }
+                                                                    if (img.height >= window.innerHeight) {
+                                                                        img.height = window.innerHeight * 0.9;
+                                                                    }
+                                                                    layer.open({
+                                                                        type: 1,
+                                                                        title: false,
+                                                                        closeBtn: 0, //不显示关闭按钮
+                                                                        anim: 5,
+                                                                        area: [img.width + "px", img.height + "px"],
+                                                                        shadeClose: true, //开启遮罩关闭
+                                                                        content: '<img  src="' + imageUrl + '" style="border-radius: 20px;width:' + img.width + 'px;height:' + img.height + 'px" alt="图片预览">'
+                                                                    });
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        field: 'operate',
+                                                        title: '',
+                                                        formatter: function (val, img) {
+                                                            let html = '<a  class="badge badge-light text-success set-image" style="cursor: pointer;"><i class="fa fa-cog text-success"></i> 使用此图像</a>';
+                                                            html += ' <a style="cursor: pointer;"  class="badge badge-light text-primary copy-link"><i class="far fa-clipboard text-primary"></i> 复制外链</a>';
+                                                            return html;
+                                                        },
+                                                        events: {
+                                                            'click .copy-link': function (event, value, img, index) {
+                                                                let clipboard = new ClipboardJS('.copy-link', {
+                                                                    text: function () {
+                                                                        return window.location.origin + imageStoragePath + img;
+                                                                    }
+                                                                });
+                                                                clipboard.on('success', function (e) {
+                                                                    layer.msg("复制成功QAQ~");
+                                                                });
+                                                            },
+                                                            'click .set-image': function (event, value, img, index) {
+                                                                img = imageStoragePath + img;
+                                                                let imgInstance = $('.hex-modal-' + unqueId + ' .' + item.name + ' img');
+                                                                $('.hex-modal-' + unqueId + ' input[name=' + item.name + ']').val(img);
+                                                                $('.hex-modal-' + unqueId + ' .' + item.name + ' button').hide();
+                                                                imgInstance.attr('src', img);
+                                                                imgInstance.show();
+                                                                layer.close(layIndex);
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            });
+                                        }
+                                    });
+                                });
+
                                 upload.render(opts)
                                 break;
                             case 'file':
