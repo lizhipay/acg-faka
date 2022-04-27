@@ -156,6 +156,8 @@ class Index extends User
         foreach ($category as $cate) {
             $cates[] = (string)$cate['id'];
         }
+
+
         //最终的商品数据遍历
         foreach ($data as $key => $val) {
             $parseGroupConfig = Commodity::parseGroupConfig($val['level_price'], $userGroup);
@@ -168,17 +170,9 @@ class Index extends User
             $data[$key]['card_count'] = Card::query()->where("status", 0)->where("commodity_id", $val['id'])->count();
             //如果登录后，则自动计算登录后的价格
             if ($user) {
-                $tradeAmount = $this->order->getTradeAmount(
-                    user: $user,
-                    userGroup: $userGroup,
-                    cardId: 0,
-                    num: 1,
-                    coupon: "",
-                    commodityId: $commodity[$key],
-                    disableShared: true
-                );
-                $data[$key]['price'] = $tradeAmount['price'];
-                $data[$key]['user_price'] = $tradeAmount['price'];
+                $tradeAmount = $this->order->calcAmount(owner: $user->id, commodity: $commodity[$key], group: $userGroup, num: 1, disableSubstation: true);
+                $data[$key]['price'] = $tradeAmount;
+                $data[$key]['user_price'] = $tradeAmount;
             }
 
             unset(
@@ -194,8 +188,8 @@ class Index extends User
             if (isset($userCommodityMap[$val['id']])) {
                 $var = $userCommodityMap[$val['id']];
                 if ($var->premium > 0) {
-                    $data[$key]['price'] += $var->premium;
-                    $data[$key]['user_price'] += $var->premium;
+                    $data[$key]['price'] = (int)(($data[$key]['price'] + $var->premium) * 100) / 100;
+                    $data[$key]['user_price'] = (int)(($data[$key]['user_price'] + $var->premium) * 100) / 100;
                 }
                 if ($var->name) {
                     $data[$key]['name'] = $var->name;
