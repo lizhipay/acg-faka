@@ -201,12 +201,11 @@ class App extends Manage
         $appStore = (array)json_decode((string)file_get_contents($file), true);
 
         foreach ($plugins['rows'] as $plugin) {
-            $info = Helper::isInstall($plugin['plugin_key'], (int)$plugin['type']);
+            // $info = Helper::isInstall($plugin['plugin_key'], (int)$plugin['type']);
 
-            if (!$info) {
-                continue;
-            }
-
+            /*     if (!$info) {
+                     continue;
+                 }*/
             $appStore[$plugin['plugin_key']] = [
                 "icon" => $plugin['icon'],
                 "name" => $plugin['plugin_name'],

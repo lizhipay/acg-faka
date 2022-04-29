@@ -180,7 +180,7 @@ class Master extends User
             $array[$index]['name'] = $item->name;
         }
         $json = $this->json(200, null, $array);
-        $json['count'] = $data['total'];
+        $json['count'] =  $data->total();
         return $json;
     }
 

@@ -24,6 +24,10 @@ class Plugin extends Manage
         $plugins = \Kernel\Util\Plugin::getPlugins(\Kernel\Util\Plugin::isCache());
         $appStore = (array)json_decode((string)file_get_contents(BASE_PATH . "/runtime/plugin/store.cache"), true);
         $path = BASE_PATH . "/app/Plugin/";
+
+        $keywords = urldecode((string)$_POST['keywords']);
+        $status = $_POST['status'];
+
         foreach ($plugins as $key => $plugin) {
             $plugins[$key]["id"] = $plugin[\App\Consts\Plugin::PLUGIN_NAME];
             if (!array_key_exists($plugins[$key]["id"], $appStore)) {
@@ -35,7 +39,22 @@ class Plugin extends Manage
             if (file_exists($path . $plugins[$key]["id"] . "/Wiki/Index.html")) {
                 $plugins[$key]['wiki'] = "/app/Plugin/{$plugins[$key]["id"]}/Wiki/Index.html";
             }
+
+            if ($status !== "" && $status !== null) {
+                //未运行
+                if ((int)$plugin[\App\Consts\Plugin::PLUGIN_CONFIG]['STATUS'] != $status) {
+                    unset($plugins[$key]);
+                }
+            }
+
+            if ($keywords) {
+                if (!str_contains($plugin[\App\Consts\Plugin::NAME], $keywords) && !str_contains($plugin[\App\Consts\Plugin::DESCRIPTION], $keywords)) {
+                    unset($plugins[$key]);
+                }
+            }
         }
+
+        $plugins = array_values($plugins);
         return $this->json(200, 'success', $plugins);
     }
 

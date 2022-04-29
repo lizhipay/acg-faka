@@ -19,6 +19,7 @@
     <script src="/assets/static/clipboard.js"></script>
     <title>#{$config.title}</title>
     <!--start::HOOK-->
+    #{hook(\App\Consts\Hook::USER_GLOBAL_VIEW_HEADER)}
     #{hook(\App\Consts\Hook::USER_VIEW_INDEX_HEADER)}
     <!--end::HOOK-->
 </head>

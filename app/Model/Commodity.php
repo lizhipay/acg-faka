@@ -150,4 +150,27 @@ class Commodity extends Model
         $parse['show'] = (int)$var['show'];
         return $parse;
     }
+
+
+    /**
+     * @param string $config
+     * @param int $type
+     * @param float $premium
+     * @return string
+     * @throws JSONException
+     */
+    public static function premiumConfig(string $config, int $type, float $premium): string
+    {
+        $configs = Ini::toArray($config);
+
+        if (array_key_exists("category", $configs)) {
+            foreach ($configs['category'] as $ck => $cv) {
+                //计算当前种类的成本
+                $price = $type == 0 ? (float)$cv + $premium : (float)$cv + ($premium * (float)$cv);
+                $price = (int)($price * 100) / 100;
+                $configs['category'][$ck] = $price;
+            }
+        }
+        return Ini::toConfig($configs);
+    }
 }

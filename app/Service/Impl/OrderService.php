@@ -857,6 +857,7 @@ class OrderService implements Order
      * @param string $coupon
      * @param int|Commodity|null $commodityId
      * @param string|null $race
+     * @param bool $disableShared
      * @return array
      * @throws JSONException
      */
@@ -970,5 +971,51 @@ class OrderService implements Order
         $data ['couponMoney'] = sprintf("%.2f", (int)($couponMoney * 100) / 100);
 
         return $data;
+    }
+
+
+    /**
+     * @param Commodity $commodity
+     * @param string $race
+     * @param int $num
+     * @param string $contact
+     * @param string $password
+     * @param int|null $cardId
+     * @param int $userId
+     * @param string $widget
+     * @return array
+     * @throws JSONException
+     */
+    public function giftOrder(Commodity $commodity, string $race = "", int $num = 1, string $contact = "", string $password = "", ?int $cardId = null, int $userId = 0, string $widget = "[]"): array
+    {
+        return DB::transaction(function () use ($race, $widget, $contact, $password, $num, $cardId, $commodity, $userId) {
+            //创建订单
+            $date = Date::current();
+            $order = new  \App\Model\Order();
+            $order->owner = $userId;
+            $order->trade_no = Str::generateTradeNo();
+            $order->amount = 0;
+            $order->commodity_id = $commodity->id;
+            $order->card_id = $cardId;
+            $order->card_num = $num;
+            $order->pay_id = 1;
+            $order->create_time = $date;
+            $order->create_ip = Client::getAddress();
+            $order->create_device = 0;
+            $order->status = 0;
+            $order->password = $password;
+            $order->contact = trim($contact);
+            $order->delivery_status = 0;
+            $order->widget = $widget;
+            $order->rent = 0;
+            $order->race = $race;
+            $order->user_id = $commodity->owner;
+            $order->save();
+            $secret = $this->orderSuccess($order);
+            return [
+                "secret" => $secret,
+                "tradeNo" => $order->trade_no
+            ];
+        });
     }
 }

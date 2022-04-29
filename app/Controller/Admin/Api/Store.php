@@ -177,7 +177,7 @@ class Store extends Manage
                 }
 
                 $commodity->cover = $shared->domain . $item['cover'];
-                $commodity->factory_price = $item['user_price'];
+                $commodity->factory_price = $item['factory_price'];
                 $commodity->status = $shelves;
                 $commodity->owner = 0;
                 $commodity->create_time = $date;
@@ -210,7 +210,7 @@ class Store extends Manage
                 $commodity->purchase_count = $item['purchase_count'];
                 $commodity->widget = $item['widget'];
                 $commodity->minimum = $item['minimum'];
-                $commodity->config = $item['config'];
+                $commodity->config = \App\Model\Commodity::premiumConfig((string)$item['config'], $premiumType, $premium);
 
                 $commodity->save();
                 $success++;

@@ -19,6 +19,9 @@
             #{/if}
         }
     </style>
+    <!--start::HOOK-->
+    #{hook(\App\Consts\Hook::USER_GLOBAL_VIEW_HEADER)}
+    <!--end::HOOK-->
 </head>
 <!--end::Head-->
 <!--begin::Body-->
@@ -174,6 +177,12 @@
 
 </script>
 <!--end::Javascript-->
+<!--start::HOOK-->
+#{hook(\App\Consts\Hook::USER_GLOBAL_VIEW_BODY)}
+<!--end::HOOK-->
 </body>
 <!--end::Body-->
+<!--start::HOOK-->
+#{hook(\App\Consts\Hook::USER_GLOBAL_VIEW_FOOTER)}
+<!--end::HOOK-->
 </html>

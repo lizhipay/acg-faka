@@ -111,6 +111,7 @@
                 },
                 //回调函数
                 responseHandler: function (res) {
+                    pluginUpdate.updateNum = 0;
                     return {
                         "total": res.count,
                         "rows": res.data
@@ -186,15 +187,35 @@
                         formatter: function (val, item) {
                             let html = '<a  class="badge badge-light text-success log" style="cursor: pointer;"><i class="far fa-clipboard text-success"></i> 日志</a>';
 
-                            if (item.hasOwnProperty('submit') && item.submit.length > 0) { 
+                            if (item.hasOwnProperty('submit') && item.submit.length > 0) {
                                 html += ' <a style="cursor: pointer;"  class="badge badge-light text-success edit"><i class="fa fa-cog text-success"></i> 配置</a>';
                             }
+
+                            html += '<a style="cursor: pointer;"  class="badge badge-light uninstall"><i class="fas fa-trash-alt"></i> 卸载</a>';
 
                             return html;
                         },
                         events: {
                             'click .edit': function (event, value, row, index) {
                                 modal(row);
+                            },
+                            'click .uninstall': function (event, value, row, index) {
+                                layer.confirm('你想要卸载 <span style="color: red;"> ' + row.info.name + " </span>吗，这将清空该插件的所有数据，并且无法恢复？", {
+                                    btn: ['卸载', '取消'],
+                                    title: "卸载插件"
+                                }, function () {
+                                    let layIndex = layer.load(1, {shade: [0.3, '#fff']});
+                                    $.post('/admin/api/app/uninstall', {
+                                        plugin_key: row.id,
+                                        type: 1
+                                    }, res => {
+                                        layer.close(layIndex);
+                                        layer.msg(res.msg);
+                                        if (res.code == 200) {
+                                            table.bootstrapTable('refresh', {silent: true});
+                                        }
+                                    });
+                                });
                             },
                             'click .log': function (event, value, row, index) {
                                 let mapItem = row;

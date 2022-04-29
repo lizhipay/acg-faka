@@ -4,6 +4,7 @@
         position: relative !important;
         overflow: auto !important;
     }
+
     .rowSameHeight {
         white-space: nowrap;
         overflow: hidden;
@@ -32,7 +33,8 @@
                 </div>
                 <!--end::Header-->
 
-                <div class="card-body py-3" >
+                <div class="card-body py-3">
+                    <form class="search-query"></form>
                     <table id="plugin" lay-filter="plugin" class="rowSameHeight"></table>
                 </div>
             </div>
@@ -115,6 +117,7 @@
                 },
                 //回调函数
                 responseHandler: function (res) {
+                    pluginUpdate.updateNum = 0;
                     return {
                         "total": res.count,
                         "rows": res.data
@@ -127,13 +130,65 @@
                         }
                     }
                     , {
-                        field: 'website', title: '官方网站', formatter: function (val, item) {
-                            return '<span class="badge badge-light-primary">' + item.WEB_SITE + '</span>';
+                        field: 'status', title: '状态', formatter: function (val, item) {
+                            if (item.PLUGIN_CONFIG && item.PLUGIN_CONFIG.STATUS == 1) {
+                                return '<span class="badge badge-light-success plugin-state" data-id="' + item.id + '">运行中</span>';
+                            }
+
+                            return '<span class="badge badge-light-danger plugin-state" data-id="' + item.id + '">未启用</span>';
+                        }
+                    }
+                    , {
+                        field: 'operate',
+                        title: '控制',
+                        formatter: function (val, item) {
+                            let html = '';
+                            if (item.PLUGIN_CONFIG && item.PLUGIN_CONFIG.STATUS == 1) {
+                                html += '<a style="cursor: pointer;"  class="badge badge-light text-danger disable"><i class="fa fa-stop-circle text-danger"></i> 停用</a>';
+                            } else {
+                                html += '<a style="cursor: pointer;"  class="badge badge-light text-success enable"><i class="fa fa-play-circle text-success"></i> 启用</a>';
+                            }
+                            if (item.hasOwnProperty('PLUGIN_SUBMIT') && item.PLUGIN_SUBMIT.length > 0) {
+                                html += '<a style="cursor: pointer;"  class="badge badge-light text-primary edit"><i class="fa fa-cog text-primary"></i> 配置</a>';
+                            }
+                            return html;
+                        },
+                        events: {
+                            'click .edit': function (event, value, row, index) {
+                                modal(row);
+                            },
+                            'click .disable': function (event, value, row, index) {
+                                let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+                                $.post("/admin/api/plugin/setConfig", {id: row.id, STATUS: 0}, res => {
+                                    layer.close(loaderIndex);
+                                    if (res.code == 200) {
+                                        table.bootstrapTable('refresh', {silent: true});
+                                        $('.plugin-state[data-id=' + row.id + ']').removeClass("badge-light-success").addClass("badge-light-danger").html("已停止");
+                                    }
+                                    layer.msg(res.msg);
+                                });
+                            },
+                            'click .enable': function (event, value, row, index) {
+                                let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+                                $.post("/admin/api/plugin/setConfig", {id: row.id, STATUS: 1}, res => {
+                                    layer.close(loaderIndex);
+                                    if (res.code == 200) {
+                                        table.bootstrapTable('refresh', {silent: true});
+                                        $('.plugin-state[data-id=' + row.id + ']').removeClass("badge-light-danger").addClass("badge-light-success").html("已启动");
+                                    }
+                                    layer.msg(res.msg);
+                                });
+                            },
                         }
                     }
                     , {
                         field: 'description', title: '简介', formatter: function (val, item) {
                             return '<span class="badge badge-light">' + item.DESCRIPTION + '</span>';
+                        }
+                    }
+                    , {
+                        field: 'website', title: '官方网站', formatter: function (val, item) {
+                            return '<span class="badge badge-light-primary">' + item.WEB_SITE + '</span>';
                         }
                     }
                     , {
@@ -184,54 +239,32 @@
                             return '<span class="badge badge-light">' + item.AUTHOR + '</span>';
                         }
                     }
-                    , {
-                        field: 'status', title: '状态', formatter: function (val, item) {
-                            if (item.PLUGIN_CONFIG && item.PLUGIN_CONFIG.STATUS == 1) {
-                                return '<span class="badge badge-light-success plugin-state" data-id="' + item.id + '">运行中</span>';
-                            }
 
-                            return '<span class="badge badge-light-danger plugin-state" data-id="' + item.id + '">未启用</span>';
-                        }
-                    }
                     , {
-                        field: 'operate',
-                        title: '操作',
+                        field: 'more',
+                        title: '更多',
                         formatter: function (val, item) {
                             let html = '<a  class="badge badge-light text-success log" style="cursor: pointer;"><i class="far fa-clipboard text-success"></i> 日志</a> ';
-                            if (item.PLUGIN_CONFIG && item.PLUGIN_CONFIG.STATUS == 1) {
-                                html += '<a style="cursor: pointer;"  class="badge badge-light text-danger disable"><i class="fa fa-stop-circle text-danger"></i> 停用</a>';
-                            } else {
-                                html += '<a style="cursor: pointer;"  class="badge badge-light text-success enable"><i class="fa fa-play-circle text-success"></i> 启用</a>';
-                            }
-                            if (item.hasOwnProperty('PLUGIN_SUBMIT') && item.PLUGIN_SUBMIT.length > 0) {
-                                html += '<a style="cursor: pointer;"  class="badge badge-light text-primary edit"><i class="fa fa-cog text-primary"></i> 配置</a>';
-                            }
+                            html += '<a style="cursor: pointer;"  class="badge badge-light uninstall"><i class="fas fa-trash-alt"></i> 卸载</a>';
                             return html;
                         },
                         events: {
-                            'click .edit': function (event, value, row, index) {
-                                modal(row);
-                            },
-                            'click .disable': function (event, value, row, index) {
-                                let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
-                                $.post("/admin/api/plugin/setConfig", {id: row.id, STATUS: 0}, res => {
-                                    layer.close(loaderIndex);
-                                    if (res.code == 200) {
-                                        table.bootstrapTable('refresh', {silent: true});
-                                        $('.plugin-state[data-id=' + row.id + ']').removeClass("badge-light-success").addClass("badge-light-danger").html("已停止");
-                                    }
-                                    layer.msg(res.msg);
-                                });
-                            },
-                            'click .enable': function (event, value, row, index) {
-                                let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
-                                $.post("/admin/api/plugin/setConfig", {id: row.id, STATUS: 1}, res => {
-                                    layer.close(loaderIndex);
-                                    if (res.code == 200) {
-                                        table.bootstrapTable('refresh', {silent: true});
-                                        $('.plugin-state[data-id=' + row.id + ']').removeClass("badge-light-danger").addClass("badge-light-success").html("已启动");
-                                    }
-                                    layer.msg(res.msg);
+                            'click .uninstall': function (event, value, row, index) {
+                                layer.confirm('你想要卸载 <span style="color: red;"> ' + row.NAME + " </span>吗，这将清空该插件的所有数据，并且无法恢复？", {
+                                    btn: ['卸载', '取消'],
+                                    title: "卸载插件"
+                                }, function () {
+                                    let layIndex = layer.load(1, {shade: [0.3, '#fff']});
+                                    $.post('/admin/api/app/uninstall', {
+                                        plugin_key: row.id,
+                                        type: 0
+                                    }, res => {
+                                        layer.close(layIndex);
+                                        layer.msg(res.msg);
+                                        if (res.code == 200) {
+                                            table.bootstrapTable('refresh', {silent: true});
+                                        }
+                                    });
                                 });
                             },
                             'click .log': function (event, value, row, index) {
@@ -273,6 +306,7 @@
                             }
                         }
                     }
+
                 ]
             });
 
@@ -287,6 +321,17 @@
                     }
                 });
             }
+
+
+            cao.query('.search-query', table, [
+                {title: "搜索插件..", name: "keywords", type: "input"},
+                {
+                    title: "运行状态", name: "status", type: "select", dict: [
+                        {id: 0, name: "未运行"},
+                        {id: 1, name: "正在运行"}
+                    ]
+                }
+            ], true, false);
         });
     });
 </script>

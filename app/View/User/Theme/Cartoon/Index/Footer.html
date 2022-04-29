@@ -1,9 +1,11 @@
 <div class="content-icp">#{$setting.icp}</div>
 <!--start::HOOK-->
+#{hook(\App\Consts\Hook::USER_GLOBAL_VIEW_BODY)}
 #{hook(\App\Consts\Hook::USER_VIEW_INDEX_BODY)}
 <!--end::HOOK-->
 </body>
 <!--start::HOOK-->
+#{hook(\App\Consts\Hook::USER_GLOBAL_VIEW_FOOTER)}
 #{hook(\App\Consts\Hook::USER_VIEW_INDEX_FOOTER)}
 <!--end::HOOK-->
 </html>

@@ -54,7 +54,7 @@ class Ini
     /**
      * @param string $content
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public static function toArray(string $content): array
     {
@@ -89,5 +89,42 @@ class Ini
             }
         }
         return $list;
+    }
+
+
+    /**
+     * @param array $config
+     * @param string|null $prefix
+     * @return string
+     */
+    private static function parseContent(array $config, ?string $prefix = null): string
+    {
+        $cfg = "";
+        foreach ($config as $key => $val) {
+            if (is_array($val)) {
+                $cfg .= self::parseContent($val, $prefix ? $prefix . "." . $key : $key);
+            } else {
+                //不是数组
+                $cfg .= ($prefix ? $prefix . "." : "") . $key . "=" . $val . PHP_EOL;
+            }
+        }
+
+        return $cfg;
+    }
+
+    /**
+     * @param array $config
+     * @return string
+     */
+    public static function toConfig(array $config): string
+    {
+        $cfg = "";
+        foreach ($config as $key => $value) {
+            if (is_array($value)) {
+                $cfg .= "[{$key}]" . PHP_EOL;
+                $cfg .= self::parseContent($value);
+            }
+        }
+        return trim($cfg);
     }
 }

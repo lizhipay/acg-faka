@@ -59,9 +59,11 @@ class User extends Manage
     public function save(): array
     {
         $map = $_POST;
+        $groupId = (int)$map['group_id'];
 
         unset($map['balance']);
         unset($map['coin']);
+        unset($map['group_id']);
 
         $user = \App\Model\User::query()->find((int)$map['id']);
 
@@ -92,6 +94,13 @@ class User extends Manage
                 $business->create_time = Date::current();
                 $business->master_display = 1;
                 $business->save();
+            }
+        }
+
+        if ($groupId > 0 && $groupId != $user->group->id) {
+            $group = UserGroup::query()->find($groupId);
+            if ($group) {
+                $map['recharge'] = $group->recharge;
             }
         }
 

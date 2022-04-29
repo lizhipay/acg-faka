@@ -813,7 +813,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                                         field: 'image',
                                                         title: '',
                                                         formatter: function (val, img) {
-                                                            return '<img class="preview" src="' + imageStoragePath + img + '" alt="预览图" style="height: 100px;cursor: pointer;border-radius: 10px;">';
+                                                            return '<img class="preview" src="' + imageStoragePath + img + '" alt="预览图" style="height: 100px;max-width:100px;cursor: pointer;border-radius: 10px;">';
                                                         },
                                                         events: {
                                                             'click .preview': function (event, value, imageUrl, index) {

@@ -32,7 +32,7 @@ class Commodity extends Shared
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function items(): array
     {
@@ -40,29 +40,69 @@ class Commodity extends Shared
             $relation->where("api_status", 1)->where("status", 1);
         }])->where("status", 1)->get();
 
-        $list = $items->toArray();
+        $list = $items->toArray(); //
 
         $userGroup = $this->getUserGroup();
+        $userId = $this->getUser()->id;
 
         foreach ($list as $key => $item) {
+            if (count($item['children']) == 0) {
+                unset($list[$key]);
+                continue;
+            }
             foreach ($item['children'] as $index => $child) {
+                $commodity = $items[$key]['children'][$index]; //直接拿到商品对象
+                if (!$commodity || $commodity->id != $child['id']) {
+                    unset($list[$key]['children'][$index]);
+                    continue;
+                }
+
                 $parseGroupConfig = \App\Model\Commodity::parseGroupConfig($child['level_price'], $userGroup);
                 if ($child['hide'] == 1 && (!$parseGroupConfig || !isset($parseGroupConfig['show']) || $parseGroupConfig['show'] != 1)) {
                     unset($list[$key]['children'][$index]);
                     continue;
                 }
                 unset($list[$key]['children'][$index]['leave_message'], $list[$key]['children'][$index]['delivery_message']);
+                //去掉原来的成本，准备计算拿货价
+                $configs = Ini::toArray((string)$child['config']);
+                if (array_key_exists("category_factory", $configs)) {
+                    unset($configs['category_factory']);
+                }
+                //检测是否设置了种类
+                if (array_key_exists("category", $configs)) {
+                    //挨个计算成本
+                    $categorys = $configs['category'];
+                    $factorys = [];
+                    //这里ck = race种类名称，cv=单价
+                    foreach ($categorys as $ck => $cv) {
+                        //计算当前种类的成本
+                        $factorys[$ck] = $this->order->calcAmount(owner: $userId, num: 1, disableSubstation: true, group: $userGroup, commodity: $commodity, race: $ck);
+                    }
+                    if (count($factorys) != 0) {
+                        //覆盖成本
+                        $configs['category_factory'] = $factorys;
+                    }
+                    //将config array转换为配置文件
+                    $list[$key]['children'][$index]['config'] = Ini::toConfig($configs);
+                    $list[$key]['children'][$index]['factory_price'] = 0;
+                } else {
+                    //没有设置种类，计算会员价
+                    $list[$key]['children'][$index]['factory_price'] = $this->order->calcAmount(owner: $userId, num: 1, disableSubstation: true, group: $userGroup, commodity: $commodity);
+                }
+
             }
             //重组
             $list[$key]['children'] = array_values($list[$key]['children']);
         }
+
+        $list = array_values($list);
 
         return $this->json(200, 'success', $list);
     }
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function inventoryState(): array
     {
@@ -123,7 +163,7 @@ class Commodity extends Shared
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function inventory(): array
     {
@@ -172,19 +212,57 @@ class Commodity extends Shared
             $count = $count->count();
         }
 
+        //去掉原来的成本，准备计算拿货价
+        $userId = $this->getUser()->id;
+        $userGroup = $this->getUserGroup();
+
+        $factoryPrice = 0;
+        $isCategory = false;
+
+        $configs = Ini::toArray((string)$commodity->config);
+        if (array_key_exists("category_factory", $configs)) {
+            unset($configs['category_factory']);
+        }
+
+        //检测是否设置了种类
+        if (array_key_exists("category", $configs)) {
+            //挨个计算成本
+            $categorys = $configs['category'];
+            $factorys = [];
+            //这里ck = race种类名称，cv=单价
+            foreach ($categorys as $ck => $cv) {
+                $isCategory = true;
+                //计算当前种类的成本
+                $factorys[$ck] = $this->order->calcAmount(owner: $userId, num: 1, disableSubstation: true, group: $userGroup, commodity: $commodity, race: $ck);
+            }
+            if (count($factorys) != 0) {
+                //覆盖成本
+                $configs['category_factory'] = $factorys;
+            }
+        } else {
+            //没有设置种类，计算会员价
+            $factoryPrice = $this->order->calcAmount(owner: $userId, num: 1, disableSubstation: true, group: $userGroup, commodity: $commodity);
+        }
+
+        //将config array转换为配置文件
+        $cfg = Ini::toConfig($configs);
+
+
         return $this->json(200, "success", [
             'count' => $count,
             'delivery_way' => $commodity->delivery_way,
             "draft_status" => $commodity->draft_status,
             'price' => $commodity->price,
             'user_price' => $commodity->user_price,
-            "config" => $commodity->config
+            "config" => $cfg,
+            "factory_price" => $factoryPrice,
+            "is_category" => $isCategory
         ]);
     }
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function trade(): array
     {
@@ -205,7 +283,7 @@ class Commodity extends Shared
      * @param int $limit
      * @param string $race
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function draftCard(#[Post] string $sharedCode, #[Post] int $page, #[Post] int $limit, #[Post] string $race): array
     {

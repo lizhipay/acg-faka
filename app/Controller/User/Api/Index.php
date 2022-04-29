@@ -241,19 +241,22 @@ class Index extends User
 
                 $_premium = $commodity->shared_premium_type == 0 ? $commodity->shared_premium : sprintf("%.2f", $commodity->shared_premium * (float)$inventory['price']);
 
-                if (($commodity->price - $_premium) != (float)$inventory['price']) {
+                if (!$inventory['is_category'] && ($commodity->price - $_premium) != (float)$inventory['price']) {
                     $new->price = (float)$inventory['price'] + $_premium;
                     $commodity->price = $new->price;
+                    $new->factory_price = $inventory['factory_price'];
                 }
 
                 $_premium = $commodity->shared_premium_type == 0 ? $commodity->shared_premium : sprintf("%.2f", $commodity->shared_premium * (float)$inventory['user_price']);
-                if (($commodity->user_price - $_premium) != (float)$inventory['user_price']) {
+                if (!$inventory['is_category'] && ($commodity->user_price - $_premium) != (float)$inventory['user_price']) {
                     $new->user_price = (float)$inventory['user_price'] + $_premium;
                     $commodity->user_price = $new->user_price;
+                    $new->factory_price = $inventory['factory_price'];
                 }
 
-                if ($new->config != $inventory['config']) {
-                    $new->config = $inventory['config'];
+                $premiumConfig = \App\Model\Commodity::premiumConfig((string)$inventory['config'], (int)$commodity->shared_premium_type, (float)$commodity->shared_premium);
+                if ($new->config != $premiumConfig) {
+                    $new->config = $premiumConfig;
                     $commodity->config = $new->config;
                 }
 

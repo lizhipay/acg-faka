@@ -79,4 +79,18 @@ interface Order
      * @return array
      */
     public function callbackInitialize(string $handle, array $map): array;
+
+    /**
+     * 赠送礼品
+     * @param Commodity $commodity
+     * @param string $race
+     * @param int $num
+     * @param string $contact
+     * @param string $password
+     * @param int|null $cardId
+     * @param int $userId
+     * @param string $widget
+     * @return array
+     */
+    public function giftOrder(Commodity $commodity, string $race = "", int $num = 1, string $contact = "", string $password = "", ?int $cardId = null, int $userId = 0, string $widget = "[]"): array;
 }

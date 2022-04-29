@@ -570,6 +570,7 @@
                                 recharge(row);
                             },
                             'click .edit': function (event, value, row, index) {
+                                row.group_id = row.group.id;
                                 modal(row);
                             },
                             'click .del': function (event, value, row, index) {
@@ -608,6 +609,13 @@
                 cao.popup('/admin/api/user/save', [
                     {title: "头像", name: "avatar", type: "image", placeholder: "请选择图片", width: 100},
                     {title: "用户名", name: "username", type: "input", placeholder: "请输入用户名"},
+                    {
+                        title: "会员等级",
+                        name: "group_id",
+                        type: "select",
+                        dict: "user_group,id,name",
+                        placeholder: "请选择"
+                    },
                     {title: "邮箱", name: "email", type: "input", placeholder: "请输入邮箱"},
                     {title: "手机", name: "phone", type: "input", placeholder: "请输入手机号"},
                     {title: "QQ", name: "qq", type: "input", placeholder: "请输入QQ号"},
@@ -620,7 +628,6 @@
                         dict: "business_level,id,name",
                         placeholder: "暂未开通"
                     },
-                    {title: "元气", name: "recharge", type: "input", placeholder: "可以修改元气让用户达到理想等级"},
                     {title: "状态", name: "status", type: "switch", text: "正常"},
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});
@@ -688,10 +695,16 @@
                         type: "select",
                         dict: "user_group,id,name",
                         placeholder: "请选择"
+                    },
+                    {
+                        title: "修改说明",
+                        name: "explain",
+                        type: "explain",
+                        placeholder: "修改会员等级的原理就是自动修改他对应等级的元气值，这个功能可以达到批量修改的效果。"
                     }
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});
-                }, {}, '520px', false, "一键操作选中商品");
+                }, {}, ['420px', '420px'], false, "一键操作选中商品");
             });
 
 

@@ -151,4 +151,11 @@ interface Hook
     const USER_VIEW_BODY = 0x129;
     //挂载点 app\View\User\* -> Common -> 底部
     const USER_VIEW_FOOTER = 0x130;
+
+    //用户端全局  -> 头部
+    const USER_GLOBAL_VIEW_HEADER = 0x228;
+    //用户端全局 -> 内容
+    const USER_GLOBAL_VIEW_BODY = 0x229;
+    //用户端全局 -> 底部
+    const USER_GLOBAL_VIEW_FOOTER = 0x230;
 }
