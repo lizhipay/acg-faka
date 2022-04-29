@@ -76,7 +76,12 @@ class Commodity extends Shared
                     //这里ck = race种类名称，cv=单价
                     foreach ($categorys as $ck => $cv) {
                         //计算当前种类的成本
-                        $factorys[$ck] = $this->order->calcAmount(owner: $userId, num: 1, disableSubstation: true, group: $userGroup, commodity: $commodity, race: $ck);
+                        try {
+                            $factorys[$ck] = $this->order->calcAmount(owner: $userId, num: 1, disableSubstation: true, group: $userGroup, commodity: $commodity, race: $ck);
+                        } catch (\Error|\Exception $e) {
+                            unset($configs['category'][$ck]);
+                            continue;
+                        }
                     }
                     if (count($factorys) != 0) {
                         //覆盖成本
@@ -233,7 +238,12 @@ class Commodity extends Shared
             foreach ($categorys as $ck => $cv) {
                 $isCategory = true;
                 //计算当前种类的成本
-                $factorys[$ck] = $this->order->calcAmount(owner: $userId, num: 1, disableSubstation: true, group: $userGroup, commodity: $commodity, race: $ck);
+                try {
+                    $factorys[$ck] = $this->order->calcAmount(owner: $userId, num: 1, disableSubstation: true, group: $userGroup, commodity: $commodity, race: $ck);
+                } catch (\Error|\Exception $e) {
+                    unset($configs['category'][$ck]);
+                    continue;
+                }
             }
             if (count($factorys) != 0) {
                 //覆盖成本
