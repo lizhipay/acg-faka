@@ -19,10 +19,18 @@ class Waf implements InterceptorInterface
             exit;
         }
 
-        \App\Util\Waf::instance()->run(/**
-         * @throws \Kernel\Exception\JSONException
-         */ function (string $message) {
-            throw new JSONException("非法请求");
-        });
+        \App\Util\Waf::instance()->run(
+        /**
+         * @throws JSONException
+         */
+            function (string $message) {
+                hook(\App\Consts\Hook::WAF_INTERCEPT, $message);
+                if (DEBUG) {
+                    throw new JSONException($message);
+                } else {
+                    throw new JSONException("WAF检测到非法请求");
+                }
+            }
+        );
     }
 }

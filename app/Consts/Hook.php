@@ -158,4 +158,7 @@ interface Hook
     const USER_GLOBAL_VIEW_BODY = 0x229;
     //用户端全局 -> 底部
     const USER_GLOBAL_VIEW_FOOTER = 0x230;
+
+    //防火墙拦截 -> $message
+    const WAF_INTERCEPT = 0x289;
 }

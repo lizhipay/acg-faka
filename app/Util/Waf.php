@@ -21,7 +21,7 @@ class Waf
         $def = json_decode(self::$RULE["POST"], true);
         foreach ($def as $key => $value) {
             if (preg_match("#" . $value[1] . "#i", self::$DATA["POST"])) {
-                throw new JSONException($value[2]);
+                throw new JSONException("异次元WAF，触发规则：{$value[1]}");
             }
         }
     }
@@ -34,13 +34,13 @@ class Waf
         $def = json_decode(self::$RULE["ARG"], true);
         foreach ($def as $key => $value) {
             if (preg_match("#" . $value[1] . "#i", self::$DATA["REQUEST"])) {
-                throw new JSONException($value[2]);
+                throw new JSONException("异次元WAF，触发规则：{$value[1]}");
             }
         }
         $sd = json_decode(self::$RULE["URL"], true);
         foreach ($sd as $key => $value) {
             if (preg_match("#" . $value[1] . "#i", self::$DATA["REQUEST"])) {
-                throw new JSONException($value[2]);
+                throw new JSONException("异次元WAF，触发规则：{$value[1]}");
             }
         }
     }
@@ -53,7 +53,7 @@ class Waf
         $def = json_decode(self::$RULE["COOKIE"], true);
         foreach ($def as $key => $value) {
             if (preg_match("#" . $value[1] . "#i", self::$DATA["COOKIE"])) {
-                throw new JSONException($value[2]);
+                throw new JSONException("异次元WAF，触发规则：{$value[1]}");
             }
         }
     }
@@ -66,7 +66,7 @@ class Waf
         $def = json_decode(self::$RULE["UA"], true);
         foreach ($def as $key => $value) {
             if (preg_match("#" . $value[1] . "#i", self::$DATA["UA"])) {
-                throw new JSONException($value[2]);
+                throw new JSONException("异次元WAF，触发规则：{$value[1]}");
             }
         }
     }
