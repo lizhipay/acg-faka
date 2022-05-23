@@ -13,7 +13,7 @@ use App\Service\Query;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 
-#[Interceptor([Waf::class, ManageSession::class, Owner::class], Interceptor::TYPE_API)]
+#[Interceptor([ManageSession::class, Owner::class], Interceptor::TYPE_API)]
 class Log extends Manage
 {
     #[Inject]

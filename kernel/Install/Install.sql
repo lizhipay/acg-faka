@@ -361,6 +361,8 @@ CREATE TABLE `__PREFIX__pay`  (
                                   `handle` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '支付平台',
                                   `sort` smallint UNSIGNED NOT NULL DEFAULT 0 COMMENT '排序',
                                   `equipment` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '设备：0=通用，1=手机，2=电脑',
+                                  `cost` decimal(10, 3) UNSIGNED NULL DEFAULT 0.000 COMMENT '手续费',
+                                  `cost_type` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '手续费模式：0=单笔固定，1=百分比',
                                   PRIMARY KEY (`id`) USING BTREE,
                                   INDEX `commodity`(`commodity` ASC) USING BTREE,
                                   INDEX `recharge`(`recharge` ASC) USING BTREE,
@@ -369,8 +371,8 @@ CREATE TABLE `__PREFIX__pay`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 
-INSERT INTO `__PREFIX__pay` VALUES (1, '余额', '/assets/static/images/wallet.png', '#system', 1, 0, '1997-01-01 00:00:00', '#system', 999, 0);
-INSERT INTO `__PREFIX__pay` VALUES (2, '支付宝', '/assets/user/images/cash/alipay.png', 'alipay', 1, 1, '1997-01-01 00:00:00', 'Epay', 1, 0);
+INSERT INTO `__PREFIX__pay` VALUES (1, '余额', '/assets/static/images/wallet.png', '#system', 1, 0, '1997-01-01 00:00:00', '#system', 999, 0, 0.000, 0);
+INSERT INTO `__PREFIX__pay` VALUES (2, '支付宝', '/assets/user/images/cash/alipay.png', 'alipay', 1, 1, '1997-01-01 00:00:00', 'Epay', 1, 0, 0.000, 0);
 
 
 DROP TABLE IF EXISTS `__PREFIX__shared`;

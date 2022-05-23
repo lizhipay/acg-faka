@@ -13,7 +13,7 @@ use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\Post;
 use Kernel\Exception\JSONException;
 
-#[Interceptor([Waf::class, ManageSession::class], Interceptor::TYPE_API)]
+#[Interceptor([ManageSession::class], Interceptor::TYPE_API)]
 class Plugin extends Manage
 {
     /**

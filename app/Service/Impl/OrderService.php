@@ -548,6 +548,10 @@ class OrderService implements Order
                     if (file_exists($autoload)) {
                         require($autoload);
                     }
+                    //增加接口手续费：0.9.6-beta
+                    $order->amount = $order->amount + ($pay->cost_type == 0 ? $pay->cost : $order->amount * $pay->cost);
+                    $order->amount = (float)sprintf("%.2f", (int)($order->amount * 100) / 100);
+
                     $payObject = new $class;
                     $payObject->amount = $order->amount;
                     $payObject->tradeNo = $order->trade_no;
