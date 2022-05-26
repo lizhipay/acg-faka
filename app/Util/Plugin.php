@@ -111,7 +111,7 @@ class Plugin
             return;
         }
 
-        setConfig($data, $db);
+        setConfig($data, $path, true);
     }
 
     /**

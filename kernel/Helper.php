@@ -116,11 +116,12 @@ if (!function_exists("setConfig")) {
     /**
      * @param array $data
      * @param string $file
+     * @param bool $reset
      * @throws \Kernel\Exception\JSONException
      */
-    function setConfig(array $data, string $file): void
+    function setConfig(array $data, string $file, bool $reset = false): void
     {
-        if (file_exists($file)) {
+        if (file_exists($file) && !$reset) {
             $config = require($file);
         } else {
             $config = [];

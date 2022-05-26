@@ -68,7 +68,7 @@ class OrderService implements Order
 
         //禁用任何折扣,直接计算
         if ($commodity->level_disable == 1) {
-            return (int)(($num * ($price + $premium)) * 100) / 100;
+            return (int)(string)(($num * ($price + $premium)) * 100) / 100;
         }
 
         $userDefinedConfig = Commodity::parseGroupConfig((string)$commodity->level_price, $group);
@@ -110,7 +110,7 @@ class OrderService implements Order
         }
 
         $price += $premium; //分站加价
-        return (int)(($num * $price) * 100) / 100;
+        return (int)(string)(($num * $price) * 100) / 100;
     }
 
 
@@ -509,7 +509,7 @@ class OrderService implements Order
             }
 
             $secret = null;
-            $order->amount = (float)sprintf("%.2f", (int)($order->amount * 100) / 100);
+            $order->amount = (float)sprintf("%.2f", (int)(string)($order->amount * 100) / 100);
 
             if ($order->amount == 0) {
                 //免费赠送
@@ -550,7 +550,7 @@ class OrderService implements Order
                     }
                     //增加接口手续费：0.9.6-beta
                     $order->amount = $order->amount + ($pay->cost_type == 0 ? $pay->cost : $order->amount * $pay->cost);
-                    $order->amount = (float)sprintf("%.2f", (int)($order->amount * 100) / 100);
+                    $order->amount = (float)sprintf("%.2f", (int)(string)($order->amount * 100) / 100);
 
                     $payObject = new $class;
                     $payObject->amount = $order->amount;
@@ -970,9 +970,9 @@ class OrderService implements Order
         }
 
 
-        $data ['amount'] = sprintf("%.2f", (int)($amount * 100) / 100);
-        $data ['price'] = sprintf("%.2f", (int)($price * 100) / 100);
-        $data ['couponMoney'] = sprintf("%.2f", (int)($couponMoney * 100) / 100);
+        $data ['amount'] = sprintf("%.2f", (int)(string)($amount * 100) / 100);
+        $data ['price'] = sprintf("%.2f", (int)(string)($price * 100) / 100);
+        $data ['couponMoney'] = sprintf("%.2f", (int)(string)($couponMoney * 100) / 100);
 
         return $data;
     }
