@@ -6,14 +6,16 @@ namespace App\Controller\Shared;
 
 use App\Controller\Base\API\Shared;
 use App\Interceptor\SharedValidation;
+use App\Interceptor\Waf;
 use App\Model\Config;
 use Kernel\Annotation\Interceptor;
+use Kernel\Exception\JSONException;
 
-#[Interceptor(SharedValidation::class, Interceptor::TYPE_API)]
+#[Interceptor([Waf::class, SharedValidation::class], Interceptor::TYPE_API)]
 class Authentication extends Shared
 {
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function connect(): array
     {

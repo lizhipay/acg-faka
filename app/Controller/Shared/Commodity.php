@@ -7,6 +7,7 @@ namespace App\Controller\Shared;
 use App\Controller\Base\API\Shared;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\SharedValidation;
+use App\Interceptor\Waf;
 use App\Model\Card;
 use App\Model\Category;
 use App\Service\Order;
@@ -18,7 +19,7 @@ use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\Post;
 use Kernel\Exception\JSONException;
 
-#[Interceptor(SharedValidation::class, Interceptor::TYPE_API)]
+#[Interceptor([Waf::class, SharedValidation::class], Interceptor::TYPE_API)]
 class Commodity extends Shared
 {
     #[Inject]
