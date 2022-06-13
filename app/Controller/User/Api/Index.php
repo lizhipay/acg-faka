@@ -502,17 +502,19 @@ class Index extends User
     }
 
     /**
-     * @param int $orderId
+     * @param string $orderId
      * @param string $password
      * @return array
      * @throws JSONException
      */
-    public function secret(#[Post] int $orderId, #[Post] string $password): array
+    public function secret(#[Post] string $orderId, #[Post] string $password): array
     {
-        $order = Order::query()->find($orderId);
+        $order = Order::query()->where("trade_no", $orderId)->first();
+
         if (!$order) {
             throw new JSONException("未查询到相关信息");
         }
+
         $commodity = $order->commodity;
         if ($commodity->password_status == 1) {
             if ((string)$order->password != "" && $password != $order->password) {

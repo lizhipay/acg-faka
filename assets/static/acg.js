@@ -22,7 +22,7 @@ let acg = {
             opera: /opera/.test(window.navigator.userAgent.toLowerCase()),
             safari: /safari/.test(window.navigator.userAgent.toLowerCase())
         }, cache: {
-            raceId: "", payHtml: "", inventoryHidden: 0
+            raceId: "", payHtml: "", inventoryHidden: 0, order: []
         }, setting: {
             cache: 0, cache_expire: 0
         },
@@ -190,7 +190,7 @@ let acg = {
     }, API: {
         secret(opt) {
             acg.$post("/user/api/index/secret", {
-                orderId: opt.orderId, password: opt.password
+                orderId: acg.property.cache.order[opt.orderId].trade_no, password: opt.password
             }, res => {
                 typeof opt.begin === 'function' && opt.begin(res);
                 if (res.length == 0) {
@@ -211,6 +211,7 @@ let acg = {
                     return;
                 }
                 res.forEach(item => {
+                    acg.property.cache.order[item.id] = item;
                     typeof opt.success === 'function' && opt.success(item);
                 });
                 typeof opt.yes === 'function' && opt.yes(res);

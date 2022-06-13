@@ -71,7 +71,7 @@
                         '                        </div>\n' +
                         '                        <div style="font-size: 14px;">售后支持：<b style="color: #d78aeb;font-weight: bold;"><img src="' + order.business_avatar + '" style="height: 18px;border-radius: 100%;margin-top: -3px;"> ' + order.business_username + '</b> [ <a target="_blank" href="https://wpa.qq.com/msgrd?v=1&uin=' + order.service_qq + '" style="color: #2aa2e3;padding:0 4px 0 4px;font-size: 12px;margin:0 4px 0 0;border-radius: 5px;" class="button-click"><i class="fa fa-qq"></i> QQ客服</a><a target="_blank" href="' + order.service_url + '" class="button-click" style="color: #ff8484;padding:0 4px 0 4px;margin:0;font-size: 12px;border-radius: 5px;"><i class="fa fa-user-plus"></i> 网页客服</a> ]</div>\n' +
                         '                        <div style="font-size: 14px;' + (order.leave_message ? "" : " display: none;") + '">使用说明：<b>' + order.leave_message + '</b></div>\n' +
-                        '                        <div style="font-size: 14px;">卡密信息：<input style="border: none;box-shadow: #f0d1d4 1px 1px 1px;height: 18px;width:130px;' + (order.commodity.password_status == 1 ? '#{if $user}display:none;#{/if}' : 'display:none;') + '"  type="password" placeholder="请输入查询密码.." class="passId-' + order.id + '"> <b style="cursor:pointer;color: blue;" class="getCard" data-id="' + order.id + '">查看</b></div>\n' +
+                        '                        <div style="font-size: 14px;">卡密信息：<input style="border: none;box-shadow: #f0d1d4 1px 1px 1px;height: 18px;width:130px;' + (order.commodity.password_status == 1 ? '#{if $user}display:none;#{/if}' : 'display:none;') + '"  type="password" placeholder="请输入查询密码.." class="passId-' + order.id + '"> <b style="cursor:pointer;color: blue;" class="getCard" data-id="' + order.id + '" data-no="' + order.trade_no + '">查看</b></div>\n' +
                         '                        <div style="margin-top: 10px; display: none;" class="cardInfoView-' + order.id + '">\n' +
                         '                            <textarea class="form-control cardInfo-' + order.id + '" style="height: 420px;"></textarea>\n' +
                         '                        </div>\n' +
@@ -84,7 +84,8 @@
 
             $('.getCard').click(function () {
                 let orderId = $(this).attr('data-id');
-                Pay.getSecret(orderId, $('.passId-' + orderId).val(), res => {
+                let no = $(this).attr('data-no');
+                Pay.getSecret(no, $('.passId-' + orderId).val(), res => {
                     let secret = "";
                     if (res.widget) {
                         secret += "--------------您隐私内容---------------\n";
