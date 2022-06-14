@@ -167,7 +167,6 @@ class Plugin
         if (Context::get(\Kernel\Consts\Base::STORE_STATUS) && \Kernel\Util\Context::get(\Kernel\Consts\Base::IS_INSTALL)) {
             $list = _Point($point);
             foreach ($list as $item) {
-                \Kernel\Util\Plugin::$currentPluginName = $item['pluginName'];
                 $instance = _Instance($item);
                 $ref = new \ReflectionClass($instance);
                 $reflectionProperties = $ref->getProperties();

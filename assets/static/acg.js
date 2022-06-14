@@ -250,8 +250,12 @@ let acg = {
                         layer.open({
                             type: 1,
                             title: "您购买的卡密如下：",
-                            area: ['420px', '420px'],
-                            content: '<textarea class="layui-input" style="padding: 15px;height: 98%;width: 100%;border: none;overflow-x: hidden;">' + res.secret + '</textarea>'
+                            area: acg.Util.isMobile() ? ["100%", "100%"] : ['420px', '420px'],
+                            content: '<textarea class="layui-input" style="padding: 15px;height: 98%;width: 100%;border: none;overflow-x: hidden;">' + res.secret + '</textarea>',
+                            btn: ['<span style="color:white;">查看更多信息/下载</span>'],
+                            yes: function () {
+                                window.open('/user/personal/purchaseRecord?tradeNo=' + res.tradeNo);
+                            }
                         });
                     }
                     acg.API.captcha(".captcha");
