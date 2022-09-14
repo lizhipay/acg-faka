@@ -176,6 +176,17 @@ class Card extends Manage
 
     /**
      * @return array
+     */
+    public function sell(): array
+    {
+        $list = (array)$_POST['list'];
+        \App\Model\Card::query()->whereIn('id', $list)->whereRaw("status!=1")->update(['status' => 1, 'purchase_time' => Date::current()]);
+        ManageLog::log($this->getManage(), "[出售卡密]手动出售卡密信息，共计：" . count($list));
+        return $this->json(200, '操作成功');
+    }
+
+    /**
+     * @return array
      * @throws JSONException
      */
     public function del(): array
@@ -243,6 +254,8 @@ class Card extends Manage
                 $this->query->deleteTemplate($deleteBatchEntity);
             } catch (\Exception $e) {
             }
+        } elseif ($exportStatus == 3) {
+            \App\Model\Card::query()->whereIn('id', $ids)->whereRaw("status!=1")->update(['status' => 1, 'purchase_time' => Date::current()]);
         }
 
         ManageLog::log($this->getManage(), "[卡密导出]导出卡密，共计：" . count($data));

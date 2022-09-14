@@ -41,6 +41,19 @@ class Security extends User
 
         $plugin = (array)$_POST['plugin'];
 
+        unset(
+            $plugin['balance'],
+            $plugin['coin'],
+            $plugin['integral'],
+            $plugin['recharge'],
+            $plugin['total_coin'],
+            $plugin['status'],
+            $plugin['business_level'],
+            $plugin['username'],
+            $plugin['email'],
+            $plugin['phone']
+        );
+
         foreach ($plugin as $key => $val) {
             $user->$key = $val;
         }

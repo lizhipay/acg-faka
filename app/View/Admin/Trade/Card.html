@@ -29,6 +29,9 @@
                         <button class="btn btn-sm btn-light-success btn-app-unlock me-3"><i class="fa fa-lock-open"></i>
                             解锁选中卡密
                         </button>
+                        <button class="btn btn-sm btn-light-success btn-app-sell me-3"><i class="fa fa-marker"></i>
+                            至已出售选中卡密
+                        </button>
                         <button class="btn btn-sm btn-light-primary btn-app-export me-3"><i
                                     class="fas fa-file-export"></i>
                             导出筛选卡密
@@ -182,21 +185,21 @@
                                 layer.confirm('您是否要移除该卡密，这是无法恢复的？', {
                                     btn: ['确认移除', '取消']
                                 }, function () {
-                                    $.post('/admin/api/card/del', {list: [row.id]}, res => {
-                                        layer.msg(res.msg);
+                                    cao.$post('/admin/api/card/del', {list: [row.id]}, res => {
+                                        layer.msg("移除成功");
                                         table.bootstrapTable('refresh', {silent: true});
                                     });
                                 });
                             },
                             'click .lock': function (event, value, row, index) {
-                                $.post('/admin/api/card/edit', {id: row.id, status: 2}, res => {
-                                    layer.msg(res.msg);
+                                cao.$post('/admin/api/card/edit', {id: row.id, status: 2}, res => {
+                                    layer.msg("锁定成功");
                                     table.bootstrapTable('refresh', {silent: true});
                                 });
                             },
                             'click .unlock': function (event, value, row, index) {
-                                $.post('/admin/api/card/edit', {id: row.id, status: 0}, res => {
-                                    layer.msg(res.msg);
+                                cao.$post('/admin/api/card/edit', {id: row.id, status: 0}, res => {
+                                    layer.msg("解锁成功");
                                     table.bootstrapTable('refresh', {silent: true});
                                 });
                             }
@@ -287,8 +290,8 @@
                 layer.confirm('您确定要删除已经选中的卡密吗？这是不可恢复的操作！', {
                     btn: ['确定', '取消']
                 }, function () {
-                    $.post("/admin/api/card/del", {list: data}, res => {
-                        layer.msg(res.msg);
+                    cao.$post("/admin/api/card/del", {list: data}, res => {
+                        layer.msg("删除成功");
                         table.bootstrapTable('refresh', {silent: true});
 
                     });
@@ -304,8 +307,8 @@
                 layer.confirm('您确定要锁定选中的卡密吗？', {
                     btn: ['确定', '取消']
                 }, function () {
-                    $.post("/admin/api/card/lock", {list: data}, res => {
-                        layer.msg(res.msg);
+                    cao.$post("/admin/api/card/lock", {list: data}, res => {
+                        layer.msg("锁定成功");
                         table.bootstrapTable('refresh', {silent: true});
 
                     });
@@ -321,10 +324,26 @@
                 layer.confirm('您确定要解锁选中的卡密吗？', {
                     btn: ['确定', '取消']
                 }, function () {
-                    $.post("/admin/api/card/unlock", {list: data}, res => {
-                        layer.msg(res.msg);
+                    cao.$post("/admin/api/card/unlock", {list: data}, res => {
+                        layer.msg("解锁成功");
                         table.bootstrapTable('refresh', {silent: true});
 
+                    });
+                });
+            });
+
+            $('.btn-app-sell').click(() => {
+                let data = cao.listObjectToArray(table.bootstrapTable('getSelections'));
+                if (data.length == 0) {
+                    layer.msg("请至少勾选1个卡密进行操作！");
+                    return;
+                }
+                layer.confirm('您确定要手动出售选中的卡密吗？', {
+                    btn: ['确定', '取消']
+                }, function () {
+                    cao.$post("/admin/api/card/sell", {list: data}, res => {
+                        layer.msg("操作成功");
+                        table.bootstrapTable('refresh', {silent: true});
                     });
                 });
             });
@@ -338,6 +357,7 @@
                         '      <input type="radio" name="export_status" value="0" title="不操作" checked>\n' +
                         '      <input type="radio" name="export_status" value="1" title="锁定卡密">\n' +
                         '      <input type="radio" name="export_status" value="2" title="删除卡密">\n' +
+                        '      <input type="radio" name="export_status" value="3" title="已出售">\n' +
                         '    </div>\n' +
                         '    <div style="margin-top: 10px;margin-left: 20px;margin-right: 20px;">\n' +
                         '      <input type="input" name="export_num" class="layui-input" placeholder="指定导出数量，不填则全部哦">\n' +
@@ -345,6 +365,7 @@
                         '</form>',
                     title: "导出后，你还想做什么？（・ω・）",
                     btn: ['确认', '取消'],
+                    area: cao.isPc() ? "460px" : ["100%", "100%"],
                     shadeClose: true,
                     yes: (index, layero) => {
                         layer.close(index);
@@ -370,7 +391,13 @@
                         {id: 2, name: "锁定"},
                     ]
                 },
-                {title: "查询商品", name: "equal-commodity_id", type: "select", dict: "commodity->owner=0 and delivery_way=0 and (shared_id is null or shared_id=0),id,name", search: true},
+                {
+                    title: "查询商品",
+                    name: "equal-commodity_id",
+                    type: "select",
+                    dict: "commodity->owner=0 and delivery_way=0 and (shared_id is null or shared_id=0),id,name",
+                    search: true
+                },
                 {title: "商品类别", name: "equal-race", type: "input"},
                 {title: "卡密所属会员ID，0=系统", name: "equal-owner", type: "input"},
                 {title: "入库时间从", name: "betweenStart-create_time", type: "date"},
