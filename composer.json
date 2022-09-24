@@ -28,9 +28,9 @@
   "require": {
     "php": ">=8.0.0",
     "smarty/smarty": "~3.1",
-    "illuminate/database": "^7.19",
+    "illuminate/database": "^7.30.6",
     "symfony/var-dumper": "^5.1",
-    "illuminate/pagination": "^7.19",
+    "illuminate/pagination": "^7.30.6",
     "rah/danpu": "^2.7",
     "ext-json": "*",
     "phpmailer/phpmailer": "^6.5",

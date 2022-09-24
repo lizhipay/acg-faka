@@ -41,20 +41,42 @@ class Security extends User
 
         $plugin = (array)$_POST['plugin'];
 
-        unset(
-            $plugin['balance'],
-            $plugin['coin'],
-            $plugin['integral'],
-            $plugin['recharge'],
-            $plugin['total_coin'],
-            $plugin['status'],
-            $plugin['business_level'],
-            $plugin['username'],
-            $plugin['email'],
-            $plugin['phone']
-        );
+        $fields = [
+            'username',
+            'email',
+            'phone',
+            'qq',
+            'password',
+            'salt',
+            'app_key',
+            'avatar',
+            'balance',
+            'coin',
+            'integral',
+            'create_time',
+            'login_time',
+            'last_login_time',
+            'login_ip',
+            'last_login_ip',
+            'pid',
+            'recharge',
+            'total_coin',
+            'status',
+            'business_level',
+            'nicename',
+            'alipay',
+            'wechat',
+            'settlement'
+        ];
+
+        foreach ($fields as $value){
+            unset($plugin[$value]);
+        }
 
         foreach ($plugin as $key => $val) {
+            if (in_array(strtolower($key) , $fields)){
+                throw new JSONException("are you an idiot?");
+            }
             $user->$key = $val;
         }
 

@@ -16,11 +16,12 @@
         "php": "^7.2 || ^8.0"
     },
     "require-dev": {
-        "doctrine/coding-standard": "^7.0",
-        "phpstan/phpstan": "^0.11",
-        "phpstan/phpstan-phpunit": "^0.11",
-        "phpstan/phpstan-strict-rules": "^0.11",
-        "phpunit/phpunit": "^7.0 || ^8.0 || ^9.0"
+        "doctrine/coding-standard": "^9",
+        "phpstan/phpstan": "^1.8",
+        "phpstan/phpstan-phpunit": "^1.1",
+        "phpstan/phpstan-strict-rules": "^1.3",
+        "phpunit/phpunit": "^8.5 || ^9.5",
+        "vimeo/psalm": "^4.25"
     },
     "autoload": {
         "psr-4": {
@@ -32,9 +33,9 @@
             "Doctrine\\Tests\\Inflector\\": "tests/Doctrine/Tests/Inflector"
         }
     },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "2.0.x-dev"
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
         }
     }
 }

@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.com/voku/portable-ascii.svg?branch=master)](https://travis-ci.com/voku/portable-ascii)
+[![Build Status](https://github.com/voku/portable-ascii/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/voku/portable-ascii/actions)
 [![Build status](https://ci.appveyor.com/api/projects/status/gnejjnk7qplr7f5t/branch/master?svg=true)](https://ci.appveyor.com/project/voku/portable-ascii/branch/master)
-[![Coverage Status](https://coveralls.io/repos/voku/portable-ascii/badge.svg?branch=master&service=github)](https://coveralls.io/github/voku/portable-ascii?branch=master)
+[![codecov.io](https://codecov.io/github/voku/portable-ascii/coverage.svg?branch=master)](https://codecov.io/github/voku/portable-ascii?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/997c9bb10d1c4791967bdf2e42013e8e)](https://www.codacy.com/app/voku/portable-ascii)
 [![Latest Stable Version](https://poser.pugx.org/voku/portable-ascii/v/stable)](https://packagist.org/packages/voku/portable-ascii) 
 [![Total Downloads](https://poser.pugx.org/voku/portable-ascii/downloads)](https://packagist.org/packages/voku/portable-ascii)

@@ -184,7 +184,11 @@ function smarty_modifier_escape($string, $esc_type = 'html', $char_set = null, $
                     '"'  => '\\"',
                     "\r" => '\\r',
                     "\n" => '\\n',
-                    '</' => '<\/'
+                    '</' => '<\/',
+                    // see https://html.spec.whatwg.org/multipage/scripting.html#restrictions-for-contents-of-script-elements
+                    '<!--' => '<\!--',
+                    '<s'   => '<\s',
+                    '<S'   => '<\S'
                 )
             );
         case 'mail':
@@ -250,6 +254,7 @@ function smarty_modifier_escape($string, $esc_type = 'html', $char_set = null, $
             }
             return $return;
         default:
+            trigger_error("escape: unsupported type: $esc_type - returning unmodified string", E_USER_NOTICE);
             return $string;
     }
 }

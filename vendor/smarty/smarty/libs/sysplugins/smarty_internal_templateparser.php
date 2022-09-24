@@ -2837,6 +2837,10 @@ class Smarty_Internal_Templateparser
     // line 765 "../smarty/lexer/smarty_internal_templateparser.y"
     public function yy_r95()
     {
+        if ($this->security && $this->security->static_classes !== array()) {
+            $this->compiler->trigger_template_error('dynamic static class not allowed by security setting');
+        }
+
         $prefixVar = $this->compiler->getNewPrefixVariable();
         if ($this->yystack[ $this->yyidx + -2 ]->minor[ 'var' ] === '\'smarty\'') {
             $this->compiler->appendPrefixCode("<?php {$prefixVar} = " .

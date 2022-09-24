@@ -89,9 +89,10 @@ function smarty_modifiercompiler_escape($params, Smarty_Internal_TemplateCompile
                 return 'preg_replace("%(?<!\\\\\\\\)\'%", "\\\'",' . $params[ 0 ] . ')';
             case 'javascript':
                 // escape quotes and backslashes, newlines, etc.
+                // see https://html.spec.whatwg.org/multipage/scripting.html#restrictions-for-contents-of-script-elements
                 return 'strtr(' .
                        $params[ 0 ] .
-                       ', array("\\\\" => "\\\\\\\\", "\'" => "\\\\\'", "\"" => "\\\\\"", "\\r" => "\\\\r", "\\n" => "\\\n", "</" => "<\/" ))';
+                       ', array("\\\\" => "\\\\\\\\", "\'" => "\\\\\'", "\"" => "\\\\\"", "\\r" => "\\\\r", "\\n" => "\\\n", "</" => "<\/", "<!--" => "<\!--", "<s" => "<\s", "<S" => "<\S" ))';
         }
     } catch (SmartyException $e) {
         // pass through to regular plugin fallback

@@ -8,6 +8,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace Carbon\Traits;
 
 use Carbon\Carbon;
@@ -155,6 +156,21 @@ trait Converter
     public function toFormattedDateString()
     {
         return $this->rawFormat('M j, Y');
+    }
+
+    /**
+     * Format the instance with the day, and a readable date
+     *
+     * @example
+     * ```
+     * echo Carbon::now()->toFormattedDayDateString();
+     * ```
+     *
+     * @return string
+     */
+    public function toFormattedDayDateString(): string
+    {
+        return $this->rawFormat('D, M j, Y');
     }
 
     /**
@@ -627,7 +643,7 @@ trait Converter
             $period->setDateInterval($interval);
         }
 
-        if (\is_int($end) || \is_string($end) && ctype_digit($end)) {
+        if (\is_int($end) || (\is_string($end) && ctype_digit($end))) {
             $period->setRecurrences($end);
         } elseif ($end) {
             $period->setEndDate($end);

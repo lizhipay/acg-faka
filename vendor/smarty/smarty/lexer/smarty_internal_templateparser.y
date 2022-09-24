@@ -758,6 +758,9 @@ value(res)       ::= doublequoted_with_quotes(s). {
 
 
 value(res)    ::= varindexed(vi) DOUBLECOLON static_class_access(r). {
+    if ($this->security && $this->security->static_classes !== array()) {
+        $this->compiler->trigger_template_error('dynamic static class not allowed by security setting');
+    }
     $prefixVar = $this->compiler->getNewPrefixVariable();
     if (vi['var'] === '\'smarty\'') {
         $this->compiler->appendPrefixCode("<?php {$prefixVar} = ". $this->compiler->compileTag('private_special_variable',array(),vi['smarty_internal_index']).';?>');

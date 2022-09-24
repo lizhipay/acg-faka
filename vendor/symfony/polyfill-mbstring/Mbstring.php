@@ -80,7 +80,7 @@ final class Mbstring
 
     public static function mb_convert_encoding($s, $toEncoding, $fromEncoding = null)
     {
-        if (\is_array($fromEncoding) || false !== strpos($fromEncoding, ',')) {
+        if (\is_array($fromEncoding) || ($fromEncoding !== null && false !== strpos($fromEncoding, ','))) {
             $fromEncoding = self::mb_detect_encoding($s, $fromEncoding);
         } else {
             $fromEncoding = self::getEncoding($fromEncoding);
@@ -568,7 +568,7 @@ final class Mbstring
             }
             $rx .= '.{'.$split_length.'})/us';
 
-            return preg_split($rx, $string, null, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY);
+            return preg_split($rx, $string, -1, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY);
         }
 
         $result = [];
@@ -600,6 +600,9 @@ final class Mbstring
             return true;
         }
         if (80000 > \PHP_VERSION_ID) {
+            return false;
+        }
+        if (\is_int($c) || 'long' === $c || 'entity' === $c) {
             return false;
         }
 

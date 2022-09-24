@@ -6,11 +6,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.46] - 2022-08-01
+
+### Fixed
+- Fixed problems with smarty_mb_str_replace [#549](https://github.com/smarty-php/smarty/issues/549)
+- Fixed second parameter of unescape modifier not working [#777](https://github.com/smarty-php/smarty/issues/777)
+
+## [3.1.45] - 2022-05-17
+
+### Security
+- Prevent PHP injection through malicious block name or include file name. This addresses CVE-2022-29221
+
+### Fixed
+- Math equation `max(x, y)` didn't work anymore [#721](https://github.com/smarty-php/smarty/issues/721)
+
+## [3.1.44] - 2022-01-18
+
+### Fixed
+- Fixed illegal characters bug in math function security check [#702](https://github.com/smarty-php/smarty/issues/702)
+
+## [3.1.43] - 2022-01-10
+
+### Security
+- Prevent evasion of the `static_classes` security policy. This addresses CVE-2021-21408
+
+## [3.1.42] - 2022-01-10
+
+### Security
+- Prevent arbitrary PHP code execution through maliciously crafted expression for the math function. This addresses CVE-2021-29454
+
+## [3.1.41] - 2022-01-09
+
+### Security
+- Rewrote the mailto function to not use `eval` when encoding with javascript
+
+## [3.1.40] - 2021-10-13
+
+### Changed
+- modifier escape now triggers a E_USER_NOTICE when an unsupported escape type is used https://github.com/smarty-php/smarty/pull/649
+
+### Security
+- More advanced javascript escaping to handle https://html.spec.whatwg.org/multipage/scripting.html#restrictions-for-contents-of-script-elements thanks to m-haritonov
+
 ## [3.1.39] - 2021-02-17
 
 ### Security
-- Prevent access to `$smarty.template_object` in sandbox mode
-- Fixed code injection vulnerability by using illegal function names in `{function name='blah'}{/function}` 
+- Prevent access to `$smarty.template_object` in sandbox mode. This addresses CVE-2021-26119.
+- Fixed code injection vulnerability by using illegal function names in `{function name='blah'}{/function}`. This addresses CVE-2021-26120.
 
 ## [3.1.38] - 2021-01-08
 
