@@ -62,6 +62,10 @@ class Dashboard extends \App\Controller\Base\API\Manage
         $data['order_num'] = (clone $order)->count();
         //手续费
         $data['cost'] = sprintf("%.2f", (clone $order)->where("user_id", "!=", 0)->sum("cost"));
+        //非余额交易
+        $data['online_amout'] = sprintf("%.2f", (clone $order)->where("pay_id", "!=", 1)->sum("amount"));
+        //返利
+        $data['rebate'] = sprintf("%.2f", (clone $order)->sum("rebate"));
         //店铺数量
         $data['business'] = $business->count();
         //未处理的提现
@@ -70,6 +74,7 @@ class Dashboard extends \App\Controller\Base\API\Manage
         $data['cash_money_status_1'] = (clone $cash)->where("status", 1)->sum("amount");
         //充值金额
         $data['recharge_amount'] = (clone $recharge)->where("status", 1)->sum("amount");
+
 
         //盈利
         $data['rent'] = (

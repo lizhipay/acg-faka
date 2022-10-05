@@ -66,7 +66,8 @@ class Security extends User
             'nicename',
             'alipay',
             'wechat',
-            'settlement'
+            'settlement',
+            'id'
         ];
 
         foreach ($fields as $value){

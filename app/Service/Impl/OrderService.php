@@ -703,6 +703,7 @@ class OrderService implements Order
                     $order->premium = $rebate;
                     if ($rebate >= 0.01) {
                         Bill::create($promote_1, $rebate, Bill::TYPE_ADD, "分站返佣", 1);
+                        $order->rebate = $rebate;
                     }
                 }
                 //检测到商户等级，进行分站返佣算法 废弃
@@ -716,27 +717,38 @@ class OrderService implements Order
                     if (!$promote_2) {
                         //没有上级，直接进行1级返佣
                         Bill::create($promote_1, $rebate1, Bill::TYPE_ADD, "推广返佣", 1); //反20.00
+                        $order->rebate = $rebate1;
                     } else {
+                        $_rebate = 0;
                         //出现上级，开始将返佣的钱继续拆分
                         $promoteRebateV2 = (float)Config::get("promote_rebate_v2"); // 0.4
                         $rebate2 = $promoteRebateV2 * $rebate1; //拿走属于第二级百分比返佣 8.00
                         //先给上级返佣，这里拿掉上级的拿一份
                         Bill::create($promote_1, $rebate1 - $rebate2, Bill::TYPE_ADD, "推广返佣", 1); // 20-8=12.00
+                        $_rebate += ($rebate1 - $rebate2);
                         if ($rebate2 > 0.01) { // 8.00
                             $promote_3 = $promote_2->parent; //获取第二级的上级
                             if (!$promote_3) {
                                 //没有上级直接进行第二级返佣
                                 Bill::create($promote_2, $rebate2, Bill::TYPE_ADD, "推广返佣", 1); // 8.00
+                                $_rebate += $rebate2;
                             } else {
                                 //出现上级，继续拆分剩下的佣金
                                 $promoteRebateV3 = (float)Config::get("promote_rebate_v3"); // 0.4
                                 $rebate3 = $promoteRebateV3 * $rebate2; // 8.00 * 0.4 = 3.2
                                 //先给上级反
                                 Bill::create($promote_2, $rebate2 - $rebate3, Bill::TYPE_ADD, "推广返佣", 1); // 8.00 - 3.2 = 4.8
+                                $_rebate += ($rebate2 - $rebate3);
                                 if ($rebate3 > 0.01) {
                                     Bill::create($promote_3, $rebate3, Bill::TYPE_ADD, "推广返佣", 1); // 3.2
+                                    $_rebate += $rebate3;
                                     //返佣结束  3.2 + 4.8 + 12 = 20.00
                                 }
+                            }
+
+
+                            if ($_rebate > 0.01) {
+                                $order->rebate = $_rebate;
                             }
                         }
                     }

@@ -434,6 +434,70 @@
                             <!--end::Card-->
                         </div>
                         <!--end::Col-->
+
+                        <!--begin::Col-->
+                        <div class="col-sm-6 col-xl-3">
+                            <!--begin::Card-->
+                            <div class="card h-100">
+                                <!--begin::Card header-->
+                                <div class="card-header flex-nowrap border-0 pt-9">
+                                    <!--begin::Card title-->
+                                    <div class="card-title m-0">
+                                        <!--begin::Icon-->
+                                        <div class="symbol symbol-45px w-45px bg-light me-5">
+                                            <i class="fab fa-amazon-pay p-3" style="font-size: 26px;"></i>
+                                        </div>
+                                        <!--end::Icon-->
+                                        <!--begin::Title-->
+                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">非余额交易</a>
+                                        <!--end::Title-->
+                                    </div>
+                                    <!--end::Card title-->
+                                </div>
+                                <!--end::Card header-->
+                                <!--begin::Card body-->
+                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
+                                    <!--begin::Heading-->
+                                    <div class="fs-2hx fw-bolder mb-3 online_amout" style="color: #f1a6b4;">...</div>
+                                    <!--end::Heading-->
+                                </div>
+                                <!--end::Card body-->
+                            </div>
+                            <!--end::Card-->
+                        </div>
+                        <!--end::Col-->
+
+                        <!--begin::Col-->
+                        <div class="col-sm-6 col-xl-3">
+                            <!--begin::Card-->
+                            <div class="card h-100">
+                                <!--begin::Card header-->
+                                <div class="card-header flex-nowrap border-0 pt-9">
+                                    <!--begin::Card title-->
+                                    <div class="card-title m-0">
+                                        <!--begin::Icon-->
+                                        <div class="symbol symbol-45px w-45px bg-light me-5">
+                                            <i class="fas fa-yen-sign p-3"  style="font-size: 26px;"></i>
+                                        </div>
+                                        <!--end::Icon-->
+                                        <!--begin::Title-->
+                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">推广返利</a>
+                                        <!--end::Title-->
+                                    </div>
+                                    <!--end::Card title-->
+                                </div>
+                                <!--end::Card header-->
+                                <!--begin::Card body-->
+                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
+                                    <!--begin::Heading-->
+                                    <div class="fs-2hx fw-bolder mb-3 rebate" style="color: #f1a6b4;">...</div>
+                                    <!--end::Heading-->
+                                </div>
+                                <!--end::Card body-->
+                            </div>
+                            <!--end::Card-->
+                        </div>
+                        <!--end::Col-->
                     </div>
                     <!--end::Row-->
                 </div>
@@ -517,12 +581,13 @@
                         $('.user_login_num').text(res.data.user_login_num);
                         $('.recharge_amount').text("￥" + res.data.recharge_amount);
                         $('.order_rent').text("￥" + res.data.rent);
+                        $('.rebate').text("￥" + res.data.rebate);
+                        $('.online_amout').text("￥" + res.data.online_amout);
                     }
                 });
             }
 
             getDashboardData(0);
-
 
             $('.dashboard-data-type').change(function (e) {
                 getDashboardData(this.value);
