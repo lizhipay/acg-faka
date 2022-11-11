@@ -49,7 +49,7 @@ class ManageSession implements InterceptorInterface
             $this->kick("您的账号在其他地方登录..", $type);
         }
         //-----------------------------------
-        if ($manage['login_ip'] != $user->login_ip) {
+        if ($manage['login_ip'] != Client::getAddress()) {
             $this->kick("系统检测到您的网络有波动，请重新登录..", $type);
         }
         //保存会话

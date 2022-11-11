@@ -383,6 +383,7 @@ class OrderService implements Order
             $callbackDomain = $clientDomain;
         }
 
+        DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
         return Db::transaction(function () use ($user, $userGroup, $num, $contact, $device, $amount, $owner, $commodity, $pay, $cardId, $password, $coupon, $from, $widget, $race, $shared, $callbackDomain, $clientDomain, $factoryPrice) {
             //生成联系方式
             if ($user) {
