@@ -73,6 +73,5 @@ location / {
 - 安装完成后，后台地址是：`https://你的域名/admin`
 
 ## 更多支持
-- 交流QQ-1群：128215049
-- 交流QQ-2群：849844806（推荐）
+- 交流QQ群：640147192
 - [Telegram](https://t.me/acgshop)
