@@ -512,6 +512,8 @@ class OrderService implements Order
             $secret = null;
             $order->amount = (float)sprintf("%.2f", (int)(string)($order->amount * 100) / 100);
 
+            hook(\App\Consts\Hook::USER_API_ORDER_TRADE_PAY_BEGIN, $commodity, $order, $pay);
+
             if ($order->amount == 0) {
                 //免费赠送
                 $order->save();//先将订单保存下来
@@ -703,8 +705,8 @@ class OrderService implements Order
                     $rebate = $order->amount - $calcAmount; //差价
                     $order->premium = $rebate;
                     if ($rebate >= 0.01) {
-                        Bill::create($promote_1, $rebate, Bill::TYPE_ADD, "分站返佣", 1);
-                        $order->rebate = $rebate;
+                        Bill::create($promote_1, $rebate - $commodity->draft_premium, Bill::TYPE_ADD, "分站返佣", 1);
+                        $order->rebate = $rebate - $commodity->draft_premium;
                     }
                 }
                 //检测到商户等级，进行分站返佣算法 废弃

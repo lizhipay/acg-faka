@@ -67,6 +67,8 @@ interface Hook
     const USER_API_ORDER_TRADE_AFTER = 0x17;
     //客户成功付款后触发的点位，HOOK时传参：商品对象 $commodity, 订单对象 $order 支付对象 $pay
     const USER_API_ORDER_PAY_AFTER = 0x18;
+    //客户下单后，发起支付之前，HOOK时传参：商品对象 $commodity, 订单对象 $order 支付对象 $pay
+    const USER_API_ORDER_TRADE_PAY_BEGIN = 0x171;
 
 
     //注册账号之前，可以做一些限制
