@@ -13,7 +13,7 @@
 	[1, "into(\\s+)+(?:dump|out)file\\s*", "SQL注入过滤9", 0],
 	[1, "group\\s+by\\s+\\d", "SQL注入过滤10", 0],
 	[0, "\\<(iframe|script|body|img|layer|div|meta|style|base|object|input|embed)", "XSS过滤1", 0],
-	[0, "(onmouseover|onerror|onload)\\=", "XSS过滤2", 0],
+	[0, "(onmouseover|onerror|onload)", "XSS过滤2", 0],
 	[1, "(extractvalue\\(|concat\\(|user\\(\\)|substring\\(|count\\(\\*\\)|substring\\(hex\\(|updatexml\\()", "SQL报错注入过滤01", 0],
 	[1, "(@@version|load_file\\(|NAME_CONST\\(|exp\\(\\~|floor\\(rand\\(|geometrycollection\\(|multipoint\\(|polygon\\(|multipolygon\\(|linestring\\(|multilinestring\\(|right\\()", "SQL报错注入过滤02", 0],
 	[1, "(substr\\()", "SQL注入过滤10", 0],

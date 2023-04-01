@@ -21,6 +21,13 @@ class ManageSession implements InterceptorInterface
 
     #[NoReturn] public function handle(int $type): void
     {
+        if ($type == Interceptor::TYPE_API) {
+            list($p1, $p2) = [(array)parse_url((string)$_SERVER['HTTP_REFERER']), parse_url(Client::getUrl())];
+            if ($p1['host'] != $p2['host']) {
+                $this->kick("访问来源不明确，已被阻断..", $type);
+            }
+        }
+
         if (!array_key_exists(ManageConst::SESSION, $_SESSION)) {
             $this->kick("您还没有登录，请先登录再访问该页面..", $type);
         }
