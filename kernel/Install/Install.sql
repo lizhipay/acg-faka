@@ -323,6 +323,7 @@ CREATE TABLE `__PREFIX__order`  (
                                     `rent` decimal(10, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '成本价',
                                     `race` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '商品种类',
                                     `rebate` decimal(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '返利金额',
+                                    `pay_cost` decimal(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '支付接口手续费',
                                     PRIMARY KEY (`id`) USING BTREE,
                                     UNIQUE INDEX `trade_no`(`trade_no` ASC) USING BTREE,
                                     INDEX `commodity_id`(`commodity_id` ASC) USING BTREE,
