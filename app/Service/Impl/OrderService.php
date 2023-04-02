@@ -688,7 +688,10 @@ class OrderService implements Order
             $businessLevel = $merchant->businessLevel;
             if ($businessLevel) {
                 $order->cost = $order->amount * $businessLevel->cost; //手续费
-                Bill::create($merchant, $order->amount - $order->cost - $order->pay_cost, Bill::TYPE_ADD, "商品出售[$order->trade_no]", 1);
+                $a1 = $order->amount - $order->cost - $order->pay_cost;
+                if ($a1 > 0) {
+                    Bill::create($merchant, $a1, Bill::TYPE_ADD, "商品出售[$order->trade_no]", 1);
+                }
             }
         }
 
@@ -705,9 +708,10 @@ class OrderService implements Order
                 if ($order->amount > $calcAmount) {
                     $rebate = $order->amount - $calcAmount; //差价
                     $order->premium = $rebate;
-                    if ($rebate >= 0.01) {
-                        Bill::create($promote_1, $rebate - $commodity->draft_premium - $order->pay_cost, Bill::TYPE_ADD, "分站返佣", 1);
-                        $order->rebate = $rebate - $commodity->draft_premium - $order->pay_cost;
+                    $a2 = $rebate - $commodity->draft_premium - $order->pay_cost;
+                    if ($rebate >= 0.01 && $a2 > 0) {
+                        Bill::create($promote_1, $a2, Bill::TYPE_ADD, "分站返佣", 1);
+                        $order->rebate = $a2;
                     }
                 }
                 //检测到商户等级，进行分站返佣算法 废弃

@@ -10,6 +10,7 @@ use App\Util\Context;
 use JetBrains\PhpStorm\NoReturn;
 use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\InterceptorInterface;
+use Kernel\Exception\JSONException;
 
 /**
  * Class UserSession
@@ -18,12 +19,15 @@ use Kernel\Annotation\InterceptorInterface;
 class UserSession implements InterceptorInterface
 {
 
+    /**
+     * @throws JSONException
+     */
     #[NoReturn] public function handle(int $type): void
     {
         if ($type == Interceptor::TYPE_API) {
             list($p1, $p2) = [(array)parse_url((string)$_SERVER['HTTP_REFERER']), parse_url(Client::getUrl())];
             if ($p1['host'] != $p2['host']) {
-                $this->kick("访问来源不明确，已被阻断..", $type);
+                throw new JSONException("当前页面会话失效，请刷新网页..");
             }
         }
 
