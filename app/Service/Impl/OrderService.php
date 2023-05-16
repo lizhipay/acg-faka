@@ -708,7 +708,7 @@ class OrderService implements Order
                 if ($order->amount > $calcAmount) {
                     $rebate = $order->amount - $calcAmount; //差价
                     $order->premium = $rebate;
-                    $a2 = $rebate - $commodity->draft_premium - $order->pay_cost;
+                    $a2 = $rebate - ($order->card_id ? $commodity->draft_premium : 0) - $order->pay_cost;
                     if ($rebate >= 0.01 && $a2 > 0) {
                         Bill::create($promote_1, $a2, Bill::TYPE_ADD, "分站返佣", 1);
                         $order->rebate = $a2;
