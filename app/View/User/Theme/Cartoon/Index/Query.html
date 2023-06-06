@@ -48,7 +48,7 @@
         Pay.getQuery(keywords, res => {
             res.forEach(order => {
                 if (order.commodity && order.pay) {
-                    let status = '<span style="color: red;">未支付</span>';
+                    let status = '<span style="color: red;">未支付</span> <b style="cursor:pointer;color: blue;" class="queryBtn">刷新</b>';
                     if (order.status === 1) {
                         status = '<span style="color: green;">已支付</span>';
                     }
@@ -104,7 +104,7 @@
         });
     }
 
-    $('.queryBtn').click(function () {
+    $(document).on('click', '.queryBtn', function() {
         query(keywordsIns.val());
     });
 
