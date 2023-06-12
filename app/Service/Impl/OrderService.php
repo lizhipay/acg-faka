@@ -222,6 +222,7 @@ class OrderService implements Order
         $from = (int)$map['from'];//推广人ID
         $owner = $user == null ? 0 : $user->id;
         $race = (string)$map['race']; //2022/01/09 新增，商品种类功能
+        $requestNo = (string)$map['request_no'];
         #CFG end
 
         if ($commodityId == 0) {
@@ -384,11 +385,18 @@ class OrderService implements Order
         }
 
         DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
-        return Db::transaction(function () use ($user, $userGroup, $num, $contact, $device, $amount, $owner, $commodity, $pay, $cardId, $password, $coupon, $from, $widget, $race, $shared, $callbackDomain, $clientDomain, $factoryPrice) {
+        return Db::transaction(function () use ($requestNo, $user, $userGroup, $num, $contact, $device, $amount, $owner, $commodity, $pay, $cardId, $password, $coupon, $from, $widget, $race, $shared, $callbackDomain, $clientDomain, $factoryPrice) {
             //生成联系方式
             if ($user) {
+                //检测订单频繁
+                //
                 $contact = "-";
             }
+
+            if ($requestNo && \App\Model\Order::query()->where("request_no", $requestNo)->first()) {
+                throw new JSONException("The request ID already exists");
+            }
+
 
             $date = Date::current();
             $order = new  \App\Model\Order();
@@ -407,6 +415,12 @@ class OrderService implements Order
             $order->card_num = $num;
             $order->user_id = (int)$commodity->owner;
             $order->rent = $factoryPrice * $num; //成本价
+
+            if ($requestNo) {
+                $order->request_no = $requestNo;
+            }
+
+
             if ($race) {
                 $order->race = $race;
             }
@@ -667,7 +681,7 @@ class OrderService implements Order
 
         if ($shared) {
             //拉取远程平台的卡密发货
-            $order->secret = $this->shared->trade($shared, $commodity->shared_code, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, (string)$order->password, (string)$order->race, $order->widget);
+            $order->secret = $this->shared->trade($shared, $commodity->shared_code, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, (string)$order->password, (string)$order->race, $order->widget, $order->trade_no);
             $order->delivery_status = 1;
         } else {
             //自动发货

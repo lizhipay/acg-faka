@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property float $rent
  * @property float $premium
  * @property string $race
+ * @property string $request_no
  */
 class Order extends Model
 {
