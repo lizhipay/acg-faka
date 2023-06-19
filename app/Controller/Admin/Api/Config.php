@@ -173,12 +173,13 @@ class Config extends Manage
         try {
             $config = json_decode(\App\Model\Config::get("email_config"), true);
             $shopName = CFG::get("shop_name");
+            $secure = (int)$config['secure'] == 0 ? 'ssl' : 'tls';
             $mail = $this->mailer;
             $mail->CharSet = 'UTF-8';
             $mail->IsSMTP();
             $mail->SMTPDebug = 0;
             $mail->SMTPAuth = true;
-            $mail->SMTPSecure = 'ssl';
+            $mail->SMTPSecure = $secure;  //tls/ssl
             $mail->Host = $config['smtp'];
             $mail->Port = $config['port'];
             $mail->Username = $config['username'];
