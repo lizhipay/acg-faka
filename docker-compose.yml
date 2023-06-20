@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   acg-shop:
-    image: acg-shop
+    image: varitia/acg-shop:latest
     ports:
       - "80:80"
     depends_on:
