@@ -1,0 +1,26 @@
+version: '3.7'
+
+services:
+  acg-shop:
+    image: acg-shop
+    ports:
+      - "80:80"
+    depends_on:
+      - mysql
+    volumes:
+      - ./data:/var/www/html
+    restart: always
+    links:
+      - mysql
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=admin  # 替换你的 MySQL root 密码
+      - MYSQL_DATABASE=acgfaka  # 可选，替换你的默认数据库名
+      - MYSQL_USER=acgfaka  # 可选，替换你的 MySQL 用户名
+      - MYSQL_PASSWORD=admin  # 可选，替换你的 MySQL 用户密码
+    volumes:
+      - ./mysql:/var/lib/mysql  # MySQL 数据的持久化
+    restart: always
