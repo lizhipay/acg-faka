@@ -49,7 +49,7 @@ class Config extends Model
 
         $cfg = Config::query()->where("key", $key)->first();
         if (!$cfg) {
-            throw new JSONException("没有找到该配置选项");
+            return "";
         }
 
         //存储

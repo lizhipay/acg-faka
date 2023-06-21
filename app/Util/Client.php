@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Util;
 
+use App\Model\Config;
 use JetBrains\PhpStorm\NoReturn;
 use Kernel\Util\View;
 
@@ -18,11 +19,14 @@ class Client
      */
     public static function getAddress(): string
     {
-        if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $arr = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-            return (string)$arr[0];
+        $cdn = Config::get("cdn");
+        if ($cdn == 1) {
+            if (isset($_SERVER['HTTP_X_REAL_IP'])) {
+                return $_SERVER['HTTP_X_REAL_IP'];
+            } elseif (isset($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+                return $_SERVER['HTTP_CF_CONNECTING_IP'];
+            }
         }
-
         return (string)$_SERVER['REMOTE_ADDR'];
     }
 
@@ -31,12 +35,7 @@ class Client
      */
     public static function getUserAgent(): string
     {
-
-        if (preg_match("/Chrome/i", (string)$_SERVER['HTTP_USER_AGENT'])) {
-            return "Chrome";
-        }
-
-        return "None";
+        return (string)$_SERVER['HTTP_USER_AGENT'];
     }
 
     /**

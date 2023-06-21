@@ -7,6 +7,7 @@ namespace App\Interceptor;
 use App\Consts\User;
 use App\Util\Client;
 use App\Util\Context;
+use App\Util\Log;
 use JetBrains\PhpStorm\NoReturn;
 use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\InterceptorInterface;
@@ -36,6 +37,7 @@ class UserSession implements InterceptorInterface
         }
 
         $session = $_SESSION[User::SESSION];
+        $address = Client::getAddress();
 
         if (empty($session)) {
             $this->kick("登录会话过期，请重新登录..", $type);
@@ -65,6 +67,12 @@ class UserSession implements InterceptorInterface
         }
         //保存会话
         Context::set(User::SESSION, $user);
+
+        //写访问日志，v1.1.0-增加
+        $method = $_SERVER['REQUEST_METHOD'];
+        $url = Client::getUrl() . $_SERVER['REQUEST_URI'];
+        $post = json_encode($_POST, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_UNICODE);
+        Log::to($user->password, "【{$address}】【{$method}】->{$url} POST数据：" . $post, $user->username, "user");
     }
 
     /**
