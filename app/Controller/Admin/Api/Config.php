@@ -37,8 +37,8 @@ class Config extends Manage
      */
     public function setting(): array
     {
-        $keys = ["cdn", "closed_message", "background_mobile_url", "closed", "username_len", "user_theme", "user_mobile_theme", "background_url", "shop_name", "title", "description", "keywords", "registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "notice", "trade_verification"]; //全部字段
-        $inits = ["cdn", "closed", "registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "trade_verification"]; //需要初始化的字段
+        $keys = ["closed_message", "background_mobile_url", "closed", "username_len", "user_theme", "user_mobile_theme", "background_url", "shop_name", "title", "description", "keywords", "registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "notice", "trade_verification"]; //全部字段
+        $inits = ["closed", "registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "trade_verification"]; //需要初始化的字段
 
         $file = $_POST['logo'];
         if ($file != '/favicon.ico') {

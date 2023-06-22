@@ -19,12 +19,14 @@ class Client
      */
     public static function getAddress(): string
     {
-        $cdn = Config::get("cdn");
-        if ($cdn == 1) {
-            if (isset($_SERVER['HTTP_X_REAL_IP'])) {
-                return $_SERVER['HTTP_X_REAL_IP'];
-            } elseif (isset($_SERVER['HTTP_CF_CONNECTING_IP'])) {
-                return $_SERVER['HTTP_CF_CONNECTING_IP'];
+        if (isset($_SERVER['HTTP_X_REAL_IP'])) {
+            return $_SERVER['HTTP_X_REAL_IP'];
+        } elseif (isset($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+            return $_SERVER['HTTP_CF_CONNECTING_IP'];
+        } elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $address = explode(",", $_SERVER['HTTP_X_FORWARDED_FOR']);
+            if (count($address) > 0) {
+                return trim(end($address));
             }
         }
         return (string)$_SERVER['REMOTE_ADDR'];
