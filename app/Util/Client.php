@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Util;
 
-use App\Model\Config;
 use JetBrains\PhpStorm\NoReturn;
 use Kernel\Util\View;
 
@@ -13,23 +12,92 @@ use Kernel\Util\View;
  */
 class Client
 {
+    /**
+     * @var int|null
+     */
+    private static ?int $mode = null;
+
+    /**
+     * @param int $mode
+     * @return void
+     */
+    public static function setClientMode(int $mode): void
+    {
+        file_put_contents(BASE_PATH . "/runtime/mode", (string)$mode);
+    }
+
+    /**
+     * @return bool
+     */
+    public static function haveMode(): bool
+    {
+        return file_exists(BASE_PATH . "/runtime/mode");
+    }
+
+    /**
+     * @return int
+     */
+    public static function getClientMode(): int
+    {
+        if (self::$mode !== null) {
+            return self::$mode;
+        }
+
+        $path = BASE_PATH . "/runtime/mode";
+        if (!file_exists($path)) {
+            return 0;
+        }
+        $mode = (int)file_get_contents($path);
+        if ($mode < 0 || $mode > 8) {
+            return 0;
+        }
+
+        self::$mode = $mode;
+        return $mode;
+    }
+
+    /**
+     * @param int $type
+     * @return string|null
+     */
+    public static function getIp(int $type): ?string
+    {
+
+        $headers = [
+            'REMOTE_ADDR',
+            'HTTP_X_REAL_IP',
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_CLIENT_IP',
+            'HTTP_X_FORWARDED',
+            'HTTP_X_CLUSTER_CLIENT_IP',
+            'HTTP_FORWARDED_FOR',
+            'HTTP_FORWARDED',
+            'HTTP_CF_CONNECTING_IP'
+        ];
+
+        if (!isset($headers[$type])) {
+            return null;
+        }
+
+        $header = $headers[$type];
+        if (isset($_SERVER[$header])) {
+            //可能有多个IP地址，取第一个
+            $ips = explode(',', $_SERVER[$header]);
+            if (count($ips) > 0) {
+                return trim($ips[0]);
+            }
+        }
+
+        return null;
+    }
+
     /*
      * 获取客户端IP地址
      * @return string
      */
     public static function getAddress(): string
     {
-        if (isset($_SERVER['HTTP_X_REAL_IP'])) {
-            return $_SERVER['HTTP_X_REAL_IP'];
-        } elseif (isset($_SERVER['HTTP_CF_CONNECTING_IP'])) {
-            return $_SERVER['HTTP_CF_CONNECTING_IP'];
-        } elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $address = explode(",", $_SERVER['HTTP_X_FORWARDED_FOR']);
-            if (count($address) > 0) {
-                return trim(end($address));
-            }
-        }
-        return (string)$_SERVER['REMOTE_ADDR'];
+        return (string)self::getIp(self::getClientMode());
     }
 
     /**

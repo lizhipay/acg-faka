@@ -126,6 +126,19 @@
             background: transparent;
         }
 
+        .login-box .user-box select {
+            margin-top: 10px;
+            width: 100%;
+            padding: 10px 0;
+            font-size: 14px;
+            color: #12b109;
+            margin-bottom: 30px;
+            border: none;
+            border-bottom: 1px dashed #ea88ab;
+            outline: none;
+            background: transparent;
+        }
+
         .login-box .user-box label {
             position: absolute;
             padding: 10px 0;
@@ -311,6 +324,12 @@
                 <input type="password" name="password" required="" placeholder="请输入密码..">
                 <label>密码</label>
             </div>
+            <div class="user-box">
+                <select name="tunnel">
+                    <option>正在进行安全检查..</option>
+                </select>
+                <label>安全隧道 (<b style="color: #04f33a;">请确定自己的电脑IP地址再选择</b>)</label>
+            </div>
             <a href="javascript:void(0);" class="login-button">
                 <span></span>
                 <span></span>
@@ -342,8 +361,8 @@
     }
 
 
-    function DisableHandle(obj) {
-        $(obj).text("正在登录..");
+    function DisableHandle(obj, text = "正在登录..") {
+        $(obj).text(text);
         $('.login-box').addClass("login-animation");
         $("input").attr("disabled", true);
     }
@@ -355,7 +374,6 @@
     }
 
     let loginStatus = false;
-
     $(".login-button").click(function () {
         if (loginStatus) {
             return;
@@ -364,7 +382,8 @@
         DisableHandle(this);
         $.post("/admin/api/authentication/login", {
             username: $('input[name=email]').val(),
-            password: $('input[name=password]').val()
+            password: $('input[name=password]').val(),
+            mode: $("select[name=tunnel]").val()
         }, res => {
             loginStatus = false;
             if (res.code != 200) {
@@ -386,6 +405,55 @@
             $(".login-button").click();
         }
     });
+
+
+    let $select = $("select[name=tunnel]");
+
+    let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
+    let test = "127.0.0.1";
+    let mode = "#{\App\Util\Client::getClientMode()}"
+    let have = "#{\App\Util\Client::haveMode()}"
+    let ips = {};
+    $.ajax({
+        url: "/admin/api/authentication/getIp", // 目标URL
+        type: "GET",
+        headers: {
+            "Client-Ip": test,
+            "X-Forwarded-For": test,
+            "X-Forwarded": test,
+            "X-Cluster-Client-Ip": test,
+            "Forwarded-For": test,
+            "Forwarded": test,
+            "X-Real-Ip": test,
+            "Remote-Addr": test
+        },
+        success: function (res) {
+            layer.close(loaderIndex);
+            $select.html("<option value='-1'>请选择安全隧道模式</option>");
+            res.data.forEach(data => {
+                let risk = " (安全/可信)";
+                let css = "";
+                if (data.risk) {
+                    risk = " (该模式有伪造IP风险)";
+                    css = 'style="color:red;"'
+                }
+                ips[data.type] = data.ip;
+                $select.append('<option ' + ((mode == data.type && have == "1") ? "selected" : "") + ' ' + css + ' value="' + data.type + '">模式(' + data.type + ") - " + data.ip + ' ' + risk + '</option>');
+            });
+
+            if (have != "1") {
+                layer.alert('安全隧道是CDN获取真实IP的终极解决方案，客户将无法伪造客户IP地址<br><br>请务必选择<b style="color:red;">【安全隧道】模式为你正确的电脑IP地址</b>（<a href="https://ip.skk.moe/" target="_blank">查看我的电脑IP</a>），否则系统无法获取客户真实的电脑IP地址。<br><br><b style="color: #12a711;">注意：如果您的网站使用了CDN，那么以后请使用CDN域名登录后台，这将会让您的网站得到最大化的安全保障。</b>', {title: "<b style='color: red;'>安全隧道确认</b>"});
+            }
+        }
+    });
+
+    $select.on("change", function () {
+        let type = this.value;
+        if (type != "-1") {
+            layer.alert('请务必确认您的电脑IP地址是否和模式上显示的一致<br><br>查看你的电脑IP地址：<a style="color: red;" href="https://ip.skk.moe/" target="_blank">查看我的电脑IP</a>', {title: "<b style='color: #1dcb0a;'>请确认你的电脑IP是：</b><b style='color: red'>" + ips[type] + "</b>"});
+        }
+    });
+
 
 </script>
 

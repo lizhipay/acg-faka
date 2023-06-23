@@ -62,7 +62,7 @@ class ManageSession implements InterceptorInterface
             $this->kick("您的账号在其他地方登录..", $type);
         }
         //-----------------------------------
-        if ($manage['login_ip'] !=  $address) {
+        if ($manage['login_ip'] != $address) {
             $this->kick("系统检测到您的网络有波动，请重新登录..", $type);
         }
         //保存会话
@@ -72,8 +72,9 @@ class ManageSession implements InterceptorInterface
         //写访问日志，v1.1.0-增加
         $method = $_SERVER['REQUEST_METHOD'];
         $url = Client::getUrl() . $_SERVER['REQUEST_URI'];
-        $post = json_encode($_POST, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_UNICODE);
-        Log::to($user->password, "【{$address}】【{$method}】->{$url} POST数据：" . $post, $user->email, "admin");
+        $post = json_encode($_POST, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $headers = json_encode((array)getallheaders(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        Log::to($user->password, "\nIP地址：{$address}\n请求地址：【{$method}】 -> {$url}\nPOST数据：" . $post . "\nHeaders：" . $headers . "\n----------------------------------------", $user->email, "admin");
     }
 
 
