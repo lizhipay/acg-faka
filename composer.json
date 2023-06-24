@@ -26,7 +26,7 @@
     "source": "https://github.com/lizhipay/acg-faka"
   },
   "require": {
-    "php": ">=8.0.0",
+    "php": ">=8.0.2",
     "smarty/smarty": "~3.1",
     "illuminate/database": "^7.30.6",
     "symfony/var-dumper": "^5.1",
