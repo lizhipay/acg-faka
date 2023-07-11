@@ -93,13 +93,7 @@
                         field: 'create_ip', title: 'IP'
                     }
                     , {
-                        field: 'ua', title: '浏览器', formatter: function (val, item) {
-                            if (item.ua == "Chrome") {
-                                return '<span class="badge badge-light-success">尊贵的Chrome浏览器</span>';
-                            }
-
-                            return '<span class="badge badge-light">不知名的杂牌浏览器</span>';
-                        }
+                        field: 'ua', title: '浏览器'
                     }
                     , {
                         field: 'risk', title: '评估', formatter: function (val, item) {

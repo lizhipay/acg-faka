@@ -16,7 +16,8 @@ interface ManageSSO
      * 登录
      * @param string $username
      * @param string $password
+     * @param int $mode
      * @return array
      */
-    public function login(string $username, string $password): array;
+    public function login(string $username, string $password, int $mode): array;
 }

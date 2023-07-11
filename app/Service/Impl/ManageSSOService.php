@@ -22,11 +22,16 @@ class ManageSSOService implements ManageSSO
     /**
      * @param string $username
      * @param string $password
+     * @param int $mode
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
-    public function login(string $username, string $password): array
+    public function login(string $username, string $password, int $mode): array
     {
+        if ($mode < 0 || $mode > 8) {
+            throw new JSONException("请选择正确的安全隧道模式");
+        }
+
         $manage = Manage::query()->where("email", $username)->first();
         if (!$manage) {
             throw new JSONException("该邮箱不存在");
@@ -47,12 +52,15 @@ class ManageSSOService implements ManageSSO
             throw new JSONException("您是夜班哦，请注意休息。");
         }
 
+        Client::setClientMode($mode);
+
         $manage->last_login_time = $manage->login_time;
         $manage->last_login_ip = $manage->login_ip;
         $manage->login_time = Date::current();
         $manage->login_ip = Client::getAddress();
         $manage->save();
 
+        session_regenerate_id(true); //重置session名称
         ManageLog::log($manage, "登录了后台");
         $_SESSION["MANAGE_USER"] = $manage->toArray();
         return ["username" => $manage->email, "avatar" => $manage->avatar];

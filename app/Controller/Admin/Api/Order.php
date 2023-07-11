@@ -40,10 +40,10 @@ class Order extends Manage
                 $relation->select(["id", "code"]);
             },
             'owner' => function (Relation $relation) {
-                $relation->select(["id", "username", "avatar"]);
+                $relation->select(["id", "username", "avatar", "recharge"]);
             },
             'user' => function (Relation $relation) {
-                $relation->select(["id", "username", "avatar"]);
+                $relation->select(["id", "username", "avatar", "recharge"]);
             },
             'commodity' => function (Relation $relation) {
                 $relation->select(["id", "name", "delivery_way", "contact_type"]);
@@ -52,7 +52,7 @@ class Order extends Manage
                 $relation->select(["id", "name", "icon"]);
             },
             'promote' => function (Relation $relation) {
-                $relation->select(["id", "username", "avatar"]);
+                $relation->select(["id", "username", "avatar", "recharge"]);
             }
         ]);
 
