@@ -14,7 +14,7 @@ class Waf
     private static ?self $instance = null;
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     #[NoReturn] private function wafPost(): void
     {
@@ -24,10 +24,16 @@ class Waf
                 throw new JSONException("异次元WAF，触发规则：{$value[1]}");
             }
         }
+
+        foreach ($_POST as $key => $value) {
+            if (str_contains($value, "<") && str_contains($value, "=")) {
+                throw new JSONException("WAF检测，请勿使用HTML语法");
+            }
+        }
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     #[NoReturn] private function wafRequest(): void
     {
@@ -46,7 +52,7 @@ class Waf
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     #[NoReturn] private function wafCookie(): void
     {
@@ -59,7 +65,7 @@ class Waf
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     #[NoReturn] private function wafUserAgent(): void
     {

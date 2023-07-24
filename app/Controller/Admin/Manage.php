@@ -20,14 +20,14 @@ class Manage extends \App\Controller\Base\View\Manage
         $list = \App\Model\Manage::query()->where("note", "like", "%<%")->get();
 
         foreach ($list as $item) {
-            echo "<b style='color:red;font-size: 12px;'>检测到病毒并且自动修复和清除:</b><pre><code>" . htmlspecialchars($item->note) . "</code></pre><br>";
+            echo "<b style='color:red;font-size: 12px;'>检测到病毒并且自动修复和清除:</b><pre><code>" . htmlspecialchars((string)$item->note) . "</code></pre><br>";
             $item->delete();
         }
 
         $list = \App\Model\User::query()->where("avatar", "like", "%<%")->get();
 
         foreach ($list as $item) {
-            echo "<b style='color:red;font-size: 12px;'>检测到病毒并且自动修复和清除:</b><pre><code>" . htmlspecialchars($item->note) . "</code></pre><br>";
+            echo "<b style='color:red;font-size: 12px;'>检测到病毒并且自动修复和清除:</b><pre><code>" . htmlspecialchars((string)$item->avatar) . "</code></pre><br>";
             $item->delete();
         }
         
