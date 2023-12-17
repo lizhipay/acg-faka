@@ -23,19 +23,9 @@ class Index extends User
         if ((int)Config::get("closed") == 1) {
             return $this->theme("店铺正在维护", "CLOSED", "Index/Closed.html");
         }
-        $from = (int)$_GET['from'];
-
-        $map = [];
-        parse_str(base64_decode(urldecode((string)$_GET['code'])), $map);
-
-        if ($map['from']) {
-            $from = $map['from'];
-        }
-
-        $map['a'] = $map['a'] ? $map['a'] : Config::get("default_category");
-
-
-        return $this->theme("首页", "INDEX", "Index/Index.html", ['user' => $this->getUser(), 'from' => $from, "categoryId" => $map['a'], "commodityId" => $map['b']]);
+        $from = (int)$_GET['from']; 
+        $_GET['cid'] = $_GET['cid'] ?: Config::get("default_category");
+        return $this->theme("首页", "INDEX", "Index/Index.html", ['user' => $this->getUser(), 'from' => $from, "categoryId" => $_GET['cid'], "commodityId" => $_GET['mid']]);
     }
 
     /**

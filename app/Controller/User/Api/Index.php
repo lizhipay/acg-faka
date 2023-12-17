@@ -329,7 +329,7 @@ class Index extends User
             $array['cover'] = "/favicon.ico";
         }
 
-        $array['share_url'] = Client::getUrl() . "?code=" . urlencode(base64_encode(($this->getUser() ? "from=" . $this->getUser()->id . "&" : "") . "a={$array['category_id']}&b={$array['id']}"));
+        $array['share_url'] = Client::getUrl() . '?' . ($this->getUser() ? "from=" . $this->getUser()->id . "&" : "") . "cid={$array['category_id']}&mid={$array['id']}";
         $array['login'] = (bool)$this->getUser();
 
         //获取网站是否需要验证码
