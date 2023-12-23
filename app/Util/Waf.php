@@ -26,7 +26,7 @@ class Waf
         }
 
         foreach ($_POST as $key => $value) {
-            if (str_contains((string)$value, "=")) {
+            if ((str_contains((string)$value, "=") && str_contains((string)$value, "\"")) || str_contains((string)$value, "=") && str_contains((string)$value, "'")) {
                 throw new JSONException("WAF检测，请勿使用HTML语法");
             }
         }
