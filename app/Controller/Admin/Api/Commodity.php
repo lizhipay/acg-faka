@@ -84,7 +84,7 @@ class Commodity extends Manage
                     $url = "http://" . $val['owner']['business']['topdomain'];
                 }
             }
-            $data['data'][$key]['share_url'] = $url . "?code=" . urlencode(base64_encode("a={$val['category_id']}&b={$val['id']}"));
+            $data['data'][$key]['share_url'] = $url . "?cid={$val['category_id']}&mid={$val['id']}";
         }
 
         $json = $this->json(200, null, $data['data']);

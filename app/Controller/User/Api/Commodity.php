@@ -53,7 +53,7 @@ class Commodity extends User
         $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
 
         foreach ($data['data'] as $key => $val) {
-            $data['data'][$key]['share_url'] = Client::getUrl() . "?code=" . urlencode(base64_encode("from=" . $this->getUser()->id . "&" . "a={$val['category_id']}&b={$val['id']}"));
+            $data['data'][$key]['share_url'] = Client::getUrl() .  "?cid={$val['category_id']}&mid={$val['id']}";
         }
 
         $json = $this->json(200, null, $data['data']);
