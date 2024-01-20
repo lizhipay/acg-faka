@@ -119,7 +119,8 @@ interface Hook
     //挂载点 app\View\User\* -> INDEX -> 底部
     const USER_VIEW_INDEX_FOOTER = 0x10004;
 
-
+    //前台获取的商品分类列表, 传入数组 array $data 指针
+    const USER_API_INDEX_CATEGORY_LIST = 0x49;
     //前台获取商品列表，传入数组 array $data 指针
     const USER_API_INDEX_COMMODITY_LIST = 0x50;
     //前台获取商品详细信息 传入商品的数组 array $data 指针
