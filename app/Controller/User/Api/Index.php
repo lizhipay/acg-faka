@@ -18,6 +18,7 @@ use App\Service\Query;
 use App\Service\Shared;
 use App\Service\Shop;
 use App\Util\Client;
+use App\Util\FileCache;
 use App\Util\Ini;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -50,7 +51,6 @@ class Index extends User
     {
         $category = $this->shop->getCategory($this->getUserGroup());
         hook(\App\Consts\Hook::USER_API_INDEX_CATEGORY_LIST, $category);
-
         return $this->json(200, "success", $category);
     }
 
@@ -83,6 +83,8 @@ class Index extends User
         if ($keywords != "") {
             $commodity = $commodity->where('name', 'like', '%' . $keywords . '%');
         }
+
+        FileCache::clearCache('shop');
 
         $bus = \App\Model\Business::get(Client::getDomain());
         $userCommodityMap = []; //自定义名称的MAP
@@ -133,7 +135,7 @@ class Index extends User
                 'status', 'delivery_way', 'price',
                 'user_price', 'inventory_hidden',
                 'shared_id', 'shared_code',
-                'level_disable', 'level_price', 'hide', 'owner', "recommend", 'category_id'
+                'level_disable', 'level_price', 'hide', 'owner', "recommend", 'category_id', 'inventory_sync'
             ]);
             $total = count($commodity);
             $data = $commodity->toArray();
@@ -143,7 +145,7 @@ class Index extends User
                 'status', 'delivery_way', 'price',
                 'user_price', 'inventory_hidden',
                 'shared_id', 'shared_code',
-                'level_disable', 'level_price', 'hide', 'owner', "recommend", 'category_id'
+                'level_disable', 'level_price', 'hide', 'owner', "recommend", 'category_id', 'inventory_sync'
             ], "", $page);
             $total = $commodity->total();
             $data = $commodity->toArray()['data'];
@@ -169,7 +171,23 @@ class Index extends User
                 continue;
             }
 
-            $data[$key]['card_count'] = Card::query()->where("status", 0)->where("commodity_id", $val['id'])->count();
+            if ($val['shared'] && (int)$val['inventory_sync'] == 1) {
+                $shopCache = FileCache::getJsonFile("shop", $val['id'] . "_shared");
+                if (!empty($shopCache)) {
+                    $inventory = $shopCache;
+                } else {
+                    $com = Commodity::query()->find($val['id']);
+                    $inventory = $this->shared->inventory($com->shared, $com->shared_code);
+                    FileCache::setJsonFile("shop", $val['id'] . "_shared", $inventory, 300);
+                }
+                $data[$key]['card_count'] = $inventory['count'];
+                $data[$key]['delivery_way'] = $inventory['delivery_way'];
+                unset($data[$key]['shared']);
+                unset($data[$key]['shared_code']);
+            } else {
+                $data[$key]['card_count'] = Card::query()->where("status", 0)->where("commodity_id", $val['id'])->count();
+            }
+
             //如果登录后，则自动计算登录后的价格
             if ($user) {
                 $tradeAmount = $this->order->calcAmount(owner: $user->id, commodity: $commodity[$key], group: $userGroup, num: 1, disableSubstation: true);

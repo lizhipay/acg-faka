@@ -400,7 +400,12 @@
                         visible: cao.getColumnVisible('user', 'coin'),
                         title: '硬币',
                         formatter: function (val, item) {
-                            return '<span class="badge badge-light-success"><i class="fas fa-yen-sign text-success fs-10"></i> ' + item.coin + '</span>'
+                            return '<span class="badge badge-light-success coin" style="cursor: pointer;" ><i class="fas fa-yen-sign text-success fs-10"></i> ' + item.coin + '</span>'
+                        },
+                        events: {
+                            'click .coin': function (event, value, row, index) {
+                                coin(row);
+                            }
                         }
                     }
                     , {
@@ -649,6 +654,23 @@
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});
                 }, values, "460px", false, "充值/扣费");
+            }
+
+            let coin = (values = {}) => {
+                cao.popup('/admin/api/user/coin', [
+                    {
+                        title: "类型", name: "action", type: "radio", placeholder: "请选择", default: 1, dict: [
+                            {id: 1, name: "<b style='color: green;'>充值</b>"},
+                            {id: 0, name: "<b style='color: red;'>扣费</b>"},
+                        ]
+                    },
+                    {title: "金额", name: "amount", type: "input", placeholder: "请输入硬币数量"},
+                    {title: "原因", name: "log", type: "input", placeholder: "请输入原因"},
+                    {title: "元气累计", name: "total", type: "switch", text: "是", default: 1},
+
+                ], res => {
+                    table.bootstrapTable('refresh', {silent: true});
+                }, values, "460px", false, "硬币[充值/扣费]");
             }
 
             $('.btn-app-create').click(function () {

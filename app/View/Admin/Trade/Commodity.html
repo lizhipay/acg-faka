@@ -272,6 +272,10 @@
                 <td>[shared_sync]</td>
             </tr>
             <tr>
+                <td>对接-数量同步</td>
+                <td>[inventory_sync]</td>
+            </tr>
+            <tr>
                 <td>商品秒杀</td>
                 <td>[seckill_status]</td>
             </tr>
@@ -438,6 +442,16 @@
                     }
                     return '<span class="badge badge-light-danger">已关闭</span>';
                 },
+                inventorySync(item) {
+                    if (!item.shared) {
+                        return '<span class="badge badge-light">-</span>';
+                    }
+
+                    if (item.inventory_sync == 1) {
+                        return '<span class="badge badge-light-success">已开启</span>';
+                    }
+                    return '<span class="badge badge-light-danger">已关闭</span>';
+                },
                 seckillStatus(item) {
                     if (item.seckill_status == 1) {
                         return '<span class="badge badge-light-success">已开启</span>';
@@ -588,6 +602,7 @@
                         .replace('[coupon]', action.coupon(item))
                         .replace('[shared_id]', action.shared(item))
                         .replace('[shared_sync]', action.sharedSync(item))
+                        .replace('[inventory_sync]', action.inventorySync(item))
                         .replace('[seckill_status]', action.seckillStatus(item))
                         .replace('[seckill_start_time]', action.seckillStartTime(item))
                         .replace('[seckill_end_time]', action.seckillEndTime(item))
@@ -835,6 +850,7 @@
                 showShared(unqueId) {
                     //共享平台
                     cao.popupElement("shared_sync", "input", unqueId).parent().show();
+                    cao.popupElement("inventory_sync", "input", unqueId).parent().show();
                     cao.popupElement("shared_code", "input", unqueId).parent().parent().show();
                     cao.popupElement("shared_premium", "input", unqueId).parent().parent().show();
                     cao.popupElement("shared_premium_type", "input", unqueId).parent().parent().show();
@@ -846,6 +862,7 @@
                 },
                 hideShared(unqueId) {
                     cao.popupElement("shared_sync", "input", unqueId).parent().hide();
+                    cao.popupElement("inventory_sync", "input", unqueId).parent().hide();
                     cao.popupElement("shared_code", "input", unqueId).parent().parent().hide();
                     cao.popupElement("shared_premium", "input", unqueId).parent().parent().hide();
                     cao.popupElement("shared_premium_type", "input", unqueId).parent().parent().hide();
@@ -953,6 +970,13 @@
                         type: "switch",
                         text: "开启",
                         tips: "开启后，自动同步共享平台的价格，防止对方商品价格变动时，导致盈亏"
+                    },
+                    {
+                        title: "同步数量",
+                        name: "inventory_sync",
+                        type: "switch",
+                        text: "开启",
+                        tips: "开启后，自动同步共享平台的数量，请把控数量可能会导致网站变卡顿"
                     },
                     {
                         title: "发货方式",

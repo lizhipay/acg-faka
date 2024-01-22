@@ -137,6 +137,7 @@ class Store extends Manage
         $premium = (float)$_POST['premium']; // 加价金额
         $premiumType = (int)$_POST['premium_type']; // 加价模式
         $sharedSync = (int)$_POST['shared_sync'] == 0 ? 0 : 1; // 主从同步
+        $inventorySync = (int)$_POST['inventory_sync'] == 0 ? 0 : 1; // 数量同步
         $shelves = (int)$_POST['shelves'] == 0 ? 0 : 1; // 立即上架
 
         $shared = Shared::query()->find($storeId);
@@ -193,6 +194,7 @@ class Store extends Manage
                 $commodity->shared_premium = $premium;
                 $commodity->shared_premium_type = $premiumType;
                 $commodity->shared_sync = $sharedSync;
+                $commodity->inventory_sync = $inventorySync;
                 $commodity->seckill_status = $item['seckill_status'];
                 if ($commodity->seckill_status == 1) {
                     $commodity->seckill_start_time = $item['seckill_start_time'];
@@ -218,7 +220,6 @@ class Store extends Manage
                 $error++;
             }
         }
-
 
         ManageLog::log($this->getManage(), "[店铺共享]进行了克隆商品({$shared->name})，总数量：{$count}，成功：{$success}，失败：{$error}");
         return $this->json(200, "拉取结束，总数量：{$count}，成功：{$success}，失败：{$error}");

@@ -136,10 +136,34 @@ class User extends Manage
         }
 
         Bill::create($user, (float)$map['amount'], (int)$map['action'], $map['log'], 0, (bool)$map['total']);
-        ManageLog::log($this->getManage(), "为会员($user->username)进行了余额/硬币变动操作，详情查看账变明细");
+        ManageLog::log($this->getManage(), "为会员($user->username)进行了余额变动操作，详情查看账变明细");
         return $this->json(200, "操作成功");
     }
 
+    /**
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function coin(): array
+    {
+        $map = $_POST;
+        $user = \App\Model\User::query()->find($map['id']);
+
+        if ((float)$map['amount'] == 0) {
+            throw new JSONException("操作金额不能为0");
+        }
+
+        if (isset($map['log']) && mb_strlen($map['log']) < 2) {
+            throw new JSONException("原因最低不能少于2个字");
+        }
+        if (!$user) {
+            throw new JSONException("用户不存在");
+        }
+
+        //创建扣款订单
+        Bill::create($user, (float)$map['amount'], (int)$map['action'], $map['log'], 1, (bool)$map['total']);
+        ManageLog::log($this->getManage(), "为会员($user->username)进行了硬币变动操作，详情查看账变明细");
+        return $this->json(200, "操作成功");
+    }
 
     /**
      * @return array

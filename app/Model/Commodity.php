@@ -48,6 +48,7 @@ use Kernel\Exception\JSONException;
  * @property int $minimum
  * @property int $maximum
  * @property int $shared_sync
+ * @property int $inventory_sync
  * @property int $hide
  * @property string $config
  */

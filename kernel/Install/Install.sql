@@ -166,6 +166,7 @@ CREATE TABLE `__PREFIX__commodity`  (
   `shared_sync` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '同步平台价格：0=关，1=开',
   `config` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '配置文件',
   `hide` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '隐藏：1=隐藏，0=不隐藏',
+  `inventory_sync` tinyint(3) NOT NULL DEFAULT '0' COMMENT '同步库存数量: 0=关，1=开',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `code`(`code` ASC) USING BTREE,
   INDEX `owner`(`owner` ASC) USING BTREE,
