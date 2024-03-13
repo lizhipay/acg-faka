@@ -7,6 +7,7 @@ namespace App\Service\Impl;
 use App\Service\Shared;
 use App\Util\Str;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use Kernel\Annotation\Inject;
 use Kernel\Exception\JSONException;
 
@@ -23,8 +24,8 @@ class SharedService implements Shared
      * @param string $appKey
      * @param array $data
      * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws GuzzleException
+     * @throws JSONException
      */
     private function post(string $url, string $appId, string $appKey, array $data = []): array
     {
@@ -38,7 +39,7 @@ class SharedService implements Shared
         $contents = $response->getBody()->getContents();
         $result = json_decode($contents, true);
         if ($result['code'] != 200) {
-            throw new JSONException((string)$contents);
+            throw new JSONException("连接出错");
         }
         return (array)$result['data'];
     }
@@ -94,8 +95,8 @@ class SharedService implements Shared
      * @param int $page
      * @param string $race
      * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws GuzzleException
+     * @throws JSONException
      */
     public function draftCard(\App\Model\Shared $shared, string $sharedCode, int $limit, int $page, string $race): array
     {
@@ -113,8 +114,8 @@ class SharedService implements Shared
      * @param string $sharedCode
      * @param string $race
      * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws GuzzleException
+     * @throws JSONException
      */
     public function inventory(\App\Model\Shared $shared, string $sharedCode, string $race = ""): array
     {

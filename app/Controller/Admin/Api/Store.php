@@ -71,8 +71,8 @@ class Store extends Manage
 
         $connect = $this->shared->connect($map['domain'], $map['app_id'], $map['app_key']);
 
-        $map['name'] = $connect['shopName'];
-        $map['balance'] = $connect['balance'];
+        $map['name'] = strip_tags((string)$connect['shopName']);
+        $map['balance'] = (float)$connect['balance'];
 
         $createObjectEntity = new CreateObjectEntity();
         $createObjectEntity->setModel(Shared::class);
@@ -89,7 +89,7 @@ class Store extends Manage
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function connect(): array
     {
@@ -100,7 +100,7 @@ class Store extends Manage
             throw new JSONException("未找到该店铺");
         }
         $connect = $this->shared->connect($shared->domain, $shared->app_id, $shared->app_key);
-        $shared->name = (string)$connect['shopName'];
+        $shared->name = strip_tags((string)$connect['shopName']);
         $shared->balance = (float)$connect['balance'];
         $shared->save();
         return $this->json(200, 'success');
@@ -108,7 +108,7 @@ class Store extends Manage
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function items(): array
     {
@@ -120,6 +120,17 @@ class Store extends Manage
         }
         $items = $this->shared->items($shared);
 
+        $gan = function (&$items) use (&$gan) {
+            foreach ($items as $key => $val) {
+                $items[$key]["name"] = strip_tags((string)$val['name']);
+                if (isset($val['children']) && !empty($val['children'])) {
+                    $gan($items[$key]["children"]);
+                }
+            }
+        };
+
+        $gan($items);
+
         foreach ($items as $key => $item) {
             $items[$key]['id'] = 0;
         }
@@ -127,7 +138,7 @@ class Store extends Manage
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function addItem(): array
     {
