@@ -23,7 +23,7 @@ class FileCache
         }
 
         $fileContents = json_decode(file_get_contents($filePath), true);
-        if ($fileContents['timeout'] < time()) {
+        if ($fileContents['timeout'] != null && $fileContents['timeout'] < time()) {
             unlink($filePath);
             return [];
         }
