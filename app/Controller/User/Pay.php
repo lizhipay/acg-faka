@@ -8,9 +8,9 @@ use App\Controller\Base\View\User;
 use App\Interceptor\Waf;
 use App\Model\Order;
 use App\Model\OrderOption;
-use Kernel\Annotation\Get;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
+use Kernel\Exception\ViewException;
 use Kernel\Util\View;
 
 #[Interceptor(Waf::class)]
@@ -18,7 +18,9 @@ class Pay extends User
 {
     /**
      * @return string
-     * @throws \Kernel\Exception\JSONException|\Kernel\Exception\ViewException
+     * @throws JSONException
+     * @throws ViewException
+     * @throws \SmartyException
      */
     public function order(): string
     {
@@ -42,6 +44,16 @@ class Pay extends User
             ]);
         }
 
-        return View::render($obj['handle'] . '/View/' . $obj['code'] . '.html', ['order' => $order, 'option' => $data], BASE_PATH . '/app/Pay/');
+        $html = $obj['handle'] . '/View/' . $obj['code'] . '.html';
+
+        if (preg_match("#(?:define|eval|file_get_contents|include|require_once|shell_exec|phpinfo|system|passthru|chr|char|preg_\w+|execute|echo|print|print_r|var_dump|(fp)open|alert|showmodaldialog|file_put_contents|fopen|urldecode|scandir)#", $obj['handle'])) {
+            throw new JSONException("视图出现异常");
+        }
+
+        if (!is_file($html)) {
+            throw new JSONException("视图不存在");
+        }
+
+        return View::render($html, ['order' => $order, 'option' => $data], BASE_PATH . ' / app / Pay / ');
     }
 }

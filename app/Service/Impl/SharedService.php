@@ -39,7 +39,7 @@ class SharedService implements Shared
         $contents = $response->getBody()->getContents();
         $result = json_decode($contents, true);
         if ($result['code'] != 200) {
-            throw new JSONException("连接出错");
+            throw new JSONException(strip_tags((string)$result['msg']) ?: "连接失败");
         }
         return (array)$result['data'];
     }
@@ -84,7 +84,7 @@ class SharedService implements Shared
             $post[$key] = $item['value'];
         }
 
-        $trade = $this->post($shared->domain . "/shared/commodity/trade", $shared->app_id, $shared->app_key, $post);  
+        $trade = $this->post($shared->domain . "/shared/commodity/trade", $shared->app_id, $shared->app_key, $post);
         return (string)$trade['secret'];
     }
 
