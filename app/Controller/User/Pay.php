@@ -50,10 +50,10 @@ class Pay extends User
             throw new JSONException("视图出现异常");
         }
 
-        if (!is_file($html)) {
+        if (!is_file(BASE_PATH . '/app/Pay/' . $html)) {
             throw new JSONException("视图不存在");
         }
 
-        return View::render($html, ['order' => $order, 'option' => $data], BASE_PATH . ' / app / Pay / ');
+        return View::render($html, ['order' => $order, 'option' => $data], BASE_PATH . '/app/Pay/');
     }
 }
