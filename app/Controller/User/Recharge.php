@@ -12,6 +12,7 @@ use App\Model\UserGroup;
 use App\Model\UserRecharge;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
+use Kernel\Exception\ViewException;
 use Kernel\Util\View;
 
 #[Interceptor(Waf::class, Interceptor::TYPE_VIEW)]
@@ -19,12 +20,13 @@ class Recharge extends User
 {
     /**
      * @return mixed
-     * @throws \Kernel\Exception\ViewException
+     * @throws JSONException
+     * @throws ViewException
+     * @throws \ReflectionException
      */
     #[Interceptor(UserSession::class)]
     public function index(): string
     {
-
         $rechargeWelfareConfig = explode(PHP_EOL, (string)Config::get("recharge_welfare_config"));
 
         $welfareConfig = [];
@@ -45,8 +47,10 @@ class Recharge extends User
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
-     * @throws \Kernel\Exception\ViewException
+     * @return string
+     * @throws JSONException
+     * @throws ViewException
+     * @throws \SmartyException
      */
     public function order(): string
     {
@@ -69,6 +73,12 @@ class Recharge extends User
                 "data" => $data
             ]);
         }
+        $pay = \App\Model\Pay::query()->find((int)$order->pay_id);
+
+        if ((string)$obj['handle'] != $pay->handle || (string)$obj['code'] != $pay->code) {
+            throw new JSONException("视图出现异常");
+        }
+
         return View::render($obj['handle'] . '/View/' . $obj['code'] . '.html', ['order' => $order, 'option' => $data], BASE_PATH . '/app/Pay/');
     }
 }
