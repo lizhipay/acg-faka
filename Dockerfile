@@ -1,7 +1,5 @@
-# 使用官方的 PHP 镜像作为基础镜像
 FROM php:8.0-apache
 
-# 安装必要的依赖和 PHP 扩展
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         libpng-dev \
@@ -26,16 +24,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     echo 'opcache.enable_file_override=1'; \
     } > /usr/local/etc/php/conf.d/opcache.ini
 
-# 启用 mod_rewrite 和 mod_deflate 模块
 RUN a2enmod rewrite deflate
 
-# 设置工作目录
 WORKDIR /var/www/html
 
-# 复制源码和 .htaccess 文件
 COPY . .
 
-# 安装 Composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 RUN composer install --no-dev --optimize-autoloader
 
@@ -45,15 +39,11 @@ ENV MYSQL_USER=root
 ENV MYSQL_PASSWORD=password
 ENV MYSQL_DATABASE=your_database_name
 
-# 设置 AllowOverride
 RUN sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
-# 增加权限
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html
 
-# 开放 Apache 端口
 EXPOSE 80
 
-# 启动 Apache 服务
 CMD ["apache2-foreground"]
