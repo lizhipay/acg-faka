@@ -31,6 +31,7 @@ WORKDIR /var/www/html
 COPY . .
 
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+
 RUN composer install --no-dev --optimize-autoloader
 
 # 设置环境变量
