@@ -21,6 +21,6 @@ services:
       - /home/mysql:/var/lib/mysql         # 将 MySQL 数据目录映射到主机
     restart: always
 
-  redis:                                   # 添加 Redis 服务
+  redis:
     image: redis:latest
     restart: always
