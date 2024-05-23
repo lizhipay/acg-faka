@@ -20,7 +20,5 @@ services:
     restart: always
 
   redis:                                   # 添加 Redis 服务
-    image: redis:latest                    # 使用最新版本的 Redis 镜像
-    ports:
-      - "6379:6379"                        # 映射 Redis 默认端口
+    image: redis:latest
     restart: always
