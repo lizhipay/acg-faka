@@ -8,30 +8,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         zlib1g-dev \
         libzip-dev \
         default-mysql-client \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd zip pdo_mysql opcache \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    && { \
-    echo 'zend_extension=opcache.so'; \
-    echo 'opcache.enable=1'; \
-    echo 'opcache.enable_cli=1'; \
-    echo 'opcache.memory_consumption=256'; \
-    echo 'opcache.interned_strings_buffer=16'; \
-    echo 'opcache.max_accelerated_files=8000'; \
-    echo 'opcache.revalidate_freq=2'; \
-    echo 'opcache.fast_shutdown=1'; \
-    echo 'opcache.enable_file_override=1'; \
-    } > /usr/local/etc/php/conf.d/opcache.ini
+        redis-tools \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN a2enmod rewrite deflate
+# 安装 Redis 扩展
+RUN pecl install redis \
+    && docker-php-ext-enable redis
+
+# 配置 PHP 和 Apache
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd zip pdo_mysql opcache \
+    && a2enmod rewrite deflate \
+    && sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
 WORKDIR /var/www/html
-
 COPY . .
-
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
-
 RUN composer install --no-dev --optimize-autoloader
 
 # 设置环境变量
@@ -39,8 +31,8 @@ ENV MYSQL_HOST=localhost
 ENV MYSQL_USER=root
 ENV MYSQL_PASSWORD=password
 ENV MYSQL_DATABASE=your_database_name
-
-RUN sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+ENV REDIS_HOST=redis
+ENV REDIS_PORT=6379
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html
