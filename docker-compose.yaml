@@ -17,6 +17,8 @@ services:
       MYSQL_DATABASE: acgfakadb            # 数据库名称
       MYSQL_USER: acgfakauser              # 数据库用户名称
       MYSQL_PASSWORD: acgfakapassword      # 数据库用户密码
+    volumes:
+      - /home/mysql:/var/lib/mysql         # 将 MySQL 数据目录映射到主机
     restart: always
 
   redis:                                   # 添加 Redis 服务
