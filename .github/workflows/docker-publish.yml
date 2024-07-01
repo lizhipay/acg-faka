@@ -1,9 +1,7 @@
 name: Docker Publish
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch:
 
 jobs:
   build:
