@@ -82,6 +82,17 @@ interface App
     public function purchase(int $type, int $pluginId, int $payType): array;
 
     /**
+     * @return array
+     */
+    public function levels(): array;
+
+    /**
+     * @param int $authId
+     * @return array
+     */
+    public function bindLevel(int $authId): array;
+
+    /**
      * @param string $key
      * @param int $type
      * @param int $pluginId

@@ -31,7 +31,7 @@ class AppService implements App
     /**
      * @param string $uri
      * @param array $data
-     * @param array|null $cookie
+     * @param array|null $cookies
      * @return mixed
      * @throws JSONException
      */
@@ -262,8 +262,8 @@ class AppService implements App
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws GuzzleException
+     * @throws JSONException
      */
     public function purchaseRecords(int $pluginId): array
     {
@@ -273,8 +273,8 @@ class AppService implements App
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws GuzzleException
+     * @throws JSONException
      */
     public function unbind(int $authId): array
     {
@@ -401,7 +401,7 @@ class AppService implements App
      * @param string $username
      * @param string $password
      * @param string $captcha
-     * @param string $cookie
+     * @param array $cookie
      * @return array
      * @throws JSONException
      */
@@ -437,8 +437,8 @@ class AppService implements App
     /**
      * @param array $data
      * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws GuzzleException
+     * @throws JSONException
      */
     public function developerPlugins(array $data): array
     {
@@ -449,8 +449,8 @@ class AppService implements App
     /**
      * @param array $data
      * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws GuzzleException
+     * @throws JSONException
      */
     public function developerCreatePlugin(array $data): array
     {
@@ -474,8 +474,8 @@ class AppService implements App
     /**
      * @param array $data
      * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws GuzzleException
+     * @throws JSONException
      */
     public function developerCreateKit(array $data): array
     {
@@ -484,8 +484,8 @@ class AppService implements App
 
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws GuzzleException
+     * @throws JSONException
      */
     public function developerDeletePlugin(array $data): array
     {
@@ -495,7 +495,7 @@ class AppService implements App
     /**
      * @param array $data
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function upload(array $data): array
     {
@@ -518,8 +518,8 @@ class AppService implements App
     /**
      * @param array $data
      * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws GuzzleException
+     * @throws JSONException
      */
     public function developerUpdatePlugin(array $data): array
     {
@@ -529,11 +529,33 @@ class AppService implements App
     /**
      * @param array $data
      * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Kernel\Exception\JSONException
+     * @throws GuzzleException
+     * @throws JSONException
      */
     public function developerPluginPriceSet(array $data): array
     {
         return $this->storeRequest("/developer/priceSet", $data);
+    }
+
+    /**
+     * @param int $authId
+     * @return array
+     * @throws GuzzleException
+     * @throws JSONException
+     */
+    public function bindLevel(int $authId): array
+    {
+        return $this->storeRequest("/store/bindLevel", ["auth_id" => $authId]);
+    }
+
+
+    /**
+     * @return array
+     * @throws GuzzleException
+     * @throws JSONException
+     */
+    public function levels(): array
+    {
+        return $this->storeRequest("/store/levels");
     }
 }

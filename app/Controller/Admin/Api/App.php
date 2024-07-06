@@ -392,7 +392,7 @@ class App extends Manage
     public function unbind(): array
     {
         $this->app->unbind((int)$_POST['auth_id']);
-        return $this->json(200, "解绑成功");
+        return $this->json(200, "绑定授权成功");
     }
 
     /**
@@ -407,5 +407,22 @@ class App extends Manage
         setConfig($config, $path);
         Opcache::invalidate($path);
         return $this->json(200, "线路切换成功");
+    }
+
+    /**
+     * @return array
+     */
+    public function levels(): array
+    {
+        return $this->json(200, "ok", $this->app->levels());
+    }
+
+    /**
+     * @return array
+     */
+    public function bindLevel(): array
+    {
+        $this->app->bindLevel((int)$_POST['auth_id']);
+        return $this->json(200, "绑定授权成功");
     }
 }

@@ -33,6 +33,9 @@
                         <button class="btn btn-sm btn-light-danger me-3 update-pro" style="display: none;"><i
                                     class="fab fa-vuejs"></i>开通专业版/企业版(免费使用所有插件)
                         </button>
+                        <button class="btn btn-sm btn-light-primary me-3 bind-pro" style="display: none;"><i
+                                    class="fas fa-mask"></i> 绑定专业版/企业版
+                        </button>
                     </div>
                 </div>
                 <!--end::Header-->
@@ -135,6 +138,10 @@
             let cookie;
             let userLevel = -1;
             let purchasePrice = {};
+
+            $.post("/admin/api/app/levels", res => {
+                console.log(res);
+            });
 
             function captcha() {
                 $.post('/admin/api/app/captcha?type=captcha_reg', res => {
@@ -244,12 +251,12 @@
                             "<p>2.专业版插件免费使用</p>" +
                             "<p>3.技术指导(包含店铺功能的使用)</p>" +
                             "<p>4.远程协助</p>" +
-                            "<p>5.店铺小功能修改</p>" +
-                            "<p>6.支付插件免费对接制作</p>" +
-                            "<p>7.7×12小时专属技术响应</p>" +
-                            "<p>8.企业版专用售后QQ群</p>" +
+                            "<p>5.7×12小时专属技术响应</p>" +
+                            "<p>6.企业版专用售后QQ群</p>" +
+                            "<p style='color: #0200ff;font-weight: bold'>7.新V4.0版本抢先体验</p>" +
+                            "<p style='color: #0200ff;font-weight: bold'>8.V3(当前程序)企业版无亏损转移到V4.0</p>" +
                             "</div>" +
-                            "<p style='margin-bottom: 15px;'><span class='badge badge-light-danger'>价格：" + purchasePrice.enterprise + "/永久</span><span style='text-decoration: line-through;'>(原价:898)</span> <span style='font-size: 12px;'>正式版恢复原价</span></p>" +
+                            "<p style='margin-bottom: 15px;'><span class='badge badge-light-danger'>价格：" + purchasePrice.enterprise + "/永久</span><span style='text-decoration: line-through;'>(原价:898)</span> <span style='font-size: 12px;'>即将恢复原价</span></p>" +
                             "<p><span class='badge badge-primary purchase-btn' data-type='2' data-pay='0'>支付宝</span> <span class='badge badge-success purchase-btn' data-type='2' data-pay='1'>微信支付</span></p>" +
                             "</div>"
                     });
@@ -262,12 +269,12 @@
                             "<p>2.专业版插件免费使用</p>" +
                             "<p>3.技术指导(包含店铺功能的使用)</p>" +
                             "<p>4.远程协助</p>" +
-                            "<p>5.店铺小功能修改</p>" +
-                            "<p>6.支付插件免费对接制作</p>" +
-                            "<p>7.7×12小时专属技术响应</p>" +
-                            "<p>8.企业版专用售后QQ群</p>" +
+                            "<p>5.7×12小时专属技术响应</p>" +
+                            "<p>6.企业版专用售后QQ群</p>" +
+                            "<p style='color: #0200ff;font-weight: bold'>7.新V4.0版本抢先体验</p>" +
+                            "<p style='color: #0200ff;font-weight: bold'>8.V3(当前程序)企业版无亏损转移到V4.0</p>" +
                             "</div>" +
-                            "<p style='margin-bottom: 15px;'><span class='badge badge-light-danger'>价格：" + purchasePrice.enterprise + "/永久</span><span style='text-decoration: line-through;'>(原价:898)</span> <span style='font-size: 12px;'>正式版恢复原价</span></p>" +
+                            "<p style='margin-bottom: 15px;'><span class='badge badge-light-danger'>价格：" + (purchasePrice.enterprise-purchasePrice.pro) + "/永久</span><span style='text-decoration: line-through;'>(原价:898)</span> <span style='font-size: 12px;'>即将恢复原价</span></p>" +
                             "<p><span class='badge badge-primary purchase-btn' data-type='2' data-pay='0'>支付宝</span> <span class='badge badge-success purchase-btn' data-type='2' data-pay='1'>微信支付</span></p>" +
                             "</div>"
                     });
@@ -296,6 +303,102 @@
                                 layer.msg(res.msg);
                             })
                         });
+                    }
+                });
+            }
+
+            let bindLevel = function () {
+                layer.open({
+                    type: 1,
+                    shade: false,
+                    title: false,
+                    area: cao.isPc() ? "712px" : ["100%", "100%"],
+                    content: '<div style="padding: 30px;"><table id="purchaseLevelRecords"></table></div>',
+                    success: function () {
+                        $("#purchaseLevelRecords").bootstrapTable({
+                            url: '/admin/api/app/levels',//请求的url地址
+                            method: "post",//请求方式
+                            // striped:true,//是否显示行间隔色
+                            showRefresh: false,//是否显示刷新按钮
+                            cache: false,//是否使用缓存
+                            showToggle: false,//是否显示详细视图和列表视图的切换按钮
+                            cardView: false,
+                            singleSelect: true,//复选框只能选择一条记录
+                            contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
+                            dataType: "json",//接收的数据类型
+                            clickToSelect: true,
+                            queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
+                            queryParams: function (params) {
+                                params.page = (params.offset / params.limit) + 1;
+                                if (queryParams) {
+                                    for (const key in params) {
+                                        queryParams[key] = params[key];
+                                    }
+                                } else {
+                                    queryParams = params;
+                                }
+                                return queryParams;
+                            },
+                            //回调函数
+                            responseHandler: function (res) {
+                                return {
+                                    "total": res.count,
+                                    "rows": res.data
+                                }
+                            },
+                            columns: [
+                                {checkbox: true},
+                                {
+                                    field: 'level', title: '用户组',
+                                    formatter: function (val, item) {
+                                        if (item.level == 0) {
+                                            return '<span class="badge badge-light-primary">专业版</span>';
+                                        }
+                                        return '<span class="badge badge-light-success">企业版</span>';
+                                    }
+                                },
+                                {
+                                    field: 'server_ip',
+                                    title: '服务器IP'
+                                },
+                                {
+                                    field: 'app_key', title: '授权指纹',
+                                    formatter: function (val, item) {
+                                        return '<span class="badge badge-light-primary">' + item.app_key + '</span>';
+                                    }
+                                },
+                                {
+                                    field: 'expire_date', title: '到期时间',
+                                    formatter: function (val, item) {
+                                        return '<span class="badge badge-light-success">' + item.expire_date + '</span>';
+                                    }
+                                }
+                            ]
+                        });
+                    },
+                    btn: ["解绑授权至本机器"],
+                    yes: () => {
+                        let data = cao.listObjectToArray($("#purchaseLevelRecords").bootstrapTable('getSelections'));
+                        let authId = data[0];
+                        if (authId > 0) {
+                            layer.confirm('您正在进行指纹授权解绑操作，解绑后，该用户组将在原站点授权失效，是否继续？', {
+                                btn: ['立即解绑', '取消'],
+                                title: "解绑提示"
+                            }, function () {
+                                let layIndex = layer.load(1, {shade: [0.3, '#fff']});
+                                $.post('/admin/api/app/bindLevel', {
+                                    auth_id: authId
+                                }, res => {
+                                    layer.close(layIndex);
+                                    if (res.code == 200) {
+                                        window.location.reload();
+                                    }
+                                    layer.msg(res.msg);
+                                });
+                            });
+                        } else {
+                            layer.msg("请选择要解绑的授权");
+                        }
                     }
                 });
             }
@@ -364,6 +467,7 @@
                             userLevel = res.user.level.level;
                         } else {
                             $('.update-pro').show();
+                            $('.bind-pro').show();
                         }
                         $('.store-text').html(' <b class="badge badge-light">' + res.user.username + '</b> ' + level);
                     }
@@ -577,8 +681,8 @@
                                             url = "/admin/config/index";
                                         }
                                         if (res.code == 200) {
-                                         /*   $.get("/admin/api/app/delUpdates", res => {
-                                            });*/
+                                            /*   $.get("/admin/api/app/delUpdates", res => {
+                                               });*/
                                             window.location.href = url;
                                         }
                                     });
@@ -674,6 +778,10 @@
 
             $('.update-pro').click(function () {
                 purchase();
+            });
+
+            $('.bind-pro').click(() => {
+                bindLevel();
             });
 
             cao.query('.search-query', table, [
