@@ -6,6 +6,7 @@ namespace App\Controller\Admin;
 use App\Consts\Manage as ManageConst;
 use App\Controller\Base\View\Manage;
 use App\Util\Client;
+use Kernel\Exception\ViewException;
 
 /**
  * Class Authentication
@@ -17,7 +18,7 @@ class Authentication extends Manage
     /**
      * 管理员登录
      * @return string
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     public function login(): string
     {

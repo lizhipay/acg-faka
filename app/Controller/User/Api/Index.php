@@ -175,10 +175,32 @@ class Index extends User
                 $shopCache = FileCache::getJsonFile("shop", $val['id'] . "_shared");
                 if (!empty($shopCache)) {
                     $inventory = $shopCache;
+                    if ($inventory['count'] === 0  && $inventory['delivery_way'] == 0) {
+                        //隐藏商品
+                        unset($data[$key]);
+                        continue;
+                    }
                 } else {
                     $com = Commodity::query()->find($val['id']);
-                    $inventory = $this->shared->inventory($com->shared, $com->shared_code);
-                    FileCache::setJsonFile("shop", $val['id'] . "_shared", $inventory, 300);
+                    try {
+                        $inventory = $this->shared->inventory($com->shared, $com->shared_code);
+                        FileCache::setJsonFile("shop", $val['id'] . "_shared", $inventory, 300);
+
+                        if ($inventory['count'] === 0 && $inventory['delivery_way'] == 0) {
+                            //隐藏商品
+                            unset($data[$key]);
+                            continue;
+                        }
+                    } catch (\Throwable $e) {
+                        //如果抛异常，代表此商品出问题了，
+                        FileCache::setJsonFile("shop", $val['id'] . "_shared", [
+                            "count" => 0,
+                            "delivery_way" => 0
+                        ], 300);
+                        //隐藏商品
+                        unset($data[$key]);
+                        continue;
+                    }
                 }
                 $data[$key]['card_count'] = $inventory['count'];
                 $data[$key]['delivery_way'] = $inventory['delivery_way'];

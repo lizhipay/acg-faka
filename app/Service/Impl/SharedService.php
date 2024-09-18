@@ -32,7 +32,7 @@ class SharedService implements Shared
         $data = array_merge($data, ["app_id" => $appId, "app_key" => $appKey]);
         $data['sign'] = Str::generateSignature($data, $appKey);
         try {
-            $response = $this->http->post($url, ["form_params" => $data, "verify" => false]);
+            $response = $this->http->post($url, ["form_params" => $data, "verify" => false, "timeout" => 3]);
         } catch (\Exception $e) {
             throw new JSONException("连接失败");
         }

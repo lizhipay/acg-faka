@@ -125,14 +125,19 @@ class AppService implements App
 
     /**
      * @return array
-     * @throws JSONException|GuzzleException
+     * @throws JSONException
      */
     public function getVersions(): array
     {
         if (Context::get(Base::LOCK) == "") {
             file_put_contents(BASE_PATH . "/kernel/Install/Lock", Str::generateRandStr(32));
         }
-        return (array)$this->post("/open/project/version", ["key" => "faka"]);
+
+        return (array)$this->post("/open/project/version", [
+            "key" => "faka",
+            "domain" => \App\Util\Client::getDomain(),
+            "client_ip" => \App\Util\Client::getAddress()
+        ]);
     }
 
     /**
