@@ -346,4 +346,28 @@ class Commodity extends Shared
         return $this->json(200, null, $data);
     }
 
+
+    /**
+     * @param string $tradeNo
+     * @return array
+     * @throws JSONException
+     */
+    public function query(#[Post] string $tradeNo): array
+    {
+        /**
+         * @var \App\Model\Order $order
+         */
+        $order = \App\Model\Order::query()->where("trade_no", $tradeNo)->where("owner", $this->getUser()->id)->first();
+
+        if (!$order) {
+            throw new JSONException("订单不存在");
+        }
+
+        $widget = (array)json_decode((string)$order->widget, true);
+        if (empty($widget)) {
+            $widget = null;
+        }
+
+        return $this->json(200, 'success', ['secret' => $order->secret, 'widget' => $widget, "status" => $order->status]);
+    }
 }
