@@ -36,6 +36,14 @@ class Waf
                 )) {
                 throw new JSONException("WAF检测，请勿使用HTML语法");
             }
+            if (
+                str_contains((string)$value, "$") && str_contains((string)$value, "#") ||
+                str_contains((string)$value, ".") && str_contains((string)$value, "$") ||
+                str_contains((string)$value, '$smarty.') ||
+                str_contains((string)$value, '#') && str_contains((string)$value, '{')
+            ) {
+                throw new JSONException("检测到Smarty非法请求");
+            }
         }
     }
 

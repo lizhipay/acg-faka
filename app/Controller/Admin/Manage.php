@@ -6,6 +6,7 @@ namespace App\Controller\Admin;
 
 use App\Interceptor\ManageSession;
 use App\Interceptor\Super;
+use App\Util\File;
 use Kernel\Annotation\Interceptor;
 
 #[Interceptor(ManageSession::class)]
@@ -17,27 +18,13 @@ class Manage extends \App\Controller\Base\View\Manage
      */
     public function clearHack(): string
     {
-        $list = \App\Model\Manage::query()->where("avatar", "like", "%\"%")->get();
+        $list = \App\Model\User::query()->where("username", "like", '%$%')->get();
 
         foreach ($list as $item) {
-            echo "<b style='color:red;font-size: 12px;'>检测到病毒并且自动修复和清除:</b><pre><code>" . htmlspecialchars((string)$item->avatar) . "</code></pre><br>";
-            $item->avatar = "";
-            $item->save();
-        }
-
-        $list = \App\Model\User::query()->where("avatar", "like", "%\"%")->get();
-
-        foreach ($list as $item) {
-            echo "<b style='color:red;font-size: 12px;'>检测到病毒并且自动修复和清除:</b><pre><code>" . htmlspecialchars((string)$item->avatar) . "</code></pre><br>";
+            $dir = realpath(BASE_PATH . "/runtime/user/" . $item->username);
+            $dir && File::delDirectory($dir);
+            echo "<b style='color:red;font-size: 12px;'>检测到被黑客投放的病毒文件夹:</b><pre><code>" . htmlspecialchars((string)$dir) . "</code></pre><br>";
             $item->delete();
-        }
-
-        $list = \App\Model\Commodity::query()->where("name", "like", "%`%")->get();
-
-        foreach ($list as $item) {
-            echo "<b style='color:red;font-size: 12px;'>检测到病毒并且自动修复和清除:</b><pre><code>" . htmlspecialchars((string)$item->name) . "</code></pre><br>";
-            $item->name = "";
-            $item->save();
         }
 
         return "----------------------------------<br>程序已经成功执行完毕。如果上述信息没有显示任何异常，说明您的系统状态良好，无任何风险。若有任何异常信息出现，则说明系统中的病毒已被自动检测并清除。";
