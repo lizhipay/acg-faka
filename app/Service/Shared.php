@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Service;
 
 
+use App\Model\Commodity;
+
 interface Shared
 {
 
@@ -12,9 +14,10 @@ interface Shared
      * @param string $domain
      * @param string $appId
      * @param string $appKey
+     * @param int $type
      * @return array|null
      */
-    public function connect(string $domain, string $appId, string $appKey): ?array;
+    public function connect(string $domain, string $appId, string $appKey, int $type = 0): ?array;
 
 
     /**
@@ -27,27 +30,27 @@ interface Shared
 
     /**
      * @param \App\Model\Shared $shared
-     * @param string $sharedCode
+     * @param Commodity $commodity
      * @param int $cardId
      * @param int $num
      * @param string $race
      * @return bool
      */
-    public function inventoryState(\App\Model\Shared $shared, string $sharedCode, int $cardId, int $num, string $race): bool;
+    public function inventoryState(\App\Model\Shared $shared, Commodity $commodity, int $cardId, int $num, string $race): bool;
 
     /**
      * @param \App\Model\Shared $shared
-     * @param string $sharedCode
+     * @param Commodity $commodity
      * @param string $race
      * @return array
      */
-    public function inventory(\App\Model\Shared $shared, string $sharedCode, string $race = ""): array;
+    public function inventory(\App\Model\Shared $shared,  Commodity $commodity, string $race = ""): array;
 
 
     /**
      * 远程购买卡密
      * @param \App\Model\Shared $shared
-     * @param string $sharedCode
+     * @param Commodity $commodity
      * @param string $contact
      * @param int $num
      * @param int $cardId
@@ -58,7 +61,7 @@ interface Shared
      * @param string $requestNo
      * @return string
      */
-    public function trade(\App\Model\Shared $shared, string $sharedCode, string $contact, int $num, int $cardId, int $device, string $password, string $race, ?string $widget, string $requestNo): string;
+    public function trade(\App\Model\Shared $shared, Commodity $commodity, string $contact, int $num, int $cardId, int $device, string $password, string $race, ?string $widget, string $requestNo): string;
 
     /**
      * @param \App\Model\Shared $shared

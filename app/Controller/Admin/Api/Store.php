@@ -69,7 +69,7 @@ class Store extends Manage
 
         $map['domain'] = trim($map['domain'], "/");
 
-        $connect = $this->shared->connect($map['domain'], $map['app_id'], $map['app_key']);
+        $connect = $this->shared->connect($map['domain'], $map['app_id'], $map['app_key'], (int)$map['type']);
 
         $map['name'] = strip_tags((string)$connect['shopName']);
         $map['balance'] = (float)$connect['balance'];
@@ -99,7 +99,7 @@ class Store extends Manage
         if (!$shared) {
             throw new JSONException("未找到该店铺");
         }
-        $connect = $this->shared->connect($shared->domain, $shared->app_id, $shared->app_key);
+        $connect = $this->shared->connect($shared->domain, $shared->app_id, $shared->app_key, $shared->type);
         $shared->name = strip_tags((string)$connect['shopName']);
         $shared->balance = (float)$connect['balance'];
         $shared->save();

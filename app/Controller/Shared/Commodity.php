@@ -32,16 +32,21 @@ class Commodity extends Shared
     private \App\Service\Shared $shared;
 
     /**
+     * @param string|null $sharedCode
      * @return array
      * @throws JSONException
      */
-    public function items(): array
+    private function getItems(?string $sharedCode = null): array
     {
-        $items = Category::query()->with(['children' => function (Relation $relation) {
+        $items = Category::query()->with(['children' => function (Relation $relation) use ($sharedCode) {
             $relation->where("api_status", 1)->where("status", 1);
+            if ($sharedCode) {
+                $relation->where("code", $sharedCode);
+            }
         }])->where("status", 1)->get();
 
-        $list = $items->toArray(); //
+
+        $list = $items->toArray();
 
         $userGroup = $this->getUserGroup();
         $userId = $this->getUser()->id;
@@ -101,9 +106,29 @@ class Commodity extends Shared
             $list[$key]['children'] = array_values($list[$key]['children']);
         }
 
-        $list = array_values($list);
+        return array_values($list);
+    }
 
-        return $this->json(200, 'success', $list);
+    /**
+     * @return array
+     * @throws JSONException
+     */
+    public function items(): array
+    {
+        return $this->json(200, 'success', $this->getItems());
+    }
+
+    /**
+     * @return array
+     * @throws JSONException
+     */
+    public function item(): array
+    {
+        $sharedCode = $_POST['sharedCode'] ?? null;
+        if (!$sharedCode) {
+            throw new JSONException("对接CODE不能为空");
+        }
+        return $this->json(200, 'success', $this->getItems($sharedCode));
     }
 
     /**
@@ -132,7 +157,7 @@ class Commodity extends Shared
         $shared = $commodity->shared;
         //如果是套娃，直接拉远程服务器数据
         if ($shared) {
-            if (!$this->shared->inventoryState($shared, $commodity->shared_code, $cardId, $num, $race)) {
+            if (!$this->shared->inventoryState($shared, $commodity, $cardId, $num, $race)) {
                 throw new JSONException("库存不足");
             }
             return $this->json(200, "success");
@@ -196,7 +221,7 @@ class Commodity extends Shared
 
         //如果是套娃，直接拉远程服务器数据
         if ($shared) {
-            $inventory = $this->shared->inventory($shared, $commodity->shared_code, $race);
+            $inventory = $this->shared->inventory($shared, $commodity, $race);
             return $this->json(200, "success", $inventory);
         }
 

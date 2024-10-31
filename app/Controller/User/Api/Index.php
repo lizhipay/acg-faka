@@ -175,7 +175,7 @@ class Index extends User
                 $shopCache = FileCache::getJsonFile("shop", $val['id'] . "_shared");
                 if (!empty($shopCache)) {
                     $inventory = $shopCache;
-                    if ($inventory['count'] === 0  && $inventory['delivery_way'] == 0) {
+                    if ($inventory['count'] === 0 && $inventory['delivery_way'] == 0) {
                         //隐藏商品
                         unset($data[$key]);
                         continue;
@@ -183,7 +183,7 @@ class Index extends User
                 } else {
                     $com = Commodity::query()->find($val['id']);
                     try {
-                        $inventory = $this->shared->inventory($com->shared, $com->shared_code);
+                        $inventory = $this->shared->inventory($com->shared, $com);
                         FileCache::setJsonFile("shop", $val['id'] . "_shared", $inventory, 300);
 
                         if ($inventory['count'] === 0 && $inventory['delivery_way'] == 0) {
@@ -273,7 +273,7 @@ class Index extends User
         $shared = \App\Model\Shared::query()->find($commodity->shared_id);
 
         if ($shared) {
-            $inventory = $this->shared->inventory($shared, $commodity->shared_code);
+            $inventory = $this->shared->inventory($shared, $commodity);
             $commodity->card = $inventory['count'];
             $commodity->delivery_way = $inventory['delivery_way'];
             $commodity->draft_status = $inventory['draft_status'];
@@ -459,6 +459,10 @@ class Index extends User
 
         if (Client::isMobile()) {
             $equipment = 1;
+        }
+
+        if (Client::isWeChat()) {
+            $equipment = 3;
         }
 
         $let = "(`equipment`=0 or `equipment`={$equipment})";

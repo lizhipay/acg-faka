@@ -22,7 +22,7 @@ class Context
      * @param string $name
      * @param $value
      */
-    #[NoReturn] public static function set(string $name, $value): void
+    public static function set(string $name, $value): void
     {
         self::$context[$name] = $value;
     }

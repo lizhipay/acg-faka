@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Util;
 
 use Kernel\Exception\JSONException;
-use Kernel\Util\View;
 
 /**
  * Class Plugin
@@ -18,7 +17,8 @@ class Plugin
      * @param string $key
      * @param mixed $value
      * @param int $expire
-     * @throws \Kernel\Exception\JSONException
+     * @param bool $cli
+     * @throws JSONException
      */
     public static function setCache(string $pluginName, string $db, string $key, mixed $value, int $expire = 0, bool $cli = false): void
     {
@@ -43,6 +43,7 @@ class Plugin
      * @param string $pluginName
      * @param string $db
      * @param string $key
+     * @param bool $cli
      * @return mixed
      * @throws JSONException
      */
@@ -72,6 +73,7 @@ class Plugin
     /**
      * @param string $pluginName
      * @param string $db
+     * @param bool $cli
      * @return array
      * @throws JSONException
      */

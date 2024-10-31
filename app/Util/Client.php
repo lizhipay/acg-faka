@@ -174,4 +174,12 @@ class Client
         }
         return false;
     }
+
+    /**
+     * @return bool
+     */
+    public static function isWeChat(): bool
+    {
+        return preg_match('/MicroMessenger/i', $_SERVER['HTTP_USER_AGENT']) === 1;
+    }
 }

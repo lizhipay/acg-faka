@@ -336,7 +336,7 @@ class OrderService implements Order
         $shared = $commodity->shared; //获取商品的共享平台
 
         if ($shared) {
-            if (!$this->shared->inventoryState($shared, $commodity->shared_code, $cardId, $num, $race)) {
+            if (!$this->shared->inventoryState($shared, $commodity, $cardId, $num, $race)) {
                 throw new JSONException("库存不足");
             }
         } else {
@@ -681,7 +681,7 @@ class OrderService implements Order
 
         if ($shared) {
             //拉取远程平台的卡密发货
-            $order->secret = $this->shared->trade($shared, $commodity->shared_code, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, (string)$order->password, (string)$order->race, $order->widget, $order->trade_no);
+            $order->secret = $this->shared->trade($shared, $commodity, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, (string)$order->password, (string)$order->race, $order->widget, $order->trade_no);
             $order->delivery_status = 1;
         } else {
             //自动发货
@@ -928,7 +928,7 @@ class OrderService implements Order
             //查远程平台的库存
             $shared = \App\Model\Shared::query()->find($commodity->shared_id);
             if ($shared && !$disableShared) {
-                $inventory = $this->shared->inventory($shared, $commodity->shared_code, (string)$race);
+                $inventory = $this->shared->inventory($shared, $commodity, (string)$race);
                 $data['card_count'] = $inventory['count'];
             }
         }

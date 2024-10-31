@@ -121,6 +121,13 @@
                         field: 'status', title: '状态', formatter: function (val, item) {
                             return '<span class="connect-' + item.id + '"><span class="badge badge-light-primary">连接中..</span></span>'
                         }
+                    }, {
+                        field: 'type', title: '协议', formatter: function (val, item) {
+                            if (val == 1) {
+                                return '萌次元(V4.0)';
+                            }
+                            return '异次元(V3.0)';
+                        }
                     },
                     {
                         field: 'operate',
@@ -247,10 +254,16 @@
                 cao.popup('/admin/api/store/save', [
                     {
                         title: "协议", name: "type", type: "select", placeholder: "请选择协议", dict: [
-                            {id: 0, name: "内置(1.0)"}
+                            {id: 0, name: "异次元(3.0)"},
+                            {id: 1, name: "萌次元(4.0)"}
                         ], default: 0
                     },
-                    {title: "店铺地址", name: "domain", type: "input", placeholder: "需要带http://或者https://(推荐,如果支持)"},
+                    {
+                        title: "店铺地址",
+                        name: "domain",
+                        type: "input",
+                        placeholder: "需要带http://或者https://(推荐,如果支持)"
+                    },
                     {title: "商户ID", name: "app_id", type: "input", placeholder: "请输入商户ID"},
                     {title: "商户密钥", name: "app_key", type: "input", placeholder: "请输入商户密钥"},
                 ], res => {
