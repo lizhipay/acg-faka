@@ -7,12 +7,12 @@
 <br>
 <p align="center">
 <span>
-<img src="https://acged.cc/svg/php.svg" alt="php8.0,8.1">
+<img src="https://faka.wiki/svg/php.svg" alt="php8.0,8.1">
 </span>
 <span>
-<img src="https://acged.cc/svg/mysql-version.svg" alt="mysql5.6+">
+<img src="https://faka.wiki/svg/mysql-version.svg" alt="mysql5.6+">
 </span>
-<span><img src="https://acged.cc/svg/license.svg" alt="license"></span>
+<span><img src="https://faka.wiki/svg/license.svg" alt="license"></span>
 </p>
 
 ## 法律声明
@@ -21,6 +21,9 @@
 > 用户在使用或学习本程序时，必须严格遵守法律法规。我们提倡依法行事，尊重法律，坚守法律，避免对社会产生不良影响。
 >
 > 使用本程序即表示您已充分理解并同意本法律声明的所有内容。
+
+## 新版发布
+新版本已发布：[wiki.mcy.im](https://wiki.mcy.im)
 
 ## 快速体验
 - 后台演示：[http://162.14.111.118:91/admin](http://162.14.111.118:91/admin)  账号：demo@demo.com 密码：123456
