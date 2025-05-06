@@ -31,7 +31,7 @@
                                     class="far fa-building"></i>企业版插件
                         </button>
                         <button class="btn btn-sm btn-light-danger me-3 update-pro" style="display: none;"><i
-                                    class="fab fa-vuejs"></i>开通专业版/企业版(免费使用所有插件)
+                                    class="fab fa-vuejs"></i>开通企业版(免费使用所有插件)
                         </button>
                         <button class="btn btn-sm btn-light-primary me-3 bind-pro" style="display: none;"><i
                                     class="fas fa-mask"></i> 绑定专业版/企业版
@@ -231,7 +231,7 @@
                 }
 
                 if (userLevel == -1) {
-                    items.push({
+  /*                  items.push({
                         title: '<b style="color: #0d8ddc;margin:5px;">专业版</b>',
                         content: "<div style='padding: 20px;'><b style='color: #109b81;margin-bottom: 10px;display: block;'>说明：本程序基于MIT开源协议进行开源，项目开源地址：<a href='https://github.com/lizhipay/acg-faka' target='_blank'>https://github.com/lizhipay/acg-faka</a>，所以是完全免费的，这里的专业版或企业版仅仅是针对应用商店付费插件和技术服务而产生的。</b>" +
                             "<div style='margin-bottom: 10px;background: #2fb0ff;padding: 10px;border-radius: 10px;color: white;'>" +
@@ -240,16 +240,14 @@
                             "<p style='margin-bottom: 15px;'><span class='badge badge-light-danger'>价格：" + purchasePrice.pro + "/永久</span><span style='text-decoration: line-through;'>(原价:598)</span> <span style='font-size: 12px;'>正式版恢复原价</span></p>" +
                             "<p><span class='badge badge-primary purchase-btn' data-type='1' data-pay='0'>支付宝</span> <span class='badge badge-success purchase-btn' data-type='1' data-pay='1'>微信支付</span></p>" +
                             "</div>"
-                    });
+                    });*/
                     items.push({
-                        title: '<b style="color: #0fb183;margin:5px;">企业版(推荐)</b>',
+                        title: '<b style="color: #0fb183;margin:5px;">开通企业版(免费使用插件)</b>',
                         content: "<div style='padding: 20px;'><b style='color: #109b81;margin-bottom: 10px;display: block;'>说明：本程序基于MIT开源协议进行开源，项目开源地址：<a href='https://github.com/lizhipay/acg-faka' target='_blank'>https://github.com/lizhipay/acg-faka</a>，所以是完全免费的，这里的专业版或企业版仅仅是针对应用商店付费插件和技术服务而产生的。</b>" +
                             "<div style='margin-bottom: 10px;background: #19b387;padding: 10px;border-radius: 10px;color: white;'>" +
-                            "<p>1.企业版插件免费使用</p>" +
-                            "<p>2.专业版插件免费使用</p>" +
-                            "<p>3.技术支持</p>" +
-                            "<p>4.远程协助</p>" +
-                            "<p>5.企业版专属售后群</p>" +
+                            "<p>1.所有官方插件免费使用</p>" +
+                            "<p>2.技术支持</p>" +
+                            "<p>3.企业版专属售后群</p>" +
                             "</div>" +
                             "<p style='margin-bottom: 15px;'><span class='badge badge-light-danger'>价格：" + purchasePrice.enterprise + "/永久</span><span style='text-decoration: line-through;'>(原价:898)</span> <span style='font-size: 12px;'>即将恢复原价</span></p>" +
                             "<p><span class='badge badge-primary purchase-btn' data-type='2' data-pay='0'>支付宝</span> <span class='badge badge-success purchase-btn' data-type='2' data-pay='1'>微信支付</span></p>" +
@@ -257,19 +255,14 @@
                     });
                 } else if (userLevel == 0) {
                     items.push({
-                        title: '<b style="color: #0fb183;margin:5px;">企业版(推荐)</b>',
+                        title: '<b style="color: #0fb183;margin:5px;">升级到企业版</b>',
                         content: "<div style='padding: 20px;'><b style='color: #109b81;margin-bottom: 10px;display: block;'>说明：本程序基于MIT开源协议进行开源，项目开源地址：<a href='https://github.com/lizhipay/acg-faka' target='_blank'>https://github.com/lizhipay/acg-faka</a>，所以是完全免费的，这里的专业版或企业版仅仅是针对应用商店付费插件和技术服务而产生的。</b>" +
                             "<div style='margin-bottom: 10px;background: #19b387;padding: 10px;border-radius: 10px;color: white;'>" +
-                            "<p>1.企业版插件免费使用</p>" +
-                            "<p>2.专业版插件免费使用</p>" +
-                            "<p>3.技术指导(包含店铺功能的使用)</p>" +
-                            "<p>4.远程协助</p>" +
-                            "<p>5.7×12小时专属技术响应</p>" +
-                            "<p>6.企业版专用售后QQ群</p>" +
-                            "<p style='color: #0200ff;font-weight: bold'>7.新V4.0版本抢先体验</p>" +
-                            "<p style='color: #0200ff;font-weight: bold'>8.V3(当前程序)企业版无亏损转移到V4.0</p>" +
+                            "<p>1.所有官方插件免费使用</p>" +
+                            "<p>2.技术支持</p>" +
+                            "<p>3.企业版专属售后群</p>" +
                             "</div>" +
-                            "<p style='margin-bottom: 15px;'><span class='badge badge-light-danger'>价格：" + (purchasePrice.enterprise-purchasePrice.pro) + "/永久</span><span style='text-decoration: line-through;'>(原价:898)</span> <span style='font-size: 12px;'>即将恢复原价</span></p>" +
+                            "<p style='margin-bottom: 15px;'><span class='badge badge-light-danger'>补差价：" + (purchasePrice.enterprise-purchasePrice.pro) + "/永久</span><span style='text-decoration: line-through;'>(原价:898)</span> <span style='font-size: 12px;'>即将恢复原价</span></p>" +
                             "<p><span class='badge badge-primary purchase-btn' data-type='2' data-pay='0'>支付宝</span> <span class='badge badge-success purchase-btn' data-type='2' data-pay='1'>微信支付</span></p>" +
                             "</div>"
                     });
