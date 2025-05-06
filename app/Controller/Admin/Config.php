@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 
 use App\Controller\Base\View\Manage;
 use App\Interceptor\ManageSession;
+use App\Util\Client;
 use App\Util\Theme;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\ViewException;
@@ -33,7 +34,30 @@ class Config extends Manage
      */
     public function index(): string
     {
-        return $this->render("网站设置", "Config/Setting.html", ["toolbar" => $this->TOOLBAR, "themes" => Theme::getThemes()]);
+
+        $modes = [
+            'REMOTE_ADDR',
+            'HTTP_X_REAL_IP',
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_CLIENT_IP',
+            'HTTP_X_FORWARDED',
+            'HTTP_X_CLUSTER_CLIENT_IP',
+            'HTTP_FORWARDED_FOR',
+            'HTTP_FORWARDED',
+            'HTTP_CF_CONNECTING_IP'
+        ];
+
+        for ($i = 0; $i <= 8; $i++) {
+            $ip = Client::getIp($i);
+            $modes[$i] = $modes[$i] . " - " . ($ip ?: "此模式不适用");
+        }
+
+        return $this->render("网站设置", "Config/Setting.html", [
+            "toolbar" => $this->TOOLBAR,
+            "themes" => Theme::getThemes(),
+            "ip_get_mode" => $modes,
+            "ip_mode" => Client::getClientMode()
+        ]);
     }
 
     public function sms(): string

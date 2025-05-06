@@ -46,7 +46,8 @@
                         <!--end::Title-->
                         #{if $config.registered_state == 1}
                         <div class="text-gray-400 fw-bold fs-5">没有账号? <a href="/user/authentication/register"
-                                                                         class="link-primary fw-bolder">免费创建!</a></div>
+                                                                             class="link-primary fw-bolder">免费创建!</a>
+                        </div>
                         #{/if}
                     </div>
                     <!--begin::Heading-->
@@ -70,7 +71,8 @@
                             <label class="form-label fw-bolder fs-6 mb-0 text-color">密码</label>
                             <!--end::Label-->
                             <!--begin::Link-->
-                            <a href="#{if $config.forget_type == 0}/user/authentication/emailForget#{else}/user/authentication/phoneForget#{/if}" class="link-primary fs-8 fw-bolder">忘记密码?</a>
+                            <a href="#{if $config.forget_type == 0}/user/authentication/emailForget#{else}/user/authentication/phoneForget#{/if}"
+                               class="link-primary fs-8 fw-bolder">忘记密码?</a>
                             <!--end::Link-->
                         </div>
                         <!--end::Wrapper-->
@@ -95,7 +97,10 @@
                         <!--end::Col-->
                         <!--begin::Col-->
                         <div class="col-3 pt-9">
-                            <img src="/user/captcha/image?action=login" onclick="this.src='/user/captcha/image?action=login'" alt="" style="height: 40px;border: 3px solid #f9bff773;border-radius: 10px;margin-left: -15px;opacity: 0.6;cursor: pointer;">
+                            <img src="/user/captcha/image?action=login"
+                                 onclick="this.src='/user/captcha/image?action=login&rand='+Math.ceil(Math.random() * 10000000)"
+                                 alt=""
+                                 style="height: 40px;border: 3px solid #f9bff773;border-radius: 10px;margin-left: -15px;opacity: 0.6;cursor: pointer;">
                         </div>
                         <!--end::Col-->
                     </div>
@@ -105,7 +110,8 @@
                     <!--begin::Actions-->
                     <div class="text-center">
                         <!--begin::Submit button-->
-                        <button type="button" class="btn btn-lg #{if $setting.style==0}btn-light-danger#{else} btn-light-primary #{/if} w-100 mb-5 data-submit">
+                        <button type="button"
+                                class="btn btn-lg #{if $setting.style==0}btn-light-danger#{else} btn-light-primary #{/if} w-100 mb-5 data-submit">
                             <span class="indicator-label">LOGIN</span>
                         </button>
                         <!--end::Submit button-->

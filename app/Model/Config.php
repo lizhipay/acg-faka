@@ -6,7 +6,6 @@ namespace App\Model;
 
 use App\Util\Context;
 use Illuminate\Database\Eloquent\Model;
-use Kernel\Exception\JSONException;
 
 /**
  * @property int $id
@@ -30,12 +29,23 @@ class Config extends Model
      */
     protected $casts = ['id' => 'integer'];
 
+    /**
+     * @return int
+     */
+    public static function getSessionExpire(): int
+    {
+        $expire = self::get("session_expire") ?: (86400 * 30);
+        if ($expire < 120) {
+            return 86400 * 30;
+        }
+        return $expire;
+    }
+
 
     /**
      * 为了方便，在这里直接静态get
      * @param string $key
      * @return string
-     * @throws JSONException
      */
     public static function get(string $key): string
     {

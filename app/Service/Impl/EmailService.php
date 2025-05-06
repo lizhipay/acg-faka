@@ -9,6 +9,7 @@ use App\Service\Email;
 use App\Util\Date;
 use Kernel\Annotation\Inject;
 use Kernel\Exception\JSONException;
+use Kernel\Util\Session;
 use PHPMailer\PHPMailer\PHPMailer;
 
 class EmailService implements Email
@@ -71,8 +72,8 @@ class EmailService implements Email
             Email::CAPTCHA_BIND_OLD => sprintf(\App\Consts\Email::CAPTCHA_BIND_OLD, $email),
         };
 
-        if (isset($_SESSION[$key])) {
-            if ($_SESSION[$key]['time'] + 60 > time()) {
+        if (Session::has($key)) {
+            if (Session::get($key)['time'] + 60 > time()) {
                 throw new JSONException("验证码发送频繁，请稍后再试");
             }
         }
@@ -95,7 +96,7 @@ class EmailService implements Email
             }
         }
 
-        $_SESSION[$key] = ["time" => time(), "code" => $capthca];
+        Session::set($key, ["time" => time(), "code" => $capthca]);
     }
 
 
@@ -114,15 +115,15 @@ class EmailService implements Email
             Email::CAPTCHA_BIND_OLD => sprintf(\App\Consts\Email::CAPTCHA_BIND_OLD, $email),
         };
 
-        if (!isset($_SESSION[$key])) {
+        if (!Session::has($key)) {
             return false;
         }
 
-        if ($_SESSION[$key]['code'] != $code) {
+        if (Session::get($key)['code'] != $code) {
             return false;
         }
 
-        if ($_SESSION[$key]['time'] + 300 < time()) {
+        if (Session::get($key)['time'] + 300 < time()) {
             return false;
         }
 
@@ -141,6 +142,6 @@ class EmailService implements Email
             Email::CAPTCHA_BIND_NEW => sprintf(\App\Consts\Email::CAPTCHA_BIND_NEW, $email),
             Email::CAPTCHA_BIND_OLD => sprintf(\App\Consts\Email::CAPTCHA_BIND_OLD, $email),
         };
-        unset($_SESSION[$key]);
+        Session::remove($key);
     }
 }

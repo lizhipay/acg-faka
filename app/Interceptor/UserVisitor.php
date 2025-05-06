@@ -6,6 +6,8 @@ namespace App\Interceptor;
 
 use App\Consts\User;
 use App\Util\Context;
+use App\Util\JWT;
+use Firebase\JWT\Key;
 use JetBrains\PhpStorm\NoReturn;
 use Kernel\Annotation\InterceptorInterface;
 
@@ -19,34 +21,39 @@ class UserVisitor implements InterceptorInterface
 
     #[NoReturn] public function handle(int $type): void
     {
-        if (!array_key_exists(User::SESSION, $_SESSION)) {
+        if (!array_key_exists(User::SESSION, $_COOKIE)) {
             return;
         }
-        $session = $_SESSION[User::SESSION];
-        if (empty($session)) {
+
+        $userToken = base64_decode((string)$_COOKIE[User::SESSION]);
+
+        if (!$userToken) {
             return;
         }
-        $user = \App\Model\User::query()->find($session['id']);
-        //-----------------------------------
+
+        $head = JWT::getHead($userToken);
+        if (!isset($head['uid'])) {
+            return;
+        }
+
+        $user = \App\Model\User::query()->find($head['uid']);
+
+
         if (!$user) {
             return;
         }
-        //-----------------------------------
-        if ($session['password'] != $user->password) {
+
+        try {
+            $jwt = \Firebase\JWT\JWT::decode($userToken, new Key($user->password, 'HS256'));
+        } catch (\Exception $e) {
             return;
         }
-        //-----------------------------------
-        if ($user->status != 1) {
+
+
+        if ($jwt->expire <= time() || $user->login_time != $jwt->loginTime || $user->status != 1) {
             return;
         }
-        //-----------------------------------
-        if ($session['login_time'] != $user->login_time) {
-            return;
-        }
-        //-----------------------------------
-        if ($session['login_ip'] != $user->login_ip) {
-            return;
-        }
+
         //保存会话
         Context::set(User::SESSION, $user);
     }

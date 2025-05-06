@@ -8,6 +8,7 @@ use App\Service\Sms;
 use App\Util\Http;
 use Kernel\Annotation\Inject;
 use Kernel\Exception\JSONException;
+use Kernel\Util\Session;
 use Mrgoon\AliSms\AliSms;
 
 class SmsService implements Sms
@@ -115,8 +116,8 @@ class SmsService implements Sms
             Sms::CAPTCHA_BIND_NEW => sprintf(\App\Consts\Sms::CAPTCHA_BIND_NEW, $phone),
         };
 
-        if (isset($_SESSION[$key])) {
-            if ($_SESSION[$key]['time'] + 60 > time()) {
+        if (Session::has($key)) {
+            if (Session::get($key)['time'] + 60 > time()) {
                 throw new JSONException("验证码发送频繁，请稍后再试");
             }
         }
@@ -140,7 +141,7 @@ class SmsService implements Sms
         //统一短信发送接口
         $this->send($smsConfig, $phone, $templateCode, $var);
 
-        $_SESSION[$key] = ["time" => time(), "code" => $capthca];
+        Session::set($key, ["time" => time(), "code" => $capthca]);
     }
 
     /**
@@ -157,15 +158,15 @@ class SmsService implements Sms
             Sms::CAPTCHA_BIND_NEW => sprintf(\App\Consts\Sms::CAPTCHA_BIND_NEW, $phone),
         };
 
-        if (!isset($_SESSION[$key])) {
+        if (!Session::has($key)) {
             return false;
         }
 
-        if ($_SESSION[$key]['code'] != $code) {
+        if (Session::get($key)['code'] != $code) {
             return false;
         }
 
-        if ($_SESSION[$key]['time'] + 300 < time()) {
+        if (Session::get($key)['time'] + 300 < time()) {
             return false;
         }
 
@@ -183,7 +184,7 @@ class SmsService implements Sms
             Sms::CAPTCHA_FORGET => sprintf(\App\Consts\Sms::CAPTCHA_FORGET, $phone),
             Sms::CAPTCHA_BIND_NEW => sprintf(\App\Consts\Sms::CAPTCHA_BIND_NEW, $phone),
         };
-        unset($_SESSION[$key]);
+        Session::remove($key);
     }
 
 

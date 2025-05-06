@@ -13,11 +13,11 @@
     <!--end::Global Stylesheets Bundle-->
     <style>
         .text-color {
-        #{if $setting.style==0}
+            #{if $setting.style==0}
             color: pink;
-        #{else}
+            #{else}
             color: #70b5ff;
-        #{/if}
+            #{/if}
         }
     </style>
     <!--start::HOOK-->
@@ -46,7 +46,8 @@
                         <a href="/"><h1 class="mb-3 text-color" style="font-weight: bold;">#{$config.shop_name}</h1></a>
                         <!--end::Title-->
                         <div class="text-gray-400 fw-bold fs-5">已有账号? <a href="/user/authentication/login"
-                                                                         class="link-primary fw-bolder">现在登录!</a></div>
+                                                                             class="link-primary fw-bolder">现在登录!</a>
+                        </div>
                     </div>
                     <!--begin::Heading-->
                     <!--begin::Input group-->
@@ -55,7 +56,8 @@
                         <label class="form-label fs-6 fw-bolder text-color">用户名</label>
                         <!--end::Label-->
                         <!--begin::Input-->
-                        <input class="form-control form-control-lg form-control-solid" type="text" name="username" placeholder="请输入用户名，支持中文"
+                        <input class="form-control form-control-lg form-control-solid" type="text" name="username"
+                               placeholder="请输入用户名，支持中文"
                                autocomplete="off"/>
                         <!--end::Input-->
                     </div>
@@ -70,7 +72,8 @@
                         </div>
                         <!--end::Wrapper-->
                         <!--begin::Input-->
-                        <input class="form-control form-control-lg form-control-solid" type="text" name="password" placeholder="请设置登录密码"
+                        <input class="form-control form-control-lg form-control-solid" type="text" name="password"
+                               placeholder="请设置登录密码"
                                autocomplete="off"/>
                         <!--end::Input-->
                     </div>
@@ -90,7 +93,8 @@
                         <!--begin::Col-->
                         <div class="col-3 pt-9">
                             <img src="/user/captcha/image?action=register"
-                                 onclick="this.src='/user/captcha/image?action=register'" alt=""
+                                 onclick="this.src='/user/captcha/image?action=register&rand=' + Math.ceil(Math.random() * 10000000)"
+                                 alt=""
                                  style="height: 40px;border: 3px solid #f9bff773;border-radius: 10px;margin-left: -15px;opacity: 0.6;cursor: pointer;">
                         </div>
                         <!--end::Col-->
@@ -108,7 +112,8 @@
                         </div>
                         <!--end::Wrapper-->
                         <!--begin::Input-->
-                        <input class="form-control form-control-lg form-control-solid" type="email" name="email" placeholder="请输入邮箱"
+                        <input class="form-control form-control-lg form-control-solid" type="email" name="email"
+                               placeholder="请输入邮箱"
                                autocomplete="off"/>
                         <!--end::Input-->
                     </div>
@@ -118,7 +123,8 @@
                         <!--begin::Col-->
                         <div class="col-xl-8">
                             <label class="form-label fw-bolder fs-6 text-color">邮箱验证码</label>
-                            <input class="form-control form-control-lg form-control-solid" type="text" placeholder="邮箱验证码"
+                            <input class="form-control form-control-lg form-control-solid" type="text"
+                                   placeholder="邮箱验证码"
                                    name="email_captcha"
                                    autocomplete="off"/>
                             <div class="fv-plugins-message-container invalid-feedback"></div>
@@ -126,7 +132,8 @@
                         <!--end::Col-->
                         <!--begin::Col-->
                         <div class="col-xl-4 pt-8">
-                            <button type="button" class="btn btn-lg #{if $setting.style==0}btn-light-danger#{else} btn-light-primary #{/if} w-100 email-captcha">
+                            <button type="button"
+                                    class="btn btn-lg #{if $setting.style==0}btn-light-danger#{else} btn-light-primary #{/if} w-100 email-captcha">
                                 <span class="indicator-label">获取</span>
                             </button>
                         </div>
@@ -146,7 +153,8 @@
                         </div>
                         <!--end::Wrapper-->
                         <!--begin::Input-->
-                        <input class="form-control form-control-lg form-control-solid" type="number" name="phone" placeholder="请输入手机号"
+                        <input class="form-control form-control-lg form-control-solid" type="number" name="phone"
+                               placeholder="请输入手机号"
                                autocomplete="off"/>
                         <!--end::Input-->
                     </div>
@@ -156,7 +164,8 @@
                         <!--begin::Col-->
                         <div class="col-xl-8">
                             <label class="form-label fw-bolder fs-6 text-color">手机验证码</label>
-                            <input class="form-control form-control-lg form-control-solid" type="text" placeholder="手机验证码"
+                            <input class="form-control form-control-lg form-control-solid" type="text"
+                                   placeholder="手机验证码"
                                    name="phone_captcha"
                                    autocomplete="off"/>
                             <div class="fv-plugins-message-container invalid-feedback"></div>
@@ -164,7 +173,8 @@
                         <!--end::Col-->
                         <!--begin::Col-->
                         <div class="col-xl-4 pt-8">
-                            <button type="button" class="btn btn-lg #{if $setting.style==0}btn-light-danger#{else} btn-light-primary #{/if} w-100 phone-captcha">
+                            <button type="button"
+                                    class="btn btn-lg #{if $setting.style==0}btn-light-danger#{else} btn-light-primary #{/if} w-100 phone-captcha">
                                 <span class="indicator-label">获取</span>
                             </button>
                         </div>
@@ -176,7 +186,8 @@
                     <!--begin::Actions-->
                     <div class="text-center">
                         <!--begin::Submit button-->
-                        <button type="button" class="btn btn-lg #{if $setting.style==0}btn-light-danger#{else} btn-light-primary #{/if} w-100 mb-5 data-submit">
+                        <button type="button"
+                                class="btn btn-lg #{if $setting.style==0}btn-light-danger#{else} btn-light-primary #{/if} w-100 mb-5 data-submit">
                             <span class="indicator-label">注册 (Register)</span>
                         </button>
                         <!--end::Submit button-->

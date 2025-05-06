@@ -32,7 +32,7 @@ class Authentication extends User
     private UserSSO $sso;
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function register(): array
     {
@@ -143,7 +143,7 @@ class Authentication extends User
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function emailRegisterCaptcha(): array
     {
@@ -167,7 +167,7 @@ class Authentication extends User
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function emailForgetCaptcha(): array
     {
@@ -203,7 +203,7 @@ class Authentication extends User
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function phoneRegisterCaptcha(): array
     {
@@ -227,7 +227,7 @@ class Authentication extends User
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function phoneForgetCaptcha(): array
     {
@@ -252,7 +252,7 @@ class Authentication extends User
 
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function login(): array
     {
@@ -297,7 +297,7 @@ class Authentication extends User
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function password(): array
     {

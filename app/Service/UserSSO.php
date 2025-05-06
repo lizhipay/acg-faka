@@ -9,7 +9,7 @@ use App\Model\User;
 interface UserSSO
 {
     /**
-     * @param \App\Model\User $user
+     * @param User $user
      */
     public function loginSuccess(User $user): void;
 }

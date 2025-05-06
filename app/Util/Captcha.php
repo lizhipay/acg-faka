@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace App\Util;
 
 
+use Kernel\Util\Session;
+
 class Captcha
 {
     /**
      * 生成验证码
-     * @param int $num
-     * @param int $w
-     * @param int $h
+     * @param string $sessionName
      */
     public static function generate(string $sessionName)
     {
@@ -23,7 +23,7 @@ class Captcha
         }
         //4位验证码也可以用rand(1000,9999)直接生成
         //将生成的验证码写入session，备验证页面使用
-        $_SESSION[$sessionName] = $code;
+        Session::set($sessionName, $code);
         //创建图片，定义颜色值
         Header("Content-type: image/PNG");
         $im = imagecreate($w, $h);
@@ -82,11 +82,10 @@ class Captcha
      */
     public static function check(int $code, string $sessionName): bool
     {
-        $_code = $_SESSION[$sessionName];
         if ($code == 0) {
             return false;
         }
-        if ($_code != $code) {
+        if (Session::get($sessionName) != $code) {
             return false;
         }
         return true;
@@ -97,6 +96,6 @@ class Captcha
      */
     public static function destroy(string $sessionName): void
     {
-        unset($_SESSION[$sessionName]);
+        Session::remove($sessionName);
     }
 }

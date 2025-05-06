@@ -136,10 +136,12 @@ try {
         }
     }
 
+
     hook(\App\Consts\Hook::CONTROLLER_CALL_BEFORE, $controllerInstance, $action);
     $result = call_user_func_array([$controllerInstance, $action], $params);
+    $routePath = $_GET['s'];
     hook(\App\Consts\Hook::CONTROLLER_CALL_AFTER, $controllerInstance, $action, $result);
-    hook(\App\Consts\Hook::HTTP_ROUTE_RESPONSE, trim($_GET['s'], "/"), $result);
+    hook(\App\Consts\Hook::HTTP_ROUTE_RESPONSE, $routePath, $result);
 
     if ($result === null) {
         return;

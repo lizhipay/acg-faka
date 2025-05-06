@@ -9,6 +9,7 @@ use App\Interceptor\ManageSession;
 use App\Model\ManageLog;
 use App\Service\Query;
 use App\Service\Sms;
+use App\Util\Client;
 use App\Util\Date;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
@@ -37,8 +38,8 @@ class Config extends Manage
      */
     public function setting(): array
     {
-        $keys = ["closed_message", "background_mobile_url", "closed", "username_len", "user_theme", "user_mobile_theme", "background_url", "shop_name", "title", "description", "keywords", "registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "notice", "trade_verification"]; //全部字段
-        $inits = ["closed", "registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "trade_verification"]; //需要初始化的字段
+        $keys = ["closed_message", "background_mobile_url", "closed", "username_len", "user_theme", "user_mobile_theme", "background_url", "shop_name", "title", "description", "keywords", "registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "notice", "trade_verification", "session_expire"]; //全部字段
+        $inits = ["closed", "registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "trade_verification", "session_expire"]; //需要初始化的字段
 
         $file = $_POST['logo'];
         if ($file != '/favicon.ico') {
@@ -46,6 +47,10 @@ class Config extends Manage
             @unlink(BASE_PATH . $file);
         }
         try {
+            if (isset($_POST['ip_get_mode'])) {
+                Client::setClientMode((int)$_POST['ip_get_mode']);
+            }
+
             foreach ($keys as $index => $key) {
                 if (in_array($key, $inits)) {
                     if (!isset($_POST[$key])) {

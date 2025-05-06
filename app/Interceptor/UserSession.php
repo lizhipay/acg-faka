@@ -7,6 +7,8 @@ namespace App\Interceptor;
 use App\Consts\User;
 use App\Util\Client;
 use App\Util\Context;
+use App\Util\JWT;
+use Firebase\JWT\Key;
 use JetBrains\PhpStorm\NoReturn;
 use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\InterceptorInterface;
@@ -31,63 +33,54 @@ class UserSession implements InterceptorInterface
             }
         }
 
-        if (!array_key_exists(User::SESSION, $_SESSION)) {
-            $this->kick("您还没有登录，请先登录再访问该页面..", $type);
+        if (!array_key_exists(User::SESSION, $_COOKIE)) {
+            $this->kick($type);
         }
 
-        $session = $_SESSION[User::SESSION];
-        $address = Client::getAddress();
+        $userToken = base64_decode((string)$_COOKIE[User::SESSION]);
 
-        if (empty($session)) {
-            $this->kick("登录会话过期，请重新登录..", $type);
+        if (!$userToken) {
+            $this->kick($type);
         }
 
-        $user = \App\Model\User::query()->find($session['id']);
+        $head = JWT::getHead($userToken);
+        if (!isset($head['uid'])) {
+            $this->kick($type);
+        }
 
-        //-----------------------------------
+        $user = \App\Model\User::query()->find($head['uid']);
+
+
         if (!$user) {
-            $this->kick("账号异常，请重新登录..", $type);
+            $this->kick($type);
         }
-        //-----------------------------------
-        if ($session['password'] != $user->password) {
-            $this->kick("您的密码已修改，请重新登录..", $type);
+
+        try {
+            $jwt = \Firebase\JWT\JWT::decode($userToken, new Key($user->password, 'HS256'));
+        } catch (\Exception $e) {
+            $this->kick($type);
         }
-        //-----------------------------------
-        if ($user->status != 1) {
-            $this->kick("您的账号已被封禁..", $type);
+
+
+        if ($jwt->expire <= time() || $user->login_time != $jwt->loginTime || $user->status != 1) {
+            $this->kick($type);
         }
-        //-----------------------------------
-        if ($session['login_time'] != $user->login_time) {
-            $this->kick("您的账号在其他地方登录..", $type);
-        }
-        //-----------------------------------
-        if ($session['login_ip'] != $user->login_ip) {
-            $this->kick("系统检测到您的网络有波动，请重新登录..", $type);
-        }
+
         //保存会话
         Context::set(User::SESSION, $user);
-
-        //写访问日志，v1.1.0-增加
-      //  $method = $_SERVER['REQUEST_METHOD'];
-      //  $url = Client::getUrl() . $_SERVER['REQUEST_URI'];
-      //  $post = json_encode($_POST, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-      //  $headers = json_encode((array)getallheaders(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-       // Log::to($user->password, "\nIP地址：{$address}\n请求地址：【{$method}】 -> {$url}\nPOST数据：" . $post . "\nHeaders：" . $headers . "\n----------------------------------------", $user->username, "user");
     }
 
     /**
-     * @param string $message
      * @param int $type
      */
-    #[NoReturn] private function kick(string $message, int $type): void
+    #[NoReturn] private function kick(int $type): void
     {
-        $_SESSION[User::SESSION] = null;
-        unset($_SESSION[User::SESSION]);
+        setcookie(User::SESSION, "", time() - 3600, "/");
         if ($type == Interceptor::TYPE_VIEW) {
-            Client::redirect("/user/authentication/login?goto=" . urlencode($_SERVER['REQUEST_URI']), $message);
+            Client::redirect("/user/authentication/login?goto=" . urlencode($_SERVER['REQUEST_URI']), "登录会话过期，请重新登录..");
         } else {
             header('content-type:application/json;charset=utf-8');
-            exit(json_encode(["code" => 0, "msg" => $message], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            exit(json_encode(["code" => 0, "msg" => "登录会话过期，请重新登录.."], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         }
     }
 }

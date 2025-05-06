@@ -22,7 +22,7 @@ class Authentication extends Manage
      */
     public function login(): string
     {
-        if (array_key_exists(ManageConst::SESSION, $_SESSION) && isset($_SESSION[ManageConst::SESSION])) {
+        if (array_key_exists(ManageConst::SESSION, $_COOKIE) && isset($_COOKIE[ManageConst::SESSION])) {
             Client::redirect("/admin/dashboard/index", "正在登录..", 1);
         }
         return $this->render("登录", "Authentication/Login.html");
@@ -30,8 +30,7 @@ class Authentication extends Manage
 
     public function logout()
     {
-        $_SESSION['MANAGE_USER'] = null;
-        unset($_SESSION['MANAGE_USER']);
+        setcookie(ManageConst::SESSION, "", time() - 3600, "/");
         Client::redirect("/admin/authentication/login", "注销成功..", 1);
     }
 }

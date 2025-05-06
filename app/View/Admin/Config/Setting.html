@@ -144,6 +144,25 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">CDN获取IP方式</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-6 fv-row">
+                                    <!--begin::Input-->
+                                    <select name="ip_get_mode" class="form-select form-select-solid form-select-lg" data-control="select2" data-hide-search="true">
+                                        #{foreach $ip_get_mode as $index => $mode}
+                                        <option value="#{$index}" #{if $index == $ip_mode} selected #{/if}>#{$mode}</option>
+                                        #{/foreach}
+                                    </select>
+                                    <!--end::Input-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
                                 <label class="col-lg-4 col-form-label required fw-bold fs-6">PC背景图片(支持http地址或者图床api)</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
@@ -408,6 +427,21 @@
                                         <option value="1" #{if $config.forget_type== 1} selected #{/if}>手机验证码</option>
                                     </select>
                                     <!--end::Input-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6">会话保持时间</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="number" name="session_expire"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="请输入会话保持时间，单位/秒" value="#{$config.session_expire}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>

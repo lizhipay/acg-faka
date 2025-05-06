@@ -6,6 +6,7 @@ namespace App\Controller\User;
 use App\Controller\Base\View\User;
 use App\Model\Config;
 use App\Util\Client;
+use Kernel\Exception\ViewException;
 
 /**
  * Class Authentication
@@ -17,11 +18,11 @@ class Authentication extends User
     /**
      * 管理员登录
      * @return string
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException|\ReflectionException
      */
     public function login(): string
     {
-        if (array_key_exists(\App\Consts\User::SESSION, $_SESSION) && isset($_SESSION[\App\Consts\User::SESSION])) {
+        if (array_key_exists(\App\Consts\User::SESSION, $_COOKIE) && isset($_COOKIE[\App\Consts\User::SESSION])) {
             Client::redirect("/user/dashboard/index", "正在登录..", 1);
         }
 
@@ -31,12 +32,11 @@ class Authentication extends User
 
     /**
      * @return string
-     * @throws \Kernel\Exception\JSONException
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException|\ReflectionException
      */
     public function register(): string
     {
-        if (array_key_exists(\App\Consts\User::SESSION, $_SESSION) && isset($_SESSION[\App\Consts\User::SESSION])) {
+        if (array_key_exists(\App\Consts\User::SESSION, $_COOKIE) && isset($_COOKIE[\App\Consts\User::SESSION])) {
             Client::redirect("/user/dashboard/index", "正在登录..", 1);
         }
 
@@ -49,8 +49,8 @@ class Authentication extends User
 
     /**
      * @return string
-     * @throws \Kernel\Exception\JSONException
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
+     * @throws \ReflectionException
      */
     public function emailForget(): string
     {
@@ -63,8 +63,8 @@ class Authentication extends User
 
     /**
      * @return string
-     * @throws \Kernel\Exception\JSONException
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
+     * @throws \ReflectionException
      */
     public function phoneForget(): string
     {
@@ -77,10 +77,9 @@ class Authentication extends User
     /**
      * 注销登录
      */
-    public function logout()
+    public function logout(): void
     {
-        $_SESSION[\App\Consts\User::SESSION] = null;
-        unset($_SESSION[\App\Consts\User::SESSION]);
+        setcookie(\App\Consts\User::SESSION, "", time() - 3600, "/");
         Client::redirect("/user/authentication/login", "注销成功", 1);
     }
 }
