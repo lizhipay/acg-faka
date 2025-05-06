@@ -38,7 +38,7 @@ class Config extends Model
         if ($expire < 120) {
             return 86400 * 30;
         }
-        return $expire;
+        return (int)$expire;
     }
 
 
