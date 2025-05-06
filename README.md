@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://faka.wiki/">
-    <img src="https://acged.cc/svg/logo.png" width="120" height="120" style="border-radius: 20px;" alt="异次元店铺系统">
+    <img src="https://raw.githubusercontent.com/lizhipay/acg-faka/refs/heads/main/favicon.ico" width="120" height="120" style="border-radius: 20px;" alt="异次元店铺系统">
   </a>
 </p>
 
