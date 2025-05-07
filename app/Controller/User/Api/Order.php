@@ -51,6 +51,10 @@ class Order extends User
             $data = $_REQUEST;
             unset($data['s']);
         }
+        if (empty($data) && isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] == 'application/json') {
+            $json_string = file_get_contents('php://input');
+            $data = json_decode($json_string, true);
+        }
         return $this->order->callback($handle, $data);
     }
 
