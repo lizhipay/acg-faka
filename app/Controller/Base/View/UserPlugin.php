@@ -54,7 +54,12 @@ abstract class UserPlugin extends \App\Controller\Base\User
             }
             $data['setting'] = Theme::getConfig("Cartoon")["setting"];
             $data['default_view_path'] = BASE_PATH . '/app/View/User/Theme/Cartoon/';
-            return View::render($template, $data, BASE_PATH . "/app/Plugin/" . ($controller ? \Kernel\Util\Plugin::$currentControllerPluginName : \Kernel\Util\Plugin::$currentPluginName) . "/View");
+            return View::render(
+                $template,
+                $data,
+                BASE_PATH . "/app/Plugin/" . ($controller ? \Kernel\Util\Plugin::$currentControllerPluginName : \Kernel\Util\Plugin::$currentPluginName) . "/View",
+                $controller
+            );
         } catch (\SmartyException $e) {
             throw new ViewException($e->getMessage());
         }

@@ -10,10 +10,11 @@ class View
      * @param string $template
      * @param array $data
      * @param string $dir
+     * @param bool $controller
      * @return string
      * @throws \SmartyException
      */
-    public static function render(string $template, array $data = [], string $dir = BASE_PATH . '/app/View'): string
+    public static function render(string $template, array $data = [], string $dir = BASE_PATH . '/app/View', bool $controller = true): string
     {
         $engine = new \Smarty();
         $engine->setTemplateDir($dir);
@@ -25,7 +26,7 @@ class View
             $engine->assign($key, $item);
         }
         $result = $engine->fetch($template);
-        hook(\App\Consts\Hook::RENDER_VIEW, $result);
+        $controller && hook(\App\Consts\Hook::RENDER_VIEW, $result);
         return $result;
     }
 }
