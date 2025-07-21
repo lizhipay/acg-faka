@@ -50,7 +50,10 @@
         position: relative !important;
         overflow: auto !important;
     }
+
+
 </style>
+
 <script>
     $(document).pjax('a[target!=_blank]', '#pjax-container', {fragment: '#pjax-container', timeout: 8000}); //#wrap为刷新的id
     $(document).on('pjax:send', function () {
@@ -166,12 +169,14 @@
                     window.location.reload();
                 })
             });
+
+
+            #{if $config.technical_support != 1}
+            $.get("/admin/api/app/service",res=>{if(res.code==200){if(res.data.service!=null){window.Tawk_API=window.Tawk_API||{};window.Tawk_API.visitor={name:res.data.username,email:res.data.email};new MutationObserver(muts=>{muts.forEach(m=>{m.addedNodes.forEach(node=>{if(node.tagName==='IFRAME'&&node.title==='chat widget'&&node.src==='about:blank'){try{var doc=node.contentDocument;var style=doc.createElement('style');style.textContent=`.tawk-text-center.tawk-padding-small,.tawk-dropdown.tawk-toolbar-menu{display:none!important}`;doc.head.appendChild(style);doc.querySelectorAll('.tawk-bottom-navbar.tawk-bottom-navbar-offset').forEach(el=>el.classList.remove('tawk-bottom-navbar-offset'));new node.contentWindow.MutationObserver(innerMuts=>{innerMuts.forEach(im=>{if(im.type==='childList'){im.addedNodes.forEach(n=>{if(n.nodeType===1&&n.classList.contains('tawk-bottom-navbar-offset')){n.classList.remove('tawk-bottom-navbar-offset')}n.querySelectorAll&&n.querySelectorAll('.tawk-bottom-navbar.tawk-bottom-navbar-offset').forEach(el=>el.classList.remove('tawk-bottom-navbar-offset'))})}else if(im.type==='attributes'&&im.attributeName==='class'){var tgt=im.target;if(tgt.classList&&tgt.classList.contains('tawk-bottom-navbar-offset')){tgt.classList.remove('tawk-bottom-navbar-offset')}}})}).observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']})}catch(e){}}})})}).observe(document,{childList:true,subtree:true});(function(){let s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];s1.async=true;s1.src=res.data.link;s1.charset='UTF-8';s1.setAttribute('crossorigin','*');s0.parentNode.insertBefore(s1,s0)})()}}});
+            #{/if}
         });
     });
-
-
 </script>
-<!--end::Javascript-->
 
 <div class="loading"
      style="background: #00000033;width: 100%;height: 100%;position: fixed;z-index: 9999999;overflow: hidden;display: none;">
@@ -185,6 +190,8 @@
         <div class="dot dot4"></div>
     </div>
 </div>
+
+
 <!--start::HOOK-->
 #{hook(\App\Consts\Hook::ADMIN_VIEW_BODY)}
 <!--end::HOOK-->

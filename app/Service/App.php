@@ -15,7 +15,7 @@ interface App
     const APP_URL = BASE_APP_SERVER;
     const MAIN_SERVER = "https://store.acgshe.com";
     const STANDBY_SERVER1 = "https://standby.acgshe.com";
-    const STANDBY_SERVER2 = "https://store.acgshop.net";
+    const STANDBY_SERVER2 = "https://standby.acgshe.com";
     const GENERAL_SERVER = "https://general.acgshe.com";
 
     /**
@@ -161,4 +161,10 @@ interface App
      * @return array
      */
     public function developerPluginPriceSet(array $data): array;
+
+
+    /**
+     * @return array
+     */
+    public function service(): array;
 }

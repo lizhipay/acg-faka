@@ -554,7 +554,7 @@
                                         <div class="menu-item me-lg-1 app-store"><a class="py-3 text-success fw-bold"
                                                                                     href="/admin/store/home"><i
                                                         class="fab fa-app-store-ios fs-5 pt-1 text-success"></i> 应用商店</a>
-                                                <select style="border: none;font-size: 12px;color: dodgerblue;background: rgba(255,255,255,0);" class="app-server-select"><option value="0" #{if $app.server == 0} selected #{/if}>国内线路-1</option><option value="3" #{if $app.server == 3} selected #{/if}>通用节点-1</option><option value="1" #{if $app.server == 1} selected #{/if}>海外线路-1</option><option value="2" #{if $app.server == 2} selected #{/if}>海外线路-2</option></select>
+                                                <select style="border: none;font-size: 12px;color: dodgerblue;background: rgba(255,255,255,0);position: relative;top: 0.1rem;" class="app-server-select"><option value="0" #{if $app.server == 0} selected #{/if}>国内节点</option><option value="3" #{if $app.server == 3} selected #{/if}>通用节点</option><option value="1" #{if $app.server == 1} selected #{/if}>海外节点</option></select>
                                             <span class="store-text"></span></div>
                                     </div>
                                 #{else}

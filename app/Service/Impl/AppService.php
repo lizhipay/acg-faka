@@ -563,4 +563,14 @@ class AppService implements App
     {
         return $this->storeRequest("/store/levels");
     }
+
+    /**
+     * @return array
+     * @throws GuzzleException
+     * @throws JSONException
+     */
+    public function service(): array
+    {
+        return $this->storeRequest("/store/service");
+    }
 }

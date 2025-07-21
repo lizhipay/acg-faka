@@ -425,4 +425,12 @@ class App extends Manage
         $this->app->bindLevel((int)$_POST['auth_id']);
         return $this->json(200, "绑定授权成功");
     }
+
+    /**
+     * @return array
+     */
+    public function service(): array
+    {
+        return $this->json(200, "success", array_merge($this->app->service(), ["email" => $this->getManage()->email]));
+    }
 }
