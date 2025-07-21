@@ -14,8 +14,8 @@ define("BASE_APP_SERVER", match ((int)config("store")['server']) {
 });
 //session
 session_name("ACG-SHOP");
-session_start();
-session_write_close();
+//session_start();
+//session_write_close();
 try {
     if (!isset($_GET['s'])) {
         $_GET['s'] = "/user/index/index";
