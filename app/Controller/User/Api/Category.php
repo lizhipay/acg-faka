@@ -10,12 +10,13 @@ use App\Entity\QueryTemplateEntity;
 use App\Interceptor\Business;
 use App\Interceptor\UserSession;
 use App\Interceptor\Waf;
-use App\Model\UserCategory;
 use App\Service\Query;
 use App\Util\Client;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
+use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
+use Kernel\Waf\Filter;
 
 #[Interceptor([Waf::class, UserSession::class, Business::class], Interceptor::TYPE_API)]
 class Category extends User
@@ -50,12 +51,13 @@ class Category extends User
 
 
     /**
+     * @param Request $request
      * @return array
      * @throws JSONException
      */
-    public function save(): array
+    public function save(Request $request): array
     {
-        $map = $_POST;
+        $map = $request->post(flags: Filter::NORMAL);
         $userId = $this->getUser()->id;
 
         if ((int)$map['id'] != 0) {

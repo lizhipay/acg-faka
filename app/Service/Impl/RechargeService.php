@@ -9,6 +9,7 @@ use App\Model\Bill;
 use App\Model\Config;
 use App\Model\OrderOption;
 use App\Model\Pay;
+use App\Model\User;
 use App\Model\UserRecharge;
 use App\Service\Order;
 use App\Service\Recharge;
@@ -19,6 +20,7 @@ use App\Util\Str;
 use Illuminate\Database\Capsule\Manager as DB;
 use Kernel\Annotation\Inject;
 use Kernel\Exception\JSONException;
+use Kernel\Exception\RuntimeException;
 
 class RechargeService implements Recharge
 {
@@ -27,11 +29,12 @@ class RechargeService implements Recharge
     private Order $order;
 
     /**
-     * @param \App\Model\User $user
+     * @param User $user
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
+     * @throws RuntimeException
      */
-    public function trade(\App\Model\User $user): array
+    public function trade(User $user): array
     {
         $payId = (int)$_POST['pay_id'];//支付方式id
         $amount = (float)$_POST['amount'];//充值金额
@@ -106,15 +109,14 @@ class RechargeService implements Recharge
                         $url = $order->pay_url;
                         break;
                     case \App\Pay\Pay::TYPE_LOCAL_RENDER:
-                        $base64 = urlencode(base64_encode('type=1&handle=' . $pay->handle . '&code=' . $pay->code . '&tradeNo=' . $order->trade_no));
-                        $url = '/user/recharge/order.' . $base64;
+                        $url = '/user/recharge/order.' . $order->trade_no . ".1";
                         break;
                     case \App\Pay\Pay::TYPE_SUBMIT:
-                        $order->save();
-                        $base64 = urlencode(base64_encode('type=2&tradeNo=' . $order->trade_no));
-                        $url = '/user/recharge/order.' . $base64;
+                        $url = '/user/recharge/order.' . $order->trade_no . ".2";
                         break;
                 }
+
+                $order->save();
 
                 $option = $trade->getOption();
 

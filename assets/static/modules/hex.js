@@ -398,7 +398,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                         d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
                             '            <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '            <div class="layui-input-block">\n' +
-                            '                <textarea ' + (item.hasOwnProperty('height') ? 'style="height:' + item.height + 'px"' : '') + ' name="' + item.name + '" placeholder="' + item.placeholder + '" class="layui-textarea ' + item.name + '">' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '</textarea>' +
+                            '                <textarea ' + (item.hasOwnProperty('height') ? 'style="min-height:' + item.height + 'px;height:' + item.height + 'px"' : '') + ' name="' + item.name + '" placeholder="' + item.placeholder + '" class="layui-textarea ' + item.name + '">' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '</textarea>' +
                             '            </div>\n' +
                             '        </div>';
                         break;
@@ -1223,6 +1223,20 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                 }
                 typeof done === 'function' && done(res.data);
             });
+        },
+        async timer(call, millisecond, immediately = false) {
+            if (immediately) {
+                const state = await call();
+                if (!state) {
+                    return;
+                }
+            }
+            setTimeout(async () => {
+                const state = await call();
+                if (state) {
+                    await this.timer(call, millisecond, false);
+                }
+            }, millisecond);
         }
     }
 

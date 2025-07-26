@@ -532,6 +532,7 @@
         layui.use(['layer', 'form', 'hex'], function () {
             let cao = layui.hex;
             let uploadUrl = "/admin/api/upload/handle";
+
             let editorInstance = window.wangEditor;
             const editor = new editorInstance('.notice-div');
             const $textarea = $(".notice-textarea");

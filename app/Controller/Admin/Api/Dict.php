@@ -8,6 +8,8 @@ use App\Controller\Base\API\Manage;
 use App\Interceptor\ManageSession;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
+use Kernel\Context\Interface\Request;
+use Kernel\Waf\Filter;
 
 /**
  * Class Dict
@@ -21,11 +23,13 @@ class Dict extends Manage
     private \App\Service\Dict $dict;
 
     /**
+     * @param Request $request
      * @return array
      */
-    public function get(): array
+    public function get(Request $request): array
     {
-        @$dict = $this->dict->get((string)$_POST['dict'], (string)$_POST['keywords']);
+        $a = htmlspecialchars_decode((string)$request->post("dict", flags: Filter::NORMAL), ENT_QUOTES);
+        @$dict = $this->dict->get($a, (string)$_POST['keywords']);
         return $this->json(200, null, (array)$dict);
     }
 }

@@ -126,8 +126,14 @@
                         width: 64,
                         uploadUrl: User.property.uploadUrl
                     },
-                    {title: "分类名称", name: "name", type: "input", placeholder: "请输入分类名称"},
-                    {title: "分类排序", name: "sort", type: "input", default: 1000, placeholder: "最低1000起，值越小，排名越靠前哦~"},
+                    {title: "分类名称", name: "name", type: "textarea", height: 38, placeholder: "请输入分类名称"},
+                    {
+                        title: "分类排序",
+                        name: "sort",
+                        type: "input",
+                        default: 1000,
+                        placeholder: "最低1000起，值越小，排名越靠前哦~"
+                    },
                     {title: "状态", name: "status", type: "switch", text: "启用"},
                 ], res => {
                     table.bootstrapTable('refresh', {silent: true});

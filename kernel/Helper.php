@@ -4,6 +4,8 @@ declare (strict_types=1);
 # composer require symfony/var-dumper
 
 // use namespace
+use App\Util\Opcache;
+use App\Util\Str;
 use Kernel\Util\Plugin;
 use Kernel\Util\View;
 use Symfony\Component\VarDumper\Cloner\VarCloner;
@@ -150,6 +152,8 @@ declare (strict_types=1);\n\nreturn [\n";
         if (file_put_contents($file, $ret) === false) {
             throw new \Kernel\Exception\JSONException("没有文件写入权限");
         }
+
+        Opcache::invalidate($file);
     }
 }
 
@@ -244,7 +248,6 @@ if (!function_exists("hook")) {
     }
 }
 
-
 if (!function_exists("getHookNum")) {
     function getHookNum(int $point): int
     {
@@ -258,5 +261,33 @@ if (!function_exists("debug")) {
     {
         $path = BASE_PATH . '/runtime.log';
         file_put_contents($path, "[" . date("Y-m-d H:i:s", time()) . "]:" . $message . PHP_EOL, FILE_APPEND);
+    }
+}
+
+
+if (!function_exists("getPluginConfig")) {
+    function getPluginConfig(string $name)
+    {
+        return require(BASE_PATH . '/app/Plugin/' . $name . '/Config/Config.php');
+    }
+}
+
+if (!function_exists("PluginView")) {
+    function PluginView(string $src, bool $debug = false): string
+    {
+        $route = explode("/", trim($_GET['s'], "/"));
+        if (strtolower($route[0]) == "plugin") {
+            $pluginName = ucfirst($route[1]);
+            return "/app/Plugin/{$pluginName}/View/{$src}?v=" . Plugin::getPlugin($pluginName)[\App\Consts\Plugin::VERSION] . (!$debug ?: "&debug=" . Str::generateRandStr(16));
+        }
+
+        return "";
+    }
+}
+
+if (!function_exists("Plugin")) {
+    function Plugin(string $pluginName, string $src, bool $debug = false): string
+    {
+        return "/app/Plugin/{$pluginName}/{$src}?v=" . Plugin::getPlugin($pluginName)[\App\Consts\Plugin::VERSION] . (!$debug ?: "&debug=" . Str::generateRandStr(16));
     }
 }

@@ -1,0 +1,9 @@
+[
+	[1, "\\.(htaccess|mysql_history|bash_history|DS_Store|idea|user\\.ini)", "文件目录过滤1", 0],
+	[1, "\\.(bak|inc|old|mdb|sql|php~|swp|java|class)$", "文件目录过滤2", 0],
+	[1, "^/(vhost|bbs|host|wwwroot|www|site|root|backup|data|ftp|db|admin|website|web).*\\.(rar|sql|zip|tar\\.gz|tar)$", "文件目录过滤3", 0],
+	[1, "/(hack|shell|spy|phpspy)\\.php$", "PHP脚本执行过滤1", 0],
+	[1, "^/(attachments|css|uploadfiles|static|forumdata|cache|avatar)/(\\w+).(php|jsp)$", "PHP脚本执行过滤2", 0],
+	[1, "(?:(union(.*?)select))", "SQL注入过滤1", 0],
+	[1, "(?:define|eval|file_get_contents|include|require|require_once|shell_exec|phpinfo|system|passthru|preg_\\w+|execute|echo|print|print_r|var_dump|(fp)open|alert|showmodaldialog)\\(", "一句话木马过滤1", 1]
+]

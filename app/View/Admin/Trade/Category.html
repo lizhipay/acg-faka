@@ -223,7 +223,7 @@
             let modal = (values = {}) => {
                 cao.popup('/admin/api/category/save', [
                     {title: "分类图标", name: "icon", type: "image", placeholder: "请选择图片(推荐64*64)", width: 100},
-                    {title: "分类名称", name: "name", type: "input", placeholder: "请输入分类名称"},
+                    {title: "分类名称", name: "name", type: "textarea", height: 38, placeholder: "请输入分类名称"},
                     {title: "分类排序", name: "sort", type: "input", placeholder: "值越小，排名越靠前哦~"},
                     {
                         title: "隐藏分类",

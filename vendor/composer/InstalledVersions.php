@@ -46,6 +46,15 @@ private static $installed = array (
       ),
       'reference' => 'ade2b3bbfb776f27f0558e26eed43b5d9fe1b392',
     ),
+    'ezyang/htmlpurifier' => 
+    array (
+      'pretty_version' => 'v4.18.0',
+      'version' => '4.18.0.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => 'cb56001e54359df7ae76dc522d08845dc741621b',
+    ),
     'firebase/php-jwt' => 
     array (
       'pretty_version' => 'v6.11.1',

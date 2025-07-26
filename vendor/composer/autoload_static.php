@@ -22,6 +22,7 @@ class ComposerStaticInit61b839c02642e9ffea63f2fd1b8dedb6
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         '667aeda72477189d0494fecd327c3641' => __DIR__ . '/..' . '/symfony/var-dumper/Resources/functions/dump.php',
         'a9ed0d27b5a698798a89181429f162c5' => __DIR__ . '/..' . '/khanamiryan/qrcode-detector-decoder/lib/Common/customFunctions.php',
+        '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -248,6 +249,13 @@ class ComposerStaticInit61b839c02642e9ffea63f2fd1b8dedb6
             'Rah\\Danpu\\' => 
             array (
                 0 => __DIR__ . '/..' . '/rah/danpu/src',
+            ),
+        ),
+        'H' => 
+        array (
+            'HTMLPurifier' => 
+            array (
+                0 => __DIR__ . '/..' . '/ezyang/htmlpurifier/library',
             ),
         ),
     );

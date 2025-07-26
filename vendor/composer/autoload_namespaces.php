@@ -7,4 +7,5 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Rah\\Danpu\\' => array($vendorDir . '/rah/danpu/src'),
+    'HTMLPurifier' => array($vendorDir . '/ezyang/htmlpurifier/library'),
 );

@@ -27,8 +27,15 @@
                     <div class="card-toolbar">
                         <a href="/admin/store/home" class="btn btn-sm btn-light-primary btn-app-create me-3"><i
                                     class="fab fa-instalod"></i>
-                            获取更多插件
+                            安装更多插件
                         </a>
+                        <button class="btn btn-sm btn-light-success plugin-start me-3"><i
+                                    class="fas fa-play-circle"></i>
+                            <span>启动插件</span>
+                        </button>
+                        <button class="btn btn-sm btn-light-dark plugin-stop me-3"><i class="fas fa-stop-circle"></i>
+                            <span>停止插件</span>
+                        </button>
                     </div>
                 </div>
                 <!--end::Header-->
@@ -124,6 +131,7 @@
                     }
                 },
                 columns: [
+                    {checkbox: true},
                     {
                         field: 'plugin_name', title: '插件名称', formatter: function (val, item) {
                             return '<span class="badge badge-light-dark"><img src="' + item.icon + '"  style="width: 18px;border-radius: 5px;margin-top: -2px"/> ' + item.NAME + '</span> '
@@ -332,6 +340,87 @@
                     ]
                 }
             ], true, false);
+
+
+            $('.plugin-start').click(() => {
+                let plugins = table.bootstrapTable('getSelections');
+                if (plugins.length == 0) {
+                    layer.msg("请至少勾选1个插件进行操作！");
+                    return;
+                }
+                const $startIns = $('.plugin-start span');
+
+                let index = 0;
+                cao.timer(() => {
+                    const startLoadIndex = layer.load(2, {shade: ['0.3', '#fff']});
+                    return new Promise(resolve => {
+                        $startIns.html(`正在启动 ${index}/${plugins.length}`);
+
+                        const plugin = plugins[index];
+                        index++;
+                        if (plugin && (plugin?.PLUGIN_CONFIG?.STATUS == 0 || !plugin?.PLUGIN_CONFIG?.hasOwnProperty("STATUS"))) {
+                            $.post("/admin/api/plugin/setConfig", {id: plugin.id, STATUS: 1}).done(function (res) {
+                                if (res.code == 200) {
+                                    $('.plugin-state[data-id=' + plugin.id + ']').removeClass("badge-light-danger").addClass("badge-light-success").html("已启动");
+                                    resolve(true);
+                                } else {
+                                    resolve(true);
+                                }
+                            }).fail(function (jqXHR, textStatus, errorThrown) {
+                                resolve(true);
+                            });
+                            return;
+                        } else if (plugin && plugin?.PLUGIN_CONFIG?.STATUS != 0) {
+                            resolve(true);
+                            return;
+                        }
+
+                        table.bootstrapTable('refresh', {silent: true});
+                        $startIns.html(`启动插件`);
+                        layer.close(startLoadIndex);
+                        resolve(false);
+                    });
+                }, 300, true);
+            });
+
+            $('.plugin-stop').click(() => {
+                let plugins = table.bootstrapTable('getSelections');
+                if (plugins.length == 0) {
+                    layer.msg("请至少勾选1个插件进行操作！");
+                    return;
+                }
+                const $stopIns = $('.plugin-stop span');
+                let index = 0;
+                cao.timer(() => {
+                    const startLoadIndex = layer.load(2, {shade: ['0.3', '#fff']});
+                    return new Promise(resolve => {
+                        $stopIns.html(`正在停止 ${index}/${plugins.length}`);
+                        const plugin = plugins[index];
+                        index++;
+                        if (plugin && plugin?.PLUGIN_CONFIG?.STATUS == 1) {
+                            $.post("/admin/api/plugin/setConfig", {id: plugin.id, STATUS: 0}).done(function (res) {
+                                if (res.code == 200) {
+                                    $('.plugin-state[data-id=' + plugin.id + ']').removeClass("badge-light-success").addClass("badge-light-danger").html("已停止");
+                                    resolve(true);
+                                } else {
+                                    resolve(true);
+                                }
+                            }).fail(function (jqXHR, textStatus, errorThrown) {
+                                resolve(true);
+                            });
+                            return;
+                        } else if (plugin && plugin?.PLUGIN_CONFIG?.STATUS != 1) {
+                            resolve(true);
+                            return;
+                        }
+
+                        table.bootstrapTable('refresh', {silent: true});
+                        $stopIns.html(`停止插件`);
+                        layer.close(startLoadIndex);
+                        resolve(false);
+                    });
+                }, 300, true);
+            });
         });
     });
 </script>

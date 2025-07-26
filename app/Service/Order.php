@@ -7,7 +7,10 @@ namespace App\Service;
 use App\Model\Commodity;
 use App\Model\User;
 use App\Model\UserGroup;
+use App\Service\Impl\OrderService;
+use Kernel\Annotation\Bind;
 
+#[Bind(class: OrderService::class)]
 interface Order
 {
 

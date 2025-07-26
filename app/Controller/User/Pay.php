@@ -24,14 +24,22 @@ class Pay extends User
      */
     public function order(): string
     {
-        $obj = [];
-        parse_str(base64_decode(urldecode((string)$_GET['_PARAMETER'][0])), $obj);
+        if (!isset($_GET['_PARAMETER'][0]) || !isset($_GET['_PARAMETER'][1])) {
+            return '订单不存在';
+        }
+
+        $tradeNo = $_GET['_PARAMETER'][0];
+        $type = (int)$_GET['_PARAMETER'][1];
         //获取订单信息
-        $order = Order::query()->where("trade_no", $obj['tradeNo'])->first();
+        $order = Order::with(['pay'])->where("trade_no", $tradeNo)->first();
         if (!$order) {
             return '订单不存在';
         }
-        $type = (int)$obj['type'];
+
+        if (!$order->pay) {
+            return '支付方式不存在';
+        }
+
         $data = OrderOption::get($order->id);
 
         if ($type == 2) {
@@ -44,11 +52,7 @@ class Pay extends User
             ]);
         }
 
-        $html = $obj['handle'] . '/View/' . $obj['code'] . '.html';
-
-        if (preg_match("#(?:define|eval|file_get_contents|include|require_once|shell_exec|phpinfo|system|passthru|chr|char|preg_\w+|execute|echo|print|print_r|var_dump|(fp)open|alert|showmodaldialog|file_put_contents|fopen|urldecode|scandir)#", $obj['handle'])) {
-            throw new JSONException("视图出现异常");
-        }
+        $html = "{$order->pay->handle}/View/{$order->pay->code}.html";
 
         if (!is_file(BASE_PATH . '/app/Pay/' . $html)) {
             throw new JSONException("视图不存在");

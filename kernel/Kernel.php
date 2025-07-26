@@ -1,6 +1,17 @@
 <?php
 declare(strict_types=1);
 
+use Illuminate\Database\Capsule\Manager;
+use Kernel\Annotation\Collector;
+use Kernel\Consts\Base;
+use Kernel\Container\Di;
+use Kernel\Context\Request;
+use Kernel\Exception\NotFoundException;
+use Kernel\Plugin\Hook;
+use Kernel\Util\Context;
+use Kernel\Util\Plugin;
+use Kernel\Waf\Firewall;
+
 error_reporting(0);
 const BASE_PATH = __DIR__ . "/../";
 require(BASE_PATH . '/vendor/autoload.php');
@@ -17,6 +28,8 @@ session_name("ACG-SHOP");
 //session_start();
 //session_write_close();
 try {
+    //waf install -> 2025-07-26
+    Context::set(\Kernel\Context\Interface\Request::class, new Request());
     if (!isset($_GET['s'])) {
         $_GET['s'] = "/user/index/index";
     } elseif (trim($_GET['s'], "/") == 'admin') {
@@ -24,12 +37,11 @@ try {
     }
 
     $s = explode("/", trim((string)$_GET['s'], '/'));
-    \Kernel\Util\Context::set(\Kernel\Consts\Base::ROUTE, "/" . implode("/", $s));
-    \Kernel\Util\Context::set(\Kernel\Consts\Base::LOCK, (string)file_get_contents(BASE_PATH . "/kernel/Install/Lock"));
-    \Kernel\Util\Context::set(\Kernel\Consts\Base::IS_INSTALL, file_exists(BASE_PATH . '/kernel/Install/Lock'));
-    \Kernel\Util\Context::set(\Kernel\Consts\Base::OPCACHE, extension_loaded("Zend OPcache") || extension_loaded("opcache"));
-    \Kernel\Util\Context::set(\Kernel\Consts\Base::STORE_STATUS, file_exists(BASE_PATH . "/kernel/Plugin.php"));
-
+    Context::set(Base::ROUTE, "/" . implode("/", $s));
+    Context::set(Base::LOCK, (string)file_get_contents(BASE_PATH . "/kernel/Install/Lock"));
+    Context::set(Base::IS_INSTALL, file_exists(BASE_PATH . '/kernel/Install/Lock'));
+    Context::set(Base::OPCACHE, extension_loaded("Zend OPcache") || extension_loaded("opcache"));
+    Context::set(Base::STORE_STATUS, file_exists(BASE_PATH . "/kernel/Plugin.php"));
 
     $count = count($s);
     $controller = "App\\Controller";
@@ -37,7 +49,7 @@ try {
 
     if (strtolower($s[0]) == "plugin") {
         $controller = "App";
-        \Kernel\Util\Plugin::$currentControllerPluginName = ucfirst(trim((string)$s[1]));
+        Plugin::$currentControllerPluginName = ucfirst(trim((string)$s[1]));
     }
 
     foreach ($s as $j => $x) {
@@ -55,94 +67,63 @@ try {
     //需要执行的方法
     $action = array_shift($parameter);
     //存储
-    $_GET["_PARAMETER"] = $parameter;
-
+    $_GET["_PARAMETER"] = Firewall::inst()->xssKiller($parameter);
 
     //初始化数据库
-    $capsule = new \Illuminate\Database\Capsule\Manager();
+    $capsule = new Manager();
+    $db_config = config('database');
+    $db_config['options'][PDO::ATTR_PERSISTENT] = true;
     // 创建链接
-    $capsule->addConnection(config('database'));
+    $capsule->addConnection($db_config);
     // 设置全局静态可访问
     $capsule->setAsGlobal();
     // 启动Eloquent
     $capsule->bootEloquent();
 
     //插件库
-    if (\Kernel\Util\Context::get(\Kernel\Consts\Base::STORE_STATUS) && \Kernel\Util\Context::get(\Kernel\Consts\Base::IS_INSTALL)) {
+    if (Context::get(Base::STORE_STATUS) && Context::get(Base::IS_INSTALL)) {
         require("Plugin.php");
         //插件初始化
-        \Kernel\Util\Plugin::scan();
-        Initialize();
+        Hook::inst()->load();
         //插件初始化
         hook(\App\Consts\Hook::KERNEL_INIT);
     }
 
+
     //检测类是否存在
     if (!class_exists($controller)) {
-        throw new \Kernel\Exception\NotFoundException("404 Not Found");
+        throw new NotFoundException("404 Not Found");
     }
 
     $controllerInstance = new $controller;
-    //#Class Interceptor
-    $interceptors = [];
-    $ref = new ReflectionClass($controllerInstance);
-    $reflectionAttributes = $ref->getAttributes();
 
-    foreach ($reflectionAttributes as $attribute) {
-        $newInstance = $attribute->newInstance();
-    }
-
-    //#Method Interceptor
-    $params = [];
-    $methodRef = new ReflectionMethod($controllerInstance, $action);
-    $methodReflectionAttributes = $methodRef->getAttributes();
-    foreach ($methodReflectionAttributes as $attribute) {
-        $newInstance = $attribute->newInstance();
-    }
-
-    #param
-    foreach ($methodRef->getParameters() as $param) {
-        $reflectionParamAttributes = $param->getAttributes();
-        $paramType = $param->getType()->getName();
-        $allowsNull = $param->allowsNull();
-        foreach ($reflectionParamAttributes as $reflectionParamAttribute) {
-            $paramIns = $reflectionParamAttribute->newInstance();
-            if ($paramIns instanceof \Kernel\Annotation\Post) {
-                if (!$allowsNull) {
-                    if (!key_exists($param->getName(), $_POST)) {
-                        throw new \Kernel\Exception\ParameterMissException("{$param->getName()} can not be empty");
-                    }
-                }
-                @$params[] = dat($paramType, $_POST[$param->getName()]);
-            } elseif ($paramIns instanceof \Kernel\Annotation\Get) {
-                if (!$allowsNull) {
-                    if (!key_exists($param->getName(), $_GET)) {
-                        throw new \Kernel\Exception\ParameterMissException("{$param->getName()} can not be empty:" . $methodRef->getName());
-                    }
-                }
-                @$params[] = dat($paramType, $_GET[$param->getName()]);
-            }
-        }
-    }
-
-    $reflectionProperties = $ref->getProperties();
-    foreach ($reflectionProperties as $property) {
-        $reflectionProperty = new \ReflectionProperty($controllerInstance, $property->getName());
-        $reflectionPropertiesAttributes = $reflectionProperty->getAttributes();
-        foreach ($reflectionPropertiesAttributes as $reflectionAttribute) {
-            $ins = $reflectionAttribute->newInstance();
-            if ($ins instanceof \Kernel\Annotation\Inject) {
-                di($controllerInstance);
-            }
-        }
+    //检测method是否存在
+    if (!method_exists($controllerInstance, $action)) {
+        throw new NotFoundException("404 Not Found");
     }
 
 
+    Collector::instance()->classParse($controllerInstance, function (\ReflectionAttribute $attribute) {
+        $attribute->newInstance();
+    });
+
+    Collector::instance()->methodParse($controllerInstance, $action, function (\ReflectionAttribute $attribute) {
+        $attribute->newInstance();
+    });
+
+    //依赖注入
+    Di::instance()->inject($controllerInstance);
+
+
+    //参数注入
+    $parameters = Collector::instance()->getMethodParameters($controllerInstance, $action, $_REQUEST);
     hook(\App\Consts\Hook::CONTROLLER_CALL_BEFORE, $controllerInstance, $action);
-    $result = call_user_func_array([$controllerInstance, $action], $params);
+    $result = call_user_func_array([$controllerInstance, $action], $parameters);
     $routePath = $_GET['s'];
     hook(\App\Consts\Hook::CONTROLLER_CALL_AFTER, $controllerInstance, $action, $result);
     hook(\App\Consts\Hook::HTTP_ROUTE_RESPONSE, $routePath, $result);
+
+
 
     if ($result === null) {
         return;
@@ -156,7 +137,7 @@ try {
         echo $result;
     }
 } catch (Throwable $e) {
-    if ($e instanceof \Kernel\Exception\NotFoundException) {
+    if ($e instanceof NotFoundException) {
         exit(feedback("404 Not Found"));
     } elseif ($e instanceof \Kernel\Exception\ParameterMissException) {
         header('content-type:application/json;charset=utf-8');

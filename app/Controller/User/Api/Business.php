@@ -14,7 +14,10 @@ use App\Util\Date;
 use App\Util\Validation;
 use Illuminate\Database\Capsule\Manager as DB;
 use Kernel\Annotation\Interceptor;
+use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
+use Kernel\Exception\RuntimeException;
+use Kernel\Waf\Filter;
 
 #[Interceptor([Waf::class, UserSession::class], Interceptor::TYPE_API)]
 class Business extends User
@@ -66,11 +69,14 @@ class Business extends User
     }
 
     /**
+     * @param Request $request
      * @return array
      * @throws JSONException
+     * @throws RuntimeException
      */
-    public function saveConfig(): array
+    public function saveConfig(Request $request): array
     {
+        $post = $request->post(flags: Filter::NORMAL);
         $level = $this->businessValidation();
 
         if (empty($_POST['shop_name'])) {
@@ -133,7 +139,7 @@ class Business extends User
 
         $business->shop_name = $_POST['shop_name'];
         $business->title = $_POST['title'];
-        $business->notice = $_POST['notice'];
+        $business->notice = $post['notice'];
         $business->service_qq = $_POST['service_qq'];
         $business->service_url = $_POST['service_url'];
         $business->master_display = (int)$_POST['master_display'];

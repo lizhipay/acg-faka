@@ -1,4 +1,9 @@
 #{include file="../Common/Header.html"}
+<style>
+    .notice-div .w-e-toolbar,  .notice-div .w-e-text,  .notice-div .w-e-text-container , .CodeMirror{
+        background-color: #ffffff29 !important;
+    }
+</style>
 <div class="layui-container fly-marginTop fly-user-main">
     #{include file="../Common/Nav.html"}
     <div class="fly-panel fly-panel-user" pad20>
@@ -104,9 +109,19 @@
                             <div>
                                 <div class="form-header">店铺公告</div>
                                 <div class="form-body">
-                                    <textarea type="text" name="notice" required autocomplete="off"
-                                                                 placeholder="店铺公告，支持HTML" class="layui-textarea"
-                                                                 style="color: #ff9191;">#{$business.notice}</textarea>
+
+
+
+                                        <textarea style="display: none;" name="notice" class="notice-textarea"></textarea>
+                                        <div style="">
+                                            <button data-type="0" class="button-switch-html" type="button"
+                                                    style="width: 100%;border: none;background: #ffffff29;border-radius: 5px 5px 0 0;color: #c9b8b8;">
+                                                <i class="layui-icon layui-icon-fonts-code"></i> HTML
+                                            </button>
+                                        </div>
+                                        <div class="notice-div">#{$business.notice}</div>
+
+
                                 </div>
                             </div>
                             <div>
@@ -254,6 +269,79 @@
             let queryParams = null;
             let globalCategoryId = 0;
             let globalCategoryName = null;
+
+
+            let uploadUrl = "/user/api/upload/handle";
+
+            let editorInstance = window.wangEditor;
+            const editor = new editorInstance('.notice-div');
+            const $textarea = $(".notice-textarea");
+            editor.config.onchange = function (html) {
+                console.log(html);
+                $textarea.val(html);
+            }
+            editor.config.uploadFileName = 'file';
+            editor.config.uploadImgServer = uploadUrl;
+            editor.config.uploadImgMaxLength = 1;
+            editor.config.uploadImgHooks = {
+                customInsert: function (insertImgFn, result) {
+                    insertImgFn(result.data.path);
+                }
+            }
+            editor.config.uploadVideoServer = uploadUrl;
+            editor.config.uploadVideoName = 'file'
+            editor.config.uploadVideoHooks = {
+                customInsert: function (insertVideoFn, result) {
+                    insertVideoFn(result.data.path)
+                }
+            }
+
+            editor.create();
+            $textarea.val(editor.txt.html());
+
+            //----------------
+            let noticeDiv = $('.notice-div');
+            noticeDiv.find(".w-e-toolbar").css("border", "none");
+            noticeDiv.find(".w-e-text-container").css("border", "none");
+
+            $('.button-switch-html').click(function () {
+                let type = $(this).attr("data-type");
+                if (type == 0) {
+                    noticeDiv.hide();
+                    $(this).attr("data-type", 1);
+                    $(this).html('<i class="layui-icon layui-icon-edit"></i>' + "写作");
+                    //创建临时HTML编辑器
+                    noticeDiv.parent().append('<textarea class="textarea-temp"></textarea>');
+                    let optd = {
+                        mode: "text/html",
+                        lineNumbers: true,
+                        lineWrapping: true,
+                        extraKeys: {
+                            "Ctrl-Q": function (cm) {
+                                cm.foldCode(cm.getCursor());
+                            }
+                        },
+                        foldGutter: true,
+                        gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
+                    };
+                    tmp = CodeMirror.fromTextArea($('.textarea-temp').get(0), optd);
+                    tmp.setValue(editor.txt.html());
+                    tmp.on("change", function () {
+                        let html = tmp.getValue();
+                        $textarea.val(html);
+                    });
+                } else {
+                    let html = tmp.getValue();
+                    editor.txt.html(html);
+                    noticeDiv.show();
+                    noticeDiv.parent().find(".CodeMirror").remove();
+                    $('.textarea-temp').remove();
+                    $(this).attr("data-type", 0);
+                    $(this).html('<i class="layui-icon layui-icon-fonts-code"></i> ' + "HTML");
+                }
+            });
+            //----------------------
+
 
 
             $('.unbind-subdomain').click(function () {

@@ -19,7 +19,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
+use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
+use Kernel\Waf\Filter;
 
 #[Interceptor([Waf::class, UserSession::class, Business::class], Interceptor::TYPE_API)]
 class Commodity extends User
@@ -53,7 +55,7 @@ class Commodity extends User
         $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
 
         foreach ($data['data'] as $key => $val) {
-            $data['data'][$key]['share_url'] = Client::getUrl() .  "?cid={$val['category_id']}&mid={$val['id']}";
+            $data['data'][$key]['share_url'] = Client::getUrl() . "?cid={$val['category_id']}&mid={$val['id']}";
         }
 
         $json = $this->json(200, null, $data['data']);
@@ -63,14 +65,13 @@ class Commodity extends User
 
 
     /**
+     * @param Request $request
      * @return array
      * @throws JSONException
      */
-    public function save(): array
+    public function save(Request $request): array
     {
-
-
-        $map = $_POST;
+        $map = $request->post(flags: Filter::NORMAL);
         $user = $this->getUser();
         $map['owner'] = $user->id;
 

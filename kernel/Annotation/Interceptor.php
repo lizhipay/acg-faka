@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Kernel\Annotation;
 
+use Kernel\Container\Di;
 use Kernel\Exception\InterceptorException;
 
 #[\Attribute(\Attribute::TARGET_CLASS | \Attribute::TARGET_METHOD)]
@@ -16,6 +17,8 @@ class Interceptor
     /**
      * Interceptor constructor.
      * @param string|array $class
+     * @param int $type
+     * @throws InterceptorException
      */
     public function __construct(mixed $class, int $type = self::TYPE_VIEW)
     {
@@ -30,6 +33,9 @@ class Interceptor
 
     /**
      * @param string $class
+     * @param int $type
+     * @throws InterceptorException
+     * @throws \ReflectionException
      */
     private function run(string $class, int $type): void
     {
@@ -39,6 +45,7 @@ class Interceptor
 
         $var = new $class();
         if ($var instanceof InterceptorInterface) {
+            Di::inst()->inject($var);
             $var->handle($type);
             Interceptor::$run[$class] = 0x1;
             return;

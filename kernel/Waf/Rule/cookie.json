@@ -1,0 +1,15 @@
+[
+	[1,"(?:etc\\/\\W*passwd)","目录保护3",0],
+	[1,"(gopher|doc|php|glob|file|phar|zlib|ftp|ldap|dict|ogg|data)\\:\\/","PHP流协议过滤1",0],
+	[1,"base64_decode\\(","一句话木马过滤3",0],
+	[1,"\\$_(GET|post|cookie|files|session|env|phplib|GLOBALS|SERVER)\\[","一句话木马过滤5",0],
+	[1,"select.+(from|limit)","SQL注入过滤2",0],
+	[1,"(?:(union(.*?)select))","SQL注入过滤3",0],
+	[0,"having|load_file","SQL注入过滤4",0],
+	[1,"sleep\\((\\s*)(\\d*)(\\s*)\\)","SQL注入过滤5",0],
+	[1,"benchmark\\((.*)\\,(.*)\\)","SQL注入过滤6",0],
+	[1,"(?:from\\W+information_schema\\W)","SQL注入过滤7",0],
+	[1,"(?:(?:current_)user|database|schema|connection_id)\\s*\\(","SQL注入过滤8",0],
+	[1,"into(\\s+)+(?:dump|out)file\\s*","SQL注入过滤9",0],
+	[1,"group\\s+by.+\\(","SQL注入过滤10",0]
+]

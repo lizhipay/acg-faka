@@ -15,7 +15,9 @@ use App\Util\Date;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
+use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
+use Kernel\Waf\Filter;
 
 #[Interceptor(ManageSession::class, Interceptor::TYPE_API)]
 class Card extends Manage
@@ -55,10 +57,11 @@ class Card extends Manage
 
 
     /**
+     * @param Request $request
      * @return array
      * @throws JSONException
      */
-    public function save(): array
+    public function save(Request $request): array
     {
         $commodityId = (int)$_POST['commodity_id'];
         $race = (string)$_POST['race'];
@@ -66,13 +69,14 @@ class Card extends Manage
         if ($commodityId == 0) {
             throw new JSONException('(`･ω･´)请选择商品');
         }
-        $cards = trim(trim((string)$_POST['secret']), PHP_EOL);
+
+        $cards = trim(trim((string)$request->post("secret", Filter::NORMAL)), PHP_EOL);
+
         //进行批量插入
         if ($cards == '') {
             throw new JSONException('(`･ω･´)请至少添加1条卡密信息哦');
         }
 
-        $cards = urldecode($cards);
         $cards = explode(PHP_EOL, $cards);
         $count = count($cards);
 

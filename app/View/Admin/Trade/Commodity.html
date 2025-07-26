@@ -875,7 +875,7 @@
             let modal = (values = {}) => {
                 cao.popup('/admin/api/commodity/save', [
                     {title: "商品图标", name: "cover", type: "image", placeholder: "请选择图片(推荐64*64)"},
-                    {title: "商品名称", name: "name", type: "input", placeholder: "商品名称", required: true},
+                    {title: "商品名称", name: "name",  type: "textarea", height:38, placeholder: "商品名称", required: true},
                     {title: "商品说明", name: "description", type: "editor", placeholder: "商品说明", required: true},
                     {
                         title: "商品分类",

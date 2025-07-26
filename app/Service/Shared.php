@@ -5,7 +5,10 @@ namespace App\Service;
 
 
 use App\Model\Commodity;
+use App\Service\Impl\SharedService;
+use Kernel\Annotation\Bind;
 
+#[Bind(class: SharedService::class)]
 interface Shared
 {
 

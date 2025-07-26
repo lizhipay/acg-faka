@@ -596,12 +596,11 @@ class OrderService implements Order
                                 $url = $order->pay_url;
                                 break;
                             case \App\Pay\Pay::TYPE_LOCAL_RENDER:
-                                $base64 = urlencode(base64_encode('type=1&handle=' . $pay->handle . '&code=' . $pay->code . '&tradeNo=' . $order->trade_no));
-                                $url = '/user/pay/order.' . $base64;
+                                //$base64 = urlencode(base64_encode('type=1&handle=' . $pay->handle . '&code=' . $pay->code . '&tradeNo=' . $order->trade_no));
+                                $url = '/user/pay/order.' . $order->trade_no . ".1";
                                 break;
                             case \App\Pay\Pay::TYPE_SUBMIT:
-                                $base64 = urlencode(base64_encode('type=2&tradeNo=' . $order->trade_no));
-                                $url = '/user/pay/order.' . $base64;
+                                $url = '/user/pay/order.' . $order->trade_no . ".2";
                                 break;
                         }
                         $order->save();

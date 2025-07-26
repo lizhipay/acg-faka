@@ -41,7 +41,8 @@
     "khanamiryan/qrcode-detector-decoder": "1.0.5.2",
     "ext-zip": "*",
     "ext-curl": "*",
-    "firebase/php-jwt": "^6.11"
+    "firebase/php-jwt": "^6.11",
+    "ezyang/htmlpurifier": "^4.18"
   },
   "suggest": {
     "ext-openssl": "Required to use Encryption.",

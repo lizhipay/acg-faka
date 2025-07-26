@@ -3,10 +3,14 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Service\Impl\AppService;
+use Kernel\Annotation\Bind;
+
 /**
  * Interface App
  * @package App\Service
  */
+#[Bind(class: AppService::class)]
 interface App
 {
     /**

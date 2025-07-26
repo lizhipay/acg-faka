@@ -4,11 +4,14 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Model\UserRecharge;
+use App\Service\Impl\RechargeService;
+use Kernel\Annotation\Bind;
 
 /**
  * Interface Recharge
  * @package App\Service
  */
+#[Bind(class: RechargeService::class)]
 interface Recharge
 {
 

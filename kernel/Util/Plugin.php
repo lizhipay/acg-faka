@@ -5,6 +5,8 @@ namespace Kernel\Util;
 
 
 use App\Util\Opcache;
+use Kernel\Consts\Base;
+use Kernel\Container\Di;
 
 class Plugin
 {
@@ -46,13 +48,6 @@ class Plugin
         $info = (array)require($infoPath);
         $submit = (array)require($submitPath);
         $config = (array)require($configPath);
-
-        /*        $submit[] = [
-                    "title" => "插件状态",
-                    "name" => \App\Consts\Plugin::STATUS,
-                    "type" => "switch",
-                    "text" => "启用"
-                ];*/
 
         //submit
         if (is_array($submit)) {
@@ -121,42 +116,6 @@ class Plugin
     }
 
     /**
-     * @return void
-     * @throws \ReflectionException
-     */
-    public static function scan(): void
-    {
-        $plugins = self::getPlugins(self::isCache());
-        $path = BASE_PATH . "/app/Plugin/";
-        foreach ($plugins as $plugin) {
-            $pluginName = $plugin[\App\Consts\Plugin::PLUGIN_NAME];
-            if ($plugin[\App\Consts\Plugin::PLUGIN_CONFIG][\App\Consts\Plugin::STATUS]) {
-                //扫描插件的hook
-                $hookScan = File::scan($path . $pluginName . "/Hook/", true);
-                foreach ($hookScan as $class) {
-                    $_class = explode(".", $class);
-                    $_className = trim((string)$_class[0]);
-                    $namespace = "\\App\\Plugin\\{$pluginName}\\Hook\\{$_className}";
-                    if (class_exists($namespace)) {
-                        $reflectionClass = new \ReflectionClass(objectOrClass: $namespace);
-                        foreach ($reflectionClass->getMethods() as $method) {
-                            $reflectionMethod = new \ReflectionMethod($namespace, $method->getName());
-                            $reflectionAttributes = $reflectionMethod->getAttributes();
-                            foreach ($reflectionAttributes as $attribute) {
-                                $arguments = $attribute->getArguments();
-                                if (isset($arguments['point'])) {
-                                    Plugin::$container['hook'][$arguments['point']][] = ["namespace" => $namespace, "method" => $method->getName(), "pluginName" => $pluginName];
-                                }
-                            }
-                        }
-                    }
-                }
-
-            }
-        }
-    }
-
-    /**
      * @param int $point
      * @param mixed ...$args
      * @return void|mixed
@@ -164,22 +123,12 @@ class Plugin
      */
     public static function hook(int $point, mixed &...$args)
     {
-        if (Context::get(\Kernel\Consts\Base::STORE_STATUS) && \Kernel\Util\Context::get(\Kernel\Consts\Base::IS_INSTALL)) {
-            $list = _Point($point);
+        if (Context::get(Base::STORE_STATUS) && Context::get(Base::IS_INSTALL)) {
+            $list = (Plugin::$container['hook'] ?? [])[$point] ?? [];
             foreach ($list as $item) {
-                $instance = _Instance($item);
-                $ref = new \ReflectionClass($instance);
-                $reflectionProperties = $ref->getProperties();
-                foreach ($reflectionProperties as $property) {
-                    $reflectionProperty = new \ReflectionProperty($instance, $property->getName());
-                    $reflectionPropertiesAttributes = $reflectionProperty->getAttributes();
-                    foreach ($reflectionPropertiesAttributes as $reflectionAttribute) {
-                        $ins = $reflectionAttribute->newInstance();
-                        if ($ins instanceof \Kernel\Annotation\Inject) {
-                            di($instance);
-                        }
-                    }
-                }
+                Plugin::$currentPluginName = $item['pluginName'];
+                $instance = new $item['namespace'];
+                Di::inst()->inject($instance);
                 $result = call_user_func_array([$instance, $item['method']], $args);
                 if ($result) {
                     return $result;
@@ -195,14 +144,5 @@ class Plugin
     public static function getHookNum(int $point): int
     {
         return (int)count((array)self::$container[$point]);
-    }
-
-    /**
-     * 判断当前插件是否处于缓存中
-     * @return bool
-     */
-    public static function isCache(): bool
-    {
-        return file_exists(BASE_PATH . "/runtime/plugin/app.cache");
     }
 }

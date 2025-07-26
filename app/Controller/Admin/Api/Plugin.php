@@ -6,12 +6,12 @@ namespace App\Controller\Admin\Api;
 use App\Consts\Hook;
 use App\Controller\Base\API\Manage;
 use App\Interceptor\ManageSession;
-use App\Interceptor\Waf;
-use App\Util\Opcache;
 use App\Util\Theme;
 use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\Post;
+use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
+use Kernel\Waf\Filter;
 
 #[Interceptor([ManageSession::class], Interceptor::TYPE_API)]
 class Plugin extends Manage
@@ -21,7 +21,7 @@ class Plugin extends Manage
      */
     public function getPlugins(): array
     {
-        $plugins = \Kernel\Util\Plugin::getPlugins(\Kernel\Util\Plugin::isCache());
+        $plugins = \Kernel\Util\Plugin::getPlugins(false);
         $appStore = (array)json_decode((string)file_get_contents(BASE_PATH . "/runtime/plugin/store.cache"), true);
         $path = BASE_PATH . "/app/Plugin/";
 
@@ -59,13 +59,15 @@ class Plugin extends Manage
     }
 
     /**
+     * @param Request $request
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      * @throws \ReflectionException
+     * @throws \Throwable
      */
-    public function setConfig(): array
+    public function setConfig(Request $request): array
     {
-        $map = $_POST;
+        $map = $request->post(flags: Filter::NORMAL);
         if (!$map['id'] === "" || !isset($map['id'])) {
             throw new JSONException("插件不存在");
         }
@@ -82,27 +84,27 @@ class Plugin extends Manage
         }
         $config = $plugin[\App\Consts\Plugin::PLUGIN_CONFIG];
 
+
         if ((int)$config['STATUS'] == 0 && (int)$map['STATUS'] == 1) {
-            //触发启动时
-            \Kernel\Util\Plugin::runHookState($id, \Kernel\Annotation\Plugin::START);
+            _plugin_start($id);
+            return $this->json(200, "插件已启动");
         } else if ((int)$config['STATUS'] == 1 && (int)$map['STATUS'] == 0) {
-            //触发停止时
-            \Kernel\Util\Plugin::runHookState($id, \Kernel\Annotation\Plugin::STOP);
+            _plugin_stop($id);
+            return $this->json(200, "插件已停止");
         }
 
         foreach ($map as $k => $v) {
             $config[$k] = is_scalar($v) ? urldecode((string)$v) : $v;
         }
 
-        unlink(BASE_PATH . "/runtime/plugin/app.cache");
-        setConfig($config, BASE_PATH . '/app/Plugin/' . $id . '/Config/Config.php');
-
+        $configFile = BASE_PATH . '/app/Plugin/' . $id . '/Config/Config.php';
+        setConfig($config, $configFile);
         return $this->json(200, '配置已生效');
     }
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      * @throws \ReflectionException
      */
     public function setThemeConfig(): array

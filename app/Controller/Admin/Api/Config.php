@@ -15,7 +15,9 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use App\Model\Config as CFG;
+use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
+use Kernel\Waf\Filter;
 use Mrgoon\AliSms\AliSms;
 use PHPMailer\PHPMailer\PHPMailer;
 
@@ -33,44 +35,46 @@ class Config extends Manage
     private PHPMailer $mailer;
 
     /**
+     * @param Request $request
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
-    public function setting(): array
+    public function setting(Request $request): array
     {
+        $post = $request->post(flags: Filter::NORMAL);
         $keys = ["closed_message", "background_mobile_url", "closed", "username_len", "user_theme", "user_mobile_theme", "background_url", "shop_name", "title", "description", "keywords", "registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "notice", "trade_verification", "session_expire", "technical_support"]; //全部字段
         $inits = ["closed", "registered_state", "registered_type", "registered_verification", "registered_phone_verification", "registered_email_verification", "login_verification", "forget_type", "trade_verification", "session_expire", "technical_support"]; //需要初始化的字段
 
-        $file = $_POST['logo'];
+        $file = $post['logo'];
         if ($file != '/favicon.ico') {
             @copy(BASE_PATH . $file, BASE_PATH . '/favicon.ico');
             @unlink(BASE_PATH . $file);
         }
         try {
-            if (isset($_POST['ip_get_mode'])) {
-                Client::setClientMode((int)$_POST['ip_get_mode']);
+            if (isset($post['ip_get_mode'])) {
+                Client::setClientMode((int)$post['ip_get_mode']);
             }
 
             foreach ($keys as $index => $key) {
                 if (in_array($key, $inits)) {
-                    if (!isset($_POST[$key])) {
-                        $_POST[$key] = 0;
+                    if (!isset($post[$key])) {
+                        $post[$key] = 0;
                     }
                 }
-                CFG::put($key, $_POST[$key]);
+                CFG::put($key, $post[$key]);
             }
         } catch (\Exception $e) {
             throw new JSONException("保存失败，请检查原因");
         }
 
+        _plugin_start($post['user_theme'], true);
         ManageLog::log($this->getManage(), "修改了网站设置");
-        unlink(BASE_PATH . "/runtime/plugin/app.cache");
         return $this->json(200, '保存成功');
     }
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function other(): array
     {
@@ -106,7 +110,7 @@ class Config extends Manage
 
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function setSubstationDisplayList(): array
     {
@@ -132,7 +136,7 @@ class Config extends Manage
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function sms(): array
     {
@@ -147,7 +151,7 @@ class Config extends Manage
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function email(): array
     {
@@ -171,7 +175,7 @@ class Config extends Manage
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function emailTest(): array
     {

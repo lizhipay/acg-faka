@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Kernel\Util;
 
-use JetBrains\PhpStorm\NoReturn;
-
 /**
  * Class Context
  * @package Kernel\Util
@@ -38,10 +36,20 @@ class Context
     }
 
     /**
-     * @param $unset
+     * @param string $name
+     * @return bool
      */
-    public static function _unset(&$unset)
+    public static function has(string $name): bool
     {
-        unset($unset);
+        return isset(self::$context[$name]);
+    }
+
+    /**
+     * @param string $name
+     * @return void
+     */
+    public static function del(string $name): void
+    {
+        unset(self::$context[$name]);
     }
 }

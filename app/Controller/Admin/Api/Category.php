@@ -15,7 +15,9 @@ use App\Util\Client;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
+use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
+use Kernel\Waf\Filter;
 
 /**
  * Class Category
@@ -56,12 +58,13 @@ class Category extends Manage
 
 
     /**
+     * @param Request $request
      * @return array
      * @throws JSONException
      */
-    public function save(): array
+    public function save(Request $request): array
     {
-        $map = $_POST;
+        $map = $request->post(flags: Filter::NORMAL);
         $createObjectEntity = new CreateObjectEntity();
         $createObjectEntity->setModel(\App\Model\Category::class);
         $createObjectEntity->setMap($map);

@@ -19,7 +19,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
+use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
+use Kernel\Waf\Filter;
 
 #[Interceptor(ManageSession::class, Interceptor::TYPE_API)]
 class Commodity extends Manage
@@ -94,13 +96,13 @@ class Commodity extends Manage
 
 
     /**
+     * @param Request $request
      * @return array
      * @throws JSONException
      */
-    public function save(): array
+    public function save(Request $request): array
     {
-        $map = $_POST;
-
+        $map = $request->post(flags: Filter::NORMAL);
 
         //create new
         if ((int)$map['id'] == 0) {

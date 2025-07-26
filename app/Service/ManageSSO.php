@@ -6,10 +6,14 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Service\Impl\ManageSSOService;
+use Kernel\Annotation\Bind;
+
 /**
  * Interface ManageSSO
  * @package App\Service
  */
+#[Bind(class: ManageSSOService::class)]
 interface ManageSSO
 {
     /**

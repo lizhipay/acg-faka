@@ -3,10 +3,14 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Service\Impl\PayService;
+use Kernel\Annotation\Bind;
+
 /**
  * Interface Pay
  * @package App\Service
  */
+#[Bind(class: PayService::class)]
 interface Pay
 {
     /**

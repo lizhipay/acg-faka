@@ -21,4 +21,5 @@ return array(
     '37a3dc5111fe8f707ab4c132ef1dbc62' => $vendorDir . '/guzzlehttp/guzzle/src/functions_include.php',
     '667aeda72477189d0494fecd327c3641' => $vendorDir . '/symfony/var-dumper/Resources/functions/dump.php',
     'a9ed0d27b5a698798a89181429f162c5' => $vendorDir . '/khanamiryan/qrcode-detector-decoder/lib/Common/customFunctions.php',
+    '2cffec82183ee1cea088009cef9a6fc3' => $vendorDir . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
 );

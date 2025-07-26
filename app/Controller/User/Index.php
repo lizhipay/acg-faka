@@ -10,27 +10,31 @@ use App\Interceptor\Waf;
 use App\Model\Config;
 use App\Util\Client;
 use Kernel\Annotation\Interceptor;
+use Kernel\Exception\RuntimeException;
+use Kernel\Exception\ViewException;
 
 #[Interceptor([Waf::class, UserVisitor::class])]
 class Index extends User
 {
     /**
      * @return string
-     * @throws \Kernel\Exception\ViewException|\Kernel\Exception\JSONException|\ReflectionException
+     * @throws RuntimeException
+     * @throws ViewException
+     * @throws \ReflectionException
      */
     public function index(): string
     {
         if ((int)Config::get("closed") == 1) {
             return $this->theme("店铺正在维护", "CLOSED", "Index/Closed.html");
         }
-        $from = (int)$_GET['from']; 
+        $from = (int)$_GET['from'];
         $_GET['cid'] = $_GET['cid'] ?: Config::get("default_category");
         return $this->theme("首页", "INDEX", "Index/Index.html", ['user' => $this->getUser(), 'from' => $from, "categoryId" => $_GET['cid'], "commodityId" => $_GET['mid']]);
     }
 
     /**
      * @return string
-     * @throws \Kernel\Exception\ViewException|\ReflectionException
+     * @throws ViewException|\ReflectionException
      */
     public function query(): string
     {

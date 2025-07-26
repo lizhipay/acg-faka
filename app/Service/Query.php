@@ -7,7 +7,10 @@ namespace App\Service;
 use App\Entity\CreateObjectEntity;
 use App\Entity\DeleteBatchEntity;
 use App\Entity\QueryTemplateEntity;
+use App\Service\Impl\QueryService;
+use Kernel\Annotation\Bind;
 
+#[Bind(class: QueryService::class)]
 interface Query
 {
     /**

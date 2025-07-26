@@ -54,14 +54,24 @@ class Recharge extends User
      */
     public function order(): string
     {
-        $obj = [];
-        parse_str(base64_decode(urldecode((string)$_GET['_PARAMETER'][0])), $obj);
-        //获取订单信息
-        $order = UserRecharge::query()->where("trade_no", $obj['tradeNo'])->first();
+        if (!isset($_GET['_PARAMETER'][0]) || !isset($_GET['_PARAMETER'][1])) {
+            return '订单不存在';
+        }
+
+        $tradeNo = $_GET['_PARAMETER'][0];
+        $type = (int)$_GET['_PARAMETER'][1];
+
+
+        $order = UserRecharge::with(["pay"])->where("trade_no", $tradeNo)->first();
         if (!$order) {
             return '订单不存在';
         }
-        $type = (int)$obj['type'];
+
+        if (!$order->pay) {
+            return '支付方式不存在';
+        }
+
+
         $data = (array)json_decode((string)$order->option, true);
 
         if ($type == 2) {
@@ -73,12 +83,13 @@ class Recharge extends User
                 "data" => $data
             ]);
         }
-        $pay = \App\Model\Pay::query()->find((int)$order->pay_id);
 
-        if ((string)$obj['handle'] != $pay->handle || (string)$obj['code'] != $pay->code) {
-            throw new JSONException("视图出现异常");
+        $html = "{$order->pay->handle}/View/{$order->pay->code}.html";
+
+        if (!is_file(BASE_PATH . '/app/Pay/' . $html)) {
+            throw new JSONException("视图不存在");
         }
 
-        return View::render($obj['handle'] . '/View/' . $obj['code'] . '.html', ['order' => $order, 'option' => $data], BASE_PATH . '/app/Pay/');
+        return View::render($html, ['order' => $order, 'option' => $data], BASE_PATH . '/app/Pay/');
     }
 }
