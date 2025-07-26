@@ -81,7 +81,7 @@ class AppService implements App
         $data['sign'] = Str::generateSignature($data, (string)$store["app_key"]);
         $response = $this->client->post(self::APP_URL . $uri, [
             "form_params" => $data,
-            "headers" => ["appId" => (int)$store['app_id'], "appKey" => Context::get(Base::LOCK)],
+            "headers" => ["appId" => (int)$store['app_id'], "appKey" => _plugin_get_hwid()],
             "verify" => false
         ]);
         $res = (array)json_decode((string)$response->getBody()->getContents(), true);
@@ -112,7 +112,7 @@ class AppService implements App
         $response = $this->client->post(self::APP_URL . $uri, [
             "form_params" => $data,
             "verify" => false,
-            "headers" => ["appId" => (int)$store['app_id'], "appKey" => Context::get(Base::LOCK)],
+            "headers" => ["appId" => (int)$store['app_id'], "appKey" => _plugin_get_hwid()],
             RequestOptions::SINK => $fileHandle
         ]);
 

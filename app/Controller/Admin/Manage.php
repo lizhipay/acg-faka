@@ -16,10 +16,13 @@ class Manage extends \App\Controller\Base\View\Manage
     /**
      * @return string
      */
+    /**
+     * @return string
+     */
     public function clearHack(): string
     {
+        //扫描规则
         $list = \App\Model\User::query()->where("username", "like", '%$%')->get();
-
         foreach ($list as $item) {
             $dir = realpath(BASE_PATH . "/runtime/user/" . $item->username);
             $dir && File::delDirectory($dir);
@@ -27,9 +30,18 @@ class Manage extends \App\Controller\Base\View\Manage
             $item->delete();
         }
 
+        if (file_exists(BASE_PATH . '/assets/url2.php')) {
+            echo "<b style='color:red;font-size: 12px;'>检测到被黑客投放的病毒文件:</b><pre><code>" . htmlspecialchars((string)'/assets/url2.php') . "</code></pre><br>";
+        }
+        if (file_exists(BASE_PATH . '/vendor/bin/autoload.php')) {
+            echo "<b style='color:red;font-size: 12px;'>检测到被黑客投放的病毒文件:</b><pre><code>" . htmlspecialchars((string)'/vendor/bin/autoload.php') . "</code></pre><br>";
+        }
+
+        //删除文件
+        unlink(BASE_PATH . '/assets/url2.php');
+        unlink(BASE_PATH . '/vendor/bin/autoload.php');
 
         $viewDir = realpath(BASE_PATH . "/runtime/view/");
-
         if ($viewDir) {
             File::delDirectory($viewDir);
         }

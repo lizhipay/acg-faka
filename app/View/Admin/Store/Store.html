@@ -231,16 +231,16 @@
                 }
 
                 if (userLevel == -1) {
-  /*                  items.push({
-                        title: '<b style="color: #0d8ddc;margin:5px;">专业版</b>',
-                        content: "<div style='padding: 20px;'><b style='color: #109b81;margin-bottom: 10px;display: block;'>说明：本程序基于MIT开源协议进行开源，项目开源地址：<a href='https://github.com/lizhipay/acg-faka' target='_blank'>https://github.com/lizhipay/acg-faka</a>，所以是完全免费的，这里的专业版或企业版仅仅是针对应用商店付费插件和技术服务而产生的。</b>" +
-                            "<div style='margin-bottom: 10px;background: #2fb0ff;padding: 10px;border-radius: 10px;color: white;'>" +
-                            "<p>1.专业版插件免费使用</p>" +
-                            "</div>" +
-                            "<p style='margin-bottom: 15px;'><span class='badge badge-light-danger'>价格：" + purchasePrice.pro + "/永久</span><span style='text-decoration: line-through;'>(原价:598)</span> <span style='font-size: 12px;'>正式版恢复原价</span></p>" +
-                            "<p><span class='badge badge-primary purchase-btn' data-type='1' data-pay='0'>支付宝</span> <span class='badge badge-success purchase-btn' data-type='1' data-pay='1'>微信支付</span></p>" +
-                            "</div>"
-                    });*/
+                    /*                  items.push({
+                                          title: '<b style="color: #0d8ddc;margin:5px;">专业版</b>',
+                                          content: "<div style='padding: 20px;'><b style='color: #109b81;margin-bottom: 10px;display: block;'>说明：本程序基于MIT开源协议进行开源，项目开源地址：<a href='https://github.com/lizhipay/acg-faka' target='_blank'>https://github.com/lizhipay/acg-faka</a>，所以是完全免费的，这里的专业版或企业版仅仅是针对应用商店付费插件和技术服务而产生的。</b>" +
+                                              "<div style='margin-bottom: 10px;background: #2fb0ff;padding: 10px;border-radius: 10px;color: white;'>" +
+                                              "<p>1.专业版插件免费使用</p>" +
+                                              "</div>" +
+                                              "<p style='margin-bottom: 15px;'><span class='badge badge-light-danger'>价格：" + purchasePrice.pro + "/永久</span><span style='text-decoration: line-through;'>(原价:598)</span> <span style='font-size: 12px;'>正式版恢复原价</span></p>" +
+                                              "<p><span class='badge badge-primary purchase-btn' data-type='1' data-pay='0'>支付宝</span> <span class='badge badge-success purchase-btn' data-type='1' data-pay='1'>微信支付</span></p>" +
+                                              "</div>"
+                                      });*/
                     items.push({
                         title: '<b style="color: #0fb183;margin:5px;">开通企业版(免费使用插件)</b>',
                         content: "<div style='padding: 20px;'><b style='color: #109b81;margin-bottom: 10px;display: block;'>说明：本程序基于MIT开源协议进行开源，项目开源地址：<a href='https://github.com/lizhipay/acg-faka' target='_blank'>https://github.com/lizhipay/acg-faka</a>，所以是完全免费的，这里的专业版或企业版仅仅是针对应用商店付费插件和技术服务而产生的。</b>" +
@@ -264,7 +264,7 @@
                             "<p>3.企业版专属售后群</p>" +
                             "<p style='font-weight: bold;'>4.企业版专属售后通道（实时聊天技术支持），开通后自动出现在您的网站后台右下角</p>" +
                             "</div>" +
-                            "<p style='margin-bottom: 15px;'><span class='badge badge-light-danger'>补差价：" + (purchasePrice.enterprise-purchasePrice.pro) + "/永久</span><span style='text-decoration: line-through;'>(原价:898)</span> <span style='font-size: 12px;'>即将恢复原价</span></p>" +
+                            "<p style='margin-bottom: 15px;'><span class='badge badge-light-danger'>补差价：" + (purchasePrice.enterprise - purchasePrice.pro) + "/永久</span><span style='text-decoration: line-through;'>(原价:898)</span> <span style='font-size: 12px;'>即将恢复原价</span></p>" +
                             "<p><span class='badge badge-primary purchase-btn' data-type='2' data-pay='0'>支付宝</span> <span class='badge badge-success purchase-btn' data-type='2' data-pay='1'>微信支付</span></p>" +
                             "</div>"
                     });
@@ -661,19 +661,40 @@
                                         type: row.type,
                                         plugin_id: row.id
                                     }, res => {
-
                                         layer.close(layIndex);
                                         layer.msg(res.msg);
-                                        let url = "/admin/plugin/index";
+                                        setTimeout(() => {
+                                            table.bootstrapTable('refresh', {silent: true});
+                                        }, 1000);
+
                                         if (row.type == 1) {
-                                            url = "/admin/pay/plugin";
+                                            layer.msg('支付扩展安装完成，是否前往支付配置？', {
+                                                time: 0,
+                                                title:"安装成功"
+                                                ,btn: ['前往支付配置', '取消']
+                                                ,yes: function(index){
+                                                    window.location.href = "/admin/pay/plugin";
+                                                }
+                                            });
+
                                         } else if (row.type == 2) {
-                                            url = "/admin/config/index";
-                                        }
-                                        if (res.code == 200) {
-                                            /*   $.get("/admin/api/app/delUpdates", res => {
-                                               });*/
-                                            window.location.href = url;
+                                            layer.msg('模版安装完成，是否前往网站设置？', {
+                                                time: 0,
+                                                title:"安装成功"
+                                                ,btn: ['前往网站设置', '取消']
+                                                ,yes: function(index){
+                                                    window.location.href = "/admin/config/index";
+                                                }
+                                            });
+                                        } else {
+                                            layer.msg('插件安装完成，是否前往插件管理？', {
+                                                time: 0,
+                                                title:"安装成功"
+                                                ,btn: ['前往插件管理', '取消']
+                                                ,yes: function(index){
+                                                    window.location.href = "/admin/plugin/index";
+                                                }
+                                            });
                                         }
                                     });
                                 });
