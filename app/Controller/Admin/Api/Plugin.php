@@ -68,6 +68,7 @@ class Plugin extends Manage
     public function setConfig(Request $request): array
     {
         $map = $request->post(flags: Filter::NORMAL);
+
         if (!$map['id'] === "" || !isset($map['id'])) {
             throw new JSONException("插件不存在");
         }
@@ -84,13 +85,14 @@ class Plugin extends Manage
         }
         $config = $plugin[\App\Consts\Plugin::PLUGIN_CONFIG];
 
-
-        if ((int)$config['STATUS'] == 0 && (int)$map['STATUS'] == 1) {
-            _plugin_start($id);
-            return $this->json(200, "插件已启动");
-        } else if ((int)$config['STATUS'] == 1 && (int)$map['STATUS'] == 0) {
-            _plugin_stop($id);
-            return $this->json(200, "插件已停止");
+        if (isset($map['STATUS'])) {
+            if ((int)$config['STATUS'] == 0 && $map['STATUS'] == 1) {
+                _plugin_start($id);
+                return $this->json(200, "插件已启动");
+            } else if ((int)$config['STATUS'] == 1 && $map['STATUS'] == 0) {
+                _plugin_stop($id);
+                return $this->json(200, "插件已停止");
+            }
         }
 
         foreach ($map as $k => $v) {
