@@ -164,4 +164,12 @@ interface Hook
 
     //防火墙拦截 -> $message
     const WAF_INTERCEPT = 0x289;
+
+
+    //邮件发送之前  -> array $config, string $email, string $title, string $content
+    const SERVICE_SMTP_SEND_BEFORE = 0x3000;
+    //邮件发送成功 -> array $config, string $email, string $title, string $content
+    const SERVICE_SMTP_SEND_SUCCESS = 0x3001;
+    //邮件发送失败 -> array $config, string $email, string $title, string $content
+    const SERVICE_SMTP_SEND_ERROR = 0x3002;
 }

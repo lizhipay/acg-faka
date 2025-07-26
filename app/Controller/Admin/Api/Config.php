@@ -7,6 +7,7 @@ use App\Controller\Base\API\Manage;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
 use App\Model\ManageLog;
+use App\Service\Email;
 use App\Service\Query;
 use App\Service\Sms;
 use App\Util\Client;
@@ -17,6 +18,7 @@ use Kernel\Annotation\Interceptor;
 use App\Model\Config as CFG;
 use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
+use Kernel\Exception\RuntimeException;
 use Kernel\Waf\Filter;
 use Mrgoon\AliSms\AliSms;
 use PHPMailer\PHPMailer\PHPMailer;
@@ -33,6 +35,9 @@ class Config extends Manage
 
     #[Inject]
     private PHPMailer $mailer;
+
+    #[Inject]
+    private Email $email;
 
     /**
      * @param Request $request
@@ -175,36 +180,17 @@ class Config extends Manage
     }
 
     /**
+     * @return array
      * @throws JSONException
+     * @throws RuntimeException
      */
     public function emailTest(): array
     {
-        try {
-            $config = json_decode(\App\Model\Config::get("email_config"), true);
-            $shopName = CFG::get("shop_name");
-            $mail = $this->mailer;
-            $mail->CharSet = 'UTF-8';
-            $mail->IsSMTP();
-            $mail->SMTPDebug = 0;
-            $mail->SMTPAuth = true;
-            $mail->SMTPSecure = 'ssl';
-            $mail->Host = $config['smtp'];
-            $mail->Port = $config['port'];
-            $mail->Username = $config['username'];
-            $mail->Password = $config['password'];
-            $mail->SetFrom($config['username'], $shopName); // 邮箱，昵称
-            $mail->AddAddress($_POST['email']);
-            $mail->Subject = $shopName . "-手动测试邮件";
-            $mail->MsgHTML('测试邮件，发送时间：' . Date::current());
-            $result = $mail->Send();
-        } catch (\Exception $e) {
-            throw new JSONException("发送失败");
-        }
-
+        $shopName = CFG::get("shop_name");
+        $result = $this->email->send($_POST['email'], $shopName . "-手动测试邮件", '测试邮件，发送时间：' . Date::current());
         if (!$result) {
             throw new JSONException("发送失败");
         }
-
         ManageLog::log($this->getManage(), "测试了邮件发送");
         return $this->json(200, "成功!");
     }

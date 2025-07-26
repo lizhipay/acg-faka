@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace App\Service\Impl;
 
 
+use App\Consts\Hook;
 use App\Model\Config as CFG;
 use App\Service\Email;
-use App\Util\Date;
 use Kernel\Annotation\Inject;
 use Kernel\Exception\JSONException;
 use Kernel\Util\Session;
@@ -27,6 +27,7 @@ class EmailService implements Email
     {
         try {
             $config = json_decode(\App\Model\Config::get("email_config"), true);
+            if (is_bool($hook = hook(Hook::SERVICE_SMTP_SEND_BEFORE, $config, $email, $title, $content))) return $hook;
             $shopName = CFG::get("shop_name");
             $secure = (int)$config['secure'] == 0 ? 'ssl' : 'tls';
             $mail = $this->mailer;
@@ -45,7 +46,13 @@ class EmailService implements Email
             $mail->MsgHTML($content);
             $mail->Timeout = 10; //默认超时10秒钟
             $result = $mail->Send();
+            if ($result) {
+                if (is_bool($hook = hook(Hook::SERVICE_SMTP_SEND_SUCCESS, $config, $email, $title, $content))) return $hook;
+            } else {
+                if (is_bool($hook = hook(Hook::SERVICE_SMTP_SEND_ERROR, $config, $email, $title, $content))) return $hook;
+            }
         } catch (\Exception $e) {
+            if (is_bool($hook = hook(Hook::SERVICE_SMTP_SEND_ERROR, $config, $email, $title, $content))) return $hook;
             return false;
         }
 
@@ -60,7 +67,7 @@ class EmailService implements Email
      * @param string $email
      * @param int $type
      * @return void
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function sendCaptcha(string $email, int $type): void
     {

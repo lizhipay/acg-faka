@@ -16,7 +16,9 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\Post;
+use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
+use Kernel\Waf\Filter;
 
 #[Interceptor([ManageSession::class], Interceptor::TYPE_API)]
 class Pay extends Manage
@@ -49,12 +51,13 @@ class Pay extends Manage
 
 
     /**
+     * @param Request $request
      * @return array
      * @throws JSONException
      */
-    public function save(): array
+    public function save(Request $request): array
     {
-        $map = $_POST;
+        $map = $request->post(flags: Filter::NORMAL);
         if ($map['id'] == 1) {
             throw new JSONException("系统内置，无法操作");
         }
@@ -137,14 +140,11 @@ class Pay extends Manage
     /**
      * @throws JSONException
      */
-    public function setPluginConfig(): array
+    public function setPluginConfig(Request $request): array
     {
-        $map = $_POST;
+        $map = $request->post(flags: Filter::NORMAL);
         if (!$map['id'] === "" || !isset($map['id'])) {
             throw new JSONException("插件不存在");
-        }
-        foreach ($map as $k => $v) {
-            $map[$k] = urldecode($v);
         }
         $id = $map['id'];
         unset($map['id']);

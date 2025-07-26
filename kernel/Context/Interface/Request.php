@@ -28,6 +28,12 @@ interface Request
      */
     public function post(?string $key = null, int $flags = Filter::STRING_UNSIGNED): mixed;
 
+    /**
+     * @param string|null $key
+     * @return mixed
+     */
+    public function unsafePost(?string $key = null): mixed;
+
 
     /**
      * @param string|null $key
@@ -44,6 +50,12 @@ interface Request
      * @return array|string
      */
     public function get(?string $key = null, int $flags = Filter::STRING_UNSIGNED): mixed;
+
+    /**
+     * @param string|null $key
+     * @return mixed
+     */
+    public function unsafeGet(?string $key = null): mixed;
 
 
     /**
@@ -66,6 +78,12 @@ interface Request
      * @return mixed
      */
     public function json(?string $key = null, int $flags = Filter::STRING_UNSIGNED): mixed;
+
+    /**
+     * @param string|null $key
+     * @return mixed
+     */
+    public function unsafeJson(?string $key = null): mixed;
 
     /**
      * @param string|null $key

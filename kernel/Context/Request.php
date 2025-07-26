@@ -7,9 +7,9 @@ class Request extends Abstract\Request
 {
     public function __construct()
     {
-        $this->post = $_POST;
+        $this->_unsafe_post = $this->post = $_POST;
         $this->method = strtoupper($_SERVER['REQUEST_METHOD']);
-        $this->get = $_GET;
+        $this->_unsafe_get = $this->get = $_GET;
         $this->header = $this->parseHeader();
         $this->cookie = $_COOKIE;
         $uri = "/" . trim($_GET['_route'] ?? "/", "/");
@@ -28,7 +28,7 @@ class Request extends Abstract\Request
         }
 
         if (str_contains((string)$this->header("ContentType"), "application/json")) {
-            $this->json = (array)json_decode($this->raw);
+            $this->_unsafe_json = $this->json = (array)json_decode($this->raw, true);
         }
 
         if (isset($_SERVER["HTTPS"]) && strtolower((string)$_SERVER["HTTPS"]) == "on") {

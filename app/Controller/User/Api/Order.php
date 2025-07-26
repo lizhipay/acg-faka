@@ -12,8 +12,10 @@ use App\Util\Captcha;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\Post;
+use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
 use Kernel\Exception\RuntimeException;
+use Kernel\Waf\Filter;
 
 #[Interceptor([Waf::class, UserVisitor::class])]
 class Order extends User
@@ -42,15 +44,17 @@ class Order extends User
 
 
     /**
+     * @param Request $request
      * @return string
      */
-    public function callback(): string
+    public function callback(Request $request): string
     {
         $handle = $_GET['_PARAMETER'][0];
-        $data = $_POST;
-        if (empty($data)) {
-            $data = $_REQUEST;
-            unset($data['s']);
+        foreach (['unsafePost', 'unsafeJson', 'unsafeGet'] as $method) {
+            $data = $request->$method();
+            if (!empty($data)) {
+                break;
+            }
         }
         return $this->order->callback($handle, $data);
     }
