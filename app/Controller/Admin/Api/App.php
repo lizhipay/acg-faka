@@ -270,7 +270,6 @@ class App extends Manage
         $type = (int)$_POST['type'];
 
         if ($type == 0) {
-            \Kernel\Util\Plugin::runHookState($pluginKey, \Kernel\Annotation\Plugin::UNINSTALL);
             _plugin_stop($pluginKey);
         }
 

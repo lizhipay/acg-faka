@@ -7,16 +7,12 @@ namespace App\Service\Impl;
 use App\Consts\Hook;
 use App\Model\Config as CFG;
 use App\Service\Email;
-use Kernel\Annotation\Inject;
 use Kernel\Exception\JSONException;
 use Kernel\Util\Session;
 use PHPMailer\PHPMailer\PHPMailer;
 
 class EmailService implements Email
 {
-    #[Inject]
-    private PHPMailer $mailer;
-
     /**
      * @param string $email
      * @param string $title
@@ -30,7 +26,7 @@ class EmailService implements Email
             if (is_bool($hook = hook(Hook::SERVICE_SMTP_SEND_BEFORE, $config, $email, $title, $content))) return $hook;
             $shopName = CFG::get("shop_name");
             $secure = (int)$config['secure'] == 0 ? 'ssl' : 'tls';
-            $mail = $this->mailer;
+            $mail = new PHPMailer();
             $mail->CharSet = 'UTF-8';
             $mail->IsSMTP();
             $mail->SMTPDebug = 0;
