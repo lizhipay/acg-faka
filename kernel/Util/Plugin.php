@@ -126,6 +126,8 @@ class Plugin
         if (Context::get(Base::STORE_STATUS) && Context::get(Base::IS_INSTALL)) {
             $list = (Plugin::$container['hook'] ?? [])[$point] ?? [];
             foreach ($list as $item) {
+                if (!is_dir(BASE_PATH . "/app/Plugin/{$item['pluginName']}")) continue;
+                if (!class_exists($item['namespace'])) continue;
                 Plugin::$currentPluginName = $item['pluginName'];
                 $instance = new $item['namespace'];
                 Di::inst()->inject($instance);

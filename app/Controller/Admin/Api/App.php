@@ -271,6 +271,7 @@ class App extends Manage
 
         if ($type == 0) {
             \Kernel\Util\Plugin::runHookState($pluginKey, \Kernel\Annotation\Plugin::UNINSTALL);
+            _plugin_stop($pluginKey);
         }
 
         $this->app->uninstallPlugin($pluginKey, $type);
