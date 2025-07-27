@@ -16,7 +16,9 @@ use App\Util\Date;
 use App\Util\Str;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
+use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
+use Kernel\Waf\Filter;
 
 #[Interceptor(ManageSession::class, Interceptor::TYPE_API)]
 class Store extends Manage
@@ -140,16 +142,18 @@ class Store extends Manage
     /**
      * @throws JSONException
      */
-    public function addItem(): array
+    public function addItem(Request $request): array
     {
-        $categoryId = (int)$_POST['category_id'];
+        $map = $request->post(flags: Filter::NORMAL);
+
+        $categoryId = (int)$map['category_id'];
         $storeId = (int)$_GET['storeId'];
-        $items = (array)$_POST['items'];
-        $premium = (float)$_POST['premium']; // 加价金额
-        $premiumType = (int)$_POST['premium_type']; // 加价模式
-        $sharedSync = (int)$_POST['shared_sync'] == 0 ? 0 : 1; // 主从同步
-        $inventorySync = (int)$_POST['inventory_sync'] == 0 ? 0 : 1; // 数量同步
-        $shelves = (int)$_POST['shelves'] == 0 ? 0 : 1; // 立即上架
+        $items = (array)$map['items'];
+        $premium = (float)$map['premium']; // 加价金额
+        $premiumType = (int)$map['premium_type']; // 加价模式
+        $sharedSync = (int)$map['shared_sync'] == 0 ? 0 : 1; // 主从同步
+        $inventorySync = (int)$map['inventory_sync'] == 0 ? 0 : 1; // 数量同步
+        $shelves = (int)$map['shelves'] == 0 ? 0 : 1; // 立即上架
 
         $shared = Shared::query()->find($storeId);
 

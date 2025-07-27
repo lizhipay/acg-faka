@@ -420,7 +420,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                         d += '        <div class="layui-form-item" style="' + ((item.hasOwnProperty("hide") && item.hide && !(values.hasOwnProperty(item.name) && values[item.name] != "")) ? 'display:none;' : '') + '">\n' +
                             '            <label class="layui-form-label">' + item.title + required + '</label>\n' +
                             '            <div class="layui-input-block"><textarea name="' + item.name + '" style="display: none;"></textarea>\n' +
-                            '                <div style=""><button data-type="0" class="button-switch-' + item.name + '" type="button" style="width: 100%;border: none;background: white;border-radius: 5px 5px 0 0;color: #c9b8b8;"><i class="fas fa-code" style="color: #c9b8b8;"></i> HTML</button></div><div ' + (item.hasOwnProperty('height') ? 'style="height:' + item.height + 'px"' : '') + ' class="' + item.name + '">' + (values.hasOwnProperty(item.name) ? values[item.name] : '') + '</div>' +
+                            '                <div style=""><button data-type="0" class="button-switch-' + item.name + '" type="button" style="width: 100%;border: none;background: white;border-radius: 5px 5px 0 0;color: #c9b8b8;"><i class="fas fa-code" style="color: #c9b8b8;"></i> HTML</button></div><div ' + (item.hasOwnProperty('height') ? 'style="height:' + item.height + 'px"' : '') + ' class="' + item.name + '"></div>' +
                             '            </div>\n' +
                             '        </div>';
                         break;
@@ -953,6 +953,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 });
                                 break;
                             case 'editor':
+                                const contents = values[item.name] ?? "";
                                 let editorInstance = window.wangEditor;
                                 const editor = new editorInstance('.hex-modal-' + unqueId + ' .' + item.name);
                                 const $textarea = $(".hex-modal-" + unqueId + " textarea[name='" + item.name + "'")
@@ -982,7 +983,8 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                 }
 
                                 editor.create();
-                                $textarea.val(editor.txt.html())
+                                $textarea.val(contents)
+                                editor.txt.html(contents);
 
                                 $('.hex-modal-' + unqueId + ' div[class=' + item.name + ']').find(".w-e-toolbar").css("border", "none");
                                 $('.hex-modal-' + unqueId + ' div[class=' + item.name + ']').find(".w-e-text-container").css("border", "none");
