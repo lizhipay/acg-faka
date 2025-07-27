@@ -5,7 +5,9 @@ namespace Kernel\Plugin;
 
 use App\Util\Client;
 use Kernel\Component\Singleton;
+use Kernel\Consts\Base;
 use Kernel\Util\Binary;
+use Kernel\Util\Context;
 use Kernel\Util\File;
 use Kernel\Util\Plugin;
 
@@ -43,7 +45,7 @@ class Hook
             }
         }
 
-        $route = explode("/", trim($_GET['s'], "/"));
+        $route = explode("/", trim(Context::get(Base::ROUTE), "/"));
         if (strtolower($route[0]) == "plugin") {
             $pluginName = ucfirst($route[1]);
             $pluginCfg = Plugin::getPlugin($pluginName);

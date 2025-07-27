@@ -29,14 +29,13 @@ session_name("ACG-SHOP");
 //session_write_close();
 try {
     //waf install -> 2025-07-26
+    $routePath = $_GET['s'] = $_GET['s'] ?? "/user/index/index";
     Context::set(\Kernel\Context\Interface\Request::class, new Request());
-    if (!isset($_GET['s'])) {
-        $_GET['s'] = "/user/index/index";
-    } elseif (trim($_GET['s'], "/") == 'admin') {
+    if (trim($routePath, "/") == 'admin') {
         header('location:' . "/admin/authentication/login");
     }
 
-    $s = explode("/", trim((string)$_GET['s'], '/'));
+    $s = explode("/", trim((string)$routePath, '/'));
     Context::set(Base::ROUTE, "/" . implode("/", $s));
     Context::set(Base::LOCK, (string)file_get_contents(BASE_PATH . "/kernel/Install/Lock"));
     Context::set(Base::IS_INSTALL, file_exists(BASE_PATH . '/kernel/Install/Lock'));
@@ -119,10 +118,8 @@ try {
     $parameters = Collector::instance()->getMethodParameters($controllerInstance, $action, $_REQUEST);
     hook(\App\Consts\Hook::CONTROLLER_CALL_BEFORE, $controllerInstance, $action);
     $result = call_user_func_array([$controllerInstance, $action], $parameters);
-    $routePath = $_GET['s'];
     hook(\App\Consts\Hook::CONTROLLER_CALL_AFTER, $controllerInstance, $action, $result);
     hook(\App\Consts\Hook::HTTP_ROUTE_RESPONSE, $routePath, $result);
-
 
 
     if ($result === null) {

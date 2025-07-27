@@ -56,6 +56,8 @@ class Order extends User
                 break;
             }
         }
+        if (isset($data['s'])) unset($data['s']);
+        if (isset($data['_PARAMETER'])) unset($data['_PARAMETER']);
         return $this->order->callback($handle, $data);
     }
 

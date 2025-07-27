@@ -29,6 +29,8 @@ class RechargeNotification extends User
                 break;
             }
         }
+        if (isset($data['s'])) unset($data['s']);
+        if (isset($data['_PARAMETER'])) unset($data['_PARAMETER']);
         return $this->recharge->callback($handle, $data);
     }
 }
