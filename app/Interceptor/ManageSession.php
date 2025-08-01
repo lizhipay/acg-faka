@@ -8,12 +8,15 @@ use App\Consts\Manage as ManageConst;
 use App\Model\Manage;
 use App\Util\Client;
 use App\Util\Context;
+use App\Util\Date;
 use App\Util\JWT;
 use Firebase\JWT\Key;
 use JetBrains\PhpStorm\NoReturn;
 use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\InterceptorInterface;
+use Kernel\Consts\Base;
 use Kernel\Exception\JSONException;
+use Kernel\Util\View;
 
 /**
  * Class ManageSession
@@ -23,7 +26,9 @@ class ManageSession implements InterceptorInterface
 {
 
     /**
+     * @param int $type
      * @throws JSONException
+     * @throws \SmartyException
      */
     #[NoReturn] public function handle(int $type): void
     {
@@ -72,6 +77,15 @@ class ManageSession implements InterceptorInterface
             $manage->status != 1
         ) {
             $this->kick($type);
+        }
+
+        if (!file_exists(BASE_PATH . "/config/terms")) {
+            if (\Kernel\Util\Context::get(Base::ROUTE) == "/admin/dashboard/index" && $_GET['agree'] == 1) {
+                file_put_contents(BASE_PATH . "/config/terms", "用户同意协议，时间：" . Date::current());
+                header('content-type:application/json;charset=utf-8');
+                exit(json_encode(["code" => 200, "msg" => "success"]));
+            }
+            exit(View::render("LegalTerms.html"));
         }
 
         //保存会话

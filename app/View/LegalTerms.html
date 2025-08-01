@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>异次元用户协议</title>
+    <link rel="stylesheet" href="/assets/static/layer/theme/default/layer.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            /* position: relative; */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                position: relative;
+                top: 0;
+                left: 0;
+                transform: none;
+                margin: 10px;
+                border-radius: 12px;
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .header .update-time {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 25px 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+                margin-bottom: 8px;
+            }
+
+            .header .subtitle {
+                font-size: 1em;
+            }
+
+            .header .update-time {
+                font-size: 0.8em;
+                margin-top: 8px;
+            }
+        }
+
+        .content {
+            padding: 40px 30px;
+            max-height: 600px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 25px 20px;
+                max-height: 400px;
+            }
+        }
+
+        .content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .content::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            font-weight: 600;
+            border-left: 4px solid #667eea;
+            padding-left: 15px;
+        }
+
+        .section h3 {
+            color: #555;
+            font-size: 1.1em;
+            margin: 15px 0 10px 0;
+            font-weight: 600;
+        }
+
+        .section p {
+            margin-bottom: 12px;
+            color: #666;
+            line-height: 1.7;
+        }
+
+        .section ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .section li {
+            margin-bottom: 8px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .section {
+                margin-bottom: 25px;
+            }
+
+            .section h2 {
+                font-size: 1.2em;
+                margin-bottom: 12px;
+                padding-left: 12px;
+            }
+
+            .section h3 {
+                font-size: 1em;
+                margin: 12px 0 8px 0;
+            }
+
+            .section p {
+                margin-bottom: 10px;
+                line-height: 1.6;
+            }
+
+            .section ul {
+                margin: 8px 0;
+                padding-left: 18px;
+            }
+
+            .section li {
+                margin-bottom: 6px;
+                line-height: 1.5;
+            }
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .highlight h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .highlight {
+                padding: 15px;
+                margin: 15px 0;
+                border-radius: 6px;
+            }
+
+            .highlight h3 {
+                margin-bottom: 8px;
+                font-size: 1em;
+            }
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-container:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            accent-color: #667eea;
+        }
+
+        .checkbox-container label {
+            font-size: 1.1em;
+            color: #555;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        @media (max-width: 768px) {
+            .checkbox-container {
+                margin: 15px 0;
+                padding: 15px;
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .checkbox-container input[type="checkbox"] {
+                width: 18px;
+                height: 18px;
+                margin-right: 0;
+                margin-bottom: 8px;
+            }
+
+            .checkbox-container label {
+                font-size: 1em;
+                line-height: 1.4;
+            }
+        }
+
+        .btn-container {
+            text-align: center;
+            padding: 20px 30px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .print-btn {
+            background: #28a745;
+            margin-right: 15px;
+        }
+
+        .print-btn:hover {
+            background: #218838;
+        }
+
+        @media (max-width: 768px) {
+            .btn-container {
+                padding: 15px 20px;
+            }
+
+            .btn {
+                padding: 12px 30px;
+                font-size: 1em;
+                border-radius: 20px;
+                width: 100%;
+                max-width: 280px;
+            }
+
+            .btn:hover {
+                transform: none;
+            }
+
+            .btn:active {
+                transform: scale(0.98);
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .container {
+                box-shadow: none;
+                margin: 0;
+            }
+
+            .header {
+                background: #667eea !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .btn-container {
+                display: none;
+            }
+        }
+
+        /* 移动端触摸优化 */
+        @media (max-width: 768px) {
+            body {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 0;
+            }
+
+            /* 优化滚动体验 */
+            .content {
+                -webkit-overflow-scrolling: touch;
+                scroll-behavior: smooth;
+            }
+
+            /* 防止页面缩放 */
+            input[type="checkbox"] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 18px;
+                height: 18px;
+                border: 2px solid #667eea;
+                border-radius: 3px;
+                background: white;
+                position: relative;
+                cursor: pointer;
+            }
+
+            input[type="checkbox"]:checked::after {
+                content: '✓';
+                position: absolute;
+                top: -2px;
+                left: 2px;
+                color: #667eea;
+                font-size: 14px;
+                font-weight: bold;
+            }
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<div class="container">
+    <div class="header">
+        <h1>异次元商城用户协议</h1>
+        <div class="subtitle">欢迎使用异次元开源商城系统（严禁用于违法违规行为）</div>
+        <div class="update-time">协议更新时间：2025年8月</div>
+    </div>
+
+    <div class="content" id="content">
+        <div class="highlight">
+            <h3>📋 协议概述</h3>
+            <p>
+                异次元商城是一个基于开源协议开发的电商系统，致力于为用户提供安全、便捷的在线购物体验。在使用本系统前，请仔细阅读并同意以下用户协议。</p>
+        </div>
+
+        <div class="section">
+            <h2>一、服务说明</h2>
+            <h3>1.1 系统介绍</h3>
+            <p>
+                异次元商城是一个基于PHP开发的开源电商系统，提供完整的在线商城解决方案，包括商品管理、订单处理、用户管理、支付集成等功能。</p>
+
+            <h3>1.2 开源协议</h3>
+            <p>本系统采用MIT开源协议发布，除付费插件外，所有核心代码均为开源代码。用户可以：</p>
+            <ul>
+                <li>自由查看、修改源代码</li>
+                <li>基于本系统开发衍生作品</li>
+                <li>在遵守开源协议的前提下进行商业使用</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>二、用户权利与义务</h2>
+            <h3>2.1 用户权利</h3>
+            <ul>
+                <li>免费使用系统基础功能</li>
+                <li>获得技术支持和社区帮助</li>
+                <li>参与系统改进和功能建议</li>
+                <li>在遵守协议的前提下进行二次开发</li>
+            </ul>
+
+            <h3>2.2 用户义务</h3>
+            <ul>
+                <li>遵守相关法律法规</li>
+                <li>不得利用系统进行违法活动</li>
+                <li>保护用户隐私和数据安全</li>
+                <li>不得恶意攻击或破坏系统</li>
+                <li>不得利用本系统销售外挂、作弊工具或其他违法违规内容</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>三、知识产权</h2>
+            <h3>3.1 开源代码</h3>
+            <p>系统核心代码采用开源协议，用户可以：</p>
+            <ul>
+                <li>自由使用、修改和分发</li>
+                <li>基于代码开发新的功能</li>
+                <li>参与社区贡献和代码改进</li>
+            </ul>
+
+            <h3>3.2 付费插件</h3>
+            <p>部分高级功能以付费插件形式提供，这些插件：</p>
+            <ul>
+                <li>受版权保护，不得随意分发</li>
+                <li>仅限授权用户使用</li>
+                <li>不得进行逆向工程或破解</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>四、免责声明</h2>
+            <h3>4.1 服务可用性</h3>
+            <p>我们努力确保系统的稳定性和可用性，但无法保证：</p>
+            <ul>
+                <li>系统100%无故障运行</li>
+                <li>所有功能完全符合用户需求</li>
+                <li>第三方服务的稳定性</li>
+            </ul>
+
+            <h3>4.2 损失赔偿</h3>
+            <p>在以下情况下，我们不承担赔偿责任：</p>
+            <ul>
+                <li>因不可抗力导致的系统故障</li>
+                <li>用户操作不当造成的数据丢失</li>
+                <li>第三方服务商的问题</li>
+                <li>用户违反协议造成的损失</li>
+                <li>因用户违法使用系统而遭受的任何处罚或索赔</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>五、协议变更</h2>
+            <p>我们保留随时修改本协议的权利。重大变更将通过以下方式通知用户：</p>
+            <ul>
+                <li>在系统内发布公告</li>
+                <li>通过邮件通知注册用户</li>
+                <li>在官方网站更新协议内容</li>
+            </ul>
+            <p>继续使用系统即表示同意修改后的协议条款。</p>
+        </div>
+
+
+        <div class="section">
+            <h2>六、禁止违法用途声明</h2>
+            <h3>6.1 严禁非法用途</h3>
+            <p>您承诺不使用本系统从事任何违法、违规或损害公共利益的行为，包括但不限于：</p>
+            <ul>
+                <li>售卖外挂、作弊工具、破解软件等违反游戏厂商、平台服务协议或国家法规的商品与服务</li>
+                <li>销售黄赌毒类内容、非法支付通道、诈骗产品等非法商品</li>
+                <li>构建用于洗钱、非法资金转移、组织犯罪等目的的平台或服务</li>
+            </ul>
+
+            <h3>6.2 法律责任归属</h3>
+            <p>用户使用本系统进行违法行为所造成的一切后果，均由用户自行承担全部法律责任，与本系统作者及贡献者无关。</p>
+
+            <h3>6.3 技术支持拒绝权</h3>
+            <p>
+                一经发现用户将本系统用于违法活动，我们有权立即终止其插件服务、技术支持及授权，并保留依法向有关部门举报的权利。</p>
+        </div>
+
+        <div class="highlight">
+            <h3>🎉 感谢使用异次元商城</h3>
+            <p>感谢您选择异次元商城系统。我们致力于为用户提供最好的开源电商解决方案，期待与您一起构建更好的电商生态！</p>
+        </div>
+    </div>
+
+    <div class="checkbox-container">
+        <input type="checkbox" id="agreeCheckbox">
+        <label for="agreeCheckbox">我已仔细阅读并同意《异次元商城用户协议》的所有条款</label>
+    </div>
+
+    <div class="btn-container">
+        <button class="btn" id="agreeBtn" disabled onclick="agreeTerms()">继续使用</button>
+    </div>
+</div>
+<script src="/assets/static/jquery.min.js"></script>
+<script src="/assets/static/layer/layer.js"></script>
+<script>
+    let hasScrolled = false;
+    let hasChecked = false;
+
+    // 滚动进度条
+    const content = document.getElementById('content');
+    const progressBar = document.getElementById('progressBar');
+
+    content.addEventListener('scroll', function () {
+        const scrollTop = content.scrollTop;
+        const scrollHeight = content.scrollHeight - content.clientHeight;
+        const progress = (scrollTop / scrollHeight) * 100;
+
+        progressBar.style.width = progress + '%';
+
+        if (progress >= 95) {
+            hasScrolled = true;
+            updateButtonState();
+        }
+    });
+
+    document.getElementById('agreeCheckbox').addEventListener('change', function (e) {
+        if (this.checked && !hasScrolled) {
+            layer.msg('请先阅读全部协议内容');
+            this.checked = false;
+            return;
+        }
+        hasChecked = this.checked;
+        updateButtonState();
+    });
+
+    function updateButtonState() {
+        const agreeBtn = document.getElementById('agreeBtn');
+        if (hasScrolled && hasChecked) {
+            agreeBtn.disabled = false;
+        } else {
+            agreeBtn.disabled = true;
+        }
+    }
+
+    function agreeTerms() {
+        if (!hasScrolled) {
+            layer.msg('请完整阅读用户协议');
+            return;
+        }
+        if (!hasChecked) {
+            layer.msg('请勾选同意协议选项');
+            return;
+        }
+
+        $.get("/admin/dashboard/index?agree=1", res => {
+            if (res.code === 200) {
+                window.location.reload();
+            }
+        });
+    }
+</script>
+</body>
+</html>
