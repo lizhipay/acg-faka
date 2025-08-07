@@ -78,4 +78,4 @@ location / {
 
 ## 更多支持
 - 交流QQ群：970103572
-- [Telegram](https://t.me/acgshop)
+- [Telegram](http://t.me/mcyofficial)
