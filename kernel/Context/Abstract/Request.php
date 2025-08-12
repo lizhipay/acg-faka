@@ -4,6 +4,7 @@ declare (strict_types=1);
 namespace Kernel\Context\Abstract;
 
 
+use Kernel\Exception\RuntimeException;
 use Kernel\Util\Arr;
 use Kernel\Waf\Filter;
 use Kernel\Waf\Firewall;
@@ -30,11 +31,17 @@ abstract class Request implements \Kernel\Context\Interface\Request
     protected string $uriSuffix;
 
 
+    /**
+     * @throws \HTMLPurifier_Exception
+     * @throws RuntimeException
+     * @throws \ReflectionException
+     */
     public function __construct()
     {
         $_POST = $this->post = Firewall::instance()->xssKiller($this->post);
         $_GET = $this->get = Firewall::instance()->xssKiller($this->get);
         $_REQUEST = Firewall::instance()->xssKiller($_REQUEST);
+        $_SERVER = Firewall::instance()->xssKiller($_SERVER);
         $this->json = Firewall::instance()->xssKiller($this->json);
 
 

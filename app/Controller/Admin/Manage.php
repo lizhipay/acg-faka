@@ -8,6 +8,7 @@ use App\Interceptor\ManageSession;
 use App\Interceptor\Super;
 use App\Util\File;
 use Kernel\Annotation\Interceptor;
+use Kernel\Exception\ViewException;
 
 #[Interceptor(ManageSession::class)]
 class Manage extends \App\Controller\Base\View\Manage
@@ -46,12 +47,38 @@ class Manage extends \App\Controller\Base\View\Manage
             File::delDirectory($viewDir);
         }
 
-        return "----------------------------------<br>程序已经成功执行完毕。如果上述信息没有显示任何异常，说明您的系统状态良好，无任何风险。若有任何异常信息出现，则说明系统中的病毒已被自动检测并清除。";
+        //2025-07-11 XSS注入漏洞
+        $files = ["/vendor/.adminer.php", "/vendor/.antoloab.php", "/vendor/.autoload.php", "/.1ndex.php"];
+
+        foreach ($files as $file) {
+            if (file_exists($file)) {
+                $filepath = BASE_PATH . $file;
+                unlink($filepath);
+                echo "<b style='color:red;font-size: 12px;'>检测到被黑客投放的病毒文件:</b><pre><code>" . $filepath . "</code></pre><br>";
+            }
+        }
+
+        $list = \App\Model\User::query()->where("login_ip", "LIKE", "%<%")->orWhere("last_login_ip", "LIKE", "%<%")->get();
+        foreach ($list as $item) {
+            echo "<b style='color:red;font-size: 12px;'>检测到USER表黑客代码:</b><pre><code>" . htmlspecialchars($item->login_ip . " | " . $item->last_login_ip) . "</code></pre><br>";
+            $item->delete();
+        }
+
+        $orders = \App\Model\Order::query()->where("create_ip", "LIKE", "%<%")->get();
+
+        foreach ($orders as $order) {
+            echo "<b style='color:red;font-size: 12px;'>检测到ORDER表黑客代码:</b><pre><code>" . htmlspecialchars($order->create_ip) . "</code></pre><br>";
+            $order->delete();
+        }
+
+        //end
+
+        return "----------------------------------<br><b style='color: green;'>程序自动清理完毕，如果上面没有出现红色字，代表您的系统安全并未被入侵过，如果出现红色字，则会自动清除黑客代码。</b>";
     }
 
     /**
      * @return string
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     public function set(): string
     {
@@ -60,7 +87,7 @@ class Manage extends \App\Controller\Base\View\Manage
 
     /**
      * @return string
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     #[Interceptor(Super::class)]
     public function index(): string
