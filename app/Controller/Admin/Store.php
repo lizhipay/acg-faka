@@ -8,18 +8,19 @@ use App\Interceptor\ManageSession;
 use App\Util\Client;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
+use Kernel\Exception\ViewException;
 
 #[Interceptor(ManageSession::class)]
 class Store extends Manage
 {
 
     private array $TOOLBAR = [
-        ["name" => '<i class="fab fa-app-store"></i> 插件市场', "url" => "/admin/store/home"],
-        ["name" => '<i class="fas fa-laptop-code"></i> 开发者中心', "url" => "/admin/store/developer"]
+        ["name" => '<i class="fa-duotone fa-regular fa-grid-2-plus"></i> 插件市场', "url" => "/admin/store/home"],
+        ["name" => '<i class="fa-duotone fa-regular fa-code"></i> 开发者中心', "url" => "/admin/store/developer"]
     ];
 
     /**
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     public function index(): string
     {
@@ -29,8 +30,8 @@ class Store extends Manage
 
     /**
      * @return string
-     * @throws \Kernel\Exception\ViewException
-     * @throws \Kernel\Exception\JSONException
+     * @throws ViewException
+     * @throws JSONException
      */
     public function home(): string
     {
@@ -44,8 +45,8 @@ class Store extends Manage
 
 
     /**
-     * @throws \Kernel\Exception\ViewException
-     * @throws \Kernel\Exception\JSONException
+     * @throws ViewException
+     * @throws JSONException
      */
     public function developer(): string
     {

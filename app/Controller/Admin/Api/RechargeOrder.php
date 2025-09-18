@@ -4,16 +4,19 @@ declare(strict_types=1);
 namespace App\Controller\Admin\Api;
 
 use App\Controller\Base\API\Manage;
+use App\Entity\Query\Get;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
 use App\Model\ManageLog;
 use App\Model\UserRecharge;
 use App\Service\Query;
 use App\Service\Recharge;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
+use Kernel\Exception\NotFoundException;
 
 #[Interceptor(ManageSession::class, Interceptor::TYPE_API)]
 class RechargeOrder extends Manage
@@ -26,40 +29,37 @@ class RechargeOrder extends Manage
 
     /**
      * @return array
+     * @throws NotFoundException
+     * @throws \ReflectionException
      */
     public function data(): array
     {
         $map = $_POST;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\UserRecharge::class);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setWith([
-            'user' => function (Relation $relation) {
-                $relation->select(["id", "username", "avatar"]);
-            },
-            'pay' => function (Relation $relation) {
-                $relation->select(["id", "name", "icon"]);
-            }
-        ]);
+        $get = new Get(UserRecharge::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setWhere($map);
+        $raw = [];
 
-        $query = \App\Model\Order::query();
-        $data = $this->query->findTemplateAll($queryTemplateEntity, $query)->toArray();
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
+        $data = $this->query->get($get, function (Builder $builder) use (&$raw) {
+            $raw['order_amount'] = (clone $builder)->sum("amount");
 
-        //获取订单数量
-        $json['order_count'] = (clone $query)->count();
-        $json['order_amount'] = (clone $query)->sum("amount");
-        return $json;
+            return $builder->with([
+                'user' => function (Relation $relation) {
+                    $relation->select(["id", "username", "avatar"]);
+                },
+                'pay' => function (Relation $relation) {
+                    $relation->select(["id", "name", "icon"]);
+                }
+            ]);
+        });
+
+        return $this->json(data: array_merge($raw, $data));
     }
 
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function success(): array
     {
@@ -85,7 +85,7 @@ class RechargeOrder extends Manage
      */
     public function clear(): array
     {
-        \App\Model\UserRecharge::query()
+        UserRecharge::query()
             ->where("create_time", "<", date("Y-m-d H:i:s", time() - 1800))
             ->where("status", 0)->delete();
 

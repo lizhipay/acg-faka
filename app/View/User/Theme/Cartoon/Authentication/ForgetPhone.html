@@ -1,198 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<!--begin::Head-->
-<head>
-    <title>#{$title} - #{$config.title}</title>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <link rel="shortcut icon" href="/favicon.ico"/>
-    <!--begin::Global Stylesheets Bundle(used by all pages)-->
-    <link href="/assets/admin/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css"/>
-    <link href="/assets/admin/css/style.bundle.css" rel="stylesheet" type="text/css"/>
-    <!--end::Global Stylesheets Bundle-->
-    <style>
-        .text-color {
-        #{if $setting.style==0}
-            color: pink;
-        #{else}
-            color: #70b5ff;
-        #{/if}
-        }
-    </style>
-    <!--start::HOOK-->
-    #{hook(\App\Consts\Hook::USER_GLOBAL_VIEW_HEADER)}
-    <!--end::HOOK-->
-</head>
-<!--end::Head-->
-<!--begin::Body-->
-<body id="kt_body" class="bg-body">
-<!--begin::Main-->
-<div class="d-flex flex-column flex-root">
-    <!--begin::Authentication - Sign-in -->
-    <div class="d-flex flex-column flex-column-fluid bgi-position-y-bottom position-x-center bgi-no-repeat bgi-size-contain bgi-attachment-fixed"
-         style="background: url('#{$config.background_url}') fixed no-repeat;background-size: cover;">
-        <!--begin::Content-->
-        <div class="d-flex flex-center flex-column flex-column-fluid p-10 pb-lg-20">
-            <!--begin::Logo-->
-            <!--end::Logo-->
-            <!--begin::Wrapper-->
-            <div class="w-lg-400px bg-body rounded shadow-sm p-10 p-lg-15 mx-auto">
-                <!--begin::Form-->
-                <form class="form w-100 form-data" novalidate="novalidate">
-                    <!--begin::Heading-->
-                    <div class="text-center mb-10">
-                        <!--begin::Title-->
-                        <a href="/"><h1 class="mb-3 text-color">#{$config.shop_name}</h1></a>
-                        <!--end::Title-->
-                        <div class="text-gray-400 fw-bold fs-5">想起密码? <a href="/user/authentication/login"
-                                                                         class="link-primary fw-bolder">立即登录!</a></div>
-                    </div>
-                    <!--begin::Heading-->
-                    <!--begin::Input group-->
-                    <div class="fv-row mb-10">
-                        <!--begin::Label-->
-                        <label class="form-label fs-6 fw-bolder text-color">手机号</label>
-                        <!--end::Label-->
-                        <!--begin::Input-->
-                        <input class="form-control form-control-lg form-control-solid" type="number" name="username"
-                               placeholder="请输入你的手机"
-                               autocomplete="off"/>
-                        <!--end::Input-->
-                    </div>
-                    <!--end::Input group-->
+#{include file="./Header.html"}
+<!-- Main Container -->
+<main class="auth-wrapper">
+    <div class="auth-card">
 
-                    <div class="row fv-row mb-7 fv-plugins-icon-container">
-                        <!--begin::Col-->
-                        <div class="col-8">
-                            <label class="form-label fw-bolder fs-6 text-color">手机验证码</label>
-                            <input class="form-control form-control-lg form-control-solid" type="text" placeholder="验证码"
-                                   name="captcha"
-                                   autocomplete="off"/>
-                            <div class="fv-plugins-message-container invalid-feedback"></div>
-                        </div>
-                        <!--end::Col-->
-                        <!--begin::Col-->
-                        <div class="col-4 pt-8">
-                            <button type="button" class="btn btn-lg #{if $setting.style==0}btn-light-danger#{else} btn-light-primary #{/if} w-100 captcha">
-                                <span class="indicator-label">获取</span>
-                            </button>
-                        </div>
-                        <!--end::Col-->
-                    </div>
-
-
-                    <!--begin::Input group-->
-                    <div class="fv-row mb-10">
-                        <!--begin::Wrapper-->
-                        <div class="d-flex flex-stack mb-2">
-                            <!--begin::Label-->
-                            <label class="form-label fw-bolder fs-6 mb-0 text-color">新密码</label>
-                            <!--end::Label-->
-                        </div>
-                        <!--end::Wrapper-->
-                        <!--begin::Input-->
-                        <input class="form-control form-control-lg form-control-solid" type="text" name="password"
-                               placeholder="请输入新密码"
-                               autocomplete="off"/>
-                        <!--end::Input-->
-                    </div>
-                    <!--end::Input group-->
-
-                    <!--begin::Actions-->
-                    <div class="text-center">
-                        <!--begin::Submit button-->
-                        <button type="button" class="btn btn-lg #{if $setting.style==0}btn-light-danger#{else} btn-light-primary #{/if} w-100 mb-5 data-submit">
-                            <span class="indicator-label">设置</span>
-                        </button>
-                        <!--end::Submit button-->
-                    </div>
-                    <!--end::Actions-->
-                </form>
-                <!--end::Form-->
+        <div class="brand-header">
+            <div class="brand-logo">
+                <img src="/favicon.ico" alt="Logo" class="brand-icon">
             </div>
-            <!--end::Wrapper-->
         </div>
-        <!--end::Content-->
-        <!--begin::Footer-->
-        <div class="d-flex flex-center flex-column-auto p-10">
-            <!--begin::Links-->
-            <div class="d-flex align-items-center fw-bold fs-8">
-                <span style="color: pink;">@#{$config.shop_name}</span>
+        <p class="auth-subtitle small mb-3">手机号遗失？<a class="text-link" href="/">联系客服</a>协助帮忙找回！</p>
+
+        <form class="needs-validation">
+            <div class="form-floating mb-4">
+                <input type="number" class="form-control" name="username" placeholder="手机号" required>
+                <label for="username">手机号</label>
             </div>
-            <!--end::Links-->
-        </div>
-        <!--end::Footer-->
+
+            <div class="row mb-4">
+                <div class="col-sm-8 col-8">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="captcha"
+                               name="captcha" placeholder="验证码">
+                        <label class="form-label" for="captcha">验证码</label>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-4">
+                    <button type="button" class="w-100 btn btn-outline-primary py-3 send-phone-captcha">
+                        发送验证码
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-floating mb-4">
+                <input type="text" class="form-control" name="password" placeholder="设置登录密码"
+                       minlength="6" required>
+                <label for="password">设置登录密码</label>
+            </div>
+
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-gradient btn-lg">确认重置</button>
+            </div>
+        </form>
+
+
+            <p class="text-center small mt-3 mb-0">
+                想起密码？
+                <a class="text-link" href="/user/authentication/login">前往登录</a>
+            </p>
     </div>
-    <!--end::Authentication - Sign-in-->
-</div>
-<!--end::Main-->
-<!--begin::Javascript-->
-<!--begin::Global Javascript Bundle(used by all pages)-->
-<script src="/assets/admin/js/util.js"></script>
-<script src="/assets/static/jquery.min.js"></script>
-<script src="/assets/static/layui/layui.js"></script>
-
-<script>
-    $(function () {
-        layui.use(['layer'], function () {
-            $('.data-submit').click(function () {
-                let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
-                let data = $('.form-data').serialize();
-                $.post("/user/api/authentication/password", data, res => {
-                    layer.close(loaderIndex);
-                    if (res.code == 200) {
-                        setTimeout(() => {
-                            window.location.href = "/user/authentication/login";
-                        }, 1000);
-                        layer.msg("设置成功");
-                        return;
-                    }
-                    layer.msg(res.msg);
-                });
-            });
-        });
-
-
-        $('.captcha').click(function () {
-            layer.prompt({
-                title: '请输入验证码：<img src="/user/captcha/image?action=phoneForgetCaptcha" style="margin-top: -5px;">',
-                formType: 0
-            }, function (captcha, index) {
-                let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
-                $.post("/user/api/authentication/phoneForgetCaptcha", {
-                    captcha: captcha,
-                    phone: $('form input[name=username]').val()
-                }, res => {
-                    layer.close(loaderIndex);
-                    if (res.code == 200) {
-                        layer.close(index);
-                        let second = 60;
-                        $('.captcha').attr('disabled', true);
-                        $(".captcha").html((second) + "秒")
-                        let interval = setInterval(function () {
-                            second--
-                            $(".captcha").html((second) + "秒")
-                            if (second === -1) {
-                                $(".captcha").text("获取")
-                                $('.captcha').attr('disabled', false);
-                                clearInterval(interval)
-                            }
-                        }, 1000);
-                    }
-                    layer.msg(res.msg);
-                });
-            });
-        });
-    });
-
-</script>
-<!--end::Javascript-->
-<!--start::HOOK-->
-#{hook(\App\Consts\Hook::USER_GLOBAL_VIEW_BODY)}
-<!--end::HOOK-->
-</body>
-<!--end::Body-->
-<!--start::HOOK-->
-#{hook(\App\Consts\Hook::USER_GLOBAL_VIEW_FOOTER)}
-<!--end::HOOK-->
-</html>
+</main>
+<!-- END Main Container -->
+#{ready("/assets/user/controller/auth/forget.phone.js")}
+#{include file="./Footer.html"}

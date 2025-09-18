@@ -25,11 +25,11 @@
                     <!--begin::Form-->
                     <form id="data-form" class="form">
                         <!--begin::Card body-->
-                        <div class="card-body border-top p-9">
+                        <div class="card-body p-9">
                             <!--begin::Alert-->
                             <div class="alert alert-dismissible bg-light-primary d-flex flex-column flex-sm-row p-5 mb-10">
                                 <!--begin::Icon-->
-                                <span class="me-4 mb-5 mb-sm-0"><i class="fas fa-bell"></i></span>
+                                <span class="me-4 mb-5 mb-sm-0"><i class="fa-duotone fa-regular fa-bell"></i></span>
                                 <!--end::Icon-->
                                 <!--begin::Wrapper-->
                                 <div class="d-flex flex-column pe-0 pe-sm-10">
@@ -146,33 +146,5 @@
 <!--end::Content-->
 
 
-<script>
-    $(function () {
-        layui.use(['layer', 'form'], function () {
-            //data-form
-            $('.save-data').click(function () {
-                let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
-                $.post("/admin/api/config/email", $("#data-form").serialize(), res => {
-                    layer.close(loaderIndex);
-                    layer.msg("保存成功");
-                });
-            });
-
-            $('.send-test-message').click(function () {
-                layer.prompt({title: '邮箱地址', formType: 0}, function (email, index) {
-                    let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
-                    $.post("/admin/api/config/emailTest", {email: email}, res => {
-                        layer.close(loaderIndex);
-                        if (res.code == 200) {
-                            layer.close(index);
-                        }
-                        layer.msg(res.msg);
-                    });
-                });
-
-            });
-        });
-    });
-</script>
-
+#{ready("/assets/admin/controller/config/mail.js")}
 #{include file="../Footer.html"}

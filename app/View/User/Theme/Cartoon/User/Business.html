@@ -1,9 +1,7 @@
 #{include file="../Common/Header.html"}
-<style>
-    .notice-div .w-e-toolbar,  .notice-div .w-e-text,  .notice-div .w-e-text-container , .CodeMirror{
-        background-color: #ffffff29 !important;
-    }
-</style>
+#{set_script_var([
+    "_business_notice_var" => $business.notice
+])}
 <div class="layui-container fly-marginTop fly-user-main">
     #{include file="../Common/Nav.html"}
     <div class="fly-panel fly-panel-user" pad20>
@@ -30,7 +28,7 @@
                                 <div class="form-header">请选择</div>
                                 <div class="form-body">
                                     #{foreach $level as $le}
-                                        <a class="button-click" onclick="openLevel(this,#{$le.id})"
+                                        <a class="button-click business-group" data-id="#{$le.id}"
                                            style="line-height: 22px;color: #db66ac;"> <img
                                                     src="#{$le.icon}" class="pay-icon" style="margin-top: -5px;"> <span
                                                     style="font-weight: bold;">#{$le.name}</span> <span
@@ -58,10 +56,10 @@
                             </div>
                             <div style="margin-top: 10px;">
                                 <blockquote class="elem-tips" style="font-size: 12px;">
-                                    <p>• 分站返佣：当您开通分站店铺后，您在分站卖出去的主站商品，将会给您一定的佣金</p>
-                                    <p>• 顶级域名：当您开通分站后，可以绑定属于您自己的顶级域名，而不是使用分配的子域名</p>
-                                    <p>• 供货权限：可以建立自己的商品分类，以及添加自己的商品来进行售卖，主站也会帮你售卖。</p>
-                                    <p>• 供货手续费：用作与您自主上架的商品，当成功出售时，系统将收取一定的手续费</p>
+                                    <p>• 分站返佣：开通分站后，您在分站售出的主站商品，将按差价返还佣金（实际成交金额 - 您的拿货价 = 您的佣金）。</p>
+                                    <p>• 独立域名：开通分站后，您可绑定自己的顶级域名，而无需使用系统默认分配的子域名。</p>
+                                    <p>• 供货权限：您可自建商品分类并上架商品进行销售，主站也将协助推广与售卖。</p>
+                                    <p>• 供货手续费：针对您自主上架的商品，每笔成功交易将收取一定比例的手续费。</p>
                                 </blockquote>
 
                             </div>
@@ -110,17 +108,20 @@
                                 <div class="form-header">店铺公告</div>
                                 <div class="form-body">
 
-
-
-                                        <textarea style="display: none;" name="notice" class="notice-textarea"></textarea>
-                                        <div style="">
-                                            <button data-type="0" class="button-switch-html" type="button"
-                                                    style="width: 100%;border: none;background: #ffffff29;border-radius: 5px 5px 0 0;color: #c9b8b8;">
-                                                <i class="layui-icon layui-icon-fonts-code"></i> HTML
+                                    <div class="editor-wrapper">
+                                        <div>
+                                            <button data-type="0" class="button-switch-notice" type="button"
+                                                    style="width: 100%;border: none;background: rgba(255, 255, 255, 0.35);border-radius: 5px 5px 0 0;color: #c9b8b8;">
+                                                <i class="fa-duotone fa-regular fa-code me-1"></i>HTML
                                             </button>
                                         </div>
-                                        <div class="notice-div">#{$business.notice}</div>
-
+                                        <div class="editor-content">
+                                            <div class="toolbar-container"></div>
+                                            <div class="editor-container"></div>
+                                        </div>
+                                        <textarea class="text-container" style="display: none;"
+                                                  name="notice"></textarea>
+                                    </div>
 
                                 </div>
                             </div>
@@ -134,9 +135,9 @@
 
                             <div>
                                 <div class="form-header">主站分类
-                                    <span class="acg-badge acg-badge-light-success category-show" data-state="1"
+                                    <span class="a-badge a-badge-success category-show" data-state="1"
                                           style="cursor:pointer;">全部显示</span>
-                                    <span class="acg-badge acg-badge-light-red category-show" data-state="0"
+                                    <span class="a-badge a-badge-danger category-show" data-state="0"
                                           style="cursor:pointer;">全部隐藏</span>
                                 </div>
                                 <div class="form-body">
@@ -147,38 +148,23 @@
                             <div>
                                 <div class="form-header">主站商品
                                     <a id="commodity"></a>
-                                    <span class="acg-badge acg-badge-light-success commodity-show" data-state="1"
+                                    <span class="a-badge a-badge-success commodity-show" data-state="1"
                                           style="cursor:pointer;">全部显示</span>
-                                    <span class="acg-badge acg-badge-light-red commodity-show" data-state="0"
+                                    <span class="a-badge a-badge-danger commodity-show" data-state="0"
                                           style="cursor:pointer;">全部隐藏</span>
 
-                                    <span class="acg-badge acg-badge-light-primary commodity-premium"
+                                    <span class="a-badge a-badge-primary commodity-premium"
                                           style="cursor:pointer;">加价</span>
                                 </div>
                                 <div class="form-body">
                                     <table id="master_commodity" lay-filter="master_commodity"></table>
                                 </div>
                             </div>
-
-                            <div>
-                                <div class="form-header">客服QQ</div>
-                                <div class="form-body"><input type="text" value="#{$business.service_qq}"
-                                                              name="service_qq"
-                                                              required autocomplete="off" placeholder="售后客服QQ"
-                                                              class="layui-input" style="color: #ff9191;"></div>
-                            </div>
-                            <div>
-                                <div class="form-header">客服地址</div>
-                                <div class="form-body"><input type="text" value="#{$business.service_url}"
-                                                              name="service_url"
-                                                              required autocomplete="off" placeholder="网页客服地址"
-                                                              class="layui-input" style="color: #ff9191;"></div>
-                            </div>
+                            
                             <div>
                                 <div class="form-header">子域名 #{if $business.subdomain}
-                                        <b style="color: green;">✔</b>
-                                        <a style="color: #239c87;"
-                                           href="javascript:void(0);" class="unbind-subdomain">解绑</a>
+                                        <i class="fa-duotone fa-regular fa-check text-success"></i>
+                                        <a href="javascript:void(0);" class="unbind-subdomain text-success">解绑</a>
                                     #{/if}
                                 </div>
                                 <div class="form-body">
@@ -201,16 +187,13 @@
                                 #{if $user.businessLevel.top_domain == 1}
                                     <div>
                                         <div class="form-header">独立域名 #{if $business.topdomain}
-                                                <a style="color: #239c87;"
-                                                   href="javascript:void(0);" class="unbind-topdomain">解绑</a>
+                                                <a href="javascript:void(0);" class="unbind-topdomain text-success">解绑</a>
                                                 [#{if gethostbyname($config.cname)
                                                 == gethostbyname($business.topdomain)}
                                                     <b style="color: green;">正常</b>
                                                 #{else}
-                                                    <b
-                                                            style="color: mediumvioletred;">未检测到解析</b>
-                                                #{/if}] #{/if} <span
-                                                    style="color: red;">CNAME解析地址：<b
+                                                    <b style="color: mediumvioletred;">未检测到解析</b>
+                                                #{/if}] #{/if} <span class="text-danger">CNAME解析地址：<b
                                                         style="color: green;">#{$config.cname}</b></span></div>
                                         <div class="form-body"><input type="text" value="#{$business.topdomain}"
                                                                       name="topdomain"
@@ -222,7 +205,7 @@
                                     </div>
                                 #{/if}
                                 <div style="margin-top: 25px;">
-                                    <button type="button" class="layui-btn layui-btn-pink save-config">保存设置</button>
+                                    <button type="button" class="layui-btn layui-btn-pink save-config me-1">保存设置</button>
                                 </div>
                         </form>
                     #{else}
@@ -236,389 +219,5 @@
     </div>
 </div>
 
-<script>
-    let levelId = 0;
-
-    function openLevel(obj, id) {
-        User.switchElement(obj);
-        levelId = id;
-    }
-
-    $('.payButton').click(() => {
-        User.$post("/user/api/business/purchase", {
-            levelId: levelId
-        }, res => {
-            layer.msg("开通成功");
-            window.location.href = "/user/business/index";
-        })
-    });
-
-    $('.save-config').click(() => {
-        User.$post("/user/api/business/saveConfig", $('.form-data').serialize(), res => {
-            layer.msg("保存成功");
-        })
-    });
-
-
-    $(function () {
-        layui.use(['form', 'hex'], function () {
-            var form = layui.form;
-            let table = $("#master_category");
-            let table2 = $("#master_commodity");
-            let cao = layui.hex;
-            let queryParams = null;
-            let globalCategoryId = 0;
-            let globalCategoryName = null;
-
-
-            let uploadUrl = "/user/api/upload/handle";
-
-            let editorInstance = window.wangEditor;
-            const editor = new editorInstance('.notice-div');
-            const $textarea = $(".notice-textarea");
-            editor.config.onchange = function (html) {
-                console.log(html);
-                $textarea.val(html);
-            }
-            editor.config.uploadFileName = 'file';
-            editor.config.uploadImgServer = uploadUrl;
-            editor.config.uploadImgMaxLength = 1;
-            editor.config.uploadImgHooks = {
-                customInsert: function (insertImgFn, result) {
-                    insertImgFn(result.data.path);
-                }
-            }
-            editor.config.uploadVideoServer = uploadUrl;
-            editor.config.uploadVideoName = 'file'
-            editor.config.uploadVideoHooks = {
-                customInsert: function (insertVideoFn, result) {
-                    insertVideoFn(result.data.path)
-                }
-            }
-
-            editor.create();
-            $textarea.val(editor.txt.html());
-
-            //----------------
-            let noticeDiv = $('.notice-div');
-            noticeDiv.find(".w-e-toolbar").css("border", "none");
-            noticeDiv.find(".w-e-text-container").css("border", "none");
-
-            $('.button-switch-html').click(function () {
-                let type = $(this).attr("data-type");
-                if (type == 0) {
-                    noticeDiv.hide();
-                    $(this).attr("data-type", 1);
-                    $(this).html('<i class="layui-icon layui-icon-edit"></i>' + "写作");
-                    //创建临时HTML编辑器
-                    noticeDiv.parent().append('<textarea class="textarea-temp"></textarea>');
-                    let optd = {
-                        mode: "text/html",
-                        lineNumbers: true,
-                        lineWrapping: true,
-                        extraKeys: {
-                            "Ctrl-Q": function (cm) {
-                                cm.foldCode(cm.getCursor());
-                            }
-                        },
-                        foldGutter: true,
-                        gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
-                    };
-                    tmp = CodeMirror.fromTextArea($('.textarea-temp').get(0), optd);
-                    tmp.setValue(editor.txt.html());
-                    tmp.on("change", function () {
-                        let html = tmp.getValue();
-                        $textarea.val(html);
-                    });
-                } else {
-                    let html = tmp.getValue();
-                    editor.txt.html(html);
-                    noticeDiv.show();
-                    noticeDiv.parent().find(".CodeMirror").remove();
-                    $('.textarea-temp').remove();
-                    $(this).attr("data-type", 0);
-                    $(this).html('<i class="layui-icon layui-icon-fonts-code"></i> ' + "HTML");
-                }
-            });
-            //----------------------
-
-
-
-            $('.unbind-subdomain').click(function () {
-                layer.confirm('您正在解绑子域名，解绑后，用户将无法再通过旧子域名访问您的店铺。', {
-                    btn: ['解绑', '取消'],
-                    title: "解绑子域名"
-                }, function () {
-                    User.$post("/user/api/business/unbind", {type: 0}, res => {
-                        layer.msg("解绑成功");
-                        setTimeout(() => {
-                            window.location.reload()
-                        }, 500);
-                    })
-                });
-            });
-            $('.unbind-topdomain').click(function () {
-                layer.confirm('您正在解绑独立域名，解绑后，用户将无法再通过独立域名访问您的店铺。', {
-                    btn: ['解绑', '取消'],
-                    title: "解绑独立域名"
-                }, function () {
-                    User.$post("/user/api/business/unbind", {type: 1}, res => {
-                        layer.msg("解绑成功");
-                        setTimeout(() => {
-                            window.location.reload()
-                        }, 500);
-                    })
-                });
-            });
-
-
-            //####主站
-            let setCategory = (values = {}) => {
-                cao.popup('/user/api/master/setCategory', [
-                    {title: "cid", name: "category_id", type: "hidden"},
-                    {title: "自定义名称", name: "name", type: "input", placeholder: "自定义分类名称，不填写代表使用主站的"},
-                    {title: "状态", name: "status", type: "switch", text: "显示"}
-                ], res => {
-                    table.bootstrapTable('refresh', {silent: true});
-                }, values, "480px");
-            }
-            let setCommodity = (values = {}) => {
-                cao.popup('/user/api/master/setCommodity', [
-                    {title: "cid", name: "commodity_id", type: "hidden"},
-                    {title: "自定义名称", name: "name", type: "input", placeholder: "自定义商品名称，不填写代表使用主站的"},
-                    {title: "加价", name: "premium", type: "input", placeholder: "商品加价"},
-                    {title: "状态", name: "status", type: "switch", text: "显示"}
-                ], res => {
-                    table2.bootstrapTable('refresh', {silent: true});
-                }, values, "480px");
-            }
-
-            $('.commodity-show').click(function () {
-                let status = $(this).attr("data-state");
-                User.$post("/user/api/master/setCommodityAllStatus", {
-                    status: status,
-                    category_id: globalCategoryId
-                }, res => {
-                    layer.msg("已生效");
-                    table2.bootstrapTable('refresh', {silent: true});
-                });
-            });
-
-            $('.category-show').click(function () {
-                let status = $(this).attr("data-state");
-                User.$post("/user/api/master/setCategoryAllStatus", {status: status}, res => {
-                    layer.msg("已生效");
-                    table.bootstrapTable('refresh', {silent: true});
-                });
-            });
-
-            $('.commodity-premium').click(function () {
-                cao.popup('/user/api/master/setCommodityAllPremium', [
-                    {
-                        title: "加价模式", name: "mode", type: "radio", dict: [
-                            {id: 0, name: "普通金额加价"},
-                            {id: 1, name: "百分比加价"}
-                        ], default: 0
-                    },
-                    {title: "加价数量", name: "premium", type: "input", placeholder: "金额/百分比(小数代替)"},
-                    {title: "cid", name: "category_id", type: "hidden"}
-                ], res => {
-                    table2.bootstrapTable('refresh', {silent: true});
-                }, {category_id: globalCategoryId}, "480px", false, "加价" + (globalCategoryName ? " - <b style='color:red;'>仅分类：" + globalCategoryName + "</b>" : " - 全部"));
-            });
-
-            table.bootstrapTable({
-                url: '/user/api/master/category',//请求的url地址
-                method: "post",//请求方式
-                pageSize: 10,
-                showRefresh: false,//是否显示刷新按钮
-                cache: false,//是否使用缓存
-                showToggle: false,//是否显示详细视图和列表视图的切换按钮
-                cardView: false,
-                pagination: true,//是否显示分页
-                pageNumber: 1,//初始化显示第几页，默认第1页
-                singleSelect: false,//复选框只能选择一条记录
-                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
-                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
-                dataType: "json",//接收的数据类型
-                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
-                queryParams: function (params) {
-                    params.page = (params.offset / params.limit) + 1;
-                    if (queryParams) {
-                        for (const key in params) {
-                            queryParams[key] = params[key];
-                        }
-                    } else {
-                        queryParams = params;
-                    }
-                    return queryParams;
-                },
-                //回调函数
-                responseHandler: function (res) {
-                    return {
-                        "total": res.count,
-                        "rows": res.data
-                    }
-                },
-                columns: [
-                    {field: 'name', title: '主站名称'}
-                    , {
-                        field: 'status', title: '状态', formatter: function (val, item) {
-                            if (!item.user_category || item.user_category.status == 1) {
-                                return '<span class="acg-badge acg-badge-light-success status" style="cursor:pointer;">显示</span>';
-                            }
-                            return '<span class="acg-badge acg-badge-light-red status" style="cursor:pointer;">隐藏</span>';
-                        }, events: {
-                            'click .status': function (event, value, row, index) {
-                                let values = row.user_category;
-
-                                if (!values) {
-                                    values = {id: 0, category_id: row.id};
-                                }
-
-                                User.$post("/user/api/master/setCategoryStatus", values, res => {
-                                    layer.msg("已生效");
-                                    table.bootstrapTable('refresh', {silent: true});
-                                });
-                            }
-                        }
-                    }
-
-                    , {
-                        field: 'user_name', title: '自定义名称', formatter: function (val, item) {
-                            if (!item.user_category || !item.user_category.name) {
-                                return '-';
-                            }
-                            return item.user_category.name;
-                        }
-                    }
-                    , {
-                        field: 'operate',
-                        title: '',
-                        formatter: function (val, item) {
-                            return '<a  class="acg-badge acg-badge-light-success acg-badge-button view-commodity" href="#commodity"><i class="layui-icon">&#xe656;</i> 查看商品</a> ' +
-                                '<span  class="acg-badge acg-badge-light-primary acg-badge-button setting"><i class="layui-icon">&#xe614;</i> 设置</span> ';
-                        },
-                        events: {
-                            'click .setting': function (event, value, row, index) {
-                                let values = row.user_category;
-
-                                if (!values) {
-                                    values = {category_id: row.id};
-                                }
-
-                                setCategory(values);
-                            },
-                            'click .view-commodity': function (event, value, row, index) {
-                                globalCategoryId = row.id;
-                                globalCategoryName = row.name;
-                                table2.bootstrapTable('refresh', {
-                                    silent: false,
-                                    pageNumber: 1,
-                                    query: {category_id: row.id}
-                                });
-                            }
-                        }
-                    }
-                ]
-            });
-            table2.bootstrapTable({
-                url: '/user/api/master/commodity',//请求的url地址
-                method: "post",//请求方式
-                pageSize: 10,
-                showRefresh: false,//是否显示刷新按钮
-                cache: false,//是否使用缓存
-                showToggle: false,//是否显示详细视图和列表视图的切换按钮
-                cardView: false,
-                pagination: true,//是否显示分页
-                pageNumber: 1,//初始化显示第几页，默认第1页
-                singleSelect: false,//复选框只能选择一条记录
-                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
-                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
-                dataType: "json",//接收的数据类型
-                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
-                queryParams: function (params) {
-                    params.page = (params.offset / params.limit) + 1;
-                    if (queryParams) {
-                        for (const key in params) {
-                            queryParams[key] = params[key];
-                        }
-                    } else {
-                        queryParams = params;
-                    }
-                    return queryParams;
-                },
-                //回调函数
-                responseHandler: function (res) {
-                    return {
-                        "total": res.count,
-                        "rows": res.data
-                    }
-                },
-                columns: [
-                    {field: 'name', title: '名称'}
-                    , {field: 'user_price', title: '进货价'}
-                    , {field: 'price', title: '单价'}
-                    , {
-                        field: 'status', title: '状态', formatter: function (val, item) {
-                            if (!item.user_commodity || item.user_commodity.status == 1) {
-                                return '<span class="acg-badge acg-badge-light-success commodity-status" style="cursor:pointer;">显示</span>';
-                            }
-                            return '<span class="acg-badge acg-badge-light-red commodity-status" style="cursor:pointer;">隐藏</span>';
-                        }, events: {
-                            'click .commodity-status': function (event, value, row, index) {
-                                let values = row.user_commodity;
-
-                                if (!values) {
-                                    values = {id: 0, commodity_id: row.id};
-                                }
-
-                                User.$post("/user/api/master/setCommodityStatus", values, res => {
-                                    layer.msg("已生效");
-                                    table2.bootstrapTable('refresh', {silent: true});
-                                });
-                            }
-                        }
-                    }
-                    , {
-                        field: 'user_name', title: '自定义名称', formatter: function (val, item) {
-                            if (!item.user_commodity || !item.user_commodity.name) {
-                                return '-';
-                            }
-                            return item.user_commodity.name;
-                        }
-                    }
-                    , {
-                        field: 'premium', title: '加价', formatter: function (val, item) {
-                            if (!item.user_commodity || item.user_commodity.premium == 0) {
-                                return '-';
-                            }
-                            return item.user_commodity.premium;
-                        }
-                    }
-                    , {
-                        field: 'operate',
-                        title: '',
-                        formatter: function (val, item) {
-                            return '<span  class="acg-badge acg-badge-light-primary acg-badge-button c-setting"><i class="layui-icon">&#xe614;</i> 设置</span> ';
-                        },
-                        events: {
-                            'click .c-setting': function (event, value, row, index) {
-                                let values = row.user_commodity;
-
-                                if (!values) {
-                                    values = {commodity_id: row.id};
-                                }
-
-                                setCommodity(values);
-                            }
-                        }
-                    }
-                ]
-            });
-
-
-        });
-    });
-</script>
+#{ready("/assets/user/controller/business/business.js")}
 #{include file="../Common/Footer.html"}

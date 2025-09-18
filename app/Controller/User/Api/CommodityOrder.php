@@ -5,10 +5,11 @@ namespace App\Controller\User\Api;
 
 
 use App\Controller\Base\API\User;
-use App\Entity\QueryTemplateEntity;
+use App\Entity\Query\Get;
 use App\Interceptor\UserSession;
 use App\Interceptor\Waf;
 use App\Service\Query;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
@@ -26,34 +27,33 @@ class CommodityOrder extends User
     public function data(): array
     {
         $map = $_POST;
-        $map['equal-user_id'] = $this->getUser()->id;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Order::class);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setWith([
-            'owner' => function (Relation $relation) {
-                $relation->select(["id", "username", "avatar"]);
-            },
-            'commodity' => function (Relation $relation) {
-                $relation->select(["id", "name", "delivery_way", "contact_type"]);
-            },
-            'pay' => function (Relation $relation) {
-                $relation->select(["id", "name", "icon"]);
-            }
-        ]);
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
-        return $json;
+        $get = new Get(\App\Model\Order::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setWhere($map);
+        $data = $this->query->get($get, function (Builder $builder) {
+            return $builder->where("user_id", $this->getUser()->id)->with([
+                'coupon' => function (Relation $relation) {
+                    $relation->select(["id", "code"]);
+                },
+                'owner' => function (Relation $relation) {
+                    $relation->select(["id", "username", "avatar"]);
+                },
+                'commodity' => function (Relation $relation) {
+                    $relation->select(["id", "name", "cover", "delivery_way", "contact_type"]);
+                },
+                'pay' => function (Relation $relation) {
+                    $relation->select(["id", "name", "icon"]);
+                },
+                'card'
+            ]);
+        });
+        return $this->json(data: $data);
     }
 
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function delivery(): array
     {
@@ -72,10 +72,6 @@ class CommodityOrder extends User
 
         if ($order->status == 0) {
             throw new JSONException("该订单还未支付");
-        }
-
-        if ($order->delivery_status == 1) {
-            throw new JSONException("该订单已发货过了");
         }
 
         $order->secret = $message;

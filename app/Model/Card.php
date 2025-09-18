@@ -5,6 +5,7 @@ namespace App\Model;
 
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int $commodity_id
@@ -15,9 +16,11 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $owner
  * @property string $purchase_time
  * @property string $secret
+ * @property array $sku
  * @property string $note
  * @property int $status
  * @property string $race
+ * @property string $draft_premium
  */
 class Card extends Model
 {
@@ -34,20 +37,20 @@ class Card extends Model
     /**
      * @var array
      */
-    protected $casts = ['commodity_id' => 'integer', 'id' => 'integer', 'order_id' => 'integer', 'owner' => 'integer', 'status' => 'integer'];
+    protected $casts = ['commodity_id' => 'integer', 'id' => 'integer', 'order_id' => 'integer', 'owner' => 'integer', 'status' => 'integer', 'sku' => 'json'];
 
 
-    public function owner(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function owner(): ?HasOne
     {
         return $this->hasOne(User::class, "id", "owner");
     }
 
-    public function commodity(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function commodity(): ?HasOne
     {
         return $this->hasOne(Commodity::class, "id", "commodity_id");
     }
 
-    public function order(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function order(): ?HasOne
     {
         return $this->hasOne(Order::class, "id", "order_id");
     }

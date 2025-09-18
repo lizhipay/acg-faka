@@ -28,37 +28,11 @@ interface Config
      */
     const SUBMIT = [
         [
-            "title" => "模板风格",
-            "name" => "style",
-            "type" => "select",
-            "dict" => [
-                ["id" => 0, "name" => "会员中心-二次元风(默认)"],
-                ["id" => 1, "name" => "会员中心-商务风"],
-                ["id" => 2, "name" => "会员中心-二次元风(高端)"],
-            ],
-            "placeholder" => "请选择",
-            "default" => 0
-        ],
-        [
-            "title" => "缓存",
-            "name" => "cache",
-            "type" => "switch",
-            "text" => "开启",
-            "tips" => "浏览器本地缓存，缓存时间60秒"
-        ],
-        [
-            "title" => "缓存时间",
-            "name" => "cache_expire",
-            "type" => "input",
-            "placeholder" => "缓存过期时间，推荐60秒",
-            "default" => 60
-        ],
-        [
             "title" => "ICP备案号",
             "name" => "icp",
             "type" => "input",
             "placeholder" => "填写后将会在店铺底部显示ICP备案号，不填写则不显示。"
-        ],
+        ]
     ];
 
     /**

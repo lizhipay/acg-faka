@@ -4,9 +4,10 @@ declare(strict_types=1);
 namespace App\Model;
 
 
-use App\Plugin\CosmicAPI\Hook\Init;
 use App\Util\Ini;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Kernel\Exception\JSONException;
 
 /**
@@ -50,7 +51,10 @@ use Kernel\Exception\JSONException;
  * @property int $shared_sync
  * @property int $inventory_sync
  * @property int $hide
- * @property string $config
+ * @property array|string $config
+ * @property array $shared_stock
+ * @property float $draft_premium
+ * @property int $stock
  */
 class Commodity extends Model
 {
@@ -75,6 +79,7 @@ class Commodity extends Model
         'shared_premium' => 'float',
         'status' => 'integer',
         'hide' => 'integer',
+        'stock' => 'integer',
         'owner' => 'integer',
         'integral' => 'integer',
         'delivery_way' => 'integer',
@@ -94,30 +99,31 @@ class Commodity extends Model
         'only_user' => 'integer',
         'purchase_count' => 'integer',
         'minimum' => 'integer',
-        'maximum' => 'integer'
+        'maximum' => 'integer',
+        'shared_stock' => 'json'
     ];
 
-    public function owner(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function owner(): ?HasOne
     {
         return $this->hasOne(User::class, "id", "owner");
     }
 
-    public function shared(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function shared(): ?HasOne
     {
         return $this->hasOne(Shared::class, "id", "shared_id");
     }
 
-    public function category(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function category(): ?HasOne
     {
         return $this->hasOne(Category::class, "id", "category_id");
     }
 
-    public function card(): ?\Illuminate\Database\Eloquent\Relations\HasMany
+    public function card(): ?HasMany
     {
         return $this->hasMany(Card::class, 'commodity_id', 'id');
     }
 
-    public function order(): ?\Illuminate\Database\Eloquent\Relations\HasMany
+    public function order(): ?HasMany
     {
         return $this->hasMany(Order::class, 'commodity_id', 'id');
     }
@@ -125,9 +131,9 @@ class Commodity extends Model
     /**
      * 解析用户组配置
      * @param string|null $config
-     * @param \App\Model\UserGroup|null $group
+     * @param UserGroup|null $group
      * @return array|null
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public static function parseGroupConfig(?string $config, ?UserGroup $group): ?array
     {
@@ -143,7 +149,6 @@ class Commodity extends Model
 
         $var = $levelPrice[$group->id];
 
-
         //解析自定义金额
         $parse = [];
         $parse['amount'] = (float)$var['amount'];
@@ -151,7 +156,6 @@ class Commodity extends Model
         $parse['show'] = (int)$var['show'];
         return $parse;
     }
-
 
     /**
      * @param string $config

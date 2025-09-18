@@ -5,6 +5,7 @@ namespace App\Model;
 
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int $id
@@ -57,7 +58,7 @@ class User extends Model
     protected $appends = ['group'];
 
     /**
-     * @return \App\Model\UserGroup|null
+     * @return UserGroup|null
      */
     public function getGroupAttribute(): ?UserGroup
     {
@@ -65,25 +66,25 @@ class User extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne|null
+     * @return HasOne|null
      */
-    public function parent(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function parent(): ?HasOne
     {
         return $this->hasOne(User::class, "id", "pid");
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne|null
+     * @return HasOne|null
      */
-    public function businessLevel(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function businessLevel(): ?HasOne
     {
         return $this->hasOne(BusinessLevel::class, "id", "business_level");
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne|null
+     * @return HasOne|null
      */
-    public function business(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function business(): ?HasOne
     {
         return $this->hasOne(Business::class, "user_id", "id");
     }

@@ -1,52 +1,101 @@
-<!doctype html>
-<html lang="zh">
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <meta name="keywords" content="#{$config.keywords}"/>
     <meta name="description" content="#{$config.description}"/>
     <link href="#{$favicon}?v=#{$app.version}" rel="icon">
-    <link rel="stylesheet" href="/assets/static/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/assets/static/font/font-awesome-4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="/assets/static/css/i.css?v=#{$app.version}">
-
-    <script src="/assets/static/jquery.min.js"></script>
-    <script src="/assets/static/jquery.sliderBar.js"></script>
-    <script src="/assets/static/layer/layer.js"></script>
-    <script src="/assets/static/pay.js?v=#{$app.version}"></script>
-    <script src="/assets/static/clipboard.js"></script>
-    <title>#{$config.title}</title>
+    <title>#{$title} - #{$config.shop_name}</title>
+    #{css(
+    [
+    "/assets/common/css/bootstrap.min.css",
+    "/assets/common/css/_.css",
+    "/assets/user/css/index.css"
+    ],
+    [
+    "/assets/common/css/font.min.css",
+    "/assets/common/js/layui/css/layui.css",
+    "/assets/common/css/select2.min.css",
+    "/assets/common/css/component.css",
+    "/assets/common/js/table/bootstrap-table.css",
+    "/assets/common/js/layer/theme/default/layer.css",
+    "/assets/common/css/bootstrap.min.css",
+    "/assets/common/css/toastr.min.css",
+    "/assets/user/css/index.css"
+    ])}
+    #{js("/assets/common/js/ready.js")}
+    #{index_var()}
     <!--start::HOOK-->
     #{hook(\App\Consts\Hook::USER_GLOBAL_VIEW_HEADER)}
     #{hook(\App\Consts\Hook::USER_VIEW_INDEX_HEADER)}
     <!--end::HOOK-->
 </head>
-<body style="background: url('#{$config.background_url}') fixed no-repeat;background-size: cover;">
-<div id="app">
-    <nav class="navbar navbar-expand-lg navbar-light bg-light"
-         style="background-color: rgba(255,255,255,0.85) !important;">
-        <div class="container">
-           <div class="navbar-brand">
-               <a href="#{if $user}/user/dashboard/index#{else}/#{/if}">
-                   <img src="#{if $user.avatar}#{$user.avatar}#{else}#{$favicon}#{/if}" height="30px" style="border-radius: 50%;box-shadow: #f0d1d4 1px 1px 1px;">
-                   #{if $user}<span style="position: relative;top: 4px;left: 3px;font-weight: bold;color: #1396558a;"> #{$user.username}  #{else} <span style="position: relative;top: 4px;left: 3px;font-weight: bold;color: #1396558a;">  #{$config.shop_name}  #{/if}
-               </span></a>
-                #{if $user}
-               <a href="/user/dashboard/index"><span style="position: relative;top: 4px;left: 10px;font-size: 14px;font-weight: bold;color: #7be7bfd9;"><i class="fa fa-yen"></i>#{$user.balance}</span></a>
-               #{else}  <a href="/user/authentication/login?goto=/"><span style="position: relative;top: 4px;left: 10px;font-size: 18px;color: #79b9fbbd;font-weight: bold;"><i class="fa fa-sign-in"></i> 登录</span></a> #{/if}
-           </div>
-            <div class="row">
-                <a class="nav-link" href="/" style="font-weight: bolder;"><i class="fa fa-shopping-cart" aria-hidden="true"></i>  购物</a>
-                <a class="nav-link" href="/user/index/query"  style="font-weight: bolder;"><i class="fa fa-search-plus" aria-hidden="true"></i> 查订单</a>
-            #{if $config.service_url}<a class="nav-link" href="#{$config.service_url}" target="_blank"  style="font-weight: bolder;"><i class="fa fa-twitch" aria-hidden="true"></i> 在线客服</a>#{/if}
-                #{foreach hook(\App\Consts\Hook::USER_VIEW_HEADER_NAV) as $item}
-                    <a class="nav-link" href="#{$item.url}" style="font-weight: bolder;" target="#{$item.target}"><i class="#{$item.icon}" aria-hidden="true"></i>  #{$item.name}</a>
-                #{/foreach}
+<body style="background-size: cover;background-image: linear-gradient(180deg, rgb(255 255 255 / 0%), rgb(255 255 255 / 71%)), url('#{$config.background_url}')">
+<nav class="navbar navbar-expand-lg navbar-acg">
+    <div class="container">
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
+            <img src="/favicon.ico" alt="ACG Logo" class="brand-logo me-2">
+            <span style="color: #1396558a;">#{$config.shop_name}</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-lg-0">
+                <li class="nav-item"><a class="nav-link #{if $title == "首页"}active#{/if}" href="/"><i class="fa-duotone fa-regular fa-cart-shopping nav-icon"></i>购物</a></li>
+                <li class="nav-item"><a class="nav-link #{if $title == "订单查询"}active#{/if}" href="/user/index/query"><i class="fa-duotone fa-regular fa-folders nav-icon"></i>订单查询</a></li>
+            </ul>
+            <div class="d-none d-lg-flex search-input" role="search">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fa-duotone fa-regular fa-magnifying-glass nav-icon"></i></span>
+                    <input class="form-control item-search-input" type="search" placeholder="搜索商品关键词.." aria-label="Search">
+                </div>
             </div>
-            <!--<div class="navbar-collapse">
-                <ul class="navbar-nav mr-auto"></ul>
-            </div>-->
+            <div class="ms-2 d-none d-lg-block">
+                <!-- 未登录状态 -->
+                #{if $user}
+                    <div class="dropdown">
+                        <button class="btn btn-link text-decoration-none dropdown-toggle d-flex align-items-center"
+                                type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img id="user-avatar"
+                                 src="#{$user.avatar}"
+                                 alt="用户头像" class="rounded-circle me-2"
+                                 style="width: 32px; height: 32px; object-fit: cover; background-color: #f8f9fa;">
+                            <div class="d-flex flex-column align-items-start me-2">
+                                <span id="username" class="fw-bold text-dark"
+                                      style="font-size: 14px; line-height: 1.2;">#{$user.username}</span>
+                                <span id="user-balance" class="text-muted" style="font-size: 12px; line-height: 1.2;">余额: <span class="text-success">¥#{$user.balance}</span></span>
+                            </div>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="/user/dashboard/index"><i
+                                            class="fa-duotone fa-regular fa-user me-2"></i>个人中心</a></li>
+                            <li><a class="dropdown-item" href="/user/recharge/index"><i
+                                            class="fa-duotone fa-regular fa-wallet me-2"></i>钱包充值</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/user/personal/purchaseRecord"><i
+                                            class="fa-duotone fa-regular fa-receipt me-2"></i>我的订单</a></li>
+                            <li><a class="dropdown-item" href="/user/security/personal"><i
+                                            class="fa-duotone fa-regular fa-gear me-2"></i>设置</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="/user/authentication/logout"><i
+                                            class="fa-duotone fa-regular fa-sign-out me-2"></i>退出登录</a></li>
+                        </ul>
+                    </div>
+                #{else}
+                    <a class="btn btn-outline-secondary btn-sm br-12" href="/user/authentication/login"><i
+                                class="fa-duotone fa-regular fa-right-to-bracket nav-icon"></i>登录</a>
+                    <a class="btn btn-primary btn-sm br-12" href="/user/authentication/register"><i
+                                class="fa-duotone fa-regular fa-user-plus nav-icon"></i>创建账号</a>
+                #{/if}
+            </div>
         </div>
-    </nav>
+    </div>
+</nav>
+<div id="pjax-container">

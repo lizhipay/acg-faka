@@ -1,5 +1,7 @@
 #{include file="../Header.html"}
-
+#{set_script_var([
+"_substation_display_list" => $config.substation_display_list
+])}
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     <!--begin::Toolbar-->
@@ -25,7 +27,7 @@
                     <!--begin::Form-->
                     <form id="data-form" class="form">
                         <!--begin::Card body-->
-                        <div class="card-body border-top p-9">
+                        <div class="card-body p-9">
 
                             <!--begin::Input group-->
                             <div class="row mb-6">
@@ -105,52 +107,6 @@
                             </div>
                             <!--end::Input group-->
 
-
-                            <!--begin::Input group-->
-                            <div class="row mb-6">
-                                <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">推广1级返佣 (<a
-                                            href="https://faka.wiki/#/zh-cn/rebate" target="_blank" style="color: red;">详细教程</a>)</label>
-                                <!--end::Label-->
-                                <!--begin::Col-->
-                                <div class="col-lg-8 fv-row">
-                                    <input type="text" name="promote_rebate_v1"
-                                           class="form-control form-control-lg form-control-solid"
-                                           placeholder="推广1级返佣" value="#{$config.promote_rebate_v1}"/>
-                                </div>
-                                <!--end::Col-->
-                            </div>
-                            <!--end::Input group-->
-
-                            <!--begin::Input group-->
-                            <div class="row mb-6">
-                                <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">推广2级返佣</label>
-                                <!--end::Label-->
-                                <!--begin::Col-->
-                                <div class="col-lg-8 fv-row">
-                                    <input type="text" name="promote_rebate_v2"
-                                           class="form-control form-control-lg form-control-solid"
-                                           placeholder="推广2级返佣" value="#{$config.promote_rebate_v2}"/>
-                                </div>
-                                <!--end::Col-->
-                            </div>
-                            <!--end::Input group-->
-
-                            <!--begin::Input group-->
-                            <div class="row mb-6">
-                                <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">推广3级返佣</label>
-                                <!--end::Label-->
-                                <!--begin::Col-->
-                                <div class="col-lg-8 fv-row">
-                                    <input type="text" name="promote_rebate_v3"
-                                           class="form-control form-control-lg form-control-solid"
-                                           placeholder="推广3级返佣" value="#{$config.promote_rebate_v3}"/>
-                                </div>
-                                <!--end::Col-->
-                            </div>
-                            <!--end::Input group-->
 
                             <!--begin::Input group-->
                             <div class="row mb-6">
@@ -361,9 +317,7 @@
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
-                                    <input type="text" name="commodity_name"
-                                           class="form-control form-control-lg form-control-solid"
-                                           placeholder="首页推荐分类名称" value="#{$config.commodity_name}"/>
+                                    <textarea class="form-control form-control-lg form-control-solid"   name="commodity_name" placeholder="首页推荐分类名称"   rows="1">#{$config.commodity_name}</textarea>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -389,135 +343,5 @@
 </div>
 <!--end::Content-->
 
-
-<script>
-    $(function () {
-
-        layui.use(['layer', 'form', 'hex'], function () {
-            //substation_display_list
-            let hex = layui.hex;
-            let table = $("#substation_display_list");
-            let substationDisplayList = #{$config.substation_display_list};
-
-            //data-form
-            $('.save-data').click(function () {
-                let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
-                $.post("/admin/api/config/other", $("#data-form").serialize(), res => {
-                    layer.close(loaderIndex);
-                    layer.msg(res.msg);
-                });
-            });
-
-            //table
-            let queryParams = null;
-            table.bootstrapTable({
-                url: '/admin/api/config/getBusiness',//请求的url地址
-                method: "post",//请求方式
-                // striped:true,//是否显示行间隔色
-                pageSize: 5,//每页显示的数量
-                pageList: [5, 25, 50, 100],
-                showRefresh: false,//是否显示刷新按钮
-                cache: false,//是否使用缓存
-                showToggle: false,//是否显示详细视图和列表视图的切换按钮
-                cardView: false,
-                pagination: true,//是否显示分页
-                pageNumber: 1,//初始化显示第几页，默认第1页
-                singleSelect: false,//复选框只能选择一条记录
-                sidePagination: 'server',//分页显示方式，可以选择客户端和服务端（server|client）
-                contentType: "application/x-www-form-urlencoded",//使用post请求时必须加上
-                dataType: "json",//接收的数据类型
-                queryParamsType: 'limit',//参数格式，发送标准的Restful类型的请求
-                queryParams: function (params) {
-                    params.page = (params.offset / params.limit) + 1;
-                    if (queryParams) {
-                        for (const key in params) {
-                            queryParams[key] = params[key];
-                        }
-                    } else {
-                        queryParams = params;
-                    }
-                    return queryParams;
-                },
-                //回调函数
-                responseHandler: function (res) {
-                    return {
-                        "total": res.count,
-                        "rows": res.data
-                    }
-                },
-                columns: [
-                    {
-                        field: 'avatar', title: '商家', formatter: function (val, item) {
-                            if (!item.user.avatar) {
-                                item.user.avatar = "/favicon.ico";
-                            }
-                            return '<span class="badge badge-light-dark"><img src="' + item.user.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.user.username + '</span> '
-                        }
-                    },
-                    {
-                        field: 'shop_name', title: '店铺名称'
-                    },
-                    {
-                        field: 'subdomain', title: '子域名'
-                    },
-                    {
-                        field: 'topdomain', title: '独立域名'
-                    },
-                    {
-                        field: 'business_level', title: '店铺等级', formatter: function (val, item) {
-                            return '<span class="badge badge-light">' + item.user.business_level.name + '</span>';
-                        }
-                    },
-                    {
-                        field: 'status', title: '主站显示', formatter: function (val, item) {
-                            let html = '';
-                            if (substationDisplayList.indexOf(item.user.id) != -1) {
-                                html += '<span class="badge badge-light-success">已显示</span>';
-                            } else {
-                                html += '<span class="badge badge-light-danger">已隐藏</span>';
-                            }
-                            return html;
-                        }
-                    },
-                    {
-                        field: 'operate',
-                        title: '操作',
-                        formatter: function (val, item) {
-                            let html = '';
-                            if (substationDisplayList.indexOf(item.user.id) != -1) {
-                                html += '<span class="del_substation_display_list" style="cursor: pointer"><i class="fas fa-eye-slash text-danger"></i></span>';
-                            } else {
-                                html += '<span class="add_substation_display_list"  style="cursor: pointer"><i class="fas fa-eye text-primary"></i></span>';
-                            }
-                            return html;
-                        },
-                        events: {
-                            'click .add_substation_display_list': function (event, value, row, index) {
-                                $.post("/admin/api/config/setSubstationDisplayList", {
-                                    id: row.user.id,
-                                    type: 0
-                                }, res => {
-                                    substationDisplayList = res.data;
-                                    layer.msg(res.msg);
-                                    table.bootstrapTable('refresh', {silent: true});
-                                });
-                            },
-                            'click .del_substation_display_list': function (event, value, row, index) {
-                                $.post("/admin/api/config/setSubstationDisplayList", {
-                                    id: row.user.id,
-                                    type: 1
-                                }, res => {
-                                    substationDisplayList = res.data;
-                                    layer.msg(res.msg);
-                                    table.bootstrapTable('refresh', {silent: true});
-                                });
-                            }
-                        }
-                    }
-                ]
-            });
-        });
-    });
-</script>
-
+#{ready("/assets/admin/controller/config/other.js")}
 #{include file="../Footer.html"}

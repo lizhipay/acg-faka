@@ -1,10 +1,8 @@
 #{include file="../Header.html"}
-<style>
-    .layui-popup .layui-layer-content {
-        position: relative !important;
-        overflow: auto !important;
-    }
-</style>
+#{set_script_var([
+"_config" => $config,
+"_themes" => $themes
+])}
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     <!--begin::Toolbar-->
@@ -30,7 +28,7 @@
                     <!--begin::Form-->
                     <form id="data-form" class="form">
                         <!--begin::Card body-->
-                        <div class="card-body border-top p-9">
+                        <div class="card-body  p-9">
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -49,7 +47,7 @@
                                         <label class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
                                                data-kt-image-input-action="change" data-bs-toggle="tooltip"
                                                title="Change logo">
-                                            <i class="fas fa-pen"></i>
+                                            <i class="fa-duotone fa-regular fa-pen"></i>
                                             <!--begin::Inputs-->
                                             <input type="file" class="upload-logo"
                                                    accept=".png, .jpg, .jpeg, .ico"/>
@@ -61,20 +59,15 @@
                                         <span class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
                                               data-kt-image-input-action="cancel" data-bs-toggle="tooltip"
                                               title="Cancel logo">
-																<i class="bi bi-x fs-2"></i>
+																<i class="fa-duotone fa-regular fa-xmark"></i>
 															</span>
                                         <!--end::Cancel-->
-                                        <!--begin::Remove-->
-                                        <span class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
-                                              data-kt-image-input-action="remove" data-bs-toggle="tooltip"
-                                              title="Remove logo">
-																<i class="far fa-trash-alt"></i>
-															</span>
-                                        <!--end::Remove-->
                                     </div>
                                     <!--end::Image input-->
                                     <!--begin::Hint-->
-                                    <div class="form-text">支持文件格式: png, jpg, jpeg, ico，更换后，记得强制刷新浏览器，否则你看到的还是缓存。</div>
+                                    <div class="form-text">支持文件格式: png, jpg, jpeg,
+                                        ico，更换后，记得强制刷新浏览器，否则你看到的还是缓存。
+                                    </div>
                                     <!--end::Hint-->
                                 </div>
                                 <!--end::Col-->
@@ -102,7 +95,7 @@
                                 <div class="col-lg-2 fv-row">
                                     <!--begin::Input-->
                                     <button type="button" class="btn btn-light theme-setting"><i
-                                                class="fas fa-cogs"></i> 模板设置
+                                                class="fa-duotone fa-regular fa-folder-gear"></i> 模板设置
                                     </button>
                                     <!--end::Input-->
                                 </div>
@@ -133,7 +126,7 @@
                                 <div class="col-lg-2 fv-row">
                                     <!--begin::Input-->
                                     <button type="button" class="btn btn-light theme-mobile-setting"><i
-                                                class="fas fa-cogs"></i> 模板设置
+                                                class="fa-duotone fa-regular fa-folder-gear"></i> 模板设置
                                     </button>
                                     <!--end::Input-->
                                 </div>
@@ -149,9 +142,10 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-6 fv-row">
                                     <!--begin::Input-->
-                                    <select name="ip_get_mode" class="form-select form-select-solid form-select-lg" data-control="select2" data-hide-search="true">
+                                    <select name="ip_get_mode" class="form-select form-select-solid form-select-lg"
+                                            data-control="select2" data-hide-search="true">
                                         #{foreach $ip_get_mode as $index => $mode}
-                                        <option value="#{$index}" #{if $index == $ip_mode} selected #{/if}>#{$mode}</option>
+                                            <option value="#{$index}" #{if $index == $ip_mode} selected #{/if}>#{$mode}</option>
                                         #{/foreach}
                                     </select>
                                     <!--end::Input-->
@@ -169,7 +163,8 @@
                                 <div class="col-lg-6 fv-row">
                                     <input type="text" name="background_url"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入背景图床地址，可以是url" value="#{$config.background_url}"/>
+                                           placeholder="请输入背景图床地址，可以是url"
+                                           value="#{$config.background_url}"/>
                                 </div>
                                 <div class="col-lg-2 fv-row">
                                     <!--begin::Input-->
@@ -177,7 +172,7 @@
                                            accept=".png, .jpg, .jpeg, .gif"/>
                                     <button type="button" class="btn btn-light background-upload"
                                             onclick="document.getElementsByClassName('background-upload')[0].click();">
-                                        <i class="fas fa-cloud-upload-alt"></i> 上传图片
+                                        <i class="fa-duotone fa-regular fa-cloud-arrow-up"></i> 上传图片
                                     </button>
                                     <!--end::Input-->
                                 </div>
@@ -201,7 +196,7 @@
                                            accept=".png, .jpg, .jpeg, .gif"/>
                                     <button type="button" class="btn btn-light background-mb-upload"
                                             onclick="document.getElementsByClassName('background-mobile-upload')[0].click();">
-                                        <i class="fas fa-cloud-upload-alt"></i> 上传图片
+                                        <i class="fa-duotone fa-regular fa-cloud-arrow-up"></i> 上传图片
                                     </button>
                                     <!--end::Input-->
                                 </div>
@@ -276,14 +271,20 @@
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
-                                    <textarea style="display: none;" name="notice" class="notice-textarea"></textarea>
-                                    <div style="">
-                                        <button data-type="0" class="button-switch-html" type="button"
-                                                style="width: 100%;border: none;background: white;border-radius: 5px 5px 0 0;color: #c9b8b8;">
-                                            <i class="fas fa-code" style="color: #c9b8b8;"></i> HTML
-                                        </button>
+                                    <div class="editor-wrapper">
+                                        <div>
+                                            <button data-type="0" class="button-switch-notice" type="button"
+                                                    style="width: 100%;border: none;background: rgba(255, 255, 255, 0.35);border-radius: 5px 5px 0 0;color: #c9b8b8;">
+                                                <i class="fa-duotone fa-regular fa-code me-1"></i>HTML
+                                            </button>
+                                        </div>
+                                        <div class="editor-content">
+                                            <div class="toolbar-container"></div>
+                                            <div class="editor-container"></div>
+                                        </div>
+                                        <textarea class="text-container" style="display: none;"
+                                                  name="notice"></textarea>
                                     </div>
-                                    <div class="notice-div">#{$config.notice}</div>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -299,7 +300,8 @@
                                     <!--begin::Input-->
                                     <select name="registered_type" class="form-select form-select-solid form-select-lg"
                                             data-control="select2" data-hide-search="true">
-                                        <option value="0" #{if $config.registered_type== 0} selected #{/if}>用户名</option>
+                                        <option value="0" #{if $config.registered_type== 0} selected #{/if}>用户名
+                                        </option>
                                         <option value="1" #{if $config.registered_type== 1} selected #{/if}>用户名+手机
                                         </option>
                                         <option value="2" #{if $config.registered_type== 2} selected #{/if}>用户名+邮箱
@@ -423,8 +425,10 @@
                                     <!--begin::Input-->
                                     <select name="forget_type" class="form-select form-select-solid form-select-lg"
                                             data-control="select2" data-hide-search="true">
-                                        <option value="0" #{if $config.forget_type== 0} selected #{/if}>邮箱验证码</option>
-                                        <option value="1" #{if $config.forget_type== 1} selected #{/if}>手机验证码</option>
+                                        <option value="0" #{if $config.forget_type== 0} selected #{/if}>邮箱验证码
+                                        </option>
+                                        <option value="1" #{if $config.forget_type== 1} selected #{/if}>手机验证码
+                                        </option>
                                     </select>
                                     <!--end::Input-->
                                 </div>
@@ -478,28 +482,6 @@
                                 <!--end::Col-->
                             </div>
                             <!--end::Input group-->
-
-                            <!--begin::Input group-->
-                            <div class="row mb-6">
-                                <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label fw-bold fs-6">禁用技术支持</label>
-                                <!--begin::Label-->
-                                <!--begin::Label-->
-                                <div class="col-lg-8 d-flex align-items-center">
-                                    <div class="form-check form-check-solid form-switch fv-row">
-                                        <input class="form-check-input w-45px h-30px" type="checkbox"
-                                               name="technical_support"
-                                               value="1" #{if $config.technical_support== 1} checked #{/if}/>
-                                        <label class="form-check-label"></label>
-                                    </div>
-
-                                    <!--begin::Hint-->
-                                    <div class="form-text">禁用技术支持后，左下角将不会出现技术支持通道</div>
-                                    <!--end::Hint-->
-                                </div>
-                                <!--begin::Label-->
-                            </div>
-                            <!--end::Input group-->
                         </div>
                         <!--end::Card body-->
                         <!--begin::Actions-->
@@ -520,213 +502,5 @@
 </div>
 <!--end::Content-->
 
-
-<script>
-    $(function () {
-        let themesRef = #{json_encode($themes)};
-        let themes = {};
-        themesRef.forEach(item => {
-            themes[item.info.KEY] = item;
-        });
-
-        layui.use(['layer', 'form', 'hex'], function () {
-            let cao = layui.hex;
-            let uploadUrl = "/admin/api/upload/handle";
-
-            let editorInstance = window.wangEditor;
-            const editor = new editorInstance('.notice-div');
-            const $textarea = $(".notice-textarea");
-            editor.config.onchange = function (html) {
-                console.log(html);
-                $textarea.val(html);
-            }
-            editor.config.uploadFileName = 'file';
-            editor.config.uploadImgServer = uploadUrl;
-            editor.config.uploadImgMaxLength = 1;
-            editor.config.uploadImgHooks = {
-                customInsert: function (insertImgFn, result) {
-                    insertImgFn(result.data.path);
-                }
-            }
-            editor.config.uploadVideoServer = uploadUrl;
-            editor.config.uploadVideoName = 'file'
-            editor.config.uploadVideoHooks = {
-                customInsert: function (insertVideoFn, result) {
-                    insertVideoFn(result.data.path)
-                }
-            }
-
-            editor.create();
-            $textarea.val(editor.txt.html());
-
-            //----------------
-            let noticeDiv = $('.notice-div');
-            noticeDiv.find(".w-e-toolbar").css("border", "none");
-            noticeDiv.find(".w-e-text-container").css("border", "none");
-
-            $('.button-switch-html').click(function () {
-                let type = $(this).attr("data-type");
-                if (type == 0) {
-                    noticeDiv.hide();
-                    $(this).attr("data-type", 1);
-                    $(this).html('<i class="fas fa-feather" style="color: #c9b8b8;"></i> ' + "写作");
-                    //创建临时HTML编辑器
-                    noticeDiv.parent().append('<textarea class="textarea-temp"></textarea>');
-                    let optd = {
-                        mode: "text/html",
-                        lineNumbers: true,
-                        lineWrapping: true,
-                        extraKeys: {
-                            "Ctrl-Q": function (cm) {
-                                cm.foldCode(cm.getCursor());
-                            }
-                        },
-                        foldGutter: true,
-                        gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
-                    };
-                    tmp = CodeMirror.fromTextArea($('.textarea-temp').get(0), optd);
-                    tmp.setValue(editor.txt.html());
-                    tmp.on("change", function () {
-                        let html = tmp.getValue();
-                        $textarea.val(html);
-                    });
-                } else {
-                    let html = tmp.getValue();
-                    editor.txt.html(html);
-                    noticeDiv.show();
-                    noticeDiv.parent().find(".CodeMirror").remove();
-                    $('.textarea-temp').remove();
-                    $(this).attr("data-type", 0);
-                    $(this).html('<i class="fas fa-code" style="color: #c9b8b8;"></i> ' + "HTML");
-                }
-            });
-            //----------------------
-
-            let hex = layui.hex;
-            $('.upload-logo').change(function () {
-                let formdata = new FormData();
-                formdata.append("file", $('.upload-logo')[0].files[0]);
-                let index = layer.load(1, {
-                    shade: [0.3, '#fff']
-                });
-                $.ajax({
-                    type: "POST",
-                    url: "/admin/api/upload/handle",
-                    data: formdata,
-                    contentType: false, // 不设置内容类型
-                    processData: false, // 不处理数据
-                    dataType: "json",
-                    success: function (res) {
-                        layer.close(index);
-                        if (res.code == 200) {
-                            layer.msg('图标上传成功，但需要保存后才会生效哦~');
-                            $('input[name=logo]').val(res.data.path);
-                        } else {
-                            layer.msg(res.msg);
-                        }
-                    },
-                    error: function (data) {
-                        layer.close(index);
-                        layer.msg('上传失败');
-                    }
-                });
-            });
-
-            $('.background-upload').change(function () {
-                let formdata = new FormData();
-                formdata.append("file", $(this)[0].files[0]);
-                let index = layer.load(1, {
-                    shade: [0.3, '#fff']
-                });
-                $.ajax({
-                    type: "POST",
-                    url: "/admin/api/upload/handle",
-                    data: formdata,
-                    contentType: false, // 不设置内容类型
-                    processData: false, // 不处理数据
-                    dataType: "json",
-                    success: function (res) {
-                        layer.close(index);
-                        if (res.code == 200) {
-                            layer.msg('背景图片上传成功，需要保存才会生效哦。');
-                            $('input[name=background_url]').val(res.data.path);
-                        } else {
-                            layer.msg(res.msg);
-                        }
-                    },
-                    error: function (data) {
-                        layer.close(index);
-                        layer.msg('上传失败');
-                    }
-                });
-            });
-
-            $('.background-mobile-upload').change(function () {
-                let formdata = new FormData();
-                formdata.append("file", $(this)[0].files[0]);
-                let index = layer.load(1, {
-                    shade: [0.3, '#fff']
-                });
-                $.ajax({
-                    type: "POST",
-                    url: "/admin/api/upload/handle",
-                    data: formdata,
-                    contentType: false, // 不设置内容类型
-                    processData: false, // 不处理数据
-                    dataType: "json",
-                    success: function (res) {
-                        layer.close(index);
-                        if (res.code == 200) {
-                            layer.msg('手机背景图片上传成功，需要保存才会生效哦。');
-                            $('input[name=background_mobile_url]').val(res.data.path);
-                        } else {
-                            layer.msg(res.msg);
-                        }
-                    },
-                    error: function (data) {
-                        layer.close(index);
-                        layer.msg('上传失败');
-                    }
-                });
-            });
-
-            //data-form
-            $('.save-data').click(function () {
-                let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
-                $.post("/admin/api/config/setting", $("#data-form").serialize(), res => {
-                    layer.close(loaderIndex);
-                    layer.msg(res.msg);
-                });
-            });
-
-            let modal = (values = {}) => {
-                if (values.submit.length == 0) {
-                    layer.msg("该模板暂时没有可设置的选项");
-                    return;
-                }
-
-                values.setting.id = values.info.KEY;
-
-                cao.popup('/admin/api/plugin/setThemeConfig', values.submit, res => {
-                    window.location.reload();
-                }, values.setting, "660px", false, "模板设置");
-            }
-
-            $('.theme-setting').click(function () {
-                let userTheme = $('select[name=user_theme]').val();
-                modal(themes[userTheme]);
-            });
-
-            $('.theme-mobile-setting').click(function () {
-                let userTheme = $('select[name=user_mobile_theme]').val();
-                if (userTheme == 0) {
-                    layer.msg("没有模板可以设置哦，请不要瞎点(>_<)");
-                    return;
-                }
-                modal(themes[userTheme]);
-            });
-        });
-    });
-</script>
-
+#{ready("/assets/admin/controller/config/index.js")}
 #{include file="../Footer.html"}

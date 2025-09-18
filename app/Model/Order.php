@@ -5,6 +5,7 @@ namespace App\Model;
 
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property float $amount
@@ -27,12 +28,16 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $secret
  * @property int $status
  * @property int $from
+ * @property int $substation_user_id
  * @property string $trade_no
  * @property string $widget
  * @property float $rent
+ * @property float $rebate
  * @property float $premium
+ * @property float $divide_amount
  * @property string $race
  * @property string $request_no
+ * @property array $sku
  */
 class Order extends Model
 {
@@ -49,40 +54,45 @@ class Order extends Model
     /**
      * @var array
      */
-    protected $casts = ['amount' => 'float', 'cost' => 'float', 'rent' => 'float', 'premium' => 'float', 'user_id' => 'integer', 'from' => 'integer', 'commodity_id' => 'integer', 'card_id' => 'integer', 'card_num' => 'integer', 'create_device' => 'integer', 'delivery_status' => 'integer', 'id' => 'integer', 'owner' => 'integer', 'pay_id' => 'integer', 'status' => 'integer'];
+    protected $casts = ['amount' => 'float', 'cost' => 'float', 'rebate' => 'float', 'divide_amount' => 'float', 'rent' => 'float', 'premium' => 'float', 'user_id' => 'integer', 'substation_user_id' => 'integer', 'from' => 'integer', 'commodity_id' => 'integer', 'card_id' => 'integer', 'card_num' => 'integer', 'create_device' => 'integer', 'delivery_status' => 'integer', 'id' => 'integer', 'owner' => 'integer', 'pay_id' => 'integer', 'status' => 'integer', 'sku' => 'json'];
 
-    public function owner(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function owner(): ?HasOne
     {
         return $this->hasOne(User::class, "id", "owner");
     }
 
-    public function user(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function user(): ?HasOne
     {
         return $this->hasOne(User::class, "id", "user_id");
     }
 
-    public function commodity(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function commodity(): ?HasOne
     {
         return $this->hasOne(Commodity::class, "id", "commodity_id");
     }
 
-    public function pay(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function pay(): ?HasOne
     {
         return $this->hasOne(Pay::class, "id", "pay_id");
     }
 
-    public function card(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function card(): ?HasOne
     {
         return $this->hasOne(Card::class, "id", "card_id");
     }
 
-    public function promote(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function promote(): ?HasOne
     {
         return $this->hasOne(User::class, "id", "from");
     }
 
+    public function substationUser(): HasOne
+    {
+        return $this->hasOne(User::class, "id", "substation_user_id");
+    }
+
     //优惠卷
-    public function coupon(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function coupon(): ?HasOne
     {
         return $this->hasOne(Coupon::class, "id", "coupon_id");
     }

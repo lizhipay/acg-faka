@@ -1,117 +1,68 @@
 #{include file="./Header.html"}
-
-<div class="content-wrapper">
-    <div class="container">
-
-        <div class="card">
-            <div class="card-header">
-                <p class="card-title">查询订单 </p>
-            </div>
-            <div class="card-block" style="padding-top: 10px;padding-bottom: 10px">
-                <fieldset>
-                    <div class="input-group">
-                        <input type="text" class="form-control keywords" placeholder="请输入联系方式或订单号进行查询"
-                               autocomplete="off"
-                               value="#{$tradeNo}">
-                        <div class="input-group-append">
-                            <button class="btn btn-success queryBtn">查询</button>
-                        </div>
-                    </div>
-                </fieldset>
-            </div>
-        </div>
-        <div class="card queryView" style="display: none;">
-            <div class="card-header">
-                <p class="card-title">查询结果</p>
-            </div>
-            <div class="card-block" style="margin-top: 10px;">
-                <h1 class="text-center notfound" style="display: none;">未查询到相关订单</h1>
-                <div class="order-success" style="display: none;">
-                </div>
-            </div>
-        </div>
+<main class="container py-4">
+  <!-- 订单查询面板 -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="icon">🔍</span>
+      <h6 class="panel-title">订单查询</h6>
     </div>
-</div>
-</div>
+    <div class="panel-body">
+      <form class="order-query-form">
+        <div class="d-flex justify-content-center align-items-center gap-3">
+          <div style="width: 300px;">
+            <input type="text" class="form-control" name="keywords" value="#{$tradeNo}" placeholder="订单号/联系方式">
+          </div>
+          <div>
+            <button type="submit" class="btn btn-primary btn-search-query">
+              <i class="fa-duotone fa-regular fa-search me-2"></i>查询订单
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 
-<script>
-    let keywordsIns = $('.keywords');
+  <!-- 查询结果区域 -->
+  <div class="order-results" style="display: none;">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="icon">📋</span>
+        <h6 class="panel-title">查询结果</h6>
+      </div>
+      <div class="panel-body">
+        <div class="order-list">
 
-    function query(keywords) {
-        let orderSuccess = $('.order-success');
-        $('.notfound').hide();
-        orderSuccess.hide();
-        orderSuccess.html('');
-        $('.payDateView').hide();
-        $('.queryView').show();
-        let orderId = 0;
-        Pay.getQuery(keywords, res => {
-            res.forEach(order => {
-                if (order.commodity && order.pay) {
-                    let status = '<span style="color: red;">未支付</span>';
-                    if (order.status === 1) {
-                        status = '<span style="color: green;">已支付</span>';
-                    }
+        </div>
+      </div>
+    </div>
+  </div>
 
-                    let race = "";
-                    if (order.race) {
-                        race = " ( <b style='color: #20b033;'>" + order.race + "</b> )";
-                    }
+  <!-- 无结果提示 -->
+  <div class="no-results" style="display: none;">
+    <div class="panel pt-3">
+      <div class="panel-body text-center">
+        <div class="mb-3">
+          <i class="fa-duotone fa-regular fa-search" style="font-size: 3rem; color: #6b7280;"></i>
+        </div>
+        <h6 class="text-muted">未找到相关订单</h6>
+        <p class="text-muted mb-0">请检查输入信息是否正确，或联系客服协助查询</p>
+      </div>
+    </div>
+  </div>
 
-                    let html = '<div class="hr-top">\n' +
-                        '                        <div style="font-size: 14px;">订单号：<b class="trade_no">' + order.trade_no + '</b>  #{hook(\App\Consts\Hook::USER_VIEW_QUERY_TRADE_NO)}</div>\n' +
-                        '                        <div style="font-size: 14px;">下单金额：<b style="color: red;" class="amount">' + order.amount + '</b></div>\n' +
-                        '                        <div style="font-size: 14px;">购买数量：<b style="color: blue;" class="buyNum">' + order.card_num + '</b></div>\n' +
-                        '                        <div style="font-size: 14px;">下单时间：<b class="create_time">' + order.create_time + '</b></div>\n' +
-                        '                        <div style="font-size: 14px;">商品名称：<b class="commodity_name">' + order.commodity.name + race + '</b></div>\n' +
-                        '                        <div style="font-size: 14px;">支付方式：<b class="icon"><img src="' + order.pay.icon + '" height="16px"> ' + order.pay.name + '</b></div>\n' +
-                        '                        <div style="font-size: 14px;">订单状态：<b class="status">' + status + '</b></div>\n' +
-                        '                        <div style="font-size: 14px;' + (order.status == 1 ? '' : 'display: none;') + '" class="payDateView">支付时间：<b class="pay_date"\n' +
-                        '                                                                                                style="color: green;">' + order.pay_time + '</b>\n' +
-                        '                        </div>\n' +
-                        '                        <div style="font-size: 14px;">售后支持：<b style="color: #d78aeb;font-weight: bold;"><img src="' + order.business_avatar + '" style="height: 18px;border-radius: 100%;margin-top: -3px;"> ' + order.business_username + '</b> [ <a target="_blank" href="https://wpa.qq.com/msgrd?v=1&uin=' + order.service_qq + '" style="color: #2aa2e3;padding:0 4px 0 4px;font-size: 12px;margin:0 4px 0 0;border-radius: 5px;" class="button-click"><i class="fa fa-qq"></i> QQ客服</a><a target="_blank" href="' + order.service_url + '" class="button-click" style="color: #ff8484;padding:0 4px 0 4px;margin:0;font-size: 12px;border-radius: 5px;"><i class="fa fa-user-plus"></i> 网页客服</a> ]</div>\n' +
-                        '                        <div style="font-size: 14px;' + (order.leave_message ? "" : " display: none;") + '">使用说明：<b>' + order.leave_message + '</b></div>\n' +
-                        '                        <div style="font-size: 14px;">卡密信息：<input style="border: none;box-shadow: #f0d1d4 1px 1px 1px;height: 18px;width:130px;' + (order.commodity.password_status == 1 ? '#{if $user}display:none;#{/if}' : 'display:none;') + '"  type="password" placeholder="请输入查询密码.." class="passId-' + order.id + '"> <b style="cursor:pointer;color: blue;" class="getCard" data-id="' + order.id + '" data-no="' + order.trade_no + '">查看</b></div>\n' +
-                        '                        <div style="margin-top: 10px; display: none;" class="cardInfoView-' + order.id + '">\n' +
-                        '                            <textarea class="form-control cardInfo-' + order.id + '" style="height: 420px;"></textarea>\n' +
-                        '                        </div>\n' +
-                        '                    </div>';
-                    orderSuccess.append(html);
-                }
+  <!-- 加载状态 -->
+  <div class="loading-state" style="display: none;">
+    <div class="panel">
+      <div class="panel-body text-center">
+        <div class="mb-3 mt-3">
+          <i class="fa-duotone fa-regular fa-spinner-third icon-spin" style="font-size: 2rem; color: var(--acg-primary);"></i>
+        </div>
+        <p class="text-muted mb-0">正在查询订单信息...</p>
+      </div>
+    </div>
+  </div>
+</main>
 
-            });
-            orderSuccess.show();
 
-            $('.getCard').click(function () {
-                let orderId = $(this).attr('data-id');
-                let no = $(this).attr('data-no');
-                Pay.getSecret(no, $('.passId-' + orderId).val(), res => {
-                    let secret = "";
-                    if (res.widget) {
-                        secret += "--------------您隐私内容---------------\n";
-                        for (const widgetKey in res.widget) {
-                            secret += res.widget[widgetKey].cn + "：" + res.widget[widgetKey].value + "\n";
-                        }
-                        secret += "--------------卡密信息---------------\n";
-                    }
-                    secret += res.secret;
-                    $('.cardInfo-' + orderId).html(secret);
-                    $('.cardInfoView-' + orderId).show(80);
-                });
-            });
-        }, () => {
-            $('.notfound').show();
-        });
-    }
-
-    $('.queryBtn').click(function () {
-        query(keywordsIns.val());
-    });
-
-    #{if $tradeNo != ''}
-    $('.queryBtn').click();
-    #{else if $user}
-    query("");
-    #{/if}
-</script>
+#{ready("/assets/user/controller/index/query.js")}
 #{include file="./Footer.html"}

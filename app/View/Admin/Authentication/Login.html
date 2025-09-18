@@ -1,405 +1,114 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
-    <meta charset="utf-8">
-    <title>登录 - #{$config.title}</title>
+    <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <script src="/assets/static/jquery.min.js"></script>
-    <script src="/assets/static/layer/layer.js"></script>
-    <style>
-        @media screen and (max-width: 768px) {
-            .login-box {
-                height: 100%;
-                width: 100%;
-            }
-        }
+    <title>登录 - #{$config.title}</title>
+    #{css(
+    [
+    "/assets/common/css/_.css",
+    "/assets/admin/css/auth.css"
+    ],
+    [
+    "/assets/admin/css/style.bundle.css",
+    "/assets/common/css/font.min.css",
+    "/assets/common/js/layui/css/layui.css",
+    "/assets/common/css/select2.min.css",
+    "/assets/common/css/component.css",
+    "/assets/common/css/toastr.min.css",
+    "/assets/common/js/table/bootstrap-table.css",
+    "/assets/common/js/layer/theme/default/layer.css",
+    "/assets/admin/css/auth.css"
+    ])}
 
-        * {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            font-family: "微软雅黑", serif;
-        }
-
-        html {
-            height: 100%;
-            margin: 0;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background: url('#{$config.background_url}') fixed no-repeat;
-            background-size: cover;
-            width: 100%;
-            height: 100%;
-        }
-
-        #app {
-            background: #000000de;
-            height: 100vh;
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            overflow: hidden;
-        }
-
-        @keyframes login {
-            from {
-                box-shadow: rgba(253, 173, 204, 0.35) 0px 7px 29px 0px;
-            }
-            to {
-                box-shadow: rgb(253 173 204) 0px 7px 29px 0px;
-            }
-        }
-
-        @-webkit-keyframes login /* Safari 与 Chrome */
-        {
-            from {
-                box-shadow: rgba(253, 173, 204, 0.35) 0px 7px 29px 0px;
-            }
-            to {
-                box-shadow: rgb(253 173 204) 0px 7px 29px 0px;
-            }
-        }
-
-        .login-animation {
-            animation: login 2s;
-            animation-direction: alternate;
-            animation-iteration-count: infinite;
-            -webkit-animation: login 2s; /* Safari 与 Chrome */
-            -webkit-animation-direction: alternate;
-            -webkit-animation-iteration-count: infinite;
-        }
-
-        .login-box {
-            position: relative;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 380px;
-            padding: 40px;
-            background: linear-gradient(to bottom right, #2d3e5594, #7d617cbd);
-            box-sizing: border-box;
-            /*   box-shadow: 0 15px 25px rgba(253, 173, 204, 0.28);*/
-            box-shadow: rgba(253, 173, 204, 0.35) 0px 7px 29px 0px;
-            border-radius: 10px;
-            border-top: 5px solid rgb(240 74 133 / 45%);
-        }
-
-        .login-box h2 {
-            margin: 0 0 70px;
-            padding: 0;
-            text-align: center;
-            font-weight: bolder !important;
-        }
-
-        .login-box h2 span {
-            padding: 5px 20px;
-            padding-bottom: 10px;
-            opacity: 0.8;
-            font-size: 18px;
-            border: 1px dashed rgba(234, 136, 171, 0.45);
-            border-top: none;
-            position: absolute;
-            top: 0;
-            left: 50%;
-            border-bottom-left-radius: 10px;
-            border-bottom-right-radius: 10px;
-            transform: translate(-50%, 0);
-            color: rgba(253, 173, 204, 0.62);
-        }
-
-        .login-box .user-box {
-            position: relative;
-        }
-
-        .login-box .user-box input {
-            margin-top: 10px;
-            width: 100%;
-            padding: 10px 0;
-            font-size: 14px;
-            color: #4acb5b;
-            margin-bottom: 30px;
-            border: none;
-            border-bottom: 1px dashed #ea88ab;
-            outline: none;
-            background: transparent;
-        }
-
-        .login-box .user-box select {
-            margin-top: 10px;
-            width: 100%;
-            padding: 10px 0;
-            font-size: 14px;
-            color: #12b109;
-            margin-bottom: 30px;
-            border: none;
-            border-bottom: 1px dashed #ea88ab;
-            outline: none;
-            background: transparent;
-        }
-
-        .login-box .user-box label {
-            position: absolute;
-            padding: 10px 0;
-            pointer-events: none;
-            transition: .5s;
-            top: -20px;
-            left: 0;
-            color: #ea88ab;
-            font-size: 12px;
-            font-weight: bolder;
-        }
-
-
-        .login-box form a {
-            position: relative;
-            display: inline-block;
-            padding: 10px 20px;
-            color: #ea88ab;
-            font-size: 14px;
-            text-decoration: none;
-            text-transform: uppercase;
-            overflow: hidden;
-            transition: .5s;
-            margin-top: 40px;
-            letter-spacing: 4px;
-        }
-
-        .login-box a:hover {
-            background: rgba(243, 193, 210, 0.38);
-            color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 5px #ea88ab,
-            0 0 25px #ea88ab,
-            0 0 50px #ea88ab,
-            0 0 100px #ea88ab;
-        }
-
-        .login-box a span {
-            position: absolute;
-            display: block;
-        }
-
-        .login-box a span:nth-child(1) {
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #ea88ab);
-            animation: btn-anim1 1s linear infinite;
-        }
-
-        @keyframes btn-anim1 {
-            0% {
-                left: -100%;
-            }
-            50%, 100% {
-                left: 100%;
-            }
-        }
-
-        .login-box a span:nth-child(2) {
-            top: -100%;
-            right: 0;
-            width: 2px;
-            height: 100%;
-            background: linear-gradient(180deg, transparent, #ea88ab);
-            animation: btn-anim2 1s linear infinite;
-            animation-delay: .25s
-        }
-
-        @keyframes btn-anim2 {
-            0% {
-                top: -100%;
-            }
-            50%, 100% {
-                top: 100%;
-            }
-        }
-
-        .login-box a span:nth-child(3) {
-            bottom: 0;
-            right: -100%;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(270deg, transparent, #ea88ab);
-            animation: btn-anim3 1s linear infinite;
-            animation-delay: .5s
-        }
-
-        @keyframes btn-anim3 {
-            0% {
-                right: -100%;
-            }
-            50%, 100% {
-                right: 100%;
-            }
-        }
-
-        .login-box a span:nth-child(4) {
-            bottom: -100%;
-            left: 0;
-            width: 2px;
-            height: 100%;
-            background: linear-gradient(360deg, transparent, #ea88ab);
-            animation: btn-anim4 1s linear infinite;
-            animation-delay: .75s
-        }
-
-        @keyframes btn-anim4 {
-            0% {
-                bottom: -100%;
-            }
-            50%, 100% {
-                bottom: 100%;
-            }
-        }
-
-        input:-webkit-autofill {
-            -webkit-text-fill-color: #a8b72b !important; /*浏览器记住密码的字的颜色*/
-            transition: background-color 5000s ease-in-out 0s; /*通过延时渲染背景色变相去除背景颜色*/
-            caret-color: #ffffff; /*光标颜色*/
-        }
-
-        /*外边框线去除*/
-        input:focus {
-            outline: none;
-        }
-
-        input::-webkit-input-placeholder {
-            /* placeholder颜色  */
-            color: #aab2bd;
-            /* placeholder字体大小  */
-            font-size: 12px;
-            /* placeholder位置  */
-        }
-
-        input ::-webkit-input-placeholder {
-            /* WebKit, Blink, Edge */
-            /* placeholder颜色  */
-            color: #aab2bd;
-            /* placeholder字体大小  */
-            font-size: 12px;
-            /* placeholder位置  */
-        }
-
-        input:-moz-placeholder {
-            /* Mozilla Firefox 4 to 18 */
-            /* placeholder颜色  */
-            color: #aab2bd;
-            /* placeholder字体大小  */
-            font-size: 12px;
-            /* placeholder位置  */
-        }
-
-        input::-moz-placeholder {
-            /* Mozilla Firefox 19+ */
-            color: #aab2bd;
-            /* placeholder字体大小  */
-            font-size: 12px;
-            /* placeholder位置  */
-        }
-
-        input:-ms-input-placeholder {
-            /* Internet Explorer 10-11 */
-            /* placeholder颜色  */
-            color: #aab2bd;
-            /* placeholder字体大小  */
-            font-size: 12px;
-            /* placeholder位置  */
-        }
-    </style>
+    #{js("/assets/common/js/ready.js")}
 </head>
-<body>
-<div id="app">
-    <div class="login-box">
-        <h2><span>#{$config.shop_name}</span></h2>
-        <form>
-            <div class="user-box">
-                <input type="email" name="email" required="" placeholder="请输入你的邮箱..">
-                <label>Email</label>
-            </div>
-            <div class="user-box">
-                <input type="password" name="password" required="" placeholder="请输入密码..">
-                <label>密码</label>
-            </div>
-            <a href="javascript:void(0);" class="login-button">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                登录
-            </a>
-        </form>
-    </div>
+<body class="ay-bg" style="background-image: linear-gradient(180deg, rgb(255 255 255 / 0%), rgb(255 255 255 / 71%)), url('#{$config.background_url}')">
+<div class="ay-dim" aria-hidden="true"></div>
+<div class="ay-petals" aria-hidden="true">
+    <i style="left:6%; top:-8vh; animation-duration:11s"></i>
+    <i style="left:24%; top:-12vh; animation-duration:13s"></i>
+    <i style="left:52%; top:-16vh; animation-duration:12s"></i>
+    <i style="left:72%; top:-10vh; animation-duration:10s"></i>
+    <i style="left:86%; top:-18vh; animation-duration:14s"></i>
 </div>
 
-<script>
-    function get(variable) {
-        var query = window.location.search.substring(1);
-        var vars = query.split("&");
-        for (var i = 0; i < vars.length; i++) {
-            var pair = vars[i].split("=");
-            if (pair[0] == variable) {
-                return pair[1];
-            }
-        }
-        return 0;
-    }
-
-    let goto = decodeURIComponent(get("goto"));
-
-    if (goto == 0) {
-        goto = "/admin/dashboard/index";
-    }
+<main class="ay-wrap">
 
 
-    function DisableHandle(obj, text = "正在登录..") {
-        $(obj).text(text);
-        $('.login-box').addClass("login-animation");
-        $("input").attr("disabled", true);
-    }
+    <section class="ay-card" role="dialog" aria-labelledby="ay-title" aria-describedby="ay-sub">
+        <header class="ay-head">
+            <div class="ay-logo" aria-hidden="true"></div>
+            <h1 id="ay-title" class="ay-title">欢迎回来，指挥官</h1>
+            <p id="ay-sub" class="ay-sub">正在验证您的管理员身份</p>
+        </header>
 
-    function EnableHandle(obj) {
-        $(obj).text("登录");
-        $('.login-box').removeClass("login-animation");
-        $("input").attr("disabled", false);
-    }
+        <div class="ay-body">
+            <form id="ay-form" novalidate>
+                <div class="ay-field">
+                    <input id="ay-user" name="username" class="ay-input" type="text" placeholder=" "
+                           autocomplete="username" required>
+                    <span class="ay-label">邮箱</span>
+                </div>
+                <div class="ay-field">
+                    <input id="ay-pass" name="password" class="ay-input" type="password" placeholder=" "
+                           autocomplete="current-password" required>
+                    <span class="ay-label">密码</span>
+                    <button type="button" class="ay-eye" id="ay-eye" aria-label="显示密码" aria-controls="ay-pass">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#cfe1ff" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
 
-    let loginStatus = false;
-    $(".login-button").click(function () {
-        if (loginStatus) {
-            return;
-        }
-        loginStatus = true;
-        DisableHandle(this);
-        $.post("/admin/api/authentication/login", {
-            username: $('input[name=email]').val(),
-            password: $('input[name=password]').val()
-        }, res => {
-            loginStatus = false;
-            if (res.code != 200) {
-                EnableHandle(this);
-                layer.msg(res.msg);
-                return;
-            }
-            localStorage.setItem("manage_token", res?.data?.token);
-            window.location.href = goto;
-        }).fail(error => {
-            loginStatus = false;
-            layer.msg("网络错误，请重试");
-            EnableHandle(this);
-        });
+                <div class="ay-row">
+                    <label class="ay-check"><input type="checkbox" id="ay-remember" name="remember" value="1">保持登录(365天)</label>
+                    <a class="ay-link" href="javascript:void(0)" onclick="message.info('查看官方文档重置密码方法');">忘记密码？</a>
+                </div>
 
-    });
+                <button class="ay-btn" type="submit" id="ay-submit">确认登入</button>
+            </form>
+            <div class="ay-foot">© #{$config.shop_name}</div>
+        </div>
+    </section>
+</main>
 
-    $("body").keypress(function (even) {
-        if (even.which == 13) {
-            $(".login-button").click();
-        }
-    });
-</script>
+#{ready("/assets/admin/controller/auth/login.js")}
 
+#{js(
+[
+"/assets/common/js/_.js"
+],
+[
+"/assets/common/js/util/dict.js",
+"/assets/common/js/jquery.min.js",
+"/assets/common/js/toastr.min.js",
+"/assets/common/js/component/loading.js",
+"/assets/common/js/util.js",
+"/assets/common/js/layer/layer.js",
+"/assets/common/js/jquery.pjax.min.js",
+"/assets/common/js/jquery.qrcode.min.js",
+"/assets/common/js/format.js",
+"/assets/common/js/message.js",
+"/assets/common/js/component.js",
+"/assets/common/js/layui/layui.js",
+"/assets/common/js/jquery.treegrid.min.js",
+"/assets/common/js/bootstrap/bootstrap.bundle.min.js",
+"/assets/common/js/table/bootstrap-table.min.js",
+"/assets/common/js/table/bootstrap-table-treegrid.min.js",
+"/assets/common/js/component/form.js",
+"/assets/common/js/component/search.js",
+"/assets/common/js/component/xm-select.js",
+"/assets/common/js/component/tree.select.js",
+"/assets/common/js/component/authtree.js",
+"/assets/common/js/component/table.js",
+"/assets/common/js/component/select2.min.js",
+"/assets/common/js/cache.js",
+"/assets/common/js/editor/editor.js",
+"/assets/common/js/editor/code/code.js",
+"/assets/common/js/component/decimal.js"
+])}
 </body>
 </html>

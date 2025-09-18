@@ -76,6 +76,64 @@ class Manage extends \App\Controller\Base\View\Manage
         return "----------------------------------<br><b style='color: green;'>程序自动清理完毕，如果上面没有出现红色字，代表您的系统安全并未被入侵过，如果出现红色字，则会自动清除黑客代码。</b>";
     }
 
+
+    public function clearFiles(): string
+    {
+        $list = <<<HTML
+assets/user/user.js
+assets/admin/js/general/login.js
+assets/admin/js/scripts.bundle.js
+assets/admin/plugins/global/fonts/bootstrap-icons.woff
+assets/admin/plugins/global/fonts/bootstrap-icons.woff2
+assets/admin/plugins/global/fonts/fa-brands-400.eot
+assets/admin/plugins/global/fonts/fa-brands-400.svg
+assets/admin/plugins/global/fonts/fa-brands-400.ttf
+assets/admin/plugins/global/fonts/fa-brands-400.woff
+assets/admin/plugins/global/fonts/fa-brands-400.woff2
+assets/admin/plugins/global/fonts/fa-regular-400.eot
+assets/admin/plugins/global/fonts/fa-regular-400.svg
+assets/admin/plugins/global/fonts/fa-regular-400.ttf
+assets/admin/plugins/global/fonts/fa-regular-400.woff
+assets/admin/plugins/global/fonts/fa-regular-400.woff2
+assets/admin/plugins/global/fonts/fa-solid-900.eot
+assets/admin/plugins/global/fonts/fa-solid-900.svg
+assets/admin/plugins/global/fonts/fa-solid-900.ttf
+assets/admin/plugins/global/fonts/fa-solid-900.woff
+assets/admin/plugins/global/fonts/fa-solid-900.woff2
+assets/admin/plugins/global/plugins.bundle.css
+assets/admin/plugins/global/plugins.bundle.js
+app/Service/Impl/AppService.php
+app/Service/Impl/CashService.php
+app/Service/Impl/DictService.php
+app/Service/Impl/EmailService.php
+app/Service/Impl/ManageSSOService.php
+app/Service/Impl/OrderService.php
+app/Service/Impl/PayService.php
+app/Service/Impl/QueryService.php
+app/Service/Impl/RechargeService.php
+app/Service/Impl/SharedService.php
+app/Service/Impl/ShopService.php
+app/Service/Impl/SmsService.php
+app/Service/Impl/UploadService.php
+app/Service/Impl/UserSSOService.php
+app/Service/Impl/UserService.php
+HTML;
+
+        $arr = explode("\n", $list);
+
+        foreach ($arr as $item) {
+            $file = BASE_PATH . trim($item);
+            if (file_exists($file)) {
+                \Kernel\Util\File::remove($file);
+                echo "<b style='color: green;'>{$item} -- deleted</b><br>";
+            } else {
+                echo "<b style='color: #817979;'>{$item} -- does not exist</b><br>";
+            }
+        }
+
+        return '';
+    }
+
     /**
      * @return string
      * @throws ViewException

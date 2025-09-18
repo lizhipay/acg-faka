@@ -145,6 +145,6 @@ class Plugin
      */
     public static function getHookNum(int $point): int
     {
-        return (int)count((array)self::$container[$point]);
+        return (int)count((array)self::$container['hook'][$point]);
     }
 }

@@ -23,11 +23,26 @@ define("BASE_APP_SERVER", match ((int)config("store")['server']) {
     2 => App\Service\App::STANDBY_SERVER2,
     3 => App\Service\App::GENERAL_SERVER
 });
+define("APP_VERSION", config('app')['version']);
+
 //session
 session_name("ACG-SHOP");
 //session_start();
 //session_write_close();
 try {
+    preg_match('/\/item\/(\d+)/', $_GET['s'] ?? "/", $_item);
+    preg_match('/\/cat\/(\d+|recommend)/', $_GET['s'] ?? "/", $_cat);
+
+    if (isset($_item[1]) && is_numeric($_item[1])) {
+        $_GET['s'] = "/user/index/item";
+        $_GET['mid'] = $_item[1];
+    }
+
+    if (isset($_cat[1]) && (is_numeric($_cat[1]) || $_cat[1] == "recommend")) {
+        $_GET['s'] = "/user/index/index";
+        $_GET['cid'] = $_cat[1];
+    }
+
     //waf install -> 2025-07-26
     $routePath = $_GET['s'] = $_GET['s'] ?? "/user/index/index";
     Context::set(\Kernel\Context\Interface\Request::class, new Request());
@@ -78,6 +93,7 @@ try {
     $capsule->setAsGlobal();
     // 启动Eloquent
     $capsule->bootEloquent();
+
 
     //插件库
     if (Context::get(Base::STORE_STATUS) && Context::get(Base::IS_INSTALL)) {

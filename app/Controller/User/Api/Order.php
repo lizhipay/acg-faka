@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller\User\Api;
 
+use App\Consts\Hook;
 use App\Controller\Base\API\User;
 use App\Interceptor\UserVisitor;
 use App\Interceptor\Waf;
@@ -24,21 +25,23 @@ class Order extends User
     private \App\Service\Order $order;
 
     /**
+     * @param Request $request
      * @return array
      * @throws JSONException
      * @throws RuntimeException
      */
-    public function trade(): array
+    public function trade(Request $request): array
     {
+        $map = $request->post(flags: Filter::NORMAL);
         if (Config::get("trade_verification") == 1) {
-            if (!Captcha::check((int)$_POST['captcha'], "trade")) {
+            if (!Captcha::check((int)$map['captcha'], "trade")) {
                 throw new JSONException("验证码错误");
             }
             Captcha::destroy("trade");
         }
 
-        hook(\App\Consts\Hook::USER_API_ORDER_TRADE_BEGIN, $_POST);
-        $trade = $this->order->trade($this->getUser(), $this->getUserGroup(), $_POST);
+        hook(Hook::USER_API_ORDER_TRADE_BEGIN, $map);
+        $trade = $this->order->trade($this->getUser(), $this->getUserGroup(), $map);
         return $this->json(200, '下单成功', $trade);
     }
 

@@ -5,9 +5,9 @@ namespace App\Controller\Admin\Api;
 
 
 use App\Controller\Base\API\Manage;
-use App\Entity\CreateObjectEntity;
-use App\Entity\DeleteBatchEntity;
-use App\Entity\QueryTemplateEntity;
+use App\Entity\Query\Delete;
+use App\Entity\Query\Get;
+use App\Entity\Query\Save;
 use App\Interceptor\ManageSession;
 use App\Model\Bill;
 use App\Model\Business;
@@ -16,10 +16,13 @@ use App\Model\UserGroup;
 use App\Service\Query;
 use App\Util\Date;
 use App\Util\Str;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
+use Kernel\Exception\NotFoundException;
+use Kernel\Exception\RuntimeException;
 
 #[Interceptor(ManageSession::class, Interceptor::TYPE_API)]
 class User extends Manage
@@ -32,29 +35,28 @@ class User extends Manage
      */
     public function data(): array
     {
-        $map = $_POST;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\User::class);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setWith([
-            'parent' => function (Relation $relation) {
-                $relation->select(["id", "username", "avatar"]);
-            },
-            'businessLevel',
-            'business'
-        ]);
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
-        return $json;
+        $map = $this->request->post();
+        $get = new Get(\App\Model\User::class);
+        $get->setWhere($map);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setOrderBy(...$this->query->getOrderBy($map, "id", "desc"));
+        $data = $this->query->get($get, function (Builder $builder) {
+            return $builder->with([
+                'parent' => function (Relation $relation) {
+                    $relation->select(["id", "username", "avatar"]);
+                }, 'businessLevel', 'business'
+            ]);
+        });
+
+        return $this->json(data: $data);
     }
 
     /**
      * @return array
      * @throws JSONException
+     * @throws NotFoundException
+     * @throws RuntimeException
+     * @throws \ReflectionException
      */
     public function save(): array
     {
@@ -88,8 +90,8 @@ class User extends Manage
                 throw new JSONException("该商户等级不存在");
             }
             //新建店铺
-            if (!\App\Model\Business::query()->where("user_id", $user->id)->first()) {
-                $business = new \App\Model\Business();
+            if (!Business::query()->where("user_id", $user->id)->first()) {
+                $business = new Business();
                 $business->user_id = $user->id;
                 $business->create_time = Date::current();
                 $business->master_display = 1;
@@ -104,10 +106,9 @@ class User extends Manage
             }
         }
 
-        $createObjectEntity = new CreateObjectEntity();
-        $createObjectEntity->setModel(\App\Model\User::class);
-        $createObjectEntity->setMap($map);
-        $save = $this->query->createOrUpdateTemplate($createObjectEntity);
+        $save = new Save(\App\Model\User::class);
+        $save->setMap($map);
+        $save = $this->query->save($save);
         if (!$save) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
@@ -117,7 +118,7 @@ class User extends Manage
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function recharge(): array
     {
@@ -141,7 +142,7 @@ class User extends Manage
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function coin(): array
     {
@@ -191,13 +192,13 @@ class User extends Manage
     /**
      * @return array
      * @throws JSONException
+     * @throws NotFoundException
+     * @throws \ReflectionException
      */
     public function del(): array
     {
-        $deleteBatchEntity = new DeleteBatchEntity();
-        $deleteBatchEntity->setModel(\App\Model\User::class);
-        $deleteBatchEntity->setList($_POST['list']);
-        $count = $this->query->deleteTemplate($deleteBatchEntity);
+        $deleteBatchEntity = new Delete(\App\Model\User::class , $_POST['list']);
+        $count = $this->query->delete($deleteBatchEntity);
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }

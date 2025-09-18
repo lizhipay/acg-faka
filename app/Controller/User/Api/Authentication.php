@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller\User\Api;
 
 
+use App\Consts\Hook;
 use App\Controller\Base\API\User;
 use App\Interceptor\Waf;
 use App\Model\Config;
@@ -17,6 +18,8 @@ use App\Util\Validation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
+use Kernel\Exception\RuntimeException;
+use Kernel\Waf\Filter;
 
 #[Interceptor(Waf::class)]
 class Authentication extends User
@@ -32,12 +35,14 @@ class Authentication extends User
     private UserSSO $sso;
 
     /**
+     * @return array
      * @throws JSONException
+     * @throws RuntimeException
      */
     public function register(): array
     {
         #CFG#
-        hook(\App\Consts\Hook::USER_API_AUTH_REGISTER_BEGIN);
+        hook(Hook::USER_API_AUTH_REGISTER_BEGIN);
         $registeredState = (int)Config::get("registered_state");
         $registeredType = (int)Config::get("registered_type");
         $registeredEmailVerification = (int)Config::get("registered_email_verification");
@@ -109,15 +114,19 @@ class Authentication extends User
         $user->create_time = Date::current();
         $user->status = 1;
         $user->avatar = "/favicon.ico";
-        if ((int)$_POST['pid'] != 0 && \App\Model\User::query()->find((int)$_POST['pid'])) {
-            $user->pid = $_POST['pid'];
+
+        //分站上级
+        if ($business = \App\Model\Business::get()) {
+            $user->pid = $business->user_id;
+        } elseif (isset($_COOKIE['promotion_from']) && \App\Model\User::query()->where("id", $_COOKIE['promotion_from'])->exists()) {
+            $user->pid = $_COOKIE['promotion_from'];
         }
 
         try {
             //session销毁
             Captcha::destroy("register");
-            $user->phone != null ?? $this->sms->destroyCaptcha($user->phone, Sms::CAPTCHA_REGISTER);
-            $user->email != null ?? $this->email->destroyCaptcha($user->email, Email::CAPTCHA_REGISTER);
+                $user->phone != null ?? $this->sms->destroyCaptcha($user->phone, Sms::CAPTCHA_REGISTER);
+                $user->email != null ?? $this->email->destroyCaptcha($user->email, Email::CAPTCHA_REGISTER);
             $user->save();
             $this->sso->loginSuccess($user);
         } catch (\Exception $e) {
@@ -125,7 +134,7 @@ class Authentication extends User
         }
 
 
-        hook(\App\Consts\Hook::USER_API_AUTH_REGISTER_AFTER, $user);
+        hook(Hook::USER_API_AUTH_REGISTER_AFTER, $user);
         return $this->json(200, '注册成功');
     }
 
@@ -144,6 +153,7 @@ class Authentication extends User
     /**
      * @return array
      * @throws JSONException
+     * @throws RuntimeException
      */
     public function emailRegisterCaptcha(): array
     {
@@ -168,6 +178,7 @@ class Authentication extends User
     /**
      * @return array
      * @throws JSONException
+     * @throws RuntimeException
      */
     public function emailForgetCaptcha(): array
     {
@@ -203,7 +214,9 @@ class Authentication extends User
     }
 
     /**
+     * @return array
      * @throws JSONException
+     * @throws RuntimeException
      */
     public function phoneRegisterCaptcha(): array
     {
@@ -227,7 +240,9 @@ class Authentication extends User
     }
 
     /**
+     * @return array
      * @throws JSONException
+     * @throws RuntimeException
      */
     public function phoneForgetCaptcha(): array
     {
@@ -252,11 +267,13 @@ class Authentication extends User
 
 
     /**
+     * @return array
      * @throws JSONException
+     * @throws RuntimeException
      */
     public function login(): array
     {
-        hook(\App\Consts\Hook::USER_API_AUTH_LOGIN_BEGIN);
+        hook(Hook::USER_API_AUTH_LOGIN_BEGIN);
 
         $loginVerification = (int)Config::get("login_verification");
 
@@ -267,7 +284,7 @@ class Authentication extends User
         if (!isset($_POST['username'])) {
             throw new JSONException("用户名输入错误");
         }
- 
+
         //验证密码
         if (!isset($_POST['password']) || !Validation::password((string)$_POST['password'])) {
             throw new JSONException("密码错误");
@@ -290,14 +307,18 @@ class Authentication extends User
             throw new JSONException("您已被封禁");
         }
 
-        $this->sso->loginSuccess($user);
+        $remember = (bool)$this->request->post("remember", Filter::BOOLEAN);
+
+        $this->sso->loginSuccess($user, $remember);
 
         Captcha::destroy("login");
         return $this->json(200, "登录成功");
     }
 
     /**
+     * @return array
      * @throws JSONException
+     * @throws RuntimeException
      */
     public function password(): array
     {

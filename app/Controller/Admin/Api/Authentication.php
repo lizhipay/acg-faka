@@ -7,6 +7,7 @@ use App\Controller\Base\API\Manage;
 use App\Service\ManageSSO;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Post;
+use Kernel\Waf\Filter;
 
 /**
  * Class Auth
@@ -23,8 +24,9 @@ class Authentication extends Manage
      * @param string $password
      * @return array
      */
-    public function login(#[Post] string $username, #[Post] string $password): array
+    public function login(string $username, string $password): array
     {
-        return $this->json(200, "success", $this->sso->login($username, $password));
+        $remember = (bool)$this->request->post("remember", Filter::BOOLEAN);
+        return $this->json(200, "success", $this->sso->login($username, $password, $remember));
     }
 }

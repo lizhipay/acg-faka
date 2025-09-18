@@ -2,14 +2,13 @@
 <div class="layui-container fly-marginTop fly-user-main">
     #{include file="../Common/Nav.html"}
     <div class="fly-panel fly-panel-user" pad20>
-        <div class="layui-tab layui-tab-brief" lay-filter="user">
+        <div class="layui-tab layui-tab-brief">
             <div class="content-header">
                 <i class="layui-icon">&#xe638;</i> 我的用户
             </div>
 
             <div class="content-body">
-                <form class="search-query"></form>
-                <table id="member" lay-filter="member"></table>
+                <table id="member-table"></table>
             </div>
         </div>
     </div>
@@ -117,4 +116,6 @@
         });
     });
 </script>
+
+#{ready("/assets/user/controller/user/child.js")}
 #{include file="../Common/Footer.html"}

@@ -1,42 +1,42 @@
 </div>
-<script>
-    layui.config({
-        version: "#{$app.version}"
-    });
+</div>
+#{js(
+[
+"/assets/common/js/_.js",
+"/assets/user/js/_user.js"
+],
+[
+"/assets/common/js/util/dict.js",
+"/assets/common/js/jquery.min.js",
+"/assets/common/js/toastr.min.js",
+"/assets/common/js/component/loading.js",
+"/assets/common/js/util.js",
+"/assets/common/js/layer/layer.js",
+"/assets/common/js/jquery.pjax.min.js",
+"/assets/common/js/jquery.qrcode.min.js",
+"/assets/common/js/format.js",
+"/assets/common/js/message.js",
+"/assets/common/js/component.js",
+"/assets/common/js/layui/layui.js",
+"/assets/common/js/jquery.treegrid.min.js",
+"/assets/common/js/bootstrap/bootstrap.bundle.min.js",
+"/assets/common/js/table/bootstrap-table.min.js",
+"/assets/common/js/table/bootstrap-table-treegrid.min.js",
+"/assets/common/js/component/form.js",
+"/assets/common/js/component/search.js",
+"/assets/common/js/component/xm-select.js",
+"/assets/common/js/component/tree.select.js",
+"/assets/common/js/component/authtree.js",
+"/assets/common/js/component/table.js",
+"/assets/common/js/component/select2.min.js",
+"/assets/common/js/cache.js",
+"/assets/common/js/editor/editor.js",
+"/assets/common/js/editor/code/code.js",
+"/assets/common/js/component/decimal.js",
+"/assets/user/js/dict.js",
+"/assets/user/controller/user/global.js"
+])}
 
-    layui.define(['layer', 'element'], function (exports) {
-
-        var $ = layui.jquery, element = layui.element;
-        //手机设备的简单适配
-        var treeMobile = $('.site-tree-mobile')
-            , shadeMobile = $('.site-mobile-shade');
-
-        $('.layui-nav-tree a').click(() => {
-            $('.net-loading').show();
-        });
-
-        treeMobile.on('click', function () {
-            $('body').addClass('site-mobile');
-        });
-        shadeMobile.on('click', function () {
-            $('body').removeClass('site-mobile');
-        });
-
-        $('.logout').click(function () {
-            layer.confirm('您是否要注销登录？', {
-                btn: ['确认', '取消'],
-                title: "安全注销"
-            }, function () {
-                window.location.href = "/user/authentication/logout";
-            });
-        });
-    });
-</script>
-<script src="/assets/static/jquery.qrcode.min.js"></script>
-<script src="/assets/static/wangEditor.min.js"></script>
-<script src="/assets/static/bootstrap-table/js/bootstrap-table.min.js"></script>
-<script src="/assets/static/bootstrap-table/js/bootstrap-table-zh-CN.js"></script>
-<script src="/assets/static/jsoneditor/jsoneditor.min.js"></script>
 
 <!--start::HOOK-->
 #{hook(\App\Consts\Hook::USER_VIEW_BODY)}

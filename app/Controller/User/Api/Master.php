@@ -4,8 +4,8 @@ declare (strict_types=1);
 namespace App\Controller\User\Api;
 
 use App\Controller\Base\API\User;
-use App\Entity\CreateObjectEntity;
-use App\Entity\QueryTemplateEntity;
+use App\Entity\Query\Get;
+use App\Entity\Query\Save;
 use App\Interceptor\UserSession;
 use App\Interceptor\Waf;
 use App\Model\UserCategory;
@@ -14,6 +14,7 @@ use App\Service\Query;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
+use Kernel\Waf\Filter;
 
 #[Interceptor([Waf::class, UserSession::class], Interceptor::TYPE_API)]
 class Master extends User
@@ -34,29 +35,21 @@ class Master extends User
         $map['equal-status'] = 1;
         $map['equal-owner'] = 0;
         $map['equal-hide'] = 0;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Category::class);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setOrder('sort', 'asc');
-        $queryTemplateEntity->setField(['id', 'name']);
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-        $array = $data['data'];
+        $get = new Get(\App\Model\Category::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
 
-        foreach ($array as $index => $item) {
+        $get->setWhere($map);
+        $get->setOrderBy('sort', 'asc');
+        $get->setColumn('id', 'icon', 'name');
+        $data = $this->query->get($get);
+
+
+        foreach ($data['list'] as &$item) {
             $userCategory = UserCategory::query()->where("user_id", $this->getUser()->id)->where("category_id", $item['id'])->first();
-            if ($userCategory) {
-                $array[$index]['user_category'] = $userCategory->toArray();
-            } else {
-                $array[$index]['user_category'] = null;
-            }
+            $item['user_category'] = $userCategory?->toArray();
         }
 
-        $json = $this->json(200, null, $array);
-        $json['count'] = $data['total'];
-        return $json;
+        return $this->json(data: $data);
     }
 
     /**
@@ -64,7 +57,7 @@ class Master extends User
      */
     public function setCategory(): array
     {
-        $map = $_POST;
+        $map = $this->request->post(flags: Filter::NORMAL);
         $map['user_id'] = $this->getUser()->id;
 
         if ($map['id'] != 0) {
@@ -73,10 +66,10 @@ class Master extends User
             }
         }
 
-        $createObjectEntity = new CreateObjectEntity();
-        $createObjectEntity->setModel(\App\Model\UserCategory::class);
-        $createObjectEntity->setMap($map, ['name']);
-        $save = $this->query->createOrUpdateTemplate($createObjectEntity);
+        $save = new Save(UserCategory::class);
+        $save->setMap($map, ['name', 'status']);
+        $save = $this->query->save($save);
+
         if (!$save) {
             throw new JSONException("保存失败");
         }
@@ -144,44 +137,18 @@ class Master extends User
             $map['equal-category_id'] = $categoryId;
         }
 
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Commodity::class);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setOrder('sort', 'asc');
-        $data = $this->query->findTemplateAll($queryTemplateEntity);
-
-
-        $items = $data->items();
-        $array = [];
-
-        $user = $this->getUser();
-        $userGroup = $this->getUserGroup();
-        foreach ($items as $index => $item) {
-            $userCategory = UserCommodity::query()->where("user_id", $this->getUser()->id)->where("commodity_id", $item['id'])->first();
-            if ($userCategory) {
-                $array[$index]['user_commodity'] = $userCategory->toArray();
-            } else {
-                $array[$index]['user_commodity'] = null;
-            }
-            //计算拿货价，采用新的方式
-            $tradeAmount = $this->order->calcAmount(
-                owner: $user->id,
-                num: 1,
-                commodity: $item,
-                group: $userGroup,
-                disableSubstation: true
-            );
-            $array[$index]['user_price'] = $tradeAmount;
-            $array[$index]['price'] = $item->price;
-            $array[$index]['id'] = $item->id;
-            $array[$index]['name'] = $item->name;
+        $get = new Get(\App\Model\Commodity::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setWhere($map);
+        $get->setOrderBy('sort', 'asc');
+        $get->setColumn('id', 'name', 'cover', 'price', 'user_price', 'sort');
+        $data = $this->query->get($get);
+        foreach ($data['list'] as &$item) {
+            $UserCommodity = UserCommodity::query()->where("user_id", $this->getUser()->id)->where("commodity_id", $item['id'])->first();
+            $item['user_commodity'] = $UserCommodity?->toArray();
         }
-        $json = $this->json(200, null, $array);
-        $json['count'] =  $data->total();
-        return $json;
+
+        return $this->json(data: $data);
     }
 
 
@@ -190,17 +157,22 @@ class Master extends User
      */
     public function setCommodity(): array
     {
-        $map = $_POST;
+        $map = $this->request->post(flags: Filter::NORMAL);
         $map['user_id'] = $this->getUser()->id;
         if ($map['id'] != 0) {
             if (!UserCommodity::query()->where("user_id", $map['user_id'])->find($map['id'])) {
                 throw new JSONException("设置错误，请刷新网页");
             }
         }
-        $createObjectEntity = new CreateObjectEntity();
-        $createObjectEntity->setModel(\App\Model\UserCommodity::class);
-        $createObjectEntity->setMap($map, ['name']);
-        $save = $this->query->createOrUpdateTemplate($createObjectEntity);
+
+        if ($map['premium'] < 0) {
+            throw new JSONException("加价百分比，无法低于0");
+        }
+
+        $save = new Save(UserCommodity::class);
+        $save->setMap($map, ['name', 'premium', 'status']);
+
+        $save = $this->query->save($save);
         if (!$save) {
             throw new JSONException("保存失败");
         }
@@ -263,12 +235,16 @@ class Master extends User
 
     /**
      * @return array
+     * @throws JSONException
      */
     public function setCommodityAllPremium(): array
     {
-        $mode = (int)$_POST['mode'] == 0 ? 0 : 1;
         $categoryId = (int)$_POST['category_id'];
-        $premium = (float)$_POST['premium'];
+        $premium = (int)$_POST['premium'];
+
+        if ($premium < 0) {
+            throw new JSONException("加价百分比，无法低于0");
+        }
 
         $commodity = \App\Model\Commodity::query()->where("owner", 0)->where("status", 1);
 
@@ -286,12 +262,7 @@ class Master extends User
                 $userCommodity->user_id = $userId;
             }
 
-            if ($mode == 0) {
-                $userCommodity->premium = $premium;
-            } else {
-                $userCommodity->premium = $item->price * $premium;
-            }
-
+            $userCommodity->premium = $premium;
             $userCommodity->save();
         }
 

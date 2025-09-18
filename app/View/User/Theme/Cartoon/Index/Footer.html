@@ -1,4 +1,46 @@
-<div class="content-icp">#{$setting.icp}</div>
+</div>
+#{if $setting.icp}
+<footer>
+    #{$setting.icp}
+</footer>
+#{/if}
+
+#{js(
+[
+"/assets/common/js/_.js",
+"/assets/user/js/_index.js"
+],
+[
+"/assets/common/js/util/dict.js",
+"/assets/common/js/jquery.min.js",
+"/assets/common/js/toastr.min.js",
+"/assets/common/js/component/loading.js",
+"/assets/common/js/util.js",
+"/assets/common/js/layer/layer.js",
+"/assets/common/js/jquery.pjax.min.js",
+"/assets/common/js/jquery.qrcode.min.js",
+"/assets/common/js/format.js",
+"/assets/common/js/message.js",
+"/assets/common/js/component.js",
+"/assets/common/js/layui/layui.js",
+"/assets/common/js/jquery.treegrid.min.js",
+"/assets/common/js/bootstrap/bootstrap.bundle.min.js",
+"/assets/common/js/table/bootstrap-table.min.js",
+"/assets/common/js/table/bootstrap-table-treegrid.min.js",
+"/assets/common/js/component/form.js",
+"/assets/common/js/component/search.js",
+"/assets/common/js/component/xm-select.js",
+"/assets/common/js/component/tree.select.js",
+"/assets/common/js/component/authtree.js",
+"/assets/common/js/component/table.js",
+"/assets/common/js/component/select2.min.js",
+"/assets/common/js/cache.js",
+"/assets/common/js/editor/editor.js",
+"/assets/common/js/editor/code/code.js",
+"/assets/common/js/component/decimal.js",
+"/assets/user/js/trade.js",
+"/assets/user/js/treasure.js"
+])}
 <!--start::HOOK-->
 #{hook(\App\Consts\Hook::USER_GLOBAL_VIEW_BODY)}
 #{hook(\App\Consts\Hook::USER_VIEW_INDEX_BODY)}

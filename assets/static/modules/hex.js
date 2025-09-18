@@ -67,6 +67,12 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
         getDict(dict, done, keywords = '') {
             if (typeof dict === "string") {
                 $.post('/admin/api/dict/get', {dict: dict, keywords: keywords}, res => {
+                    if (res?.data?.length > 0) {
+                        for (const dataKey in res.data) {
+                            res.data[dataKey]["name"] = this.plainText(res.data[dataKey]?.name);
+                        }
+                    }
+
                     if (keywords == '') {
                         localStorage.setItem('user_' + dict, JSON.stringify(res));
                     }
@@ -637,7 +643,7 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                         done(ret);
                     });
                 },
-                success: (layero, index) => {
+                success: (lay, index, that) => {
                     fields.forEach(item => {
                         //上传url
                         let uploadUrl = item.hasOwnProperty('uploadUrl') ? item.uploadUrl : '/admin/api/upload/handle';
@@ -732,9 +738,13 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                                     }
                                     this.getDict(item.dict, res => {
                                         res.data.forEach(s => {
-                                            instance.append('<input type="checkbox" ' + (val.indexOf(s.id) !== -1 || val.indexOf(s.id.toString()) !== -1 ? 'checked' : '') + ' value="' + s.id + '" name="' + item.name + '[]" title="' + s.name + '">\n');
+                                            instance.append('<input  lay-filter="checkbox-' + item.name + '"  type="checkbox" ' + (val.indexOf(s.id) !== -1 || val.indexOf(s.id.toString()) !== -1 ? 'checked' : '') + ' value="' + s.id + '" name="' + item.name + '[]" title="' + s.name + '">\n');
                                         });
                                         form.render();
+                                    });
+                                    form.on(`checkbox(checkbox-${item.name})`, function (data) {
+                                        const elem = data.elem;
+                                        typeof item?.change == "function" && item.change(elem.value, elem.checked);
                                     });
                                 }
                                 break;
@@ -1239,6 +1249,15 @@ layui.define(['layer', 'jquery', 'form', 'table', 'upload', 'laydate', 'authtree
                     await this.timer(call, millisecond, false);
                 }
             }, millisecond);
+        },
+        plainText(text) {
+            if (typeof text !== 'string') {
+                return text;
+            }
+            // 去除HTML标签
+            const noHtml = text.replace(/<[^>]*>/g, '');
+            // 去除前后空格和换行
+            return noHtml.trim();
         }
     }
 

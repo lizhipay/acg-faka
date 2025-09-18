@@ -1,21 +1,22 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller\Admin\Api;
 
 
 use App\Controller\Base\API\Manage;
-use App\Entity\CreateObjectEntity;
-use App\Entity\DeleteBatchEntity;
-use App\Entity\QueryTemplateEntity;
+use App\Entity\Query\Get;
+use App\Entity\Query\Save;
 use App\Interceptor\ManageSession;
 use App\Model\ManageLog;
 use App\Service\Query;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Arr;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
+use Kernel\Waf\Filter;
 
 #[Interceptor(ManageSession::class, Interceptor::TYPE_API)]
 class Order extends Manage
@@ -29,44 +30,42 @@ class Order extends Manage
     public function data(): array
     {
         $map = $_POST;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Order::class);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setWith([
-            'coupon' => function (Relation $relation) {
-                $relation->select(["id", "code"]);
-            },
-            'owner' => function (Relation $relation) {
-                $relation->select(["id", "username", "avatar", "recharge"]);
-            },
-            'user' => function (Relation $relation) {
-                $relation->select(["id", "username", "avatar", "recharge"]);
-            },
-            'commodity' => function (Relation $relation) {
-                $relation->select(["id", "name", "delivery_way", "contact_type"]);
-            },
-            'pay' => function (Relation $relation) {
-                $relation->select(["id", "name", "icon"]);
-            },
-            'promote' => function (Relation $relation) {
-                $relation->select(["id", "username", "avatar", "recharge"]);
-            }
-        ]);
+        $get = new Get(\App\Model\Order::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setWhere($map);
+        $raw = [];
+        $data = $this->query->get($get, function (Builder $builder) use (&$raw) {
+            $raw['order_amount'] = (clone $builder)->sum("amount");
+            $raw['order_cost'] = (clone $builder)->sum("cost");
+            return $builder->with([
+                'coupon' => function (Relation $relation) {
+                    $relation->select(["id", "code"]);
+                },
+                'owner' => function (Relation $relation) {
+                    $relation->select(["id", "username", "avatar", "recharge"]);
+                },
+                'user' => function (Relation $relation) {
+                    $relation->select(["id", "username", "avatar", "recharge"]);
+                },
+                'commodity' => function (Relation $relation) {
+                    $relation->select(["id", "name", "cover", "delivery_way", "contact_type"]);
+                },
+                'pay' => function (Relation $relation) {
+                    $relation->select(["id", "name", "icon"]);
+                },
+                //推广者
+                'promote' => function (Relation $relation) {
+                    $relation->select(["id", "username", "avatar", "recharge"]);
+                },
+                //分站订单
+                'substationUser' => function (Relation $relation) {
+                    $relation->select(["id", "username", "avatar", "recharge"]);
+                },
+                'card'
+            ]);
+        });
 
-        $query = \App\Model\Order::query();
-        $data = $this->query->findTemplateAll($queryTemplateEntity, $query)->toArray();
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
-
-        //获取订单数量
-        $json['order_count'] = (clone $query)->count();
-        $json['order_amount'] = (clone $query)->sum("amount");
-        $json['order_cost'] = (clone $query)->sum("cost");
-
-        return $json;
+        return $this->json(data: array_merge($data, $raw));
     }
 
 
@@ -76,14 +75,13 @@ class Order extends Manage
      */
     public function save(): array
     {
-        $map = $_POST;
+        $map = $this->request->post(flags: Filter::NORMAL);
         if (!$map['secret']) {
             throw new JSONException("请填写要发货的内容");
         }
-        $createObjectEntity = new CreateObjectEntity();
-        $createObjectEntity->setModel(\App\Model\Order::class);
-        $createObjectEntity->setMap(['id' => (int)$map['id'], 'secret' => $map['secret'], 'delivery_status' => 1]);
-        $save = $this->query->createOrUpdateTemplate($createObjectEntity);
+        $save = new Save(\App\Model\Order::class);
+        $save->setMap(['id' => (int)$map['id'], 'secret' => $map['secret'], 'delivery_status' => 1]);
+        $save = $this->query->save($save);
         if (!$save) {
             throw new JSONException("发货失败");
         }

@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $mode
  * @property int $category_id
  * @property string $race
+ * @property array $sku
  */
 class Coupon extends Model
 {
@@ -39,7 +40,7 @@ class Coupon extends Model
     /**
      * @var array
      */
-    protected $casts = ['commodity_id' => 'integer', 'id' => 'integer', 'category_id' => 'integer', 'mode' => 'integer', 'money' => 'float', 'owner' => 'integer', 'status' => 'integer', 'life' => 'integer', 'use_life' => 'integer'];
+    protected $casts = ['commodity_id' => 'integer', 'id' => 'integer', 'category_id' => 'integer', 'mode' => 'integer', 'money' => 'float', 'owner' => 'integer', 'status' => 'integer', 'life' => 'integer', 'use_life' => 'integer', 'sku' => 'json'];
 
     public function owner(): ?\Illuminate\Database\Eloquent\Relations\HasOne
     {

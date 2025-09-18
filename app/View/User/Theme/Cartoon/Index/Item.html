@@ -1,0 +1,153 @@
+#{include file="./Header.html"}
+#{item_var($item)}
+<main class="container py-4">
+
+    <div class="panel mt-3">
+        <div class="panel-body">
+            <div class="row g-4 align-items-stretch">
+
+                <div class="col-12 col-lg-6 d-flex">
+                    <div class="acg-card h-100 w-100 flex-fill acg-cover">
+                        <img src="#{$item.cover}" class="item-cover">
+                    </div>
+                </div>
+
+
+                <div class="col-12 col-lg-6 d-flex">
+                    <div class="flex-fill">
+                        <h4>#{$item.name}</h4>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            #{if $item.seckill_status == 1}
+                                <span class="badge-soft snap-up" style="display: none;"></span>
+                            #{/if}
+                            <span class="badge-soft badge-soft-success">#{if $item.delivery_way == 0}自动发货#{else}在线发货#{/if}</span>
+                            <span class="badge-soft badge-soft-primary">已售 #{$item.order_sold}</span>
+                            <span class="badge-soft badge-soft-success item-stock">库存 #{$item.stock}</span>
+                            <span class="badge-soft badge-soft-info shared-button"><i
+                                        class="fa-duotone fa-regular fa-share-from-square"></i></span>
+                        </div>
+                        <div class="d-flex align-items-baseline gap-2 mb-3 abacus">
+                            <div class="price"><i class="fa-duotone fa-regular fa-spinner-third icon-spin fs-6"></i></div>
+                        </div>
+                        <form class="vstack gap-3">
+                            #{if !empty($item.config.category)}
+                                <div>
+                                    <label class="form-label mb-1">宝贝类型</label>
+                                    <div class="sku-list">
+                                        #{foreach $item.config.category as $race => $price}
+                                            <a class="switch-race sku #{if $price@first}is-primary#{/if}"
+                                               data-sku="#{$race}"
+                                               data-price="#{$price}"
+                                               href="javascript:void(0);">#{$race}<span
+                                                        class="badge-money">¥#{$price}</span></a>
+                                        #{/foreach}
+                                    </div>
+                                </div>
+                            #{/if}
+
+                            #{if !empty($item.config.sku)}
+                                #{foreach $item.config.sku as $name => $sku}
+                                    <div>
+                                        <label class="form-label mb-1">#{$name}</label>
+                                        <div class="sku-list">
+                                            #{foreach $sku as $key => $price}
+                                                <a class="switch-sku sku #{if $price@first}is-primary#{/if}"
+                                                   data-sku="#{$name}"
+                                                   data-value="#{$key}" data-price="#{$price}"
+                                                   href="javascript:void(0);">#{$key}#{if $price > 0}<span
+                                                            class="badge-money">
+                                                        +¥#{$price}</span>#{/if}</a>
+                                            #{/foreach}
+                                        </div>
+                                    </div>
+                                #{/foreach}
+                            #{/if}
+
+                            #{if $item.draft_status == 1}
+                                <div>
+                                    <input type="hidden" name="card_id" class="form-control">
+                                    <label class="form-label mb-1">自选账号</label>
+                                    <button type="button" class="optional-card">未自选,将随机发货</button>
+                                </div>
+                            #{/if}
+
+                            #{if !$user}
+                                <div>
+                                    <label class="form-label mb-1">#{contact_type_msg($item.contact_type)}</label>
+                                    <input type="text" name="contact" class="form-control"
+                                           placeholder="请输入您的#{contact_type_msg($item.contact_type)}">
+                                </div>
+                            #{/if}
+
+                            #{if $item.coupon == 1}
+                                <div>
+                                    <label class="form-label mb-1">优惠券</label>
+                                    <input type="text" class="form-control" name="coupon"
+                                           placeholder="优惠券代码，没有则不填">
+                                </div>
+                            #{/if}
+
+                            #{widget_render($item.widget)}
+
+                            #{if $item.password_status == 1}
+                                <div>
+                                    <label class="form-label mb-1">查询密码</label>
+                                    <input type="password" class="form-control" name="password"
+                                           placeholder="设置查询订单的密码">
+                                </div>
+                            #{/if}
+
+                            <div>
+                                <label class="form-label mb-1">购买数量</label>
+                                <div class="input-group qty-group">
+                                    <button type="button" class="change-num-sub">-</button>
+                                    <input type="number" class="form-control text-center" name="num"
+                                           value="#{if $item.minimum > 0}#{$item.minimum}#{else}1#{/if}">
+                                    <button type="button" class="change-num-add">+</button>
+                                </div>
+                            </div>
+
+                            #{if $item.trade_captcha == 1}
+                                <div>
+                                    <label class="form-label mb-1">人机验证</label>
+                                    <div class="input-group" style="width: 240px;">
+                                        <input type="text" class="form-control captcha-input" placeholder="图形验证码"
+                                               name="captcha">
+                                        <div class="input-group-append">
+                                            <img class="input-group-text captcha-img"
+                                                 src="/user/captcha/image?action=trade"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            #{/if}
+
+                            <div class="cash-pay p-2" style="display: none;">
+                                <label class="form-label mb-2"><i class="fa-duotone fa-regular fa-cart-shopping"></i>
+                                    付款</label>
+                                <div class="pay-list">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="panel mt-3 item-detail">
+        <div class="panel-header">
+            <span class="icon"><i class="fa-duotone fa-regular fa-memo-circle-info"></i></span>
+            <h6 class="panel-title">宝贝详情</h6>
+        </div>
+        <div class="panel-body">
+            #{$item.description}
+        </div>
+    </div>
+
+
+</main>
+#{ready("/assets/user/controller/index/item.js")}
+#{include file="./Footer.html"}

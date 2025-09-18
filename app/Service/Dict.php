@@ -4,10 +4,9 @@ declare(strict_types=1);
 namespace App\Service;
 
 
-use App\Service\Impl\DictService;
 use Kernel\Annotation\Bind;
 
-#[Bind(class: DictService::class)]
+#[Bind(class: \App\Service\Bind\Dict::class)]
 interface Dict
 {
     /**
@@ -15,7 +14,7 @@ interface Dict
      * @param string $dictName
      * @param string $keywords
      * @param string $where
-     * @return mixed
+     * @return array
      */
-    public function get(string $dictName, string $keywords = '', string $where = ''): mixed;
+    public function get(string $dictName, string $keywords = '', string $where = ''): array;
 }

@@ -7,6 +7,10 @@
     url('iconfont.ttf?t=1512007250695') format('truetype'), /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/ url('iconfont.svg?t=1512007250695#iconfont') format('svg'); /* iOS 4.1- */
 }
 
+html {
+    font-size: 13px;
+}
+
 /* 全局 */
 html, body {
     overflow-x: hidden;
@@ -441,19 +445,23 @@ pre {
     width: 100%;
     height: 60px;
     border-radius: 0;
-    background: linear-gradient(to bottom right, #ffd6ecb5, #f0fffaa3);
-    box-shadow: 0 6px 0 0 rgba(0, 0, 0, .01), 0 15px 32px 0 rgba(0, 0, 0, .06);
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    padding: 0;
+    box-shadow: 0px 10px 30px 0px rgba(82, 63, 105, 0.05);
 }
 
 .fly-logo {
     position: absolute;
-    left: 15px;
+    left: 4px;
     top: 11px;
     font-weight: bold;
     color: #ff9085c7;
     font-size: 24px;
     overflow: hidden;
     z-index: 123;
+    cursor: pointer;
 }
 
 .fly-logo .user-logo img {
@@ -490,7 +498,7 @@ pre {
 
 .user-username {
     padding: 5px;
-    background: #f2fff86b;
+    /*background: #f2fff86b;*/
     /*  -webkit-box-shadow: 0 6px 0 0 rgba(255, 201, 201, 0.22), 0 15px 32px 0 #ffa8a8;
       box-shadow: 0 6px 0 0 rgba(255, 201, 201, 0.22), 0 15px 32px 0 #ffa8a8;*/
     border-radius: 10px;
@@ -1659,9 +1667,12 @@ body .fly-user-main {
     top: 0;
     z-index: 1000;
     height: 100%;
-    background: linear-gradient(to bottom right, #ffffff2e, #d2ffed52);
     box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
     border-radius: 20px;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    padding: 0;
 }
 
 .layui-nav-tree .layui-nav-child dd.layui-this, .layui-nav-tree .layui-nav-child dd.layui-this a, .layui-nav-tree .layui-this, .layui-nav-tree .layui-this > a, .layui-nav-tree .layui-this > a:hover {
@@ -1689,9 +1700,12 @@ body .fly-user-main {
 .fly-user-main > .fly-panel {
     min-height: 768px;
     margin: 0 0 10px 215px;
-    background: linear-gradient(to bottom right, #ffffff, #d2ffed3b);
-    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
     border-radius: 20px;
+
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: 0px 10px 30px 0px rgba(82, 63, 105, 0.05);
 }
 
 .fly-user-main .fly-none {
@@ -2452,7 +2466,8 @@ body .fly-user-main {
 
     .fly-user-main > .fly-panel-user {
         width: auto;
-        margin-left: 0;
+        margin-left: 10px;
+        margin-right: 10px;
         transition: all .3s;
         -webkit-transition: all .3s;
     }
@@ -2481,7 +2496,9 @@ body .fly-user-main {
     .site-mobile .fly-user-main > .layui-nav {
         left: 0;
         position: fixed;
-        top: 75px;
+        top: 0;
+        z-index: 9999999;
+        border-radius: 0;
     }
 
     .site-mobile .site-mobile-shade {
@@ -2921,3 +2938,62 @@ input[name=btSelectAll] {
     left: 0 !important;
     top: 0 !important;
 }
+
+
+.more-table td {
+    border: none;
+    font-size: 14px;
+    color: #fbaea7;
+}
+
+.card-data {
+    padding: 10px;
+}
+
+.card-data .layui-card {
+    border-radius: 10px;
+    background-color: #ebb9b926;
+}
+
+.card-data .layui-card-header {
+    color: #997cf3;
+}
+
+.card-data .layui-card-body {
+    color: #ff90f6;
+    font-weight: bold;
+}
+
+.layui-table {
+    background-color: #ffffff47;
+    border-radius: 10px;
+    padding: 24px;
+}
+
+.layui-table tbody {
+    padding: 24px;
+}
+
+.layui-btn {
+    border: none !important;
+}
+
+.bootstrap-table.bootstrap5 .table-switch-state button.active, .table-switch-state button:focus {
+    background-color: #ffa3ad82 !important;
+}
+
+.bootstrap-table.bootstrap5 .table-switch-state button:hover {
+    background-color: rgba(255, 163, 173, 0.29) !important;
+}
+
+.layui-unselect.layui-tab-bar {
+    display: none;
+}
+
+.prompt-image-code{
+    border: 3px solid #f9bff773;
+    border-radius: 10px;
+    cursor: pointer;
+    height: 48px;
+}
+

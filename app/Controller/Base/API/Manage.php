@@ -14,7 +14,7 @@ abstract class Manage extends \App\Controller\Base\Manage
      * @param array|null $data
      * @return array
      */
-    public function json(int $code, ?string $message = null, ?array $data = []): array
+    public function json(int $code = 200, ?string $message = null, ?array $data = []): array
     {
         $json['code'] = $code;
         $message ? $json['msg'] = $message : null;

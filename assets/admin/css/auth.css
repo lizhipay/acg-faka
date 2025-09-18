@@ -1,0 +1,358 @@
+:root {
+    --ay-accent-start: #ff7dc6; /* 霓虹起色 */
+    --ay-accent-end: #7aa8ff; /* 霓虹终色 */
+    --ay-text: #f3f6ff; /* 主文字 */
+    --ay-sub: #b9c3e6; /* 次文字 */
+    --ay-card: rgba(12, 14, 28, .55); /* 卡片深玻璃 */
+    --ay-stroke: rgba(255, 255, 255, .18); /* 细边 */
+    --ay-input: rgba(255, 255, 255, .06); /* 输入框底 */
+    --ay-input-h: 48px; /* 输入高度 */
+    --ay-radius: 20px; /* 圆角 */
+}
+
+html, body {
+    height: 100%;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box
+}
+
+body.ay-bg {
+    margin: 0;
+    color: var(--ay-text);
+    font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, PingFang SC, Microsoft YaHei, system-ui, Arial;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    overflow-x: hidden;
+}
+
+/* 暗化罩，凸显卡片 */
+.ay-dim {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(60% 50% at 50% 30%, rgba(0, 0, 0, .25), rgba(0, 0, 0, .55) 70%);
+}
+
+/* 轻量樱花飘落 */
+.ay-petals {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden
+}
+
+.ay-petals i {
+    position: absolute;
+    width: 12px;
+    height: 10px;
+    background: linear-gradient(135deg, #ffd1e6, #ff9aca);
+    border-radius: 80% 80% 80% 20% / 80% 80% 20% 80%;
+    opacity: .5;
+    filter: blur(.2px);
+    animation: ay-fall linear infinite;
+    transform: rotate(20deg)
+}
+
+.ay-petals i:nth-child(3n) {
+    width: 9px;
+    height: 7px;
+    animation-duration: 12s
+}
+
+.ay-petals i:nth-child(4n) {
+    animation-duration: 10s;
+    opacity: .35
+}
+
+.ay-petals i:nth-child(5n) {
+    width: 14px;
+    height: 12px;
+    animation-duration: 14s
+}
+
+@keyframes ay-fall {
+    to {
+        transform: translateY(110vh) rotate(360deg)
+    }
+}
+
+/* 外层布局：单列居中 */
+.ay-wrap {
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: clamp(16px, 4vw, 32px)
+}
+
+/* 顶部徽章 */
+.ay-badge {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--ay-stroke);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .05));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25)
+}
+
+.ay-badge em {
+    font-style: normal;
+    color: #ffe5f3
+}
+
+/* 卡片 */
+.ay-card {
+    width: min(480px, 92vw);
+    margin-top: 14px;
+    background: var(--ay-card);
+    backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid var(--ay-stroke);
+    border-radius: 24px;
+    box-shadow: 0 18px 60px rgba(5, 9, 20, .45);
+    position: relative;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.ay-card:hover { box-shadow: 0 24px 80px rgba(5,9,20,.55); }
+
+.ay-card::after{ /* 跟随鼠标的高光 */
+    content:""; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none; mix-blend-mode:screen; opacity:.0; transition: opacity .2s ease;
+    background: radial-gradient(240px 160px at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.28), rgba(255,255,255,0) 60%);
+}
+.ay-card:hover::after{ opacity:.9; }
+
+.ay-card::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(from 200deg, var(--ay-accent-start), var(--ay-accent-end), var(--ay-accent-start));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: .7
+}
+
+.ay-head {
+    padding: 26px 22px 8px;
+    display: grid;
+    place-items: center;
+    row-gap: 8px
+}
+
+.ay-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: url("/favicon.ico") no-repeat center/contain;
+    box-shadow: 0 8px 26px rgba(255, 154, 202, .25);
+}
+
+.ay-title {
+    margin: 4px 0 0;
+    font-weight: 900;
+    letter-spacing: .6px;
+    font-size: clamp(18px, 2.6vw, 22px);
+    color: white;
+}
+
+.ay-sub {
+    margin: 0 0 6px;
+    color: var(--ay-sub);
+    font-size: 12px
+}
+
+.ay-body {
+    padding: 16px 22px 22px
+}
+
+/* 输入组：深色玻璃 + 细描边 + 霓虹底线 */
+.ay-field {
+    position: relative;
+    margin: 16px 0 22px
+}
+
+.ay-input {
+    width: 100%;
+    height: var(--ay-input-h);
+    padding: 12px 44px 12px 14px;
+    border-radius: 16px;
+    border: 1px solid var(--ay-stroke);
+    background: var(--ay-input);
+    color: var(--ay-text);
+    outline: none;
+    transition: border-color .18s ease, box-shadow .18s ease
+}
+
+.ay-input::placeholder {
+    color: transparent
+}
+
+.ay-label {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-52%);
+    font-size: 13px;
+    color: var(--ay-sub);
+    pointer-events: none;
+    transition: all .16s ease
+}
+
+
+.ay-input:focus {
+    border-color: rgba(255, 255, 255, .38);
+    box-shadow: 0 0 0 3px rgba(255, 125, 198, .18)
+}
+
+.ay-input:focus + .ay-label, .ay-input:not(:placeholder-shown) + .ay-label {
+    top: -8px;
+    font-size: 11px;
+    background: rgba(10, 12, 24, .85);
+    padding: 0 8px;
+    border-radius: 999px;
+    color: #e9eaff;
+    border: 1px solid rgba(255, 255, 255, .15)
+}
+
+.ay-input:focus {
+    transform: scaleX(1)
+}
+
+/* 眼睛按钮（跟随深色系） */
+.ay-eye {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--ay-stroke);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .06));
+    display: grid;
+    place-items: center;
+    cursor: pointer
+}
+
+/* 功能区 */
+.ay-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin: 2px 0 16px
+}
+
+.ay-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #eaefff;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.ay-check input {
+    appearance: none;
+    -webkit-appearance: none; /* Safari/iOS */
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    border: 1px solid var(--ay-stroke);
+    background: rgba(255, 255, 255, .06);
+    cursor: pointer; /* 明确可点击 */
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.ay-check input:hover {
+    border-color: rgba(255, 255, 255, .4);
+    background: rgba(255, 255, 255, .1);
+}
+
+.ay-check input:checked {
+    background: linear-gradient(180deg, #ffd1ea, #c5d2ff);
+    border-color: rgba(255, 255, 255, .5)
+}
+
+.ay-check input:checked::after {
+    content: '✓';
+    color: #2a2e52;
+    font-weight: 900;
+    font-size: 12px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.ay-check input:focus-visible { outline: 2px solid rgba(255,255,255,.6); outline-offset: 2px; }
+
+.ay-link {
+    color: #fff;
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(255, 255, 255, .6);
+    opacity: .9;
+    font-size: 14px;
+}
+
+.ay-link:hover {
+    opacity: 1
+}
+
+.ay-input:hover { border-color: rgba(255,255,255,.32); }
+.ay-eye:hover { background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.1)); }
+
+/* 主按钮：萌系渐变 */
+.ay-btn {
+    width: 100%;
+    height: 48px;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    color: #ffffff;
+    font-weight: 900;
+    letter-spacing: .3px;
+    background: linear-gradient(135deg, #ffb6f0, #9ad6ff);
+    box-shadow: 0 12px 30px rgba(122, 168, 255, .35), inset 0 1px 0 rgba(255, 255, 255, .7);
+    position: relative;
+    overflow: hidden;
+    transition: transform .12s ease, box-shadow .2s ease;
+}
+
+.ay-btn:hover { transform: translateY(-1px); box-shadow: 0 16px 36px rgba(122,168,255,.45), inset 0 1px 0 rgba(255,255,255,.8); }
+.ay-btn:active { transform: translateY(0); }
+.ay-btn::after{ content:""; position:absolute; top:-20%; bottom:-20%; left:-40%; right:-40%; pointer-events:none;
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.35) 50%, rgba(255,255,255,0) 100%);
+    transform: translateX(-120%) skewX(-20deg);
+    transition: transform .6s ease;
+}
+.ay-btn:hover::after{ transform: translateX(140%) skewX(-20deg); }
+
+.ay-foot {
+    margin: 12px 0 8px;
+    text-align: center;
+    color: #dfe6ff;
+    font-size: 12px;
+    opacity: .85
+}
+
+/* 响应式 */
+@media (max-width: 480px) {
+    :root {
+        --ay-input-h: 46px
+    }
+
+    .ay-body {
+        padding: 12px 16px 18px
+    }
+    .ay-card { transform: none !important; }
+}

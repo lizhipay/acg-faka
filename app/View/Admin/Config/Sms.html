@@ -26,7 +26,7 @@
                     <!--begin::Form-->
                     <form id="data-form" class="form">
                         <!--begin::Card body-->
-                        <div class="card-body border-top p-9">
+                        <div class="card-body p-9">
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -246,52 +246,5 @@
 </div>
 <!--end::Content-->
 
-
-<script>
-    $(function () {
-        layui.use(['layer', 'form'], function () {
-
-            $('select[name=platform]').change(function () {
-                let val = $(this).val();
-                if (val == 0) {
-                    $(".aliyun").show();
-                    $(".tencent").hide();
-                    $(".dxbao").hide();
-                } else if (val == 1) {
-                    $(".aliyun").hide();
-                    $(".dxbao").hide();
-                    $(".tencent").show();
-                } else if (val == 2) {
-                    $(".aliyun").hide();
-                    $(".dxbao").show();
-                    $(".tencent").hide();
-                }
-            });
-
-            //data-form
-            $('.save-data').click(function () {
-                let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
-                $.post("/admin/api/config/sms", $("#data-form").serialize(), res => {
-                    layer.close(loaderIndex);
-                    layer.msg("保存成功");
-                });
-            });
-
-            $('.send-test-message').click(function () {
-                layer.prompt({title: '(国内)手机号', formType: 0}, function (phone, index) {
-                    let loaderIndex = layer.load(0, {shade: ['0.3', '#fff']});
-                    $.post("/admin/api/config/smsTest", {phone: phone}, res => {
-                        layer.close(loaderIndex);
-                        if (res.code == 200) {
-                            layer.close(index);
-                        }
-                        layer.msg(res.msg);
-                    });
-                });
-
-            });
-        });
-    });
-</script>
-
+#{ready("/assets/admin/controller/config/sms.js")}
 #{include file="../Footer.html"}

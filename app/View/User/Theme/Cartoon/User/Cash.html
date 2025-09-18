@@ -12,7 +12,7 @@
 
             <div class="content-body">
                 <blockquote class="elem-quote">
-                    最低兑现金额：<b>#{$config.cash_min}元</b>，手动提现费用：<b>#{$config.cash_cost}元</b> (每天12点自动结算免费)
+                    最低兑现金额：<b>#{$config.cash_min}元</b>，手动提现费用：<b>#{$config.cash_cost}元</b>
                 </blockquote>
                 <form class="layui-form" action="">
                     <div class="form-block">
@@ -27,15 +27,11 @@
                         <div>
                             <div class="form-header">兑现方式</div>
                             <div class="form-body pay-list">
-                                #{if $config.cash_type_alipay == 1} <a class="button-click checked"
-                                                                       onclick="payClick(this,0)"
-                                                                       style="line-height: 22px;color: #db66ac;"><img
+                                #{if $config.cash_type_alipay == 1} <a class="button-click cash-wallet-btn" data-id="0" style="line-height: 22px;color: #db66ac;"><img
                                     src="/assets/user/images/cash/alipay.png" class="pay-icon"> 支付宝</a> #{/if}
-                                #{if $config.cash_type_wechat == 1} <a class="button-click" onclick="payClick(this,1)"
-                                                                       style="line-height: 22px;color: #db66ac;"><img
+                                #{if $config.cash_type_wechat == 1} <a class="button-click cash-wallet-btn"  data-id="1" style="line-height: 22px;color: #db66ac;"><img
                                     src="/assets/user/images/cash/wechat.png" class="pay-icon"> 微信</a> #{/if}
-                                #{if $config.cash_type_balance == 1} <a class="button-click" onclick="payClick(this,2)"
-                                                                       style="line-height: 22px;color: #db66ac;"><img
+                                #{if $config.cash_type_balance == 1} <a class="button-click cash-wallet-btn checked"  data-id="2" style="line-height: 22px;color: #db66ac;"><img
                                     src="/assets/static/images/wallet.png" class="pay-icon"> 钱包余额(可直接消费)</a> #{/if}
                             </div>
                         </div>
@@ -50,35 +46,5 @@
         </div>
     </div>
 </div>
-
-<script>
-    let payId = 0;
-
-    function payClick(obj, id) {
-        User.switchElement(obj);
-        payId = id;
-    }
-
-    $(function () {
-        layui.use('layer', function () {
-            $('.payButton').click(function () {
-                layer.confirm('兑现' + $('input[name=amount]').val() + "硬币需要#{$config.cash_cost}元手续费，您确定吗？", {
-                    btn: ['确认', '取消']
-                }, function () {
-                    User.$post("/user/api/cash/submit", {
-                        type: payId,
-                        amount: $('input[name=amount]').val()
-                    }, res => {
-                        layer.msg("兑现成功，请耐心等待到账。")
-                        setTimeout(() => {
-                            window.location.href = "/user/cash/record";
-                        }, 1500);
-                    });
-                });
-
-            });
-        });
-    });
-
-</script>
+#{ready("/assets/user/controller/user/cash.js")}
 #{include file="../Common/Footer.html"}

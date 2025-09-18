@@ -7,6 +7,7 @@ namespace App\Controller\Admin;
 use App\Controller\Base\View\Manage;
 use App\Interceptor\ManageSession;
 use Kernel\Annotation\Interceptor;
+use Kernel\Exception\ViewException;
 
 /**
  * Class Commodity
@@ -16,7 +17,7 @@ use Kernel\Annotation\Interceptor;
 class Commodity extends Manage
 {
     /**
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     public function index(): string
     {

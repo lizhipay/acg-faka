@@ -5,9 +5,9 @@ namespace App\Controller\Admin\Api;
 
 
 use App\Controller\Base\API\Manage;
-use App\Entity\CreateObjectEntity;
-use App\Entity\DeleteBatchEntity;
-use App\Entity\QueryTemplateEntity;
+use App\Entity\Query\Delete;
+use App\Entity\Query\Get;
+use App\Entity\Query\Save;
 use App\Interceptor\ManageSession;
 use App\Model\ManageLog;
 use App\Service\Query;
@@ -21,6 +21,8 @@ use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
+use Kernel\Exception\NotFoundException;
+use Kernel\Exception\RuntimeException;
 use Kernel\Waf\Filter;
 
 #[Interceptor(ManageSession::class, Interceptor::TYPE_API)]
@@ -35,63 +37,70 @@ class Commodity extends Manage
     public function data(): array
     {
         $map = $_POST;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Commodity::class);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setOrder('sort', 'asc');
-        $queryTemplateEntity->setWith(['shared', 'category', 'owner' => function (Relation $relation) {
-            $relation->with(['business' => function (Relation $relation) {
-                $relation->select(['id', 'user_id', 'subdomain', 'topdomain']);
-            }])->select(["id", "username", "avatar"]);
-        }]);
-        $queryTemplateEntity->setWithCount(['card as card_count' => function (Builder $builder) {
-            $builder->where("status", 0);
-        }]);
-        $queryTemplateEntity->setWithCount(['card as card_success_count' => function (Builder $builder) {
-            $builder->where("status", 1);
-        }]);
+        $get = new Get(\App\Model\Commodity::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setWhere($map);
+        $get->setOrderBy(...$this->query->getOrderBy($map, "id", "asc"));
 
-        //商品总盈利
-        $queryTemplateEntity->setWithCount(['order as order_all_amount' => function (Builder $relation) {
-            $relation->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_all_amount"));
-        }]);
-        //过去7天内盈利
-        $queryTemplateEntity->setWithCount(['order as order_week_amount' => function (Builder $relation) {
-            $relation->whereBetween('create_time', [Date::weekDay(1, Date::TYPE_START), Date::weekDay(7, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_week_amount"));
-        }]);
-        //昨日盈利
-        $queryTemplateEntity->setWithCount(['order as order_yesterday_amount' => function (Builder $relation) {
-            $relation->whereBetween('create_time', [Date::calcDay(-1), Date::calcDay()])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_yesterday_amount"));
-        }]);
-        //今日盈利
-        $queryTemplateEntity->setWithCount(['order as order_today_amount' => function (Builder $relation) {
-            $relation->whereBetween('create_time', [Date::calcDay(), Date::calcDay(1)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_today_amount"));
-        }]);
-
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-
-        $clientUrl = Client::getUrl();
-        foreach ($data['data'] as $key => $val) {
-            $url = $clientUrl;
-            if ($val['owner'] && $val['owner']['business']) {
-
-                if ($val['owner']['business']['subdomain']) {
-                    $url = "http://" . $val['owner']['business']['subdomain'];
-                }
-
-                if ($val['owner']['business']['topdomain']) {
-                    $url = "http://" . $val['owner']['business']['topdomain'];
+        $data = $this->query->get($get, function (Builder $builder) use ($map) {
+            if (isset($map['display_scope'])) {
+                if ($map['display_scope'] == 1) {
+                    $builder = $builder->where("owner", 0);
+                } elseif ($map['display_scope'] == 2) {
+                    if (isset($map['user_id']) && $map['user_id'] > 0) {
+                        $builder = $builder->where("owner", $map['user_id']);
+                    } else {
+                        $builder = $builder->where("owner", "!=", 0);
+                    }
                 }
             }
-            $data['data'][$key]['share_url'] = $url . "?cid={$val['category_id']}&mid={$val['id']}";
+
+            return $builder->with(['shared', 'category', 'owner' => function (Relation $relation) {
+                $relation->with(['business' => function (Relation $relation) {
+                    $relation->select(['id', 'user_id', 'subdomain', 'topdomain']);
+                }])->select(["id", "username", "avatar"]);
+            }])->withCount([
+                'card as card_count' => function (Builder $builder) {
+                    $builder->where("status", 0);
+                },
+                'card as card_success_count' => function (Builder $builder) {
+                    $builder->where("status", 1);
+                },
+                //商品总盈利
+                'order as order_all_amount' => function (Builder $relation) {
+                    $relation->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_all_amount"));
+                },
+                //过去7天内盈利
+                'order as order_week_amount' => function (Builder $relation) {
+                    $relation->whereBetween('create_time', [Date::weekDay(1, Date::TYPE_START), Date::weekDay(7, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_week_amount"));
+                },
+                //昨日盈利
+                'order as order_yesterday_amount' => function (Builder $relation) {
+                    $relation->whereBetween('create_time', [Date::calcDay(-1), Date::calcDay()])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_yesterday_amount"));
+                },
+                //今日盈利
+                'order as order_today_amount' => function (Builder $relation) {
+                    $relation->whereBetween('create_time', [Date::calcDay(), Date::calcDay(1)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_today_amount"));
+                }
+            ]);
+        });
+
+        $clientUrl = Client::getUrl();
+        foreach ($data['list'] as &$val) {
+            $url = $clientUrl;
+            if ($val['owner'] && $val['owner']['business']) {
+                if ($val['owner']['business']['subdomain']) {
+                    $url = "https://" . $val['owner']['business']['subdomain'];
+                }
+                if ($val['owner']['business']['topdomain']) {
+                    $url = "https://" . $val['owner']['business']['topdomain'];
+                }
+            }
+            $val['share_url'] = $url . "/item/{$val['id']}";
         }
 
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
-        return $json;
+
+        return $this->json(data: $data);
     }
 
 
@@ -99,6 +108,9 @@ class Commodity extends Manage
      * @param Request $request
      * @return array
      * @throws JSONException
+     * @throws NotFoundException
+     * @throws RuntimeException
+     * @throws \ReflectionException
      */
     public function save(Request $request): array
     {
@@ -148,11 +160,10 @@ class Commodity extends Manage
             Ini::toArray($map['config']);
         }
 
-        $createObjectEntity = new CreateObjectEntity();
-        $createObjectEntity->setModel(\App\Model\Commodity::class);
-        $createObjectEntity->setMap($map, ["description", "delivery_message", "shared_code", "config"]);
-        $createObjectEntity->setCreateDate("create_time");
-        $save = $this->query->createOrUpdateTemplate($createObjectEntity);
+        $save = new Save(\App\Model\Commodity::class);
+        $save->setMap($map);
+        $save->enableCreateTime();
+        $save = $this->query->save($save);
         if (!$save) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
@@ -165,13 +176,13 @@ class Commodity extends Manage
     /**
      * @return array
      * @throws JSONException
+     * @throws NotFoundException
+     * @throws \ReflectionException
      */
     public function del(): array
     {
-        $deleteBatchEntity = new DeleteBatchEntity();
-        $deleteBatchEntity->setModel(\App\Model\Commodity::class);
-        $deleteBatchEntity->setList($_POST['list']);
-        $count = $this->query->deleteTemplate($deleteBatchEntity);
+        $deleteBatchEntity = new Delete(\App\Model\Commodity::class, $_POST['list']);
+        $count = $this->query->delete($deleteBatchEntity);
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }
@@ -207,8 +218,7 @@ class Commodity extends Manage
                 $_POST[$key] = 1;
             }
         }
-        $update = \App\Model\Commodity::query()->whereIn('id', $list)->update($_POST);
-
+        \App\Model\Commodity::query()->whereIn('id', $list)->update($_POST);
         ManageLog::log($this->getManage(), "[批量更新]商品状态");
         return $this->json(200, '更新成功');
     }

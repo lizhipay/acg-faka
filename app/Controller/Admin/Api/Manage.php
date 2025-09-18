@@ -6,13 +6,16 @@ namespace App\Controller\Admin\Api;
 
 use App\Entity\CreateObjectEntity;
 use App\Entity\DeleteBatchEntity;
-use App\Entity\QueryTemplateEntity;
+use App\Entity\Query\Delete;
+use App\Entity\Query\Get;
+use App\Entity\Query\Save;
 use App\Interceptor\ManageSession;
 use App\Interceptor\Super;
 use App\Model\ManageLog;
 use App\Service\Query;
 use App\Util\Str;
 use App\Util\Validation;
+use Illuminate\Database\Eloquent\Builder;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
@@ -31,17 +34,13 @@ class Manage extends \App\Controller\Base\API\Manage
     public function data(): array
     {
         $map = $_POST;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Manage::class);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setWhereRaw("type!=0");
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
-        return $json;
+        $get = new Get(\App\Model\Manage::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setWhere($map);
+        $data = $this->query->get($get, function (Builder $builder) {
+            return $builder->where("type", "!=", 0);
+        });
+        return $this->json(data: $data);
     }
 
 
@@ -81,12 +80,10 @@ class Manage extends \App\Controller\Base\API\Manage
             throw new JSONException("账号类型有问题");
         }
 
-        $createObjectEntity = new CreateObjectEntity();
-        $createObjectEntity->setModel(\App\Model\Manage::class);
-        $createObjectEntity->setMap($map);
-        $createObjectEntity->setCreateDate("create_time");
-        $save = $this->query->createOrUpdateTemplate($createObjectEntity);
-
+        $save = new Save(\App\Model\Manage::class);
+        $save->setMap($map);
+        $save->enableCreateTime();
+        $save = $this->query->save($save);
         if (!$save) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
@@ -103,10 +100,8 @@ class Manage extends \App\Controller\Base\API\Manage
     #[Interceptor(Super::class, Interceptor::TYPE_API)]
     public function del(): array
     {
-        $deleteBatchEntity = new DeleteBatchEntity();
-        $deleteBatchEntity->setModel(\App\Model\Manage::class);
-        $deleteBatchEntity->setList($_POST['list']);
-        $count = $this->query->deleteTemplate($deleteBatchEntity);
+        $delete = new Delete(\App\Model\Manage::class, $_POST['list']);
+        $count = $this->query->delete($delete);
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }
@@ -117,7 +112,7 @@ class Manage extends \App\Controller\Base\API\Manage
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function set(): array
     {

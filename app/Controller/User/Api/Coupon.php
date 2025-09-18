@@ -6,6 +6,8 @@ namespace App\Controller\User\Api;
 use App\Controller\Base\API\User;
 use App\Entity\CreateObjectEntity;
 use App\Entity\DeleteBatchEntity;
+use App\Entity\Query\Get;
+use App\Entity\Query\Save;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\Business;
 use App\Interceptor\UserSession;
@@ -13,10 +15,12 @@ use App\Interceptor\Waf;
 use App\Service\Query;
 use App\Util\Date;
 use App\Util\Str;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
+use Kernel\Waf\Filter;
 
 #[Interceptor([Waf::class, UserSession::class, Business::class], Interceptor::TYPE_API)]
 class Coupon extends User
@@ -29,26 +33,21 @@ class Coupon extends User
      */
     public function data(): array
     {
-        $map = $_POST;
-        $map['equal-owner'] = $this->getUser()->id;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Coupon::class);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setWith([
-            'owner' => function (Relation $relation) {
-                $relation->select(["id", "username", "avatar"]);
-            },
-            'commodity' => function (Relation $relation) {
-                $relation->select(["id", "name"]);
-            }
-        ]);
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
-        return $json;
+        $get = new Get(\App\Model\Coupon::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setWhere($_POST);
+        $data = $this->query->get($get, function (Builder $builder) {
+            return $builder->where("owner", $this->getUser()->id)->with([
+                'owner' => function (Relation $relation) {
+                    $relation->select(["id", "username", "avatar"]);
+                },
+                'commodity' => function (Relation $relation) {
+                    $relation->select(["id", "name"]);
+                }
+            ]);
+        });
+
+        return $this->json(data: $data);
     }
 
 
@@ -65,30 +64,33 @@ class Coupon extends User
         $money = (float)$_POST['money']; //金额
         $num = (int)$_POST['num']; //生成数量
         $life = (int)$_POST['life']; //可用次数
-        $race = $_POST['race'];
         $mode = (int)$_POST['mode']; //抵扣模式
         $categoryId = (int)$_POST['category_id']; //分类ID
+
+        $raceGetMode = (int)$_POST['race_get_mode'];
+        $race = $raceGetMode == 0 ? $_POST['race'] : $_POST['race_input'];
+        $sku = $_POST['sku'] ?: [];
 
         $userId = $this->getUser()->id;
 
         if ($money <= 0) {
-            throw new JSONException("ಠ_ಠ请输入优惠卷价格");
+            throw new JSONException("ಠ_ಠ请输入优惠券价格");
         }
 
         if ($expireTime != '' && strtotime($expireTime) < time()) {
-            throw new JSONException("ಠ_ಠ优惠卷的过期时间不能是回忆");
+            throw new JSONException("ಠ_ಠ优惠券的过期时间不能是回忆");
         }
 
         if ($num <= 0) {
-            throw new JSONException("ಠ_ಠ最少也要生成1张优惠卷");
+            throw new JSONException("ಠ_ಠ最少也要生成1张优惠券");
         }
 
 
-        if ($commodityId != 0 && !\App\Model\Commodity::query()->where("owner", $userId)->find($commodityId)) {
+        if ($commodityId > 0 && !\App\Model\Commodity::query()->where("owner", $userId)->where("id", $commodityId)->exists()) {
             throw new JSONException("商品不存在");
         }
 
-        if ($categoryId != 0 && !\App\Model\Category::query()->where("owner", $userId)->find($categoryId)) {
+        if ($categoryId > 0 && !\App\Model\Category::query()->where("owner", $userId)->where("id", $categoryId)->exists()) {
             throw new JSONException("分类不存在");
         }
 
@@ -112,6 +114,7 @@ class Coupon extends User
             $voucher->note = $note;
             $voucher->life = $life;
             $voucher->mode = $mode;
+            $voucher->sku = $sku;
             if ($race) {
                 $voucher->race = $race;
             }
@@ -127,6 +130,34 @@ class Coupon extends User
         return $this->json(200, "生成完毕，成功:{$success}张，失败：{$error}张", ["code" => $codes, "success" => $success, "error" => $error]);
     }
 
+    /**
+     * @return array
+     * @throws JSONException
+     */
+    public function edit(): array
+    {
+        $map = $_POST;
+
+        $id = (int)$_POST['id'];
+
+        if ($id <= 0) {
+            throw new JSONException("error");
+        }
+
+        if (!\App\Model\Coupon::query()->where("owner", $this->getUser()->id)->where("id", $id)->exists()) {
+            throw new JSONException("优惠券不存在");
+        }
+
+        $save = new Save(\App\Model\Coupon::class);
+        $save->setMap($map, ["status"]);
+        $save->disableAddable();
+        $save = $this->query->save($save);
+        if (!$save) {
+            throw new JSONException("保存失败");
+        }
+
+        return $this->json(200, '（＾∀＾）保存成功');
+    }
 
     /**
      * @return array
@@ -151,7 +182,6 @@ class Coupon extends User
 
     /**
      * @return array
-     * @throws JSONException
      */
     public function del(): array
     {
@@ -167,19 +197,19 @@ class Coupon extends User
      */
     public function export(): string
     {
-        $map = $_GET;
-        $map['equal-owner'] = $this->getUser()->id;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Coupon::class);
-        $queryTemplateEntity->setWhere($map);
-        $data = $this->query->findTemplateAll($queryTemplateEntity);
+        $map = $this->request->get(flags: Filter::NORMAL);
+        $get = new Get(\App\Model\Coupon::class);
+        $get->setWhere($map);
+        $data = $this->query->get($get, function (Builder $builder) {
+            return $builder->where("owner", $this->getUser()->id);
+        });
         $card = '';
-        foreach ($data as $d) {
-            $card .= $d->code . PHP_EOL;
+        foreach ($data['list'] as $d) {
+            $card .= $d['code'] . PHP_EOL;
         }
         header('Content-Type:application/octet-stream');
         header('Content-Transfer-Encoding:binary');
-        header('Content-Disposition:attachment; filename=优惠卷导出(' . count($data) . ')-' . Date::current() . '.txt');
+        header('Content-Disposition:attachment; filename=优惠券导出(' . count($data['list']) . ')-' . Date::current() . '.txt');
         return $card;
     }
 }

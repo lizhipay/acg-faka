@@ -8,6 +8,7 @@ use App\Interceptor\ManageSession;
 use App\Util\Client;
 use App\Util\Theme;
 use Kernel\Annotation\Interceptor;
+use Kernel\Exception\RuntimeException;
 use Kernel\Exception\ViewException;
 
 #[Interceptor(ManageSession::class)]
@@ -60,18 +61,32 @@ class Config extends Manage
         ]);
     }
 
+    /**
+     * @return string
+     * @throws ViewException
+     * @throws RuntimeException
+     */
     public function sms(): string
     {
         $smsConfig = json_decode(\App\Model\Config::get("sms_config"), true);
         return $this->render("短信设置", "Config/Sms.html", ["toolbar" => $this->TOOLBAR, "sms" => $smsConfig]);
     }
 
+    /**
+     * @return string
+     * @throws ViewException
+     * @throws RuntimeException
+     */
     public function email(): string
     {
         $emailConfig = json_decode(\App\Model\Config::get("email_config"), true);
         return $this->render("邮箱设置", "Config/Email.html", ["toolbar" => $this->TOOLBAR, "email" => $emailConfig]);
     }
 
+    /**
+     * @return string
+     * @throws ViewException
+     */
     public function other(): string
     {
         $category = \App\Model\Category::query()->where("status", 1)->where("owner", 0)->get();

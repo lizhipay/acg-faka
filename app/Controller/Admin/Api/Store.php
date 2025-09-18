@@ -5,14 +5,16 @@ namespace App\Controller\Admin\Api;
 
 
 use App\Controller\Base\API\Manage;
-use App\Entity\CreateObjectEntity;
-use App\Entity\DeleteBatchEntity;
-use App\Entity\QueryTemplateEntity;
+use App\Entity\Query\Delete;
+use App\Entity\Query\Get;
+use App\Entity\Query\Save;
 use App\Interceptor\ManageSession;
 use App\Model\ManageLog;
 use App\Model\Shared;
+use App\Service\Image;
 use App\Service\Query;
 use App\Util\Date;
+use App\Util\Ini;
 use App\Util\Str;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
@@ -30,22 +32,20 @@ class Store extends Manage
     #[Inject]
     private \App\Service\Shared $shared;
 
+    #[Inject]
+    private Image $image;
+
     /**
      * @return array
      */
     public function data(): array
     {
         $map = $_POST;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(Shared::class);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setWhere($map);
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
-        return $json;
+        $get = new Get(Shared::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setWhere($map);
+        $data = $this->query->get($get);
+        return $this->json(data: $data);
     }
 
 
@@ -76,11 +76,10 @@ class Store extends Manage
         $map['name'] = strip_tags((string)$connect['shopName']);
         $map['balance'] = (float)$connect['balance'];
 
-        $createObjectEntity = new CreateObjectEntity();
-        $createObjectEntity->setModel(Shared::class);
-        $createObjectEntity->setMap($map);
-        $createObjectEntity->setCreateDate("create_time");
-        $save = $this->query->createOrUpdateTemplate($createObjectEntity);
+        $save = new Save(Shared::class);
+        $save->setMap($map);
+        $save->enableCreateTime();
+        $save = $this->query->save($save);
         if (!$save) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
@@ -151,8 +150,7 @@ class Store extends Manage
         $items = (array)$map['items'];
         $premium = (float)$map['premium']; // 加价金额
         $premiumType = (int)$map['premium_type']; // 加价模式
-        $sharedSync = (int)$map['shared_sync'] == 0 ? 0 : 1; // 主从同步
-        $inventorySync = (int)$map['inventory_sync'] == 0 ? 0 : 1; // 数量同步
+        $imageDownload = (bool)$map['image_download'];
         $shelves = (int)$map['shelves'] == 0 ? 0 : 1; // 立即上架
 
         $shared = Shared::query()->find($storeId);
@@ -172,53 +170,56 @@ class Store extends Manage
                 $commodity->category_id = $categoryId;
                 $commodity->name = $item['name'];
                 $commodity->description = $item['description'];
-                //正则处理
-                preg_match_all('#<img src="(/.*?)"#', $commodity->description, $matchs);
 
+                //正则处理
+                preg_match_all('#<img.*?src="(/.*?)"#', $commodity->description, $matchs);
                 $list = (array)$matchs[1];
+
                 if (count($list) > 0) {
                     foreach ($list as $e) {
-                        $commodity->description = str_replace($e, $shared->domain . $e, $commodity->description);
+                        //远端图片下载
+                        if ($imageDownload) {
+                            $download = $this->image->downloadRemoteImage($shared->domain . $e);
+                            $commodity->description = str_replace($e, $download[0], $commodity->description);
+                        } else {
+                            $commodity->description = str_replace($e, $shared->domain . $e, $commodity->description);
+                        }
                     }
                 }
 
-                if ($premiumType == 0) {
-                    //普通加价
-                    $commodity->price = $item['price'] + $premium;
-                    $commodity->user_price = $item['price'] + $premium;
+                //远端cover下载
+                if ($imageDownload) {
+                    $download = $this->image->downloadRemoteImage($shared->domain . $item['cover']);
+                    $commodity->cover = $download[0];
                 } else {
-                    //百分比加价
-                    $commodity->price = $item['price'] + ($premium * $item['price']);
-                    $commodity->user_price = $item['price'] + ($premium * $item['price']);
+                    $commodity->cover = $shared->domain . $item['cover'];
                 }
 
-                $commodity->cover = $shared->domain . $item['cover'];
-                $commodity->factory_price = $item['factory_price'];
                 $commodity->status = $shelves;
                 $commodity->owner = 0;
                 $commodity->create_time = $date;
                 $commodity->api_status = 0;
                 $commodity->code = strtoupper(Str::generateRandStr(16));
-                $commodity->delivery_way = $item['delivery_way'];
+                $commodity->delivery_way = 1;
                 $commodity->contact_type = $item['contact_type'];
                 $commodity->password_status = $item['password_status'];
-                $commodity->sort = $item['sort'];
+                $commodity->sort = 0;
                 $commodity->coupon = 0;
                 $commodity->shared_id = $storeId;
                 $commodity->shared_code = $item['code'];
                 $commodity->shared_premium = $premium;
                 $commodity->shared_premium_type = $premiumType;
-                $commodity->shared_sync = $sharedSync;
-                $commodity->inventory_sync = $inventorySync;
                 $commodity->seckill_status = $item['seckill_status'];
+
                 if ($commodity->seckill_status == 1) {
                     $commodity->seckill_start_time = $item['seckill_start_time'];
                     $commodity->seckill_end_time = $item['seckill_end_time'];
                 }
 
                 $commodity->draft_status = $item['draft_status'];
+
                 if ($commodity->draft_status) {
-                    $commodity->draft_premium = $item['draft_premium'];
+                    $commodity->draft_premium = $this->shared->AdjustmentAmount($premiumType, $premium, $item['draft_premium']);
                 }
 
                 //2022/01/05新增
@@ -227,7 +228,14 @@ class Store extends Manage
                 $commodity->purchase_count = $item['purchase_count'];
                 $commodity->widget = $item['widget'];
                 $commodity->minimum = $item['minimum'];
-                $commodity->config = \App\Model\Commodity::premiumConfig((string)$item['config'], $premiumType, $premium);
+                $commodity->stock = $item['stock'];
+
+                //自动加价
+                $config = $this->shared->AdjustmentPrice((string)$item['config'], $item['price'], $item['user_price'], $premiumType, $premium);
+
+                $commodity->config = Ini::toConfig($config['config']);
+                $commodity->price = $config['price'];
+                $commodity->user_price = $config['user_price'];
 
                 $commodity->save();
                 $success++;
@@ -246,10 +254,8 @@ class Store extends Manage
      */
     public function del(): array
     {
-        $deleteBatchEntity = new DeleteBatchEntity();
-        $deleteBatchEntity->setModel(Shared::class);
-        $deleteBatchEntity->setList($_POST['list']);
-        $count = $this->query->deleteTemplate($deleteBatchEntity);
+        $deleteBatchEntity = new Delete(Shared::class, $_POST['list']);
+        $count = $this->query->delete($deleteBatchEntity);
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }

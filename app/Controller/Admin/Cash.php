@@ -7,13 +7,14 @@ namespace App\Controller\Admin;
 use App\Controller\Base\View\Manage;
 use App\Interceptor\ManageSession;
 use Kernel\Annotation\Interceptor;
+use Kernel\Exception\ViewException;
 
 #[Interceptor(ManageSession::class)]
 class Cash extends Manage
 {
     /**
      * @return string
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     public function index(): string
     {

@@ -56,7 +56,6 @@
                                        onclick="document.getElementsByClassName('wechat-input')[0].click()"
                                        style="font-size: 32px;color: #0C84D1;cursor: pointer;">&#xe681;</i>
                                 #{else}
-                                    <!--  <img class="wechat-img" src="#{$user.wechat}" style="width: 100px;cursor: pointer;"   onclick="document.getElementsByClassName('wechat-input')[0].click()">-->
                                     <div class="wx_qrcode"
                                          onclick="document.getElementsByClassName('wechat-input')[0].click()"></div>
                                 #{/if}
@@ -78,36 +77,8 @@
     </div>
 </div>
 
-<script>
-    $(function () {
-        layui.use('form', function () {
 
-            $('.wx_qrcode').qrcode({
-                render: "canvas",
-                width: 150,
-                height: 150,
-                text: "#{$user.wechat}"
-            });
-
-            User.upload(".avatar-input", res => {
-                $('input[name=avatar]').val(res.path);
-                $('.avatar-img').attr("src", res.path);
-            });
-
-            User.upload(".wechat-input", res => {
-                $('input[name=wechat]').val(res.path);
-                $('.wx_qrcode').html('<img class="wechat-img" src="' + res.path + '" style="width: 100px;cursor: pointer;"   onclick="document.getElementsByClassName(\'wechat-input\')[0].click()">');
-                $('.wx_qrcode_temp').html('<img class="wechat-img" src="' + res.path + '" style="width: 100px;cursor: pointer;"   onclick="document.getElementsByClassName(\'wechat-input\')[0].click()">');
-                layer.msg("上传完成，需要保存才会生效哦");
-            });
-
-            $('.save-data').click(function () {
-                User.$post("/user/api/security/personal", $('.form-data').serialize(), res => {
-                    layer.msg("保存成功");
-                })
-            });
-        });
-    });
-
-</script>
+#{ready("/assets/user/controller/security/personal.js" , [
+"_user_wechat" => $user.wechat
+])}
 #{include file="../Common/Footer.html"}

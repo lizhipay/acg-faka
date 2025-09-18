@@ -12,7 +12,7 @@ class Request extends Abstract\Request
         $this->_unsafe_get = $this->get = $_GET;
         $this->header = $this->parseHeader();
         $this->cookie = $_COOKIE;
-        $uri = "/" . trim($_GET['_route'] ?? "/", "/");
+        $uri = "/" . trim($_GET['s'] ?? "/", "/");
         $uris = explode(".", $uri);
         $this->uri = (string)$uris[0];
         $this->uriSuffix = $uris[1] ?? "";

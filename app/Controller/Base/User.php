@@ -19,7 +19,7 @@ abstract class User
     }
 
     /**
-     * @return \App\Model\UserGroup|null
+     * @return UserGroup|null
      */
     public function getUserGroup(): ?UserGroup
     {

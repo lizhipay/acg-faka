@@ -7,6 +7,9 @@ namespace App\Controller\Admin\Api;
 use App\Controller\Base\API\Manage;
 use App\Entity\CreateObjectEntity;
 use App\Entity\DeleteBatchEntity;
+use App\Entity\Query\Delete;
+use App\Entity\Query\Get;
+use App\Entity\Query\Save;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\ManageSession;
 use App\Interceptor\Waf;
@@ -36,17 +39,12 @@ class Pay extends Manage
     public function data(): array
     {
         $map = $_POST;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Pay::class);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setOrder("sort", "asc");
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
-        return $json;
+        $get = new Get(\App\Model\Pay::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setWhere($map);
+        $get->setOrderBy(...$this->query->getOrderBy($map, "sort", "asc"));
+        $data = $this->query->get($get);
+        return $this->json(data: $data);
     }
 
 
@@ -61,12 +59,11 @@ class Pay extends Manage
         if ($map['id'] == 1) {
             throw new JSONException("系统内置，无法操作");
         }
-        $createObjectEntity = new CreateObjectEntity();
-        $createObjectEntity->setModel(\App\Model\Pay::class);
-        $createObjectEntity->setMap($map);
-        $createObjectEntity->setCreateDate("create_time");
-        $save = $this->query->createOrUpdateTemplate($createObjectEntity);
-        if (!$save) {
+        $save = new Save(\App\Model\Pay::class);
+        $save->setMap($map);
+        $save->enableCreateTime();
+        $state = $this->query->save($save);
+        if (!$state) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
 
@@ -84,10 +81,8 @@ class Pay extends Manage
         if (in_array("1", $_POST['list'])) {
             throw new JSONException("请不要将内置支付也选中");
         }
-        $deleteBatchEntity = new DeleteBatchEntity();
-        $deleteBatchEntity->setModel(\App\Model\Pay::class);
-        $deleteBatchEntity->setList($_POST['list']);
-        $count = $this->query->deleteTemplate($deleteBatchEntity);
+        $delete = new Delete(\App\Model\Pay::class, $_POST['list']);
+        $count = $this->query->delete($delete);
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }
@@ -111,8 +106,7 @@ class Pay extends Manage
                 $plugins[$index]['icon'] = \App\Service\App::APP_URL . $appStore[$plugin["id"]]['icon'];
             }
         }
-
-        return $this->json(200, 'success', $plugins);
+        return $this->json(data: ["list" => $plugins]);
     }
 
     /**

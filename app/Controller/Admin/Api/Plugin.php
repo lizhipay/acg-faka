@@ -26,7 +26,7 @@ class Plugin extends Manage
         $path = BASE_PATH . "/app/Plugin/";
 
         $keywords = urldecode((string)$_POST['keywords']);
-        $status = $_POST['status'];
+        $status = $_POST['equal-status'];
 
         foreach ($plugins as $key => $plugin) {
             $plugins[$key]["id"] = $plugin[\App\Consts\Plugin::PLUGIN_NAME];
@@ -55,7 +55,7 @@ class Plugin extends Manage
         }
 
         $plugins = array_values($plugins);
-        return $this->json(200, 'success', $plugins);
+        return $this->json(200, 'success', ["list" => $plugins]);
     }
 
     /**
@@ -74,9 +74,6 @@ class Plugin extends Manage
         }
         $id = $map['id'];
         unset($map['id']);
-
-        hook(Hook::ADMIN_API_PLUGIN_SAVE_CONFIG, $id, $map);//12/09-重写HOOK逻辑
-        \Kernel\Util\Plugin::runHookState($id, \Kernel\Annotation\Plugin::SAVE_CONFIG, $id, $map);//2022/01/12新增插件保存配置逻辑，无需启用插件也可以hook
 
         //   $map = array_merge($map, (array));
         $plugin = \Kernel\Util\Plugin::getPlugin($id, false);
@@ -98,6 +95,9 @@ class Plugin extends Manage
         foreach ($map as $k => $v) {
             $config[$k] = is_scalar($v) ? urldecode((string)$v) : $v;
         }
+
+        hook(Hook::ADMIN_API_PLUGIN_SAVE_CONFIG, $id, $map); //12/09-重写HOOK逻辑
+        \Kernel\Util\Plugin::runHookState($id, \Kernel\Annotation\Plugin::SAVE_CONFIG, $id, $map);//2022/01/12新增插件保存配置逻辑，无需启用插件也可以hook
 
         $configFile = BASE_PATH . '/app/Plugin/' . $id . '/Config/Config.php';
         setConfig($config, $configFile);

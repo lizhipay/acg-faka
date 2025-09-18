@@ -8,12 +8,13 @@ use App\Controller\Base\View\Manage;
 use App\Interceptor\ManageSession;
 use App\Model\UserRecharge;
 use Kernel\Annotation\Interceptor;
+use Kernel\Exception\ViewException;
 
 #[Interceptor(ManageSession::class)]
 class User extends Manage
 {
     /**
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     public function index(): string
     {
@@ -37,7 +38,7 @@ class User extends Manage
 
 
     /**
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     public function group(): string
     {
@@ -45,7 +46,7 @@ class User extends Manage
     }
 
     /**
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     public function businessLevel(): string
     {
@@ -53,7 +54,7 @@ class User extends Manage
     }
 
     /**
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     public function bill(): string
     {

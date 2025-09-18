@@ -5,10 +5,15 @@ namespace App\Controller\Base\API;
 
 
 use App\Model\BusinessLevel;
+use Kernel\Annotation\Inject;
+use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
 
 abstract class User extends \App\Controller\Base\User
 {
+    #[Inject]
+    protected Request $request;
+
     /**
      * 生成JSON格式
      * @param int $code
@@ -16,7 +21,7 @@ abstract class User extends \App\Controller\Base\User
      * @param array|null $data
      * @return array
      */
-    public function json(int $code, ?string $message = null, ?array $data = []): array
+    public function json(int $code = 200, ?string $message = null, ?array $data = []): array
     {
         $json['code'] = $code;
         $message ? $json['msg'] = $message : null;
@@ -26,7 +31,7 @@ abstract class User extends \App\Controller\Base\User
 
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     protected function businessValidation(): BusinessLevel
     {

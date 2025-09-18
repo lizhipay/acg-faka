@@ -5,13 +5,14 @@ namespace App\Controller\Admin\Api;
 
 
 use App\Controller\Base\API\Manage;
-use App\Entity\QueryTemplateEntity;
+use App\Entity\Query\Get;
 use App\Interceptor\ManageSession;
 use App\Model\ManageLog;
 use App\Service\Query;
 use App\Util\Date;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Capsule\Manager as DB;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
@@ -31,26 +32,23 @@ class Cash extends Manage
     public function data(): array
     {
         $map = $_POST;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Cash::class);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setWith([
-            'user' => function (Relation $relation) {
-                $relation->select(["id", "username", "avatar", "nicename", "alipay", "wechat"]);
-            }
-        ]);
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
-        return $json;
+        $get = new Get(\App\Model\Cash::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setWhere($map);
+        $data = $this->query->get($get, function (Builder $builder) {
+            return $builder->with([
+                'user' => function (Relation $relation) {
+                    $relation->select(["id", "username", "avatar", "nicename", "alipay", "wechat"]);
+                }
+            ]);
+        });
+
+        return $this->json(data: $data);
     }
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function decide(): array
     {

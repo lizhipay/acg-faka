@@ -12,17 +12,16 @@
             <!--begin::Tables Widget 9-->
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->
-                <div class="card-header border-0 pt-5">
+                <div class="card-header">
                     <div class="card-toolbar">
-                        <button class="btn btn-sm btn-light-primary settlement me-3"><i class="fa fa-money-bill"></i>
+                        <button class="btn btn-sm btn-light-primary settlement me-3"><i class="fa-duotone fa-regular fa-money-bill-transfer"></i>
                             一键自动结算
                         </button>
                     </div>
                 </div>
                 <!--end::Header-->
                 <div class="card-body py-3">
-                    <form class="search-query"></form>
-                    <table id="cash" lay-filter="cash"></table>
+                    <table id="cash-table"></table>
                 </div>
             </div>
 
@@ -33,42 +32,6 @@
     <!--end::Post-->
 </div>
 <!--end::Content-->
-
-
-<div style="display: none" class="more-modal">
-    <div style="padding: 10px;" class="more-table">
-        <table class="layui-table">
-            <tbody>
-            <tr>
-                <td colspan="2" style="text-align: center;"><img src="[avatar]"
-                                                                 style="height: 80px;width:80px;border-radius: 100%;box-shadow: 1px 1px 10px 1px #ed9b9bb3;">
-                </td>
-            </tr>
-            <tr>
-                <td>提现用户</td>
-                <td>[username]</td>
-            </tr>
-            <tr>
-                <td>提现金额</td>
-                <td>[amount]</td>
-            </tr>
-            <tr>
-                <td>收款方式</td>
-                <td>[card]</td>
-            </tr>
-            <tr>
-                <td>收款人</td>
-                <td>[nicename]</td>
-            </tr>
-            <tr>
-                <td>收款账号</td>
-                <td>[account]</td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
-
-</div>
 
 <script>
 
@@ -180,8 +143,8 @@
                             if (item.status != 0) {
                                 return '-';
                             }
-                            let html = '<button type="button"  class="btn btn-icon btn-light-success btn-sm me-1 success"><i class="fas fa-check"></i></button> ';
-                            html += '<button type="button"  class="btn btn-icon btn-light-danger btn-sm me-1 error"><i class="fas fa-times"></i></button> ';
+                            let html = '<button type="button"  class="btn btn-icon btn-light-success btn-sm me-1 success"><i class="fa-duotone fa-regular fa-circle-check"></i></button> ';
+                            html += '<button type="button"  class="btn btn-icon btn-light-danger btn-sm me-1 error"><i class="fa-duotone fa-regular fa-circle-exclamation"></i></button> ';
                             return html;
                         },
                         events: {
@@ -286,5 +249,5 @@
 
     });
 </script>
-
+#{ready("/assets/admin/controller/user/cash.js")}
 #{include file="../Footer.html"}

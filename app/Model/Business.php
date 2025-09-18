@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Model;
 
 
+use App\Util\Client;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -37,12 +38,21 @@ class Business extends Model
     protected $casts = ['id' => 'integer', 'user_id' => 'integer', 'master_display' => 'integer'];
 
     /**
-     * @param string $domain
-     * @return \App\Model\Business|mixed
+     * @return Business|mixed
      */
-    public static function get(string $domain): ?Business
+    public static function get(): ?Business
     {
+        $domain = Client::getDomain();
         return self::query()->where("subdomain", $domain)->first() ?? self::query()->where("topdomain", $domain)->first();
+    }
+
+    /**
+     * @return bool
+     */
+    public static function state(): bool
+    {
+        $domain = Client::getDomain();
+        return self::query()->where("subdomain", $domain)->exists() || self::query()->where("topdomain", $domain)->exists();
     }
 
 

@@ -1,4 +1,119 @@
 #{include file="../Header.html"}
+#{js("/assets/static/echarts.min.js")}
+<style>
+    /* 响应式优化样式 */
+    @media (max-width: 576px) {
+        .card-body {
+            padding: 1rem !important;
+        }
+
+        .fs-4 {
+            font-size: 1.25rem !important;
+        }
+
+        .card-title h6 {
+            font-size: 0.75rem !important;
+        }
+    }
+
+    /* 悬停效果 */
+    .hover-shadow:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+
+    /* 加载动画 */
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    .loading-pulse {
+        animation: pulse 1.5s infinite;
+    }
+
+    /* 卡片图标容器 */
+    .icon-container {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 渐变背景 */
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #ffeeeb 0%, #ffffff 100%);
+    }
+
+    /* 用户信息卡片样式 */
+    .user-info-card {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .user-info-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+        background-size: 200% 100%;
+        animation: gradient-shift 3s ease infinite;
+    }
+
+    @keyframes gradient-shift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* 信息项悬停效果 */
+    .info-item {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .info-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background-color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    /* 移动端优化 */
+    @media (max-width: 768px) {
+        .container-fluid {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+
+        .row.g-4 {
+            --bs-gutter-x: 0.5rem;
+            --bs-gutter-y: 0.5rem;
+        }
+
+        .card {
+            margin-bottom: 0.5rem;
+        }
+
+        /* 移动端用户信息卡片优化 */
+        .user-info-card .bg-gradient-primary {
+            padding: 1rem !important;
+        }
+
+        .user-info-card .p-4 {
+            padding: 1rem !important;
+        }
+    }
+</style>
 
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
@@ -10,521 +125,391 @@
     <div class="post d-flex flex-column-fluid">
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
-            <div class="row">
-                <div class="col-4">
-                    <!--begin::Tasks-->
-                    <div class="card card-flush h-lg-100">
-                        <!--begin::Card header-->
-                        <div class="card-header mt-6">
-                            <!--begin::Card title-->
-                            <div class="card-title flex-column">
-                                <h3 class="fw-bolder mb-1" style="color: #e6a0ef;">官方公告</h3>
+            <div class="row g-4">
+                <!-- 官方公告卡片 - 独占左侧 -->
+                <div class="col-12 col-lg-3">
+                    <div class="card card-flush h-100 shadow-sm border-0">
+                        <div class="card-header border-0">
+                            <div class="card-title">
+                                <h3 class="mb-0 fw-bold text-primary d-flex align-items-center">
+                                    <i class="fa-duotone fa-regular fa-bullhorn fs-3 me-2"></i>
+                                    <span class="d-none d-sm-inline">官方公告</span>
+                                    <span class="d-sm-none">公告</span>
+                                </h3>
                             </div>
-                            <!--end::Card title-->
                         </div>
-                        <!--end::Card header-->
-                        <!--begin::Card body-->
-                        <div class="card-body d-flex flex-column mb-9 p-9 pt-3 ad-html">
+                        <div class="card-body p-4 ad-html">
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-spinner fa-spin fs-2"></i>
+                                <div class="mt-2">加载中...</div>
+                            </div>
                         </div>
-                        <!--end::Card body-->
                     </div>
-                    <!--end::Tasks-->
                 </div>
 
-                <div class="col-8">
-                    <!--begin::Navbar-->
-                    <div class="card mb-6">
-                        <div class="card-body pt-9 pb-0">
-                            <!--begin::Details-->
-                            <div class="d-flex flex-wrap flex-sm-nowrap">
-                                <!--begin: Pic-->
-                                <div class="me-7 mb-4">
-                                    <div class="symbol  symbol-fixed position-relative">
-                                        <img src="#{if $user.avatar}#{$user.avatar}#{else}/favicon.ico#{/if}"
-                                             alt="image"/>
-                                        <div class="position-absolute translate-middle bottom-0 start-100 mb-6 bg-success rounded-circle border border-4 border-white h-20px w-20px"></div>
+                <!-- 主要内容区域 -->
+                <div class="col-12 col-lg-9">
+                    <!-- 用户信息卡片 - 重新设计 -->
+                    <div class="card mb-4 shadow-sm border-0 overflow-hidden user-info-card">
+                        <!-- 背景装饰 -->
+                        <div class="position-absolute top-0 start-0 w-100 h-100 bg-gradient-primary opacity-10"></div>
+
+                        <div class="card-body p-0 position-relative">
+                            <!-- 顶部信息栏 -->
+                            <div class="bg-gradient-primary text-white p-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div class="position-relative me-3">
+                                            <img src="#{if $user.avatar}#{$user.avatar}#{else}/favicon.ico#{/if}"
+                                                 alt="用户头像"
+                                                 class="rounded-circle border-3 border-white shadow-sm"
+                                                 style="width: 42px; height: 42px; object-fit: cover;"/>
+                                            <div class="position-absolute bottom-0 end-0 bg-success rounded-circle border border-2 border-white"
+                                                 style="width: 16px; height: 16px;"></div>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1 fw-bold fs-4 text-danger">#{$user.nickname}</h5>
+                                            <div class="d-flex align-items-center opacity-75">
+                                                <span class="small text-primary"><i class="fa-duotone fa-regular fa-envelope text-primary"></i> #{$user.email}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex">
+                                        <a href="/admin/manage/set" class="btn btn-sm btn-light btn-outline-light">
+                                            <i class="fa-duotone fa-regular fa-user-pen me-1"></i>
+                                            <span class="d-none d-sm-inline">编辑资料</span>
+                                            <span class="d-sm-none">编辑</span>
+                                        </a>
                                     </div>
                                 </div>
-                                <!--end::Pic-->
-                                <!--begin::Info-->
-                                <div class="flex-grow-1">
-                                    <!--begin::Title-->
-                                    <div class="d-flex justify-content-between align-items-start flex-wrap mb-2">
-                                        <!--begin::User-->
-                                        <div class="d-flex flex-column">
-                                            <!--begin::Name-->
-                                            <div class="d-flex align-items-center mb-2">
-                                                <span class="text-gray-900 text-hover-primary fs-2 fw-bolder me-1">#{$user.nickname}</span>
-                                            </div>
-                                            <!--end::Name-->
-                                            <!--begin::Info-->
-                                            <div class="d-flex flex-wrap fw-bold fs-6 mb-1 pe-2">
-                                        <span class="d-flex align-items-center text-gray-400 text-hover-primary mb-2">
-                                            <span class="svg-icon svg-icon-4 me-1">
-																<svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                                                     height="24" viewBox="0 0 24 24" fill="none">
-																	<path opacity="0.3"
-                                                                          d="M21 19H3C2.4 19 2 18.6 2 18V6C2 5.4 2.4 5 3 5H21C21.6 5 22 5.4 22 6V18C22 18.6 21.6 19 21 19Z"
-                                                                          fill="black"/>
-																	<path d="M21 5H2.99999C2.69999 5 2.49999 5.10005 2.29999 5.30005L11.2 13.3C11.7 13.7 12.4 13.7 12.8 13.3L21.7 5.30005C21.5 5.10005 21.3 5 21 5Z"
-                                                                          fill="black"/>
-																</svg>
-											</span>
-                                            <!--end::Svg Icon-->#{$user.email} </span>
-                                            </div>
-                                            <div class="d-flex flex-wrap fw-bold fs-6 pe-2">
-                                                <span class="d-flex align-items-center text-gray-400 text-hover-primary mb-2">
-                                                   <i class="fas fa-map-marker-alt text-success"></i> <span class="mx-1 text-success fs-10">本次登录IP->#{$user.login_ip}</span>
-                                                    ·<span class="mx-1 text-danger fs-10">上次登录IP->#{if $user.last_login_ip}#{$user.last_login_ip}(#{$user.last_login_time})#{else} - #{/if}</span>
-                                                </span>
-                                            </div>
-
-                                            <!--end::Info-->
-                                        </div>
-                                        <!--end::User-->
-                                        <!--begin::Actions-->
-                                        <div class="d-flex my-4">
-                                            <a href="/admin/manage/set" class="btn btn-sm btn-light-primary me-3"><i
-                                                        class="fas fa-pen-square"></i> 修改资料</a>
-
-                                        </div>
-                                        <!--end::Actions-->
-                                    </div>
-                                    <!--end::Title-->
-
-                                </div>
-                                <!--end::Info-->
                             </div>
-                            <!--end::Details-->
+
+                            <!-- 详细信息区域 -->
+                            <div class="p-4">
+                                <div class="row g-3">
+                                    <!-- 本次登录IP -->
+                                    <div class="col-12 col-sm-6">
+                                        <div class="d-flex align-items-center p-3 rounded bg-light bg-opacity-50 info-item">
+                                            <div class="flex-shrink-0 me-3">
+                                                <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                     style="width: 40px; height: 40px;">
+                                                    <i class="fa-duotone fa-regular fa-location-dot text-success"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="text-muted small mb-1">本次登录IP</div>
+                                                <div class="fw-medium text-success">#{$user.login_ip}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 上次登录信息 -->
+                                    <div class="col-12 col-sm-6">
+                                        <div class="d-flex align-items-center p-3 rounded bg-light bg-opacity-50 info-item">
+                                            <div class="flex-shrink-0 me-3">
+                                                <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                     style="width: 40px; height: 40px;">
+                                                    <i class="fa-duotone fa-regular fa-clock text-warning"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="text-muted small mb-1">上次登录</div>
+                                                <div class="fw-medium">
+                                                    #{if $user.last_login_ip}
+                                                        <div class="text-warning">#{$user.last_login_ip}</div>
+                                                        <div class="text-muted small">#{$user.last_login_time}</div>
+                                                    #{else}
+                                                        <div class="text-muted">暂无记录</div>
+                                                    #{/if}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                </div>
+
+                            </div>
                         </div>
                     </div>
-                    <!--end::Navbar-->
-                    <!--begin::Toolbar-->
-                    <div class="d-flex flex-wrap flex-stack mb-6">
-                        <!--begin::Controls-->
-                        <div class="d-flex align-items-center my-2">
-                            <!--begin::Select wrapper-->
-                            <div class="w-100px me-5">
-                                <!--begin::Select-->
-                                <select name="status"
-                                        class="form-select form-select-white form-select-sm dashboard-data-type">
-                                    <option value="0" selected="selected">今日数据</option>
-                                    <option value="1">昨日数据</option>
-                                    <option value="2">本周数据</option>
-                                    <option value="3">本月数据</option>
-                                    <option value="4">所有数据</option>
-                                </select>
-                                <!--end::Select-->
-                            </div>
-                        </div>
-                        <!--end::Controls-->
-                    </div>
-                    <!--end::Toolbar-->
-                    <!--begin::Row-->
-                    <div class="row g-6 g-xl-9">
-                        <!--begin::Col-->
-                        <div class="col-sm-6 col-xl-3">
-                            <!--begin::Card-->
-                            <div class="card h-100">
-                                <!--begin::Card header-->
-                                <div class="card-header flex-nowrap border-0 pt-9">
-                                    <!--begin::Card title-->
-                                    <div class="card-title m-0">
-                                        <!--begin::Icon-->
-                                        <div class="symbol symbol-45px w-45px bg-light me-5">
-                                            <i class="fas fa-shopping-bag p-3" style="font-size: 26px;"></i>
-                                        </div>
-                                        <!--end::Icon-->
-                                        <!--begin::Title-->
-                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">交易金额</a>
-                                        <!--end::Title-->
-                                    </div>
-                                    <!--end::Card title-->
-                                </div>
-                                <!--end::Card header-->
-                                <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
-                                    <!--begin::Heading-->
-                                    <div class="fs-2hx fw-bolder mb-3 turnover" style="color: #f1a6b4;">...</div>
-                                    <!--end::Heading-->
-                                </div>
-                                <!--end::Card body-->
-                            </div>
-                            <!--end::Card-->
-                        </div>
-                        <!--end::Col-->
-                        <!--begin::Col-->
-                        <div class="col-sm-6 col-xl-3">
-                            <!--begin::Card-->
-                            <div class="card h-100">
-                                <!--begin::Card header-->
-                                <div class="card-header flex-nowrap border-0 pt-9">
-                                    <!--begin::Card title-->
-                                    <div class="card-title m-0">
-                                        <!--begin::Icon-->
-                                        <div class="symbol symbol-45px w-45px bg-light me-5">
-                                            <i class="fas fa-chart-pie p-3" style="font-size: 26px;"></i>
-                                        </div>
-                                        <!--end::Icon-->
-                                        <!--begin::Title-->
-                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">订单</a>
-                                        <!--end::Title-->
-                                    </div>
-                                    <!--end::Card title-->
-                                </div>
-                                <!--end::Card header-->
-                                <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
-                                    <!--begin::Heading-->
-                                    <div class="fs-2hx fw-bolder mb-3 order_num" style="color: #f1a6b4;">...</div>
-                                    <!--end::Heading-->
-                                </div>
-                                <!--end::Card body-->
-                            </div>
-                            <!--end::Card-->
-                        </div>
-                        <!--end::Col-->
-                        <!--begin::Col-->
-                        <div class="col-sm-6 col-xl-3">
-                            <!--begin::Card-->
-                            <div class="card h-100">
-                                <!--begin::Card header-->
-                                <div class="card-header flex-nowrap border-0 pt-9">
-                                    <!--begin::Card title-->
-                                    <div class="card-title m-0">
-                                        <!--begin::Icon-->
-                                        <div class="symbol symbol-45px w-45px bg-light me-5">
-                                            <i class="fas fa-chart-pie p-3" style="font-size: 26px;"></i>
-                                        </div>
-                                        <!--end::Icon-->
-                                        <!--begin::Title-->
-                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">盈利</a>
-                                        <!--end::Title-->
-                                    </div>
-                                    <!--end::Card title-->
-                                </div>
-                                <!--end::Card header-->
-                                <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
-                                    <!--begin::Heading-->
-                                    <div class="fs-2hx fw-bolder mb-3 order_rent" style="color: #f1a6b4;">...</div>
-                                    <!--end::Heading-->
-                                </div>
-                                <!--end::Card body-->
-                            </div>
-                            <!--end::Card-->
-                        </div>
-                        <!--end::Col-->
-                        <!--begin::Col-->
-                        <div class="col-sm-6 col-xl-3">
-                            <!--begin::Card-->
-                            <div class="card h-100">
-                                <!--begin::Card header-->
-                                <div class="card-header flex-nowrap border-0 pt-9">
-                                    <!--begin::Card title-->
-                                    <div class="card-title m-0">
-                                        <!--begin::Icon-->
-                                        <div class="symbol symbol-45px w-45px bg-light me-5">
-                                            <i class="fas fa-donate p-3" style="font-size: 26px;"></i>
-                                        </div>
-                                        <!--end::Icon-->
-                                        <!--begin::Title-->
-                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">手续费</a>
-                                        <!--end::Title-->
-                                    </div>
-                                    <!--end::Card title-->
-                                </div>
-                                <!--end::Card header-->
-                                <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
-                                    <!--begin::Heading-->
-                                    <div class="fs-2hx fw-bolder mb-3 cost" style="color: #f1a6b4;">...</div>
-                                    <!--end::Heading-->
-                                </div>
-                                <!--end::Card body-->
-                            </div>
-                            <!--end::Card-->
-                        </div>
-                        <!--end::Col-->
-                        <!--begin::Col-->
-                        <div class="col-sm-6 col-xl-3">
-                            <!--begin::Card-->
-                            <div class="card h-100">
-                                <!--begin::Card header-->
-                                <div class="card-header flex-nowrap border-0 pt-9">
-                                    <!--begin::Card title-->
-                                    <div class="card-title m-0">
-                                        <!--begin::Icon-->
-                                        <div class="symbol symbol-45px w-45px bg-light me-5">
-                                            <i class="fas fa-laptop-house p-3" style="font-size: 26px;"></i>
-                                        </div>
-                                        <!--end::Icon-->
-                                        <!--begin::Title-->
-                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">子站</a>
-                                        <!--end::Title-->
-                                    </div>
-                                    <!--end::Card title-->
-                                </div>
-                                <!--end::Card header-->
-                                <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
-                                    <!--begin::Heading-->
-                                    <div class="fs-2hx fw-bolder mb-3 business" style="color: #f1a6b4;">...</div>
-                                    <!--end::Heading-->
-                                </div>
-                                <!--end::Card body-->
-                            </div>
-                            <!--end::Card-->
-                        </div>
-                        <!--end::Col-->
-                        <!--begin::Col-->
-                        <div class="col-sm-6 col-xl-3">
-                            <!--begin::Card-->
-                            <div class="card h-100">
-                                <!--begin::Card header-->
-                                <div class="card-header flex-nowrap border-0 pt-9">
-                                    <!--begin::Card title-->
-                                    <div class="card-title m-0">
-                                        <!--begin::Icon-->
-                                        <div class="symbol symbol-45px w-45px bg-light me-5">
-                                            <i class="fab fa-sellcast p-3" style="font-size: 26px;"></i>
-                                        </div>
-                                        <!--end::Icon-->
-                                        <!--begin::Title-->
-                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">未处理提现</a>
-                                        <!--end::Title-->
-                                    </div>
-                                    <!--end::Card title-->
-                                </div>
-                                <!--end::Card header-->
-                                <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
-                                    <!--begin::Heading-->
-                                    <div class="fs-2hx fw-bolder mb-3 cash_status_0" style="color: #f1a6b4;">...</div>
-                                    <!--end::Heading-->
-                                </div>
-                                <!--end::Card body-->
-                            </div>
-                            <!--end::Card-->
-                        </div>
-                        <!--end::Col-->
-                        <!--begin::Col-->
-                        <div class="col-sm-6 col-xl-3">
-                            <!--begin::Card-->
-                            <div class="card h-100">
-                                <!--begin::Card header-->
-                                <div class="card-header flex-nowrap border-0 pt-9">
-                                    <!--begin::Card title-->
-                                    <div class="card-title m-0">
-                                        <!--begin::Icon-->
-                                        <div class="symbol symbol-45px w-45px bg-light me-5">
-                                            <i class="fas fa-funnel-dollar p-3" style="font-size: 26px;"></i>
-                                        </div>
-                                        <!--end::Icon-->
-                                        <!--begin::Title-->
-                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">成功提现金额</a>
-                                        <!--end::Title-->
-                                    </div>
-                                    <!--end::Card title-->
-                                </div>
-                                <!--end::Card header-->
-                                <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
-                                    <!--begin::Heading-->
-                                    <div class="fs-2hx fw-bolder mb-3 cash_money_status_1" style="color: #f1a6b4;">...
-                                    </div>
-                                    <!--end::Heading-->
-                                </div>
-                                <!--end::Card body-->
-                            </div>
-                            <!--end::Card-->
-                        </div>
-                        <!--end::Col-->
-                        <!--begin::Col-->
-                        <div class="col-sm-6 col-xl-3">
-                            <!--begin::Card-->
-                            <div class="card h-100">
-                                <!--begin::Card header-->
-                                <div class="card-header flex-nowrap border-0 pt-9">
-                                    <!--begin::Card title-->
-                                    <div class="card-title m-0">
-                                        <!--begin::Icon-->
-                                        <div class="symbol symbol-45px w-45px bg-light me-5">
-                                            <i class="fas fa-user-plus p-3" style="font-size: 26px;"></i>
-                                        </div>
-                                        <!--end::Icon-->
-                                        <!--begin::Title-->
-                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">注册用户</a>
-                                        <!--end::Title-->
-                                    </div>
-                                    <!--end::Card title-->
-                                </div>
-                                <!--end::Card header-->
-                                <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
-                                    <!--begin::Heading-->
-                                    <div class="fs-2hx fw-bolder mb-3 user_register_num" style="color: #f1a6b4;">...
-                                    </div>
-                                    <!--end::Heading-->
-                                </div>
-                                <!--end::Card body-->
-                            </div>
-                            <!--end::Card-->
-                        </div>
-                        <!--end::Col-->
-                        <!--begin::Col-->
-                        <div class="col-sm-6 col-xl-3">
-                            <!--begin::Card-->
-                            <div class="card h-100">
-                                <!--begin::Card header-->
-                                <div class="card-header flex-nowrap border-0 pt-9">
-                                    <!--begin::Card title-->
-                                    <div class="card-title m-0">
-                                        <!--begin::Icon-->
-                                        <div class="symbol symbol-45px w-45px bg-light me-5">
-                                            <i class="fas fa-clock p-3" style="font-size: 26px;"></i>
-                                        </div>
-                                        <!--end::Icon-->
-                                        <!--begin::Title-->
-                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">打卡用户</a>
-                                        <!--end::Title-->
-                                    </div>
-                                    <!--end::Card title-->
-                                </div>
-                                <!--end::Card header-->
-                                <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
-                                    <!--begin::Heading-->
-                                    <div class="fs-2hx fw-bolder mb-3 user_login_num" style="color: #f1a6b4;">...</div>
-                                    <!--end::Heading-->
-                                </div>
-                                <!--end::Card body-->
-                            </div>
-                            <!--end::Card-->
-                        </div>
-                        <!--end::Col-->
-                        <!--begin::Col-->
-                        <div class="col-sm-6 col-xl-3">
-                            <!--begin::Card-->
-                            <div class="card h-100">
-                                <!--begin::Card header-->
-                                <div class="card-header flex-nowrap border-0 pt-9">
-                                    <!--begin::Card title-->
-                                    <div class="card-title m-0">
-                                        <!--begin::Icon-->
-                                        <div class="symbol symbol-45px w-45px bg-light me-5">
-                                            <i class="fas fa-hand-holding-usd p-3" style="font-size: 26px;"></i>
-                                        </div>
-                                        <!--end::Icon-->
-                                        <!--begin::Title-->
-                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">充值金额</a>
-                                        <!--end::Title-->
-                                    </div>
-                                    <!--end::Card title-->
-                                </div>
-                                <!--end::Card header-->
-                                <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
-                                    <!--begin::Heading-->
-                                    <div class="fs-2hx fw-bolder mb-3 recharge_amount" style="color: #f1a6b4;">...</div>
-                                    <!--end::Heading-->
-                                </div>
-                                <!--end::Card body-->
-                            </div>
-                            <!--end::Card-->
-                        </div>
-                        <!--end::Col-->
 
-                        <!--begin::Col-->
-                        <div class="col-sm-6 col-xl-3">
-                            <!--begin::Card-->
-                            <div class="card h-100">
-                                <!--begin::Card header-->
-                                <div class="card-header flex-nowrap border-0 pt-9">
-                                    <!--begin::Card title-->
-                                    <div class="card-title m-0">
-                                        <!--begin::Icon-->
-                                        <div class="symbol symbol-45px w-45px bg-light me-5">
-                                            <i class="fab fa-amazon-pay p-3" style="font-size: 26px;"></i>
-                                        </div>
-                                        <!--end::Icon-->
-                                        <!--begin::Title-->
-                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">非余额交易</a>
-                                        <!--end::Title-->
-                                    </div>
-                                    <!--end::Card title-->
-                                </div>
-                                <!--end::Card header-->
-                                <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
-                                    <!--begin::Heading-->
-                                    <div class="fs-2hx fw-bolder mb-3 online_amout" style="color: #f1a6b4;">...</div>
-                                    <!--end::Heading-->
-                                </div>
-                                <!--end::Card body-->
-                            </div>
-                            <!--end::Card-->
+                    <!-- 数据筛选器 -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex align-items-center">
+                            <select name="status" class="form-select form-select-sm dashboard-data-type" style="width: auto;">
+                                <option value="0" selected="selected">今日数据</option>
+                                <option value="1">昨日数据</option>
+                                <option value="2">本周数据</option>
+                                <option value="3">本月数据</option>
+                                <option value="4">所有数据</option>
+                            </select>
                         </div>
-                        <!--end::Col-->
-
-                        <!--begin::Col-->
-                        <div class="col-sm-6 col-xl-3">
-                            <!--begin::Card-->
-                            <div class="card h-100">
-                                <!--begin::Card header-->
-                                <div class="card-header flex-nowrap border-0 pt-9">
-                                    <!--begin::Card title-->
-                                    <div class="card-title m-0">
-                                        <!--begin::Icon-->
-                                        <div class="symbol symbol-45px w-45px bg-light me-5">
-                                            <i class="fas fa-yen-sign p-3"  style="font-size: 26px;"></i>
-                                        </div>
-                                        <!--end::Icon-->
-                                        <!--begin::Title-->
-                                        <a class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">推广返利</a>
-                                        <!--end::Title-->
-                                    </div>
-                                    <!--end::Card title-->
-                                </div>
-                                <!--end::Card header-->
-                                <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column px-9 pt-6 pb-8">
-                                    <!--begin::Heading-->
-                                    <div class="fs-2hx fw-bolder mb-3 rebate" style="color: #f1a6b4;">...</div>
-                                    <!--end::Heading-->
-                                </div>
-                                <!--end::Card body-->
-                            </div>
-                            <!--end::Card-->
-                        </div>
-                        <!--end::Col-->
                     </div>
-                    <!--end::Row-->
+
+                    <!-- 统计卡片网格 -->
+                    <div class="row g-3 g-sm-4 mb-4">
+                        <!-- 交易金额 -->
+                        <div class="col-6 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                <div class="card-body p-3 p-sm-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="fa-duotone fa-regular fa-circle-dollar text-primary" style="font-size: 20px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0 text-muted small">交易金额</h6>
+                                        </div>
+                                    </div>
+                                    <div class="turnover fw-bold fs-4 text-primary">...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 订单 -->
+                        <div class="col-6 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                <div class="card-body p-3 p-sm-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="fa-duotone fa-regular fa-chart-pie-simple-circle-dollar text-success" style="font-size: 20px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0 text-muted small">订单</h6>
+                                        </div>
+                                    </div>
+                                    <div class="order_num fw-bold fs-4 text-success">...</div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- 子站 -->
+                        <div class="col-6 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                <div class="card-body p-3 p-sm-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="fa-duotone fa-regular fa-house-tree text-secondary" style="font-size: 20px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0 text-muted small">子站</h6>
+                                        </div>
+                                    </div>
+                                    <div class="business fw-bold fs-4 text-secondary">...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 未处理提现 -->
+                        <div class="col-6 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                <div class="card-body p-3 p-sm-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="fa-duotone fa-regular fa-money-bill-wave text-danger" style="font-size: 20px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0 text-muted small">未处理提现</h6>
+                                        </div>
+                                    </div>
+                                    <div class="cash_status_0 fw-bold fs-4 text-danger">...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 成功提现金额 -->
+                        <div class="col-6 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                <div class="card-body p-3 p-sm-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="fa-duotone fa-regular fa-money-bill-simple text-success" style="font-size: 20px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0 text-muted small">成功提现</h6>
+                                        </div>
+                                    </div>
+                                    <div class="cash_money_status_1 fw-bold fs-4 text-success">...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 注册用户 -->
+                        <div class="col-6 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                <div class="card-body p-3 p-sm-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="fa-duotone fa-regular fa-user-plus text-primary" style="font-size: 20px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0 text-muted small">注册用户</h6>
+                                        </div>
+                                    </div>
+                                    <div class="user_register_num fw-bold fs-4 text-primary">...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 打卡用户 -->
+                        <div class="col-6 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                <div class="card-body p-3 p-sm-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="fa-duotone fa-regular fa-person-sign text-info" style="font-size: 20px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0 text-muted small">打卡用户</h6>
+                                        </div>
+                                    </div>
+                                    <div class="user_login_num fw-bold fs-4 text-info">...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 充值金额 -->
+                        <div class="col-6 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                <div class="card-body p-3 p-sm-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="fa-duotone fa-regular fa-file-invoice-dollar text-warning" style="font-size: 20px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0 text-muted small">充值金额</h6>
+                                        </div>
+                                    </div>
+                                    <div class="recharge_amount fw-bold fs-4 text-warning">...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 第三方支付 -->
+                        <div class="col-6 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                <div class="card-body p-3 p-sm-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="fa-duotone fa-regular fa-display-chart-up-circle-dollar text-success" style="font-size: 20px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0 text-muted small">第三方支付</h6>
+                                        </div>
+                                    </div>
+                                    <div class="online_amout fw-bold fs-4 text-success">...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 推广返利 -->
+                        <div class="col-6 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                <div class="card-body p-3 p-sm-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="fa-duotone fa-regular fa-rectangle-ad text-danger" style="font-size: 20px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0 text-muted small">推广返利</h6>
+                                        </div>
+                                    </div>
+                                    <div class="divide_amount fw-bold fs-4 text-danger">...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!--分站佣金-->
+                        <div class="col-6 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                <div class="card-body p-3 p-sm-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="fa-duotone fa-regular fa-hand-holding-dollar text-primary" style="font-size: 20px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0 text-muted small">子站佣金</h6>
+                                        </div>
+                                    </div>
+                                    <div class="rebate fw-bold fs-4 text-primary">...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!--供货商手续费-->
+                        <div class="col-6 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                <div class="card-body p-3 p-sm-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="fa-duotone fa-regular fa-filter-circle-dollar text-success" style="font-size: 20px;"></i>
+
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0 text-muted small">供货手续费</h6>
+                                        </div>
+                                    </div>
+                                    <div class="cost fw-bold fs-4 text-success">...</div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                    </div>
+
+                    <!-- 图表区域 -->
+                    <div class="card card-flush border-0 shadow-sm">
+                        <div class="card-header border-0">
+                            <div class="card-title">
+                                <h3 class="fw-bold mb-0 text-primary">
+                                    <i class="fa-duotone fa-regular fa-database fs-3 text-primary"></i>
+                                    本周数据
+                                </h3>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <div id="statistics" style="height: 350px; width: 100%;"></div>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="col-12" style="margin-top: 20px;">
-                    <!--begin::Tasks-->
-                    <div class="card card-flush h-lg-100">
-                        <!--begin::Card header-->
-                        <div class="card-header mt-6">
-                            <!--begin::Card title-->
-                            <div class="card-title flex-column">
-                                <h3 class="fw-bolder mb-1" style="color: #e6a0ef;">本周数据</h3>
-                            </div>
-                            <!--end::Card title-->
-                        </div>
-                        <!--end::Card header-->
-                        <!--begin::Card body-->
-                        <div class="card-body d-flex flex-column mb-9 p-9 pt-3">
-                            <div id="statistics" style="height:380px;width: 100%;"></div>
-                        </div>
-                        <!--end::Card body-->
-                    </div>
-                    <!--end::Tasks-->
-                </div>
-
             </div>
-
         </div>
         <!--end::Container-->
     </div>
@@ -533,173 +518,5 @@
 <!--end::Content-->
 
 
-<!--begin::Item -MODEL-->
-<div class="ad-item-model" style="display: none;">
-    <div class="d-flex align-items-center position-relative mb-7">
-        <!--begin::Label-->
-        <div class="position-absolute top-0 start-0 rounded h-100 bg-secondary w-4px"></div>
-        <!--end::Label-->
-        <!--begin::Details-->
-        <div class="fw-bold ms-3">
-            <a href="[url]" [target] class="fs-6 fw-bolder text-hover-primary" style="color: #b593a4;">[title]</a>
-            <!--begin::Info-->
-            <div class="text-gray-400 mt-1">[create_time]</div>
-            <!--end::Info-->
-        </div>
-        <!--end::Details-->
-    </div>
-</div>
-<!--end::Item-->
-
-<script>
-    $.get("/admin/api/app/ad", res => {
-        if (res.code != 200) {
-            return;
-        }
-        let html = "";
-        res.data.forEach(item => {
-            html += $('.ad-item-model').html().replace("[title]", item.title).replace("[create_time]", item.create_date).replace("[url]", item.url ? item.url : "javascript:void(0)").replace("[target]", item.url ? 'target="_blank"' : '');
-        });
-        $('.ad-html').append(html);
-    });
-
-    $(function () {
-        layui.use('layer', function () {
-
-            function getDashboardData(type) {
-                let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
-                $.post("/admin/api/dashboard/data", {type: type}, res => {
-                    layer.close(loaderIndex);
-                    if (res.code == 200) {
-                        $('.turnover').text("￥" + res.data.turnover);
-                        $('.order_num').text(res.data.order_num);
-                        $('.cost').text("￥" + res.data.cost);
-                        $('.business').text(res.data.business);
-                        $('.cash_status_0').text(res.data.cash_status_0);
-                        $('.cash_money_status_1').text("￥" + res.data.cash_money_status_1);
-                        $('.user_register_num').text(res.data.user_register_num);
-                        $('.user_login_num').text(res.data.user_login_num);
-                        $('.recharge_amount').text("￥" + res.data.recharge_amount);
-                        $('.order_rent').text("￥" + res.data.rent);
-                        $('.rebate').text("￥" + res.data.rebate);
-                        $('.online_amout').text("￥" + res.data.online_amout);
-                    }
-                });
-            }
-
-            getDashboardData(0);
-
-            $('.dashboard-data-type').change(function (e) {
-                getDashboardData(this.value);
-            });
-
-
-            $.get("/admin/api/dashboard/weekStatistics", res => {
-                if (res.code != 200) {
-                    layer.msg(res.msg);
-                    return;
-                }
-                let statistics = echarts.init(document.getElementById('statistics'));
-                let option = {
-                    tooltip: {
-                        trigger: 'axis',
-                        axisPointer: {
-                            type: 'cross',
-                            label: {
-                                backgroundColor: '#6a7985'
-                            }
-                        }
-                    },
-                    legend: {
-                        data: ['交易额', '盈利', '手续费', '提现', '充值']
-                    },
-                    toolbox: {
-                        feature: {
-                            saveAsImage: {}
-                        }
-                    },
-                    grid: {
-                        left: '1%',
-                        right: '1%',
-                        bottom: '1%',
-                        containLabel: true
-                    },
-                    xAxis: [
-                        {
-                            type: 'category',
-                            boundaryGap: false,
-                            data: res.data.week
-                        }
-                    ],
-                    yAxis: [
-                        {
-                            type: 'value'
-                        }
-                    ],
-                    series: [
-                        {
-                            name: '交易额',
-                            type: 'line',
-                            stack: 'Total',
-                            label: {
-                                show: true,
-                                position: 'top'
-                            },
-                            areaStyle: {},
-                            emphasis: {
-                                focus: 'series'
-                            },
-                            data: res.data.series.trade
-                        },
-                        {
-                            name: '手续费',
-                            type: 'line',
-                            stack: 'Total',
-                            areaStyle: {},
-                            emphasis: {
-                                focus: 'series'
-                            },
-                            data: res.data.series.cost
-                        },
-                        {
-                            name: '盈利',
-                            type: 'line',
-                            stack: 'Total',
-                            areaStyle: {},
-                            emphasis: {
-                                focus: 'series'
-                            },
-                            data: res.data.series.profit
-                        },
-                        {
-                            name: '提现',
-                            type: 'line',
-                            stack: 'Total',
-                            areaStyle: {},
-                            emphasis: {
-                                focus: 'series'
-                            },
-                            data: res.data.series.cash
-                        },
-                        {
-                            name: '充值',
-                            type: 'line',
-                            stack: 'Total',
-                            areaStyle: {},
-                            emphasis: {
-                                focus: 'series'
-                            },
-                            data: res.data.series.recharge
-                        }
-                    ]
-                };
-                statistics.setOption(option);
-            });
-
-        });
-    });
-
-
-</script>
-
+#{ready("/assets/admin/controller/dashboard/index.js")}
 #{include file="../Footer.html"}

@@ -5,15 +5,17 @@ namespace App\Controller\Admin\Api;
 
 
 use App\Controller\Base\API\Manage;
-use App\Entity\CreateObjectEntity;
-use App\Entity\DeleteBatchEntity;
-use App\Entity\QueryTemplateEntity;
+use App\Entity\Query\Delete;
+use App\Entity\Query\Get;
+use App\Entity\Query\Save;
 use App\Interceptor\ManageSession;
 use App\Model\ManageLog;
 use App\Service\Query;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
+use Kernel\Exception\NotFoundException;
+use Kernel\Exception\RuntimeException;
 
 #[Interceptor(ManageSession::class, Interceptor::TYPE_API)]
 class BusinessLevel extends Manage
@@ -23,35 +25,33 @@ class BusinessLevel extends Manage
 
     /**
      * @return array
+     * @throws NotFoundException
+     * @throws \ReflectionException
      */
     public function data(): array
     {
         $map = $_POST;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\BusinessLevel::class);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setOrder('price', 'asc');
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
-        return $json;
+        $get = new Get(\App\Model\BusinessLevel::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setWhere($map);
+        $get->setOrderBy('price', 'asc');
+        $data = $this->query->get($get);
+        return $this->json(data: $data);
     }
 
 
     /**
      * @return array
      * @throws JSONException
+     * @throws NotFoundException
+     * @throws RuntimeException
+     * @throws \ReflectionException
      */
     public function save(): array
     {
-        $map = $_POST;
-        $createObjectEntity = new CreateObjectEntity();
-        $createObjectEntity->setModel(\App\Model\BusinessLevel::class);
-        $createObjectEntity->setMap($map);
-        $save = $this->query->createOrUpdateTemplate($createObjectEntity);
+        $save = new Save(\App\Model\BusinessLevel::class);
+        $save->setMap($_POST);
+        $save = $this->query->save($save);
         if (!$save) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
@@ -64,13 +64,13 @@ class BusinessLevel extends Manage
     /**
      * @return array
      * @throws JSONException
+     * @throws NotFoundException
+     * @throws \ReflectionException
      */
     public function del(): array
     {
-        $deleteBatchEntity = new DeleteBatchEntity();
-        $deleteBatchEntity->setModel(\App\Model\BusinessLevel::class);
-        $deleteBatchEntity->setList($_POST['list']);
-        $count = $this->query->deleteTemplate($deleteBatchEntity);
+        $delete = new Delete(\App\Model\BusinessLevel::class, $_POST['list']);
+        $count = $this->query->delete($delete);
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }

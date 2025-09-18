@@ -6,6 +6,7 @@ namespace App\Model;
 
 use App\Util\Date;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use JetBrains\PhpStorm\NoReturn;
 use Kernel\Exception\JSONException;
 
@@ -40,22 +41,29 @@ class Bill extends Model
     protected $casts = ['amount' => 'float', 'balance' => 'float', 'id' => 'integer', 'owner' => 'integer', 'type' => 'integer', 'currency' => 'integer'];
 
 
-    public function owner(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function owner(): ?HasOne
     {
         return $this->hasOne(User::class, "id", "owner");
     }
 
     /**
-     * @param \App\Model\User $user
+     * @param User|int|string $user
      * @param float $amount
      * @param int $type
      * @param string $log
      * @param int $currency
      * @param bool $total
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
-    #[NoReturn] public static function create(User $user, float $amount, int $type, string $log, int $currency = 0, bool $total = true): void
+    public static function create(User|int|string $user, float $amount, int $type, string $log, int $currency = 0, bool $total = true): void
     {
+        if (is_int($user) || is_string($user)) {
+            $user = User::query()->find($user);
+            if (!$user) {
+                throw new JSONException("用户不存在");
+            }
+        }
+
         if ($currency == 0) {
             $user->balance = $type == 0 ? $user->balance - $amount : $user->balance + $amount;
 

@@ -69,6 +69,8 @@ CREATE TABLE `__PREFIX__card`  (
                                    `status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '状态：0=未出售，1=已出售，2=已锁定',
                                    `note` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '备注信息',
                                    `race` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '商品种类',
+                                   `sku` json DEFAULT NULL COMMENT 'SKU',
+                                   `draft_premium` decimal(10,2) unsigned DEFAULT NULL COMMENT '预选加价',
                                    PRIMARY KEY (`id`) USING BTREE,
                                    INDEX `owner`(`owner` ASC) USING BTREE,
                                    INDEX `commodity_id`(`commodity_id` ASC) USING BTREE,
@@ -112,9 +114,12 @@ CREATE TABLE `__PREFIX__category`  (
                                        `status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '状态：0=停用，1=启用',
                                        `hide` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '隐藏：1=隐藏，0=不隐藏',
                                        `user_level_config` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '会员配置',
+                                       `pid` int UNSIGNED DEFAULT NULL COMMENT '上级ID',
                                        PRIMARY KEY (`id`) USING BTREE,
                                        INDEX `owner`(`owner` ASC) USING BTREE,
-                                       INDEX `sort`(`sort` ASC) USING BTREE
+                                       INDEX `idx_category_pid`(`pid`) USING BTREE,
+                                       INDEX `sort`(`sort` ASC) USING BTREE,
+                                       CONSTRAINT `ibfk_category_pid_in_id` FOREIGN KEY (`pid`) REFERENCES `__PREFIX__category`(`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
 
@@ -146,6 +151,8 @@ CREATE TABLE `__PREFIX__commodity`  (
                                         `shared_id` int UNSIGNED NULL DEFAULT NULL COMMENT '共享平台ID',
                                         `shared_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '共享平台-商品代码',
                                         `shared_premium` float(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '商品加价',
+                                        `shared_stock` json DEFAULT NULL COMMENT '库存信息',
+                                        `stock` int(11) DEFAULT NULL COMMENT '库存',
   `shared_premium_type` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '加价模式',
   `seckill_status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '商品秒杀：0=关闭，1=开启',
   `seckill_start_time` datetime NULL DEFAULT NULL COMMENT '秒杀开始时间',
@@ -257,6 +264,7 @@ CREATE TABLE `__PREFIX__coupon`  (
                                      `life` int UNSIGNED NOT NULL DEFAULT 1 COMMENT '卡密使用寿命',
                                      `use_life` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '已使用次数',
                                      `race` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '商品类别',
+                                     `sku` json DEFAULT NULL COMMENT 'SKU',
                                      PRIMARY KEY (`id`) USING BTREE,
                                      UNIQUE INDEX `code`(`code` ASC) USING BTREE,
                                      INDEX `commodity_id`(`commodity_id` ASC) USING BTREE,
@@ -325,6 +333,9 @@ CREATE TABLE `__PREFIX__order`  (
                                     `race` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '商品种类',
                                     `rebate` decimal(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '返利金额',
                                     `pay_cost` decimal(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '支付接口手续费',
+                                    `sku` json DEFAULT NULL COMMENT 'SKU',
+                                    `divide_amount` decimal(10,2) unsigned DEFAULT NULL COMMENT '推广者分成金额',
+                                    `substation_user_id` int(10) unsigned DEFAULT NULL COMMENT '子站ID',
                                     `request_no` char(19) COMMENT '请求id',
                                     PRIMARY KEY (`id`) USING BTREE,
                                     UNIQUE INDEX `trade_no`(`trade_no` ASC) USING BTREE,
@@ -339,6 +350,7 @@ CREATE TABLE `__PREFIX__order`  (
                                     INDEX `card_id`(`card_id` ASC) USING BTREE,
                                     INDEX `create_time`(`create_time` ASC) USING BTREE,
                                     INDEX `delivery_status`(`delivery_status` ASC) USING BTREE,
+                                    INDEX `substation_user_id`(`substation_user_id`) USING BTREE,
                                     INDEX `coupon_id`(`coupon_id` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
@@ -473,7 +485,7 @@ CREATE TABLE `__PREFIX__user_group`  (
                                          `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
                                          `name` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '等级名称',
                                          `icon` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '等级图标',
-                                         `discount` decimal(4, 2) UNSIGNED NOT NULL COMMENT '折扣百分比',
+                                         `discount_config` TEXT DEFAULT NULL COMMENT '折扣配置',
                                          `cost` decimal(4, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '抽成比例',
                                          `recharge` decimal(14, 2) UNSIGNED NOT NULL COMMENT '累计充值(达到该等级)',
                                          PRIMARY KEY (`id`) USING BTREE,
@@ -528,5 +540,30 @@ CREATE TABLE `__PREFIX__manage_log`  (
                                          INDEX `nickname`(`nickname`) USING BTREE,
                                          INDEX `content`(`content`) USING BTREE
 ) ENGINE = MyISAM CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+DROP TABLE IF EXISTS `__PREFIX__commodity_group`;
+CREATE TABLE IF NOT EXISTS `__PREFIX__commodity_group` (
+                                                           `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `name` varchar(32) NOT NULL COMMENT '组名称',
+    `commodity_list` json DEFAULT NULL COMMENT '商品列表',
+    PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `__PREFIX__upload`;
+CREATE TABLE `__PREFIX__upload` (
+                                    `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+                                    `user_id` int(11) unsigned DEFAULT NULL COMMENT 'null=后台',
+                                    `hash` varchar(32) NOT NULL COMMENT '文件MD5',
+                                    `type` varchar(8) NOT NULL COMMENT '文件类型',
+                                    `path` varchar(255) NOT NULL COMMENT '文件路径',
+                                    `create_time` datetime NOT NULL COMMENT '上传时间',
+                                    `note` varchar(32) DEFAULT NULL COMMENT '文件备注',
+                                    PRIMARY KEY (`id`) USING BTREE,
+                                    UNIQUE KEY `hash` (`hash`) USING BTREE,
+                                    KEY `user_id` (`user_id`) USING BTREE,
+                                    KEY `type` (`type`) USING BTREE,
+                                    KEY `create_time` (`create_time`) USING BTREE,
+                                    KEY `note` (`note`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=81 DEFAULT CHARSET=utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -9,6 +9,7 @@ use App\Interceptor\ManageSession;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Context\Interface\Request;
+use Kernel\Util\Tree;
 use Kernel\Waf\Filter;
 
 /**
@@ -28,8 +29,18 @@ class Dict extends Manage
      */
     public function get(Request $request): array
     {
-        $a = htmlspecialchars_decode((string)$request->post("dict", flags: Filter::NORMAL), ENT_QUOTES);
-        @$dict = $this->dict->get($a, (string)$_POST['keywords']);
-        return $this->json(200, null, (array)$dict);
+        $dict = $this->dict->get(html_entity_decode((string)$request->get("dict", flags: Filter::NORMAL)), (string)$request->get("keywords"));
+
+
+        foreach ($dict as &$item) {
+            $item['name'] = strip_tags($item['name']);
+        }
+
+
+        if ($request->get("tree")) {
+            $dict = Tree::generate($dict, "id", "pid", "children");
+        }
+
+        return $this->json(data: $dict);
     }
 }

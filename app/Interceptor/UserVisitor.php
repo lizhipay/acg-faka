@@ -8,7 +8,6 @@ use App\Consts\User;
 use App\Util\Context;
 use App\Util\JWT;
 use Firebase\JWT\Key;
-use JetBrains\PhpStorm\NoReturn;
 use Kernel\Annotation\InterceptorInterface;
 
 /**
@@ -18,9 +17,12 @@ use Kernel\Annotation\InterceptorInterface;
  */
 class UserVisitor implements InterceptorInterface
 {
-
-    #[NoReturn] public function handle(int $type): void
+    public function handle(int $type): void
     {
+        if (isset($_GET['from']) && \App\Model\User::query()->where("id", $_GET['from'])->exists()) {
+            setcookie("promotion_from", $_GET['from'], time() + 10 * 365 * 24 * 60 * 60, "/");
+        }
+
         if (!array_key_exists(User::SESSION, $_COOKIE)) {
             return;
         }

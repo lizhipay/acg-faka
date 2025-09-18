@@ -5,19 +5,19 @@ namespace App\Controller\Admin\Api;
 
 
 use App\Controller\Base\API\Manage;
-use App\Entity\CreateObjectEntity;
-use App\Entity\DeleteBatchEntity;
-use App\Entity\QueryTemplateEntity;
+use App\Entity\Query\Delete;
+use App\Entity\Query\Get;
+use App\Entity\Query\Save;
 use App\Interceptor\ManageSession;
 use App\Model\ManageLog;
 use App\Service\Query;
 use App\Util\Date;
 use App\Util\Str;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Eloquent\Builder;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
+use Kernel\Waf\Filter;
 
 #[Interceptor(ManageSession::class, Interceptor::TYPE_API)]
 class Coupon extends Manage
@@ -31,27 +31,19 @@ class Coupon extends Manage
     public function data(): array
     {
         $map = $_POST;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Coupon::class);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setWith([
-            'owner' => function (Relation $relation) {
-                $relation->select(["id", "username", "avatar"]);
-            },
-            'commodity' => function (Relation $relation) {
-                $relation->select(["id", "name"]);
-            },
-            'category' => function (Relation $relation) {
-                $relation->select(["id", "name"]);
-            }
-        ]);
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
-        return $json;
+        $get = new Get(\App\Model\Coupon::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setWhere($map);
+
+        $data = $this->query->get($get, function (Builder $builder) {
+            return $builder->with([
+                'owner:id,username,avatar',
+                'commodity:id,name',
+                'category:id,name'
+            ]);
+        });
+
+        return $this->json(data: $data);
     }
 
 
@@ -70,7 +62,9 @@ class Coupon extends Manage
         $num = (int)$_POST['num']; //生成数量
         $life = (int)$_POST['life']; //可用次数
         $mode = (int)$_POST['mode']; //抵扣模式
-        $race = $_POST['race'];
+        $raceGetMode = (int)$_POST['race_get_mode'];
+        $race = $raceGetMode == 0 ? $_POST['race'] : $_POST['race_input'];
+        $sku = $_POST['sku'] ?: [];
 
         if ($money <= 0) {
             throw new JSONException("ಠ_ಠ请输入优惠卷价格");
@@ -103,6 +97,7 @@ class Coupon extends Manage
             $voucher->note = $note;
             $voucher->life = $life;
             $voucher->mode = $mode;
+            $voucher->sku = $sku;
             if ($race) {
                 $voucher->race = $race;
             }
@@ -126,10 +121,9 @@ class Coupon extends Manage
     public function edit(): array
     {
         $map = $_POST;
-        $createObjectEntity = new CreateObjectEntity();
-        $createObjectEntity->setModel(\App\Model\Coupon::class);
-        $createObjectEntity->setMap($map);
-        $save = $this->query->createOrUpdateTemplate($createObjectEntity);
+        $save = new Save(\App\Model\Coupon::class);
+        $save->setMap($map);
+        $save = $this->query->save($save);
         if (!$save) {
             throw new JSONException("保存失败");
         }
@@ -170,10 +164,8 @@ class Coupon extends Manage
      */
     public function del(): array
     {
-        $deleteBatchEntity = new DeleteBatchEntity();
-        $deleteBatchEntity->setModel(\App\Model\Coupon::class);
-        $deleteBatchEntity->setList($_POST['list']);
-        $count = $this->query->deleteTemplate($deleteBatchEntity);
+        $delete = new Delete(\App\Model\Coupon::class, $_POST['list']);
+        $count = $this->query->delete($delete);
         if ($count == 0) {
             throw new JSONException("没有移除任何数据");
         }
@@ -189,16 +181,15 @@ class Coupon extends Manage
      */
     public function export(): string
     {
-        $map = $_GET;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Coupon::class);
-        $queryTemplateEntity->setWhere($map);
-        $data = $this->query->findTemplateAll($queryTemplateEntity);
+        $map = $this->request->get(flags: Filter::NORMAL);
+        $get = new Get(\App\Model\Coupon::class);
+        $get->setWhere($map);
+        $data = $this->query->get($get);
+        $data = $data['list'];
         $card = '';
         foreach ($data as $d) {
-            $card .= $d->code . PHP_EOL;
+            $card .= $d['code'] . PHP_EOL;
         }
-
         ManageLog::log($this->getManage(), "[优惠卷导出]导出优惠卷，共计：" . count($data));
         header('Content-Type:application/octet-stream');
         header('Content-Transfer-Encoding:binary');

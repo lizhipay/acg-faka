@@ -7,10 +7,10 @@ namespace App\Model;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @property float $discount
  * @property int $id
  * @property string $name
  * @property float $recharge
+ * @property array $discount_config
  */
 class UserGroup extends Model
 {
@@ -32,7 +32,7 @@ class UserGroup extends Model
     /**
      * @var array
      */
-    protected $casts = ['discount' => 'float', 'id' => 'integer', 'recharge' => 'float'];
+    protected $casts = ['id' => 'integer', 'recharge' => 'float', 'discount_config' => 'json'];
 
 
     /**

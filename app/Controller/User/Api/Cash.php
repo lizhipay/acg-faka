@@ -5,16 +5,19 @@ namespace App\Controller\User\Api;
 
 
 use App\Controller\Base\API\User;
+use App\Entity\Query\Get;
 use App\Entity\QueryTemplateEntity;
 use App\Interceptor\UserSession;
 use App\Interceptor\Waf;
 use App\Model\Config;
 use App\Service\Query;
 use App\Util\Date;
+use Illuminate\Database\Eloquent\Builder;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
 use Illuminate\Database\Capsule\Manager as DB;
+use Kernel\Exception\RuntimeException;
 
 #[Interceptor([Waf::class, UserSession::class], Interceptor::TYPE_API)]
 class Cash extends User
@@ -25,7 +28,8 @@ class Cash extends User
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
+     * @throws RuntimeException
      */
     public function submit(): array
     {
@@ -106,17 +110,14 @@ class Cash extends User
      */
     public function record(): array
     {
-        $map = $_POST;
-        $map['equal-user_id'] = $this->getUser()->id;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Cash::class);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setWhere($map);
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
-        return $json;
+        $map = $this->request->post();
+        $get = new Get(\App\Model\Cash::class);
+        $get->setOrderBy("id", "desc");
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setWhere($map);
+        $data = $this->query->get($get, function (Builder $builder) {
+            return $builder->where("user_id", $this->getUser()->id);
+        });
+        return $this->json(data: $data);
     }
 }

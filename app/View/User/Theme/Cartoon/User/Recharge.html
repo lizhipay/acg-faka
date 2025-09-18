@@ -10,10 +10,9 @@
             <div class="content-body">
                 <blockquote class="elem-quote">
                     当前元气：<b style="color: #0C84D1;">#{$user.recharge}</b>，您当前用户等级：<b
-                            style="color: #0C84D1;">#{$user.group.name}</b>，购物时可以享受：<b
-                            style="color: #0C84D1;">#{$user.group.discount*100}%折扣</b>
+                            style="color: #0C84D1;">#{$user.group.name}</b>
                     #{if $groupNext}，升级到
-                        <b style="color: #8d16e3;">#{$groupNext.name}[折扣:#{$groupNext.discount*100}%]</b>
+                        <b style="color: #8d16e3;">#{$groupNext.name}</b>
                         还需要充值
                         <b style="color: #8d16e3;">¥#{$groupNext.recharge-$user.recharge}</b>
                     #{/if}
@@ -49,14 +48,13 @@
                         </div>
 
                         <div>
-                            <div class="form-header">修炼等级划分（<span style="color: #0a53be;">说明：充值/消费可获得元气，比例1:1</span>）</div>
+                            <div class="form-header">会员等级划分（<span style="color: #0a53be;">说明：充值/消费可获得元气，比例1:1</span>）</div>
                             <div class="form-body">
-                                <table class="layui-table">
+                                <table class="table table-bordered table-hover">
                                     <thead>
                                     <tr>
                                         <td>等级</td>
                                         <td>所需元气</td>
-                                        <td>购物折扣</td>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -64,15 +62,12 @@
                                         <tr>
                                             <td><img src="#{$g.icon}" style="height: 32px;"> <span class="layui-badge layui-bg-gray">#{$g.name}</span></td>
                                             <td style="color: #f68b8b;font-weight: bolder;">#{$g.recharge}</td>
-                                            <td>#{$g.discount*100}%</td>
                                         </tr>
                                     #{/foreach}
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-
-
                     </div>
                 </form>
             </div>
@@ -80,31 +75,6 @@
     </div>
 </div>
 
-<script>
-    let payId = 0;
 
-    function payClick(obj, id) {
-        User.switchElement(obj);
-        payId = id;
-    }
-
-    $(function () {
-        layui.use('layer', function () {
-            User.getPay(res => {
-                res.forEach(item => {
-                    $('.pay-list').append('<a class="button-click" onclick="payClick(this,' + item.id + ')" style="line-height: 22px;color: #db66ac;"> <img src="' + item.icon + '" class="pay-icon"> ' + item.name + '</a>');
-                });
-            });
-            $('.payButton').click(function () {
-                User.trade({
-                    pay_id: payId,
-                    amount: $('input[name=amount]').val()
-                }, res => {
-                    window.location.href = res.url;
-                });
-            });
-        });
-    });
-
-</script>
+#{ready("/assets/user/controller/user/recharge.js")}
 #{include file="../Common/Footer.html"}

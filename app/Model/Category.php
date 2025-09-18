@@ -52,7 +52,7 @@ class Category extends Model
 
 
     /**
-     * @param \App\Model\UserGroup|null $group
+     * @param UserGroup|null $group
      * @return array|null
      */
     public function getLevelConfig(?UserGroup $group): ?array

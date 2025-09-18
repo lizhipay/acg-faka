@@ -4,8 +4,9 @@ declare(strict_types=1);
 namespace App\Controller\User\Api;
 
 
+use App\Consts\Hook;
 use App\Controller\Base\API\User;
-use App\Entity\QueryTemplateEntity;
+use App\Entity\Query\Get;
 use App\Interceptor\UserVisitor;
 use App\Interceptor\Waf;
 use App\Model\Card;
@@ -18,15 +19,13 @@ use App\Service\Query;
 use App\Service\Shared;
 use App\Service\Shop;
 use App\Util\Client;
-use App\Util\FileCache;
-use App\Util\Ini;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Kernel\Annotation\Get;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
-use Kernel\Annotation\Post;
 use Kernel\Exception\JSONException;
+use Kernel\Exception\RuntimeException;
+use Kernel\Util\Decimal;
 
 #[Interceptor([Waf::class, UserVisitor::class])]
 class Index extends User
@@ -50,33 +49,32 @@ class Index extends User
     public function data(): array
     {
         $category = $this->shop->getCategory($this->getUserGroup());
-        hook(\App\Consts\Hook::USER_API_INDEX_CATEGORY_LIST, $category);
+        hook(Hook::USER_API_INDEX_CATEGORY_LIST, $category);
         return $this->json(200, "success", $category);
     }
 
     /**
-     * @param int $categoryId
      * @return array
      * @throws JSONException
+     * @throws RuntimeException
      */
-    public function commodity(#[Get] int $categoryId): array
+    public function commodity(): array
     {
         $keywords = (string)$_GET['keywords'];
         $limit = (int)$_GET['limit'];
         $page = (int)$_GET['page'];
+        $categoryId = $_GET['categoryId'];
 
-        $commodity = Commodity::query()->with(['shared' => function (Relation $relation) {
-            $relation->select(['id']);
-        }, 'owner' => function (Relation $relation) {
-            $relation->select(["id", "username", "avatar"]);
-        }, 'category' => function (Relation $relation) {
-            $relation->select(["id", "name", "icon"]);
-        }]);
+        $commodity = Commodity::query()
+            ->with(['owner' => function (Relation $relation) {
+                $relation->select(["id", "username", "avatar"]);
+            }, 'category' => function (Relation $relation) {
+                $relation->select(["id", "name", "icon"]);
+            }]);
 
-        if ($categoryId == -10) {
+        if ($categoryId == 'recommend') {
             $commodity = $commodity->where("recommend", 1);
         } elseif ($categoryId != 0) {
-            //检测分类是否启用
             $commodity = $commodity->where("category_id", $categoryId);
         }
 
@@ -84,15 +82,10 @@ class Index extends User
             $commodity = $commodity->where('name', 'like', '%' . $keywords . '%');
         }
 
-        FileCache::clearCache('shop');
-
-        $bus = \App\Model\Business::get(Client::getDomain());
+        $bus = \App\Model\Business::get();
         $userCommodityMap = []; //自定义名称的MAP
-        $master = true; //主站
 
         if ($bus) {
-            $master = false; // 否定主站
-
             //商家
             if ($bus->master_display == 0) {
                 $commodity = $commodity->where("owner", $bus->user_id);
@@ -128,29 +121,29 @@ class Index extends User
             }
         }
 
-        $commodity = $commodity->where("status", 1)->orderBy("sort", "asc");
-        if ($limit == 0) {
-            $commodity = $commodity->get([
+        $commodity = $commodity
+            ->where("status", 1)
+            ->orderBy("sort", "asc")
+            ->select([
                 'id', 'name', 'cover',
                 'status', 'delivery_way', 'price',
-                'user_price', 'inventory_hidden',
-                'shared_id', 'shared_code',
-                'level_disable', 'level_price', 'hide', 'owner', "recommend", 'category_id', 'inventory_sync'
-            ]);
+                'user_price',
+                'level_disable', 'level_price', 'hide', 'owner', "recommend", 'category_id', 'stock', 'shared_id'
+            ])
+            ->withCount(['order as order_sold' => function (Builder $relation) {
+                $relation->where("delivery_status", 1);
+            }]);
+        if ($limit == 0) {
+            $commodity = $commodity
+                ->get();
             $total = count($commodity);
             $data = $commodity->toArray();
         } else {
-            $commodity = $commodity->paginate($limit, [
-                'id', 'name', 'cover',
-                'status', 'delivery_way', 'price',
-                'user_price', 'inventory_hidden',
-                'shared_id', 'shared_code',
-                'level_disable', 'level_price', 'hide', 'owner', "recommend", 'category_id', 'inventory_sync'
-            ], "", $page);
+            $commodity = $commodity
+                ->paginate($limit, ["*"], "", $page);
             $total = $commodity->total();
             $data = $commodity->toArray()['data'];
         }
-
 
         $user = $this->getUser();
         $userGroup = $this->getUserGroup();
@@ -161,7 +154,6 @@ class Index extends User
             $cates[] = (string)$cate['id'];
         }
 
-
         //最终的商品数据遍历
         foreach ($data as $key => $val) {
             $parseGroupConfig = Commodity::parseGroupConfig($val['level_price'], $userGroup);
@@ -171,48 +163,13 @@ class Index extends User
                 continue;
             }
 
-            if ($val['shared'] && (int)$val['inventory_sync'] == 1) {
-                $shopCache = FileCache::getJsonFile("shop", $val['id'] . "_shared");
-                if (!empty($shopCache)) {
-                    $inventory = $shopCache;
-                    if ($inventory['count'] === 0 && $inventory['delivery_way'] == 0) {
-                        //隐藏商品
-                        unset($data[$key]);
-                        continue;
-                    }
-                } else {
-                    $com = Commodity::query()->find($val['id']);
-                    try {
-                        $inventory = $this->shared->inventory($com->shared, $com);
-                        FileCache::setJsonFile("shop", $val['id'] . "_shared", $inventory, 300);
-
-                        if ($inventory['count'] === 0 && $inventory['delivery_way'] == 0) {
-                            //隐藏商品
-                            unset($data[$key]);
-                            continue;
-                        }
-                    } catch (\Throwable $e) {
-                        //如果抛异常，代表此商品出问题了，
-                        FileCache::setJsonFile("shop", $val['id'] . "_shared", [
-                            "count" => 0,
-                            "delivery_way" => 0
-                        ], 300);
-                        //隐藏商品
-                        unset($data[$key]);
-                        continue;
-                    }
-                }
-                $data[$key]['card_count'] = $inventory['count'];
-                $data[$key]['delivery_way'] = $inventory['delivery_way'];
-                unset($data[$key]['shared']);
-                unset($data[$key]['shared_code']);
-            } else {
-                $data[$key]['card_count'] = Card::query()->where("status", 0)->where("commodity_id", $val['id'])->count();
+            if ($val['delivery_way'] == 0 && !$val['shared_id']) {
+                $data[$key]['stock'] = Card::query()->where("status", 0)->where("commodity_id", $val['id'])->count();
             }
 
             //如果登录后，则自动计算登录后的价格
             if ($user) {
-                $tradeAmount = $this->order->calcAmount(owner: $user->id, commodity: $commodity[$key], group: $userGroup, num: 1, disableSubstation: true);
+                $tradeAmount = $this->order->valuation(commodity: $commodity[$key], group: $userGroup);
                 $data[$key]['price'] = $tradeAmount;
                 $data[$key]['user_price'] = $tradeAmount;
             }
@@ -229,9 +186,10 @@ class Index extends User
             //分站自定义名称和价格
             if (isset($userCommodityMap[$val['id']])) {
                 $var = $userCommodityMap[$val['id']];
+
                 if ($var->premium > 0) {
-                    $data[$key]['price'] = (int)(($data[$key]['price'] + $var->premium) * 100) / 100;
-                    $data[$key]['user_price'] = (int)(($data[$key]['user_price'] + $var->premium) * 100) / 100;
+                    $data[$key]['price'] = (new Decimal($data[$key]['price'], 2))->mul($var->premium / 100)->add($data[$key]['price'])->getAmount();
+                    $data[$key]['user_price'] = (new Decimal($data[$key]['user_price'], 2))->mul($var->premium / 100)->add($data[$key]['user_price'])->getAmount();
                 }
                 if ($var->name) {
                     $data[$key]['name'] = $var->name;
@@ -240,7 +198,7 @@ class Index extends User
         }
 
         $data = array_values($data);
-        hook(\App\Consts\Hook::USER_API_INDEX_COMMODITY_LIST, $data);
+        hook(Hook::USER_API_INDEX_COMMODITY_LIST, $data);
         $json = $this->json(200, "success", $data);
         $json['total'] = $total;
         return $json;
@@ -249,152 +207,31 @@ class Index extends User
     /**
      * @param int $commodityId
      * @return array
-     * @throws JSONException
      */
-    public function commodityDetail(#[Get] int $commodityId): array
+    public function commodityDetail(int $commodityId): array
     {
-        $commodity = Commodity::query()->with(['owner' => function (Relation $relation) {
-            $relation->select(["id", "username", "avatar"]);
-        }])->find($commodityId, ["id", "name", "description",
-            "only_user", "purchase_count", "category_id", "cover", "price", "user_price",
-            "status", "owner", "delivery_way", "contact_type", "password_status", "level_price",
-            "level_disable", "coupon", "shared_id", "shared_code", "shared_premium", "shared_premium_type", "seckill_status",
-            "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden",
-            "widget", "minimum", "maximum", "shared_sync", "config"]);
-
-        if (!$commodity) {
-            throw new JSONException("商品不存在");
-        }
-
-        if ($commodity->status != 1) {
-            throw new JSONException("该商品暂未上架");
-        }
-
-        $shared = \App\Model\Shared::query()->find($commodity->shared_id);
-
-        if ($shared) {
-            $inventory = $this->shared->inventory($shared, $commodity);
-            $commodity->card = $inventory['count'];
-            $commodity->delivery_way = $inventory['delivery_way'];
-            $commodity->draft_status = $inventory['draft_status'];
-            //同步远程平台价格
-            if ($commodity->shared_sync == 1) {
-                $new = Commodity::query()->find($commodity->id);
-
-                $_premium = $commodity->shared_premium_type == 0 ? $commodity->shared_premium : sprintf("%.2f", $commodity->shared_premium * (float)$inventory['price']);
-
-                if (!$inventory['is_category'] && ($commodity->price - $_premium) != (float)$inventory['price']) {
-                    $new->price = (float)$inventory['price'] + $_premium;
-                    $commodity->price = $new->price;
-                    $new->factory_price = $inventory['factory_price'];
-                }
-
-                $_premium = $commodity->shared_premium_type == 0 ? $commodity->shared_premium : sprintf("%.2f", $commodity->shared_premium * (float)$inventory['user_price']);
-                if (!$inventory['is_category'] && ($commodity->user_price - $_premium) != (float)$inventory['user_price']) {
-                    $new->user_price = (float)$inventory['user_price'] + $_premium;
-                    $commodity->user_price = $new->user_price;
-                    $new->factory_price = $inventory['factory_price'];
-                }
-
-                $premiumConfig = \App\Model\Commodity::premiumConfig((string)$inventory['config'], (int)$commodity->shared_premium_type, (float)$commodity->shared_premium);
-                if ($new->config != $premiumConfig) {
-                    $new->config = $premiumConfig;
-                    $commodity->config = $new->config;
-                }
-
-                $new->save();
-            }
-        }
-
-
-        //检测是否登录
-        $userGroup = $this->getUserGroup();
-        //解析商品配置
-        $this->order->parseConfig($commodity, $userGroup, $userGroup ? $this->getUser()->id : 0);
-
-        if (!$shared && $commodity->delivery_way == 0) {
-            $commodity->card = Card::query()->where("commodity_id", $commodity->id)->where("status", 0);
-            if ($commodity->race) {
-                foreach ($commodity->race as $key => $race) {
-                    $commodity->card = $commodity->card->where("race", $key);
-                    break;
-                }
-            }
-            $commodity->card = $commodity->card->count();
-        }
-
-        if ($commodity->delivery_way == 0 && $commodity->card == 0 && !$commodity->race) {
-            throw new JSONException("库存不足");
-        }
-
-        if ($userGroup) {
-            $commodity->user_price = $this->order->calcAmount($this->getUser()->id, 1, $commodity, $userGroup);
-        }
-
-        $bus = \App\Model\Business::get(Client::getDomain());
-        //分站加价
-        if ($bus) {
-            if ($userCommodity = UserCommodity::getCustom($bus->user_id, $commodity->id)) {
-                $commodity->price += (float)$userCommodity->premium;
-                if (!$userGroup) {
-                    $commodity->user_price += (float)$userCommodity->premium;
-                }
-                if ($userCommodity->name) {
-                    $commodity->name = $userCommodity->name;
-                }
-                //批发加价
-                if (is_array($commodity['wholesale'])) {
-                    $wholesales = [];
-                    foreach ($commodity->wholesale as $wkey => $wval) {
-                        $wholesales[$wkey] = (float)$wval + (float)$userCommodity->premium;
-                    }
-                    $commodity->setAttribute("wholesale", $wholesales);
-                }
-            }
-        }
-
-
-        $commodity->service_url = Config::get("service_url");
-        $commodity->service_qq = Config::get("service_qq");
-
-        $array = $commodity->toArray();
-
-        if ($array["owner"]) {
-            $business = \App\Model\Business::query()->where("user_id", $array["owner"]['id'])->first();
-            if ($business) {
-                $array['service_url'] = $business->service_url;
-                $array['service_qq'] = $business->service_qq;
-            }
-        }
-
-        if (!$array['cover']) {
-            $array['cover'] = "/favicon.ico";
-        }
-
-        $array['share_url'] = Client::getUrl() . '?' . ($this->getUser() ? "from=" . $this->getUser()->id . "&" : "") . "cid={$array['category_id']}&mid={$array['id']}";
-        $array['login'] = (bool)$this->getUser();
-
-        //获取网站是否需要验证码
-        $array['trade_captcha'] = (int)Config::get("trade_verification");
-
-        hook(\App\Consts\Hook::USER_API_INDEX_COMMODITY_DETAIL_INFO, $array);
+        $array = $this->shop->getItem($commodityId, $this->getUser(), $this->getUserGroup());
+        hook(Hook::USER_API_INDEX_COMMODITY_DETAIL_INFO, $array);
         return $this->json(200, 'success', $array);
     }
 
     /**
-     * @param int $commodityId
-     * @param int $page
-     * @param string $race
      * @return array
      * @throws JSONException
      */
-    public function card(#[Get] int $commodityId, #[Get] int $page, #[Get] string $race): array
+    public function card(): array
     {
-        $commodity = Commodity::query()->find($commodityId);
-        $limit = $_GET['limit'] ?? 10;
+        $map = $this->request->post();
+        /**
+         * @var Commodity $commodity
+         */
+        $commodity = Commodity::with(['shared'])->find($map['item_id']);
+        $limit = $map['limit'] ?? 10;
+
         if (!$commodity) {
             throw new JSONException("商品不存在");
         }
+
         if ($commodity->status != 1) {
             throw new JSONException("该商品暂未上架");
         }
@@ -402,57 +239,94 @@ class Index extends User
             throw new JSONException("该商品不支持预选");
         }
 
-        //解析配置文件
-        $parseConfig = Ini::toArray((string)$commodity->config);
-        if (key_exists("category", $parseConfig)) {
-            $commodity->race = $parseConfig['category'];
-            if (!key_exists($race, $commodity->race)) {
-                throw new JSONException("请选择商品种类");
+        if ($commodity->shared) {
+            $data = $this->shared->draftCard($commodity->shared, $commodity->shared_code, $map);
+            //加价算法
+            foreach ($data['list'] as &$item) {
+                if ($item['draft_premium'] > 0) {
+                    $item['draft_premium'] = $this->shared->AdjustmentAmount($commodity->shared_premium_type, $commodity->shared_premium, $item['draft_premium']);
+                }
             }
-        }
-
-        $shared = $commodity->shared;
-        if ($shared) {
-            $draftCard = $this->shared->draftCard($shared, $commodity->shared_code, (int)$limit, $page, $race);
-            return $this->json(200, "success", $draftCard);
         } else {
-            $map = ["equal-commodity_id" => (string)$commodityId, "equal-status" => 0];
-            if ($race) {
-                $map['equal-race'] = $race;
-            }
-            $queryTemplateEntity = new QueryTemplateEntity();
-            $queryTemplateEntity->setModel(Card::class);
-            $queryTemplateEntity->setLimit((int)$limit);
-            $queryTemplateEntity->setPage($page);
-            $queryTemplateEntity->setWhere($map);
-            $queryTemplateEntity->setPaginate(true);
-            $queryTemplateEntity->setField(['id', 'draft']);
-            $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
-            return $this->json(200, "success", $data);
+            $get = new Get(Card::class);
+            $get->setPaginate((int)$this->request->post("page"), (int)$limit);
+            $get->setWhere($map);
+            $get->setColumn('id', 'draft', 'draft_premium');
+
+            $data = $this->query->get($get, function (Builder $builder) use ($map) {
+                $builder = $builder->where("commodity_id", $map['item_id'])->where("status", 0);
+
+                if (!empty($map['race'])) {
+                    $builder = $builder->where("race", $map['race']);
+                }
+
+                if (!empty($map['sku']) && is_array($map['sku'])) {
+                    foreach ($map['sku'] as $k => $v) {
+                        $builder = $builder->where("sku->{$k}", $v);
+                    }
+                }
+
+                return $builder;
+            });
         }
+
+        //分站处理
+        if (\App\Model\Business::state()) {
+            foreach ($data['list'] as &$item) {
+                if ($item['draft_premium'] > 0) {
+                    $item['draft_premium'] = $this->shop->getSubstationPrice($commodity, $item['draft_premium']);
+                }
+            }
+        }
+
+        if ($commodity->level_disable != 1) {
+            //折扣处理
+            foreach ($data['list'] as &$item) {
+                if ($item['draft_premium'] > 0) {
+                    $item['draft_premium'] = $this->order->getValuationPrice($commodity->id, $item['draft_premium'], $this->getUserGroup());
+                }
+            }
+        }
+
+        return $this->json(data: $data);
     }
 
 
     /**
-     * @param int $num
-     * @param int $cardId
-     * @param string $coupon
-     * @param int $commodityId
-     * @param string $race
      * @return array
      */
-    public function tradeAmount(#[Post] int $num, #[Post] int $cardId, #[Post] string $coupon, #[Post] int $commodityId, #[Post] string $race): array
+    public
+    function valuation(): array
     {
-        $result = $this->order->getTradeAmount($this->getUser(), $this->getUserGroup(), $cardId, $num, $coupon, $commodityId, $race);
-        hook(\App\Consts\Hook::USER_API_INDEX_TRADE_CALC_AMOUNT, $result);
-        return $this->json(200, "success", $result);
+        $price = $this->order->valuation(
+            commodity: (int)$this->request->post("item_id"),
+            num: (int)$this->request->post("num"),
+            race: (string)$this->request->post("race"),
+            sku: (array)$this->request->post("sku"),
+            cardId: (int)$this->request->post("card_id"),
+            coupon: (string)$this->request->post("coupon"),
+            group: $this->getUserGroup()
+        );
+        $price = $this->shop->getSubstationPrice((int)$this->request->post("item_id"), $price);
+        return $this->json(data: ["price" => $price]);
     }
 
 
     /**
      * @return array
      */
-    public function pay(): array
+    public
+    function stock(): array
+    {
+        $stock = $this->shop->getItemStock((int)$this->request->post("item_id"), (string)$this->request->post("race"), (array)$this->request->post("sku"));
+        return $this->json(data: ["stock" => $stock]);
+    }
+
+    /**
+     * @return array
+     */
+    public
+    function pay(): array
     {
 
         $equipment = 2;
@@ -467,9 +341,13 @@ class Index extends User
 
         $let = "(`equipment`=0 or `equipment`={$equipment})";
 
+        if (!$this->getUser()) {
+            $let .= " and id!=1";
+        }
+
         $pay = Pay::query()->orderBy("sort", "asc")->where("commodity", 1)->whereRaw($let)->get(['id', 'name', 'icon', 'handle'])->toArray();
 
-        hook(\App\Consts\Hook::USER_API_INDEX_PAY_LIST, $pay);
+        hook(Hook::USER_API_INDEX_PAY_LIST, $pay);
         return $this->json(200, 'success', $pay);
     }
 
@@ -477,98 +355,69 @@ class Index extends User
     /**
      * @param string $keywords
      * @return array
-     * @throws JSONException
      */
-    public function query(#[Post] string $keywords): array
+    public function query(string $keywords): array
     {
         $keywords = trim($keywords);
 
-        $filed = ['id', 'trade_no', 'user_id', 'amount', 'pay_id', 'commodity_id', 'create_time', 'pay_time', 'status', 'card_num', 'contact', "race"];
+        $get = new Get(Order::class);
+        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
+        $get->setColumn('id', 'trade_no', 'sku', 'secret', 'user_id', 'password', 'amount', 'pay_id', 'commodity_id', 'create_time', 'pay_time', 'delivery_status', 'status', 'card_num', 'contact', "race");
 
+        $data = $this->query->get($get, function (Builder $builder) use ($keywords) {
 
-        $callback = function (Relation $relation) {
-            $relation->select(['id', 'name', 'cover', 'password_status', 'leave_message']);
-        };
+            $builder = $builder->with(['pay' => function (Relation $relation) {
+                $relation->select(['id', 'name', 'icon']);
+            }, 'commodity' => function (Relation $relation) {
+                $relation->select(['id', 'name', 'cover', 'password_status', 'leave_message']);
+            }]);
 
-        $userCallback = function (Relation $relation) {
-            $relation->with(['business' => function (Relation $relation) {
-                $relation->select(['id', 'user_id', 'service_qq', 'service_url']);
-            }])->select(['id', 'username', 'avatar']);
-        };
-
-        if ($keywords) {
-            $order = Order::query()->where("trade_no", trim($keywords))->with(['pay', 'commodity' => $callback, 'user' => $userCallback])->get($filed);
-            if (count($order) == 0) {
-                $order = Order::query()->where("owner", 0)->where("contact", trim($keywords))->with(['pay', 'commodity' => $callback, 'user' => $userCallback])->orderBy("id", "desc")->limit(10)->get($filed);
-            }
-        } else {
-            $user = $this->getUser();
-            if (!$user) {
-                throw new JSONException("无数据");
-            }
-            $order = Order::query()->where("owner", $user->id)->orderBy("id", "desc")->limit(10)->with(['pay', 'commodity' => $callback, 'user' => $userCallback])->get($filed);
-        }
-
-        if (count($order) == 0) {
-            throw new JSONException("无数据");
-        }
-
-        $serviceUrl = Config::get("service_url");
-        $serviceQQ = Config::get("service_qq");
-        foreach ($order as $key => $val) {
-            if ($val->user instanceof \App\Model\User && $val->user->business instanceof \App\Model\Business) {
-                $order[$key]->service_url = $val->user->business->service_url;
-                $order[$key]->service_qq = $val->user->business->service_qq;
-                $order[$key]->business_username = $val->user->username;
-                $order[$key]->business_avatar = $val->user->avatar;
+            if (preg_match('/^\d{18}$/', $keywords)) {
+                $builder = $builder->where("trade_no", $keywords);
             } else {
-                $order[$key]->service_url = $serviceUrl;
-                $order[$key]->service_qq = $serviceQQ;
-                $order[$key]->business_username = "官方自营";
-                $order[$key]->business_avatar = "/favicon.ico";
+                $builder = $builder->where("contact", $keywords);
+            }
+            return $builder;
+        });
+
+        foreach ($data['list'] as &$item) {
+            if ($item['status'] != 1) {
+                unset($item['commodity']['leave_message']);
+                unset($item['secret']);
+            }
+
+            if (!empty($item['password'])) {
+                $item['password'] = true;
+                unset($item['secret']);
             }
         }
 
-        $orderArray = $order->toArray();
-
-        foreach ($orderArray as $k => $v) {
-            if ($v['commodity']) {
-                if ($v['status'] == 0) {
-                    $orderArray[$k]['leave_message'] = null;
-                } else if ($v['status'] == 1) {
-                    $orderArray[$k]['leave_message'] = $v['commodity']['leave_message'];
-                }
-                unset($orderArray[$k]['commodity']['leave_message']);
-            }
-        }
-
-        hook(\App\Consts\Hook::USER_API_INDEX_QUERY_LIST, $orderArray);
-        //回显订单信息
-        return $this->json(200, 'success', $orderArray);
+        hook(Hook::USER_API_INDEX_QUERY_LIST, $data);
+        return $this->json(data: $data);
     }
 
     /**
-     * @param string $orderId
+     * @param string $tradeNo
      * @param string $password
      * @return array
      * @throws JSONException
      */
-    public function secret(#[Post] string $orderId, #[Post] string $password): array
+    public function secret(string $tradeNo, string $password): array
     {
-        $order = Order::query()->where("trade_no", $orderId)->first();
+        $order = Order::with(['commodity'])->where("trade_no", $tradeNo)->first();
 
         if (!$order) {
             throw new JSONException("未查询到相关信息");
         }
 
-        $commodity = $order->commodity;
-        if ($commodity->password_status == 1) {
-            if ((string)$order->password != "" && $password != $order->password) {
-                throw new JSONException("密码错误", 0);
+        if (!empty($order->password)) {
+            if ($password != $order->password) {
+                throw new JSONException("密码错误");
             }
         }
+
         if ($order->status != 1) {
-            throw new JSONException("该订单还未支付");
+            throw new JSONException("订单还未支付");
         }
 
         $widget = (array)json_decode((string)$order->widget, true);
@@ -576,7 +425,11 @@ class Index extends User
             $widget = null;
         }
 
-        hook(\App\Consts\Hook::USER_API_INDEX_QUERY_SECRET, $order);
-        return $this->json(200, 'success', ['secret' => $order->secret, 'widget' => $widget]);
+        hook(Hook::USER_API_INDEX_QUERY_SECRET, $order);
+        return $this->json(data: [
+            'secret' => $order->secret,
+            'widget' => $widget,
+            'leave_message' => $order?->commodity?->leave_message
+        ]);
     }
 }

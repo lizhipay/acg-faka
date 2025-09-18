@@ -29,7 +29,7 @@ class UserCommodity extends Model
     /**
      * @var array
      */
-    protected $casts = ['id' => 'integer', 'user_id' => 'integer', 'commodity_id' => 'integer', 'status' => 'integer', 'premium' => 'float'];
+    protected $casts = ['id' => 'integer', 'user_id' => 'integer', 'commodity_id' => 'integer', 'status' => 'integer', 'premium' => 'integer'];
 
 
     /**

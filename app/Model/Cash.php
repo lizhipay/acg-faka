@@ -5,6 +5,7 @@ namespace App\Model;
 
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int $id
@@ -36,9 +37,9 @@ class Cash extends Model
     protected $casts = ['id' => 'integer', 'user_id' => 'integer', 'amount' => 'float',  'cost' => 'float', 'type' => 'integer', 'card' => 'integer', 'status' => 'integer'];
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne|null
+     * @return HasOne|null
      */
-    public function user(): ?\Illuminate\Database\Eloquent\Relations\HasOne
+    public function user(): ?HasOne
     {
         return $this->hasOne(User::class, "id", "user_id");
     }

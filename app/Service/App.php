@@ -3,24 +3,23 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Service\Impl\AppService;
 use Kernel\Annotation\Bind;
 
 /**
  * Interface App
  * @package App\Service
  */
-#[Bind(class: AppService::class)]
+#[Bind(class: \App\Service\Bind\App::class)]
 interface App
 {
     /**
      * 应用商店地址
      */
     const APP_URL = BASE_APP_SERVER;
-    const MAIN_SERVER = "https://store.acgshe.com";
-    const STANDBY_SERVER1 = "https://standby.acgshe.com";
-    const STANDBY_SERVER2 = "https://standby.acgshe.com";
-    const GENERAL_SERVER = "https://general.acgshe.com";
+    const MAIN_SERVER = "https://tencent.3rd.mcycdn.com";
+    const STANDBY_SERVER1 = "https://byte.3rd.mcycdn.com";
+    const STANDBY_SERVER2 = "https://byte.3rd.mcycdn.com";
+    const GENERAL_SERVER = "https://aliyun.3rd.mcycdn.com";
 
     /**
      * @return array
@@ -171,4 +170,11 @@ interface App
      * @return array
      */
     public function service(): array;
+
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function editPassword(array $data): array;
 }

@@ -5,13 +5,14 @@ namespace App\Controller\User\Api;
 
 
 use App\Controller\Base\API\User;
-use App\Entity\CreateObjectEntity;
-use App\Entity\QueryTemplateEntity;
+use App\Entity\Query\Get;
+use App\Entity\Query\Save;
 use App\Interceptor\Business;
 use App\Interceptor\UserSession;
 use App\Interceptor\Waf;
 use App\Service\Query;
 use App\Util\Client;
+use Illuminate\Database\Eloquent\Builder;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Context\Interface\Request;
@@ -29,24 +30,19 @@ class Category extends User
      */
     public function data(): array
     {
-        $map = [];
-        $map['equal-owner'] = $this->getUser()->id;
-        $queryTemplateEntity = new QueryTemplateEntity();
-        $queryTemplateEntity->setModel(\App\Model\Category::class);
-        $queryTemplateEntity->setPaginate(true);
-        $queryTemplateEntity->setLimit((int)$_POST['limit']);
-        $queryTemplateEntity->setPage((int)$_POST['page']);
-        $queryTemplateEntity->setWhere($map);
-        $queryTemplateEntity->setOrder('sort', 'asc');
-        $data = $this->query->findTemplateAll($queryTemplateEntity)->toArray();
+        $map = $this->request->post();
+        $get = new Get(\App\Model\Category::class);
+        $get->setWhere($map);
+        $get->setOrderBy(...$this->query->getOrderBy($map, "sort", "asc"));
+        $data = $this->query->get($get, function (Builder $builder) {
+            return $builder->where("owner", $this->getUser()->id);
+        });
 
-        foreach ($data['data'] as $key => $val) {
-            $data['data'][$key]['share_url'] = Client::getUrl() . "?code=" . urlencode(base64_encode("from=" . $this->getUser()->id . "&" . "a={$val['id']}"));
+        foreach ($data['list'] as &$item) {
+            $item['share_url'] = Client::getUrl() . "/cat/{$item['id']}";
         }
 
-        $json = $this->json(200, null, $data['data']);
-        $json['count'] = $data['total'];
-        return $json;
+        return $this->json(data: $data);
     }
 
 
@@ -60,27 +56,24 @@ class Category extends User
         $map = $request->post(flags: Filter::NORMAL);
         $userId = $this->getUser()->id;
 
-        if ((int)$map['id'] != 0) {
-            $category = \App\Model\Category::query()->find($map['id']);
-            if (!$category || $category->owner != $userId) {
-                throw new JSONException("该分类不存在");
+        if (!empty($map['id']) && !\App\Model\Category::query()->where("owner", $userId)->where("id", $map['id'])->exists()) {
+            throw new JSONException("分类不存在");
+        }
+
+        if (isset($map['sort'])) {
+            if ((int)$map['sort'] < 1000) {
+                throw new JSONException("排序最低设置1000");
+            }
+            if ((int)$map['sort'] > 60000) {
+                throw new JSONException("排序最高设置60000");
             }
         }
 
-        if ((int)$map['sort'] < 1000) {
-            throw new JSONException("排序最低设置1000");
-        }
-
-        if ((int)$map['sort'] > 60000) {
-            throw new JSONException("排序最高设置60000");
-        }
-
-        $map['owner'] = $userId;
-        $createObjectEntity = new CreateObjectEntity();
-        $createObjectEntity->setModel(\App\Model\Category::class);
-        $createObjectEntity->setMap($map);
-        $createObjectEntity->setCreateDate("create_time");
-        $save = $this->query->createOrUpdateTemplate($createObjectEntity);
+        $save = new Save(\App\Model\Category::class);
+        $save->addForceMap("owner", $userId);
+        $save->setMap($map);
+        $save->enableCreateTime();
+        $save = $this->query->save($save);
         if (!$save) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }

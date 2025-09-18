@@ -20,11 +20,15 @@ abstract class Manage extends \App\Controller\Base\Manage
      * @param string $template
      * @param array $data
      * @return string
-     * @throws \Kernel\Exception\ViewException
+     * @throws ViewException
      */
     public function render(string $title, string $template, array $data = []): string
     {
         try {
+
+            //加载helper
+            require(BASE_PATH . "/app/View/Admin/Helper.php");
+
             $data['title'] = $title;
             $data['app']['version'] = \config("app")['version'];
             $data['app']['server'] = (int)\config("store")['server'];

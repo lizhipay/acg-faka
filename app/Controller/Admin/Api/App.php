@@ -6,7 +6,6 @@ namespace App\Controller\Admin\Api;
 use App\Interceptor\ManageSession;
 use App\Interceptor\Waf;
 use App\Model\ManageLog;
-use App\Util\Helper;
 use App\Util\Opcache;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
@@ -117,14 +116,14 @@ class App extends Manage
      */
     public function plugins(): array
     {
-        $type = -1;
-        if (isset($_POST['type'])) {
-            $type = (int)$_POST['type'];
+        $owner = -1;
+        if (isset($_POST['equal-owner'])) {
+            $owner = (int)$_POST['equal-owner'];
         }
         $keywords = (string)$_POST['keywords'];
 
         $data = [
-            "type" => $type,
+            "owner" => $owner,
             "page" => (int)$_POST['page'],
             "limit" => (int)$_POST['limit'],
             "group" => (int)$_POST['group']
@@ -169,9 +168,15 @@ class App extends Manage
             } else {
                 $plugins['rows'][$index]['install'] = 0;
             }
+
+            $plugins['rows'][$index]['icon'] = \App\Service\App::APP_URL . "/{$plugins['rows'][$index]['icon']}";
         }
-        $json = $this->json(200, null, $plugins['rows']);
-        $json['count'] = $plugins['count'];
+
+        $json = $this->json(data: [
+            "list" => $plugins['rows'],
+            "total" => $plugins['count']
+        ]);
+
         $json['user'] = $plugins['user'];
         $json['purchase'] = $plugins['purchase'];
         return $json;
@@ -261,7 +266,6 @@ class App extends Manage
 
     /**
      * @return array
-     * @throws \ReflectionException
      */
     public function uninstall(): array
     {
@@ -289,8 +293,15 @@ class App extends Manage
             "page" => (int)$_POST['page'],
             "limit" => (int)$_POST['limit']
         ]);
-        $json = $this->json(200, null, $plugins['rows']);
-        $json['count'] = $plugins['count'];
+
+        foreach ($plugins['rows'] as &$plugin) {
+            $plugin['icon'] = \App\Service\App::APP_URL . "/{$plugin['icon']}";
+        }
+
+        $json = $this->json(data: [
+            "list" => $plugins['rows'],
+            "total" => $plugins['count']
+        ]);
         $json['user'] = $plugins['user'];
         return $json;
     }
@@ -299,7 +310,7 @@ class App extends Manage
     /**
      * 创建插件
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function developerCreatePlugin(): array
     {
@@ -313,7 +324,7 @@ class App extends Manage
     }
 
     /**
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function developerCreateKit(): array
     {
@@ -346,7 +357,7 @@ class App extends Manage
 
     /**
      * @return array
-     * @throws \Kernel\Exception\JSONException
+     * @throws JSONException
      */
     public function developerUpdatePlugin(): array
     {
@@ -383,7 +394,7 @@ class App extends Manage
      */
     public function purchaseRecords(): array
     {
-        return $this->json(200, "ok", $this->app->purchaseRecords((int)$_GET['plugin_id']));
+        return $this->json(data: ["list" => $this->app->purchaseRecords((int)$_GET['plugin_id'])]);
     }
 
     /**
@@ -414,7 +425,7 @@ class App extends Manage
      */
     public function levels(): array
     {
-        return $this->json(200, "ok", $this->app->levels());
+        return $this->json(data: ["list" => $this->app->levels()]);
     }
 
     /**
@@ -431,6 +442,16 @@ class App extends Manage
      */
     public function service(): array
     {
-        return $this->json(200, "success", array_merge($this->app->service(), ["email" => $this->getManage()->email]));
+        return $this->json(data: $this->app->service());
+    }
+
+
+    /**
+     * @return array
+     */
+    public function editPassword(): array
+    {
+        $this->app->editPassword($_POST);
+        return $this->json();
     }
 }

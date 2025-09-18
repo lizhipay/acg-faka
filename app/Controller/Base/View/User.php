@@ -27,6 +27,9 @@ abstract class User extends \App\Controller\Base\User
     public function render(string $title, string $template, array $data = []): string
     {
         try {
+            //加载helper
+            require(BASE_PATH . "/app/View/User/Helper.php");
+
             $data['title'] = $title;
             $data['app']['version'] = \config("app")['version'];
             $cfg = Config::list();
@@ -52,6 +55,9 @@ abstract class User extends \App\Controller\Base\User
     public function theme(string $title, string $template, string $default, array $data = []): string
     {
         try {
+            //加载helper
+            require(BASE_PATH . "/app/View/User/Helper.php");
+
             $data['title'] = $title;
             $data['app']['version'] = \config("app")['version'];
             $data['favicon'] = "/favicon.ico";

@@ -1,36 +1,4 @@
 #{include file="../Common/Header.html"}
-<style>
-    .layui-layer-page .layui-layer-content {
-        overflow-wrap: break-word;
-    }
-
-    .more-table td {
-        border-width: 1px !important;
-        border-color: rgba(241, 195, 195, 0.27) !important;
-        font-size: 14px;
-        color: #fbaea7;
-    }
-
-    .card-data {
-        padding: 10px;
-    }
-
-    .card-data .layui-card {
-        border-radius: 10px;
-        background-color: #ebb9b926;
-    }
-
-    .card-data .layui-card-header {
-        color: #997cf3;
-    }
-
-    .card-data .layui-card-body {
-        color: #ff90f6;
-        font-weight: bold;
-    }
-
-</style>
-
 <div class="layui-container fly-marginTop fly-user-main">
     #{include file="../Common/Nav.html"}
     <div class="fly-panel fly-panel-user" pad20>
@@ -78,7 +46,7 @@
                         <tr>
                             <td class="layui-col-md2">推广链接：</td>
                             <td class="layui-col-md10"><a style="cursor: pointer;color: #0C84D1;" class="clipboard"
-                                                          data-clipboard-text="#{$share_url}">#{$share_url}</a> (<span
+                                                          data-text="#{$share_url}">#{$share_url}</a> (<span
                                     style="color: #0f6674;">通过该链接消费的人会给您丰厚的佣金</span>)
                             </td>
                         </tr>
@@ -169,26 +137,5 @@
         </div>
     </div>
 
-    <script>
-        $('.clipboard').click(function () {
-            var clipboard = new ClipboardJS(".clipboard");
-            clipboard.on('success', function (e) {
-                layer.msg("推广链接已经复制成功了，赶快发给好友吧！")
-            });
-        });
-
-        $('.reset-key').click(function () {
-            layer.confirm('您真的要重置您的商户密钥吗？这是无法恢复的操作。', {
-                btn: ['立即重置', '取消'],
-                title: "重置密钥"
-            }, function () {
-                $.post('/user/api/security/resetKey', res => {
-                    layer.msg(res.msg);
-                    if (res.code == 200) {
-                        $('.app-key').html(res.data.app_key);
-                    }
-                });
-            });
-        });
-    </script>
+    #{ready("/assets/user/controller/dashboard/index.js")}
     #{include file="../Common/Footer.html"}

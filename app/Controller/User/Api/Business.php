@@ -87,10 +87,6 @@ class Business extends User
             throw new JSONException("网站标题不能为空");
         }
 
-        if (empty($_POST['service_qq'])) {
-            throw new JSONException("客服QQ不能为空");
-        }
-
         $business = \App\Model\Business::query()->where("user_id", $this->getUser()->id)->first();
 
         if (!$business) {

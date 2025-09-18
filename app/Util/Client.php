@@ -136,8 +136,9 @@ class Client
      * @param string $url
      * @param string $message
      * @param int $time
+     * @throws \SmartyException
      */
-    #[NoReturn] public static function redirect(string $url, string $message, int $time = 2): void
+    public static function redirect(string $url, string $message, int $time = 2): void
     {
         if ($time == 0) {
             header('location:' . $url);

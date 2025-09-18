@@ -1,196 +1,50 @@
 </div>
-<script src="../../../assets/admin/js/scripts.bundle.js"></script></div>
+</div>
 <!--end::Wrapper-->
 </div>
 <!--end::Page-->
 </div>
 <!--end::Root-->
 
-<!--begin::Scrolltop-->
-<div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
-    <!--begin::Svg Icon | path: icons/duotune/arrows/arr066.svg-->
-    <span class="svg-icon">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-					<rect opacity="0.5" x="13" y="6" width="13" height="2" rx="1" transform="rotate(90 13 6)"
-                          fill="black"/>
-					<path d="M12.5657 8.56569L16.75 12.75C17.1642 13.1642 17.8358 13.1642 18.25 12.75C18.6642 12.3358 18.6642 11.6642 18.25 11.25L12.7071 5.70711C12.3166 5.31658 11.6834 5.31658 11.2929 5.70711L5.75 11.25C5.33579 11.6642 5.33579 12.3358 5.75 12.75C6.16421 13.1642 6.83579 13.1642 7.25 12.75L11.4343 8.56569C11.7467 8.25327 12.2533 8.25327 12.5657 8.56569Z"
-                          fill="black"/>
-				</svg>
-			</span>
-    <!--end::Svg Icon-->
-</div>
-<!--end::Scrolltop-->
-<!--end::Main-->
-<script>var hostUrl = "/assets/admin/";</script>
-<!--begin::Javascript-->
-<!--begin::Global Javascript Bundle(used by all pages)-->
-<script src="/assets/admin/plugins/global/plugins.bundle.js"></script>
-<script src="/assets/admin/js/scripts.bundle.js"></script>
-<!--end::Global Javascript Bundle-->
-<script src="/assets/static/layui/layui.js"></script>
-<script src="/assets/static/modules/xm-select.js"></script>
-<script src="/assets/static/clipboard.js"></script>
-<script src="/assets/static/wangEditor.min.js"></script>
-<script src="/assets/static/jquery.qrcode.min.js"></script>
-<script src="/assets/static/jquery.pjax.js"></script>
-<script src="/assets/static/bootstrap-table/js/bootstrap-table.min.js"></script>
-<script src="/assets/static/bootstrap-table/js/bootstrap-table-zh-CN.js"></script>
-<script src="/assets/static/jsoneditor/jsoneditor.min.js"></script>
+<div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true"><i class="fa-duotone fa-regular fa-arrow-up text-white"></i></div>
 
-<div style="display: none" class="update-modal">
-    <div style="padding: 20px;" class="more-table">
-        <ul class="layui-timeline version-list">
-        </ul>
-    </div>
-</div>
-
-
-<style>
-    .update-open .layui-layer-content {
-        position: relative !important;
-        overflow: auto !important;
-    }
-
-
-</style>
-
-<script>
-    $(document).pjax('a[target!=_blank]', '#pjax-container', {fragment: '#pjax-container', timeout: 8000}); //#wrap为刷新的id
-    $(document).on('pjax:send', function () {
-        $(".loading").css("display", "block");
-    });
-
-    $(document).on('pjax:complete', function () {
-        $(".loading").css("display", "none");
-    });
-
-    $("a[target!=_blank]").click(function () {
-        $('a[target!=_blank]').removeClass("active");
-        $(this).addClass("active");
-    });
-
-    layui.config({
-        base: '/assets/static/modules/',
-        version: "#{$app.version}"
-    }); //加载入口
-
-
-    $(function () {
-        layui.use(['hex'], function () {
-            let cao = layui.hex;
-
-            function latestOpen(res) {
-                let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
-                $.get("/admin/api/app/versions", versions => {
-                    layer.close(loaderIndex);
-                    if (versions.code != 200) {
-                        return;
-                    }
-                    $('.version-list').html("");
-                    versions.data.forEach(item => {
-                        let html = '<li class="layui-timeline-item">\n' +
-                            '                <i class="layui-icon layui-timeline-axis">&#xe63f;</i>\n' +
-                            '                <div class="layui-timeline-content layui-text">\n' +
-                            '                    <h3 class="layui-timeline-title" style="color: ' + (item.version == res.data.local ? '#2fcf94' : '#f98ee7') + ';font-weight: bold;">v' + item.version + (item.version == res.data.local ? '◂' : '') + '</h3>\n' +
-                            '                    <p>' + item.content + '</p>\n' +
-                            '                <p style="margin-top: 10px;color: #867d00;font-size: 12px;">更新朔源：<a href="' + item.update_url + '" target="_blank">update.zip</a></p>\n' +
-                            '                <p style="color: #79b39b;font-size: 12px;">' + item.update_date + '</p></div>\n' +
-                            '            </li>';
-
-                        $('.version-list').append(html);
-                    });
-
-                    layer.open({
-                        type: 1,
-                        title: '版本更新',
-                        content: $('.update-modal').html(),
-                        skin: "update-open",
-                        area: cao.isPc() ? ["520px", "620px"] : ["100%", "100%"],
-                        btn: [res.data.latest ? '你已经是最新版本' : "安全更新至 v" + res.data.version, '取消'],
-                        success: () => {
-                        },
-                        yes: () => {
-                            if (res.data.latest) {
-                                return;
-                            }
-                            let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
-                            $.post("/admin/api/app/update", res => {
-                                layer.close(loaderIndex);
-                                layer.msg(res.msg);
-                                if (res.code == 200) {
-                                    setTimeout(() => {
-                                        window.location.reload();
-                                    }, 1500);
-                                }
-                            });
-                        }
-                    });
-
-                });
-            }
-
-            $.get("/admin/api/app/latest", res => {
-                if (res.code != 200) {
-                    $('.latest-update').css("color", "red").html("应用商店连接失败");
-                    return;
-                }
-                $('.local-version').html(res.data.local);
-                if (res.data.latest) {
-                    $('.latest-version').css("color", "green").html("[ 最新 ]");
-                } else {
-                    $('.latest-version').css("color", "red").html("[ 更新 v" + res.data.version + " ]");
-                    let cache = localStorage.getItem(res.data.version);
-                    //第一次检测到版本，主动打开更新窗口
-                    if (!cache) {
-                        latestOpen(res);
-                        localStorage.setItem(res.data.version, true);
-                    }
-                }
-
-                $('.latest-update').click(function () {
-                    latestOpen(res);
-                });
-            });
-
-
-            $.get("/admin/api/app/getUpdates", res => {
-                if (res.code != 200) {
-                    return;
-                }
-
-                localStorage.setItem("pluginVersions", JSON.stringify(res.data));
-            }); //无感请求插件更新列表
-
-            $('.app-server-select').change(function () {
-                let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
-                $.post("/admin/api/app/setServer", {server: $(this).val()}, res => {
-                    layer.close(loaderIndex);
-                    layer.msg(res.msg);
-                    window.location.reload();
-                })
-            });
-
-
-            #{if $config.technical_support != 1}
-            $.get("/admin/api/app/service",res=>{if(res.code==200){if(res.data.service!=null){window.Tawk_API=window.Tawk_API||{};window.Tawk_API.visitor={name:res.data.username,email:res.data.email};new MutationObserver(muts=>{muts.forEach(m=>{m.addedNodes.forEach(node=>{if(node.tagName==='IFRAME'&&node.title==='chat widget'&&node.src==='about:blank'){try{var doc=node.contentDocument;var style=doc.createElement('style');style.textContent=`.tawk-text-center.tawk-padding-small,.tawk-dropdown.tawk-toolbar-menu{display:none!important}`;doc.head.appendChild(style);doc.querySelectorAll('.tawk-bottom-navbar.tawk-bottom-navbar-offset').forEach(el=>el.classList.remove('tawk-bottom-navbar-offset'));new node.contentWindow.MutationObserver(innerMuts=>{innerMuts.forEach(im=>{if(im.type==='childList'){im.addedNodes.forEach(n=>{if(n.nodeType===1&&n.classList.contains('tawk-bottom-navbar-offset')){n.classList.remove('tawk-bottom-navbar-offset')}n.querySelectorAll&&n.querySelectorAll('.tawk-bottom-navbar.tawk-bottom-navbar-offset').forEach(el=>el.classList.remove('tawk-bottom-navbar-offset'))})}else if(im.type==='attributes'&&im.attributeName==='class'){var tgt=im.target;if(tgt.classList&&tgt.classList.contains('tawk-bottom-navbar-offset')){tgt.classList.remove('tawk-bottom-navbar-offset')}}})}).observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']})}catch(e){}}})})}).observe(document,{childList:true,subtree:true});(function(){const origFetch=window.fetch;window.fetch=function(resource,init){if(typeof resource==='string'&&resource.includes('/v1/session/start')&&init&&init.method==='POST'&&init.body){try{const data=JSON.parse(init.body);if(data.url!==undefined)data.url='';if(data.referrer!==undefined)data.referrer='';init.body=JSON.stringify(data)}catch(e){}}return origFetch.call(this,resource,init)}})();(function(){const origSend=WebSocket.prototype.send;WebSocket.prototype.send=function(data){let payload=data;try{if(typeof payload==='string'&&payload.startsWith('4{')){const msg=JSON.parse(payload.slice(1));if(msg.c==='nav'&&Array.isArray(msg.p)&&msg.p[0]){return}}}catch(e){}return origSend.call(this,payload)}})();(function(){let s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];s1.async=true;s1.src=res.data.link;s1.charset='UTF-8';s1.setAttribute('crossorigin','*');s0.parentNode.insertBefore(s1,s0)})()}}});
-            #{/if}
-        });
-    });
-</script>
-
-<div class="loading"
-     style="background: #00000033;width: 100%;height: 100%;position: fixed;z-index: 9999999;overflow: hidden;display: none;">
-    <div class="loader">
-        <div class="dot dot1"></div><!--
-  -->
-        <div class="dot dot2"></div><!--
-  -->
-        <div class="dot dot3"></div><!--
-  -->
-        <div class="dot dot4"></div>
-    </div>
-</div>
-
+#{js(
+[
+"/assets/common/js/_.js",
+"/assets/admin/js/_admin.js"
+],
+[
+"/assets/common/js/util/dict.js",
+"/assets/common/js/jquery.min.js",
+"/assets/common/js/toastr.min.js",
+"/assets/common/js/component/loading.js",
+"/assets/common/js/util.js",
+"/assets/common/js/layer/layer.js",
+"/assets/common/js/jquery.pjax.min.js",
+"/assets/common/js/jquery.qrcode.min.js",
+"/assets/common/js/format.js",
+"/assets/common/js/message.js",
+"/assets/common/js/component.js",
+"/assets/common/js/layui/layui.js",
+"/assets/common/js/jquery.treegrid.min.js",
+"/assets/common/js/bootstrap/bootstrap.bundle.min.js",
+"/assets/common/js/table/bootstrap-table.min.js",
+"/assets/common/js/table/bootstrap-table-treegrid.min.js",
+"/assets/common/js/component/form.js",
+"/assets/common/js/component/search.js",
+"/assets/common/js/component/xm-select.js",
+"/assets/common/js/component/tree.select.js",
+"/assets/common/js/component/authtree.js",
+"/assets/common/js/component/table.js",
+"/assets/common/js/component/select2.min.js",
+"/assets/common/js/cache.js",
+"/assets/common/js/editor/editor.js",
+"/assets/common/js/editor/code/code.js",
+"/assets/common/js/component/decimal.js",
+"/assets/admin/js/dict.js",
+"/assets/admin/js/menu.js",
+"/assets/admin/controller/global.js"
+])}
 
 <!--start::HOOK-->
 #{hook(\App\Consts\Hook::ADMIN_VIEW_BODY)}

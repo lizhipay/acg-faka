@@ -1,134 +1,217 @@
-<!doctype html>
-<html>
-<head>
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta charset="utf-8">
-    <title>#{$title}</title>
-    <style>
+<title>
+    #{$title}
+</title>
 
+<style>
+    :root{
+      --bg1:#0b1220;
+      --bg2:#090a0f;
+      --fg:#e5e7eb;
+      --muted:#94a3b8;
+      --accent:#22D3EE;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      overflow:hidden;
+      background: radial-gradient(ellipse at bottom, #1b2735 0%, var(--bg2) 100%);
+      color:var(--fg);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"PingFang SC","Microsoft YaHei",sans-serif;
+    }
+    /* full-canvas layer */
+    #warp{
+      position:fixed;
+      inset:0;
+      width:100vw;
+      height:100vh;
+      display:block;
+      background: radial-gradient(ellipse at bottom, #0e1624 0%, #07080c 100%);
+    }
+    /* subtle vignette to enhance tunnel感 */
+    .vignette{
+      pointer-events:none;
+      position:fixed;inset:0;
+      background: radial-gradient(circle at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.35) 85%, rgba(0,0,0,.6) 100%);
+      mix-blend-mode: multiply;
+    }
+    /* center text */
+    .center-text{
+      position:fixed;
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      text-align:center;
+      color:#fff;
+      padding:14px 18px;
+      border-radius:16px;
+      background:rgba(3,6,23,.18);
+      border:1px solid rgba(148,163,184,.25);
+      backdrop-filter: blur(8px) saturate(140%);
+      -webkit-backdrop-filter: blur(8px) saturate(140%);
+      text-shadow: 0 2px 10px rgba(0,0,0,.55);
+      box-shadow: 0 10px 30px rgba(2,6,23,.35), inset 0 1px 1px rgba(255,255,255,.18);
+      max-width:min(92vw,720px);
+    }
+    .center-text h1{
+      margin:0 0 6px;
+      font-size: clamp(22px, 3.6vw, 36px);
+      font-weight:900;
+      letter-spacing:.3px;
+    }
+    .center-text p{
+      margin:0;
+      color:var(--muted);
+      font-size: clamp(13px, 2.2vw, 16px);
+    }
+    /* tiny hint at bottom */
+    .hint{
+      position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+      color:#9fb3c8;font-size:12px;opacity:.85;text-align:center
+    }
+    @media (prefers-reduced-motion: reduce){
+      #warp{background: radial-gradient(ellipse at bottom, #0e1624 0%, #07080c 100%)}
+    }
+  </style>
+  <canvas id="warp"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
 
-        html {
-            min-height: 100%;
+  <div class="center-text" role="status" aria-live="polite">
+    <h1>#{$config.closed_message}</h1>
+  </div>
+
+  <script>
+  (() => {
+    const canvas = document.getElementById('warp');
+    const ctx = canvas.getContext('2d');
+
+    let W, H, CX, CY, DPR = Math.min(window.devicePixelRatio || 1, 2);
+    let stars = [];
+    let speed = 0.025;         // 基础速度（越大越快）
+    let warpBoost = 2.2;       // 加速倍数
+    let boosting = true;       // 初始进入就有“加速感”
+    let last = 0;
+
+    const STAR_COUNT = 700;    // 星点数量
+    const FOV = 320;           // 视距（影响透视感）
+    const Z_NEAR = 0.2;        // 最近深度
+    const Z_FAR  = 3.5;        // 最远深度
+
+    function resize(){
+      W = canvas.width  = Math.floor(window.innerWidth  * DPR);
+      H = canvas.height = Math.floor(window.innerHeight * DPR);
+      CX = W / 2;
+      CY = H / 2;
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.scale(DPR, DPR); // 逻辑像素绘制更清晰
+      initStars();
+    }
+
+    function randRange(a,b){ return a + Math.random()*(b-a); }
+
+    function initStars(){
+      stars = [];
+      const radius = Math.hypot(window.innerWidth, window.innerHeight) * 0.7;
+      for(let i=0;i<STAR_COUNT;i++){
+        const angle = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(Math.random()) * radius; // sqrt 分布让中心稀疏、边缘更密
+        stars.push({
+          x: Math.cos(angle) * r,
+          y: Math.sin(angle) * r,
+          z: randRange(Z_NEAR, Z_FAR),
+          s: randRange(0.6, 1.8)   // 星星“体型”
+        });
+      }
+    }
+
+    function project(star){
+      // 简单透视投影
+      const scale = FOV / (FOV * star.z);
+      return {
+        sx: CX/DPR + star.x * scale,
+        sy: CY/DPR + star.y * scale,
+        size: star.s * (1.4 - star.z) * 1.1  // 越近越大
+      };
+    }
+
+    function update(dt){
+      const v = speed * (boosting ? warpBoost : 1);
+      for(let s of stars){
+        s.z -= v * dt;
+        if(s.z < Z_NEAR){
+          // 重新“出生”在远处，形成源源不断的穿梭感
+          s.z = Z_FAR;
+          const angle = Math.random() * Math.PI * 2;
+          const radius = Math.hypot(window.innerWidth, window.innerHeight) * 0.7;
+          const r = Math.sqrt(Math.random()) * radius;
+          s.x = Math.cos(angle) * r;
+          s.y = Math.sin(angle) * r;
         }
+      }
+    }
 
-        body {
-            padding: 0;
-            margin: 0;
-            box-sizing: border-box;
-            height: 100%;
-            background-color: #000000;
-            background-image: radial-gradient(#333, #111);
-            font-family: 'Inconsolata', Helvetica, sans-serif;
-            font-size: 1.5rem;
-            color: rgba(128, 128, 128, 0.8);
-            text-shadow: 0 0 1ex rgba(51, 51, 51, 1), 0 0 2px rgba(255, 255, 255, 0.8);
-        }
+    function render(){
+      // 背景 / 轻微拉光
+      const grd = ctx.createRadialGradient(window.innerWidth/2, window.innerHeight/2, 0, window.innerWidth/2, window.innerHeight/2, Math.max(window.innerWidth,window.innerHeight));
+      grd.addColorStop(0, '#0b1220');
+      grd.addColorStop(1, '#05060a');
+      ctx.fillStyle = grd;
+      ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
 
-        .overlay {
-            pointer-events: none;
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0) 100%);
-            background-size: auto 4px;
-            z-index: 99;
-        }
+      // 画星：用速度产生“拖影”，更像隧穿
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
 
-        .overlay::before {
-            content: "";
-            pointer-events: none;
-            position: absolute;
-            display: block;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: linear-gradient(0deg,
-            transparent 0%,
-            rgba(128, 128, 128, 0.2) 2%,
-            rgba(128, 128, 128, 0.8) 3%,
-            rgba(128, 128, 128, 0.2) 3%,
-            transparent 100%);
-            background-repeat: no-repeat;
-            animation: scan 7.5s linear 0s infinite;
-        }
+      for(let s of stars){
+        const p = project(s);
 
-        @keyframes scan {
-            0% {
-                background-position: 0 -100vh;
-            }
-            35%, 100% {
-                background-position: 0 100vh;
-            }
-        }
+        // 越靠近中心、速度越大 → 拖尾越长
+        const tail = Math.max(1, (1.6 - s.z) * 18);
 
-        .terminal {
-            box-sizing: inherit;
-            position: absolute;
-            height: 100%;
-            width: 1000px;
-            max-width: 100%;
-            padding: 4rem;
-            text-transform: uppercase;
-        }
+        // 计算尾巴方向：朝向投影中心
+        const dx = p.sx - window.innerWidth/2;
+        const dy = p.sy - window.innerHeight/2;
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len;
+        const uy = dy / len;
 
-        .output {
-            color: rgba(128, 128, 128, 0.8);
-            text-shadow: 0 0 1ex rgba(51, 51, 51, 0.8),
-            0 0 2px rgba(255, 255, 255, 0.8);
-            font-size: 18px;
-        }
+        // 颜色带点青蓝霓虹感
+        ctx.strokeStyle = 'rgba(98, 169, 255, .9)';
+        ctx.lineWidth = Math.max(0.6, p.size * 0.9);
 
-        .output::before {
-            content: "> ";
-        }
+        ctx.beginPath();
+        ctx.moveTo(p.sx - ux * tail, p.sy - uy * tail);
+        ctx.lineTo(p.sx, p.sy);
+        ctx.stroke();
 
-        /*
-        .input {
-          color: rgba(192, 255, 192, 0.8);
-          text-shadow: 0 0 1ex #3f3, 0 0 2px rgba(255, 255, 255, 0.8);
-        }
+        // 星头点亮
+        ctx.fillStyle = 'rgba(180, 230, 255, .95)';
+        ctx.beginPath();
+        ctx.arc(p.sx, p.sy, Math.max(0.4, p.size*0.6), 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
 
-        .input::before {
-          content: "$ ";
-        }
-        */
+    function loop(ts){
+      const now = ts || performance.now();
+      const dt = last ? Math.min((now - last) / 16.666, 3) : 1; // 以 ~60fps 基准，限制最大步长
+      last = now;
+      update(dt);
+      render();
+      req = requestAnimationFrame(loop);
+    }
 
-        a {
-            color: #fff;
-            text-decoration: none;
-        }
+    window.addEventListener('resize', resize);
 
-        a::before {
-            content: "[";
-        }
+    // 空格切换“加速/减速”感
+    window.addEventListener('keydown', (e)=>{
+      if(e.code === 'Space'){
+        boosting = !boosting;
+      }
+    });
 
-        a::after {
-            content: "]";
-        }
-
-        .errorcode {
-            color: white;
-        }</style>
-</head>
-<body>
-<div class="overlay"></div>
-<div class="terminal">
-    <h2>抱歉，我们正在维护</h2>
-    <p class="output">#{$config.closed_message}</p>
-    <p class="output">在维护之际，我们为你精心准备了精彩歌曲</p>
-
-    <iframe style="width: 100%;height: 500px;border-radius: 10px;"
-            src="//player.bilibili.com/player.html?aid=421805433&bvid=BV183411t7Cv&cid=445016935&page=1" scrolling="no"
-            border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>
-
-</div>
-
-
-<script>
-</script>
-
-</body>
-</html>
-
+    resize();
+    let req = requestAnimationFrame(loop);
+  })();
+  </script>

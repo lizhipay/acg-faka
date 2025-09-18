@@ -4,46 +4,26 @@
     <meta charset="utf-8">
     <title>#{$title} - #{$config.title}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <link rel="stylesheet" href="/assets/static/layui/css/layui.css">
-    <link rel="stylesheet" href="/assets/static/bootstrap-table/css/bootstrap-table.css">
-    #{if $setting.style == 0}
-        <link rel="stylesheet" href="/assets/user/css/global.css?v=#{$app.version}">
-    #{elseif $setting.style == 1}
-        <link rel="stylesheet" href="/assets/user/css/global_1.css?v=#{$app.version}">
-    #{elseif $setting.style == 2}
-        <link rel="stylesheet" href="/assets/user/css/global_2.css?v=#{$app.version}">
-    #{/if}
-    <link rel="stylesheet" href="/assets/static/css/style.css?v=#{$app.version}">
+
     <link href="#{$favicon}" rel="icon">
 
-    <script src="/assets/static/jquery.min.js"></script>
-    <script src="/assets/static/layui/layui.js"></script>
-    <script src="/assets/user/user.js?v=#{$app.version}"></script>
-    <script src="/assets/static/clipboard.js"></script>
+    #{css(
+    [
+    "/assets/common/css/_.css",
+    "/assets/user/css/_user.css"
+    ],
+    [
+    "/assets/common/css/font.min.css",
+    "/assets/common/js/layui/css/layui.css",
+    "/assets/common/css/select2.min.css",
+    "/assets/common/css/toastr.min.css",
+    "/assets/common/js/table/bootstrap-table.css",
+    "/assets/common/js/layer/theme/default/layer.css",
+    "/assets/common/css/component.css",
+    "/assets/user/css/global_2.css"
+    ])}
 
-    <link rel="stylesheet" href="/assets/static/codemirror/lib/codemirror.css">
-    <link rel="stylesheet" href="/assets/static/codemirror/addon/fold/foldgutter.css">
-    <link rel="stylesheet" href="/assets/static/jsoneditor/jsoneditor.min.css">
-    <script src="/assets/static/codemirror/lib/codemirror.js"></script>
-    <script src="/assets/static/codemirror/addon/fold/foldcode.js"></script>
-    <script src="/assets/static/codemirror/addon/fold/foldgutter.js"></script>
-    <script src="/assets/static/codemirror/addon/fold/brace-fold.js"></script>
-    <script src="/assets/static/codemirror/addon/fold/xml-fold.js"></script>
-    <script src="/assets/static/codemirror/addon/fold/indent-fold.js"></script>
-    <script src="/assets/static/codemirror/addon/fold/markdown-fold.js"></script>
-    <script src="/assets/static/codemirror/addon/fold/comment-fold.js"></script>
-    <script src="/assets/static/codemirror/mode/javascript/javascript.js"></script>
-    <script src="/assets/static/codemirror/mode/xml/xml.js"></script>
-    <script src="/assets/static/codemirror/mode/css/css.js"></script>
-    <script src="/assets/static/codemirror/mode/htmlmixed/htmlmixed.js"></script>
-    <script src="/assets/static/codemirror/mode/python/python.js"></script>
-    <script src="/assets/static/codemirror/mode/markdown/markdown.js"></script>
-
-    <script>
-        layui.config({
-            base: '/assets/static/modules/'
-        });
-    </script>
+    #{js("/assets/common/js/ready.js")}
 
     <!--start::HOOK-->
     #{hook(\App\Consts\Hook::USER_VIEW_HEADER)}
@@ -55,10 +35,10 @@
         <div class="loading-image"></div>
     </div>
 </div>
-<div style="background: rgba(255,255,255,0.77);overflow:auto;height:calc(100vh - 61px);" class="bg-content">
+<div style="background: rgba(255,255,255,0.5);overflow:auto;height:100vh;" class="bg-content">
     <div class="fly-header">
         <div class="layui-container">
-            <a class="fly-logo" href="/">
+            <a class="fly-logo" href="/" target="_blank">
                 <span class="user-logo"><img src="#{$favicon}"></span>
                 <span class="user-logo-title">#{$config.shop_name}</span>
             </a>
@@ -67,7 +47,7 @@
                     <a href="/user/personal/purchaseRecord"><i class="iconfont icon-jiaoliu"></i>我的订单</a>
                 </li>
                 <li class="layui-nav-item">
-                    <a href="/"><i class="iconfont icon-shichang"></i>购买商品</a>
+                    <a href="/" target="_blank"><i class="iconfont icon-shichang"></i>购买商品</a>
                 </li>
             </ul>
 
@@ -96,3 +76,6 @@
             </ul>
         </div>
     </div>
+
+
+    <div id="pjax-container">

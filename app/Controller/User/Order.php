@@ -8,12 +8,15 @@ use App\Controller\Base\View\User;
 use App\Interceptor\UserSession;
 use App\Interceptor\Waf;
 use Kernel\Annotation\Interceptor;
+use Kernel\Exception\ViewException;
 
 #[Interceptor([Waf::class, UserSession::class, \App\Interceptor\Business::class])]
 class Order extends User
 {
     /**
-     * @throws \Kernel\Exception\ViewException
+     * @return string
+     * @throws ViewException
+     * @throws \ReflectionException
      */
     public function index(): string
     {
