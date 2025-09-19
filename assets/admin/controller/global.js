@@ -96,7 +96,7 @@
             height: "720px",
             tab: [
                 {
-                    name: `<span class="text-success"><i class="fa-duotone fa-regular fa-code"></i> 版本列表</span>`,
+                    name: `<i class="fa-duotone fa-regular fa-code"></i> 版本列表`,
                     form: [
                         {
                             title: false,
@@ -108,10 +108,12 @@
                                 util.post({
                                     url: "/admin/api/app/versions", done: res => {
                                         res.data.forEach(item => {
+                                            let beta =  item?.beta == 1 ? `<b class="text-primary">beta</b>` : "<b class='text-success'>stable</b>";
+
                                             $versionList.append(`<div class="layui-timeline-item">
                                                                         <i class="layui-icon layui-timeline-axis">&#xe63f;</i>
                                                                         <div class="layui-timeline-content">
-                                                                          <h3 class="layui-timeline-title fs-5" style="color: ${item.version == _LocalVersion ? "#2fcf94" : "#f98ee7"};">${item.version} ${item.version == _LocalVersion ? "←" : ''}</h3>
+                                                                          <h3 class="layui-timeline-title fs-5" style="color: ${item.version == _LocalVersion ? "#2fcf94" : "#f98ee7"};">${item.version} ${beta} ${item.version == _LocalVersion ? "←" : ''}</h3>
                                                                           <p>${item.content}</p>
                                                                           <p style="margin-top: 10px;color: #867d00;font-size: 12px;">source: <a class="text-primary" href="${item.update_url}" target="_blank">${item.version}.zip</a></p>
                                                                           <p class="fw-normal" style="font-size: 12px;color: #009a25;">${item.update_date}</p>

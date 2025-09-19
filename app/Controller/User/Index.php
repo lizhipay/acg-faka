@@ -60,7 +60,7 @@ class Index extends User
         return $this->theme(strip_tags($item['name']), "ITEM", "Index/Item.html", [
             'user' => $this->getUser(),
             'from' => (int)$_GET['from'],
-            "commodityId" => $_GET['mid'],
+            "commodityId" => (int)$_GET['mid'],
             'item' => $item
         ]);
     }

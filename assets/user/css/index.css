@@ -55,6 +55,20 @@ body {
     font-weight: 600;
 }
 
+@media (max-width: 767.98px) {
+    .user-info-box {
+        position: absolute;
+        right: 64px;
+        top: 8px;
+    }
+    .user-login-box {
+        position: absolute;
+        right: 68px;
+        top: 14px;
+    }
+}
+
+
 /* Hero 文案块（纯色卡片） */
 .hero-acg {
     background: var(--acg-card-bg);
@@ -87,7 +101,7 @@ body {
     overflow-x: visible;
     overflow-y: visible;
     padding: 2px 0 .25rem;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
 }
 
 .chip-list::-webkit-scrollbar {
@@ -997,6 +1011,13 @@ body {
     box-shadow: 0 2px 8px rgba(122, 140, 255, 0.3);
 }
 
+/* 响应式调整 */
+@media (max-width: 767.98px) {
+    .order-query-form .btn-primary {
+        width: 120px;
+    }
+}
+
 /* 订单项样式 - 重新设计 */
 .order-item {
     background: rgba(255, 255, 255, 0.15);
@@ -1546,7 +1567,7 @@ body {
     }
 }
 
-.card-display{
+.card-display {
     white-space: pre-line;
 }
 

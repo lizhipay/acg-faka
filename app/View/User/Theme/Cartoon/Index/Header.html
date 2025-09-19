@@ -38,64 +38,75 @@
             <img src="/favicon.ico" alt="ACG Logo" class="brand-logo me-2">
             <span style="color: #1396558a;">#{$config.shop_name}</span>
         </a>
+
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto mb-lg-0">
-                <li class="nav-item"><a class="nav-link #{if $title == "首页"}active#{/if}" href="/"><i class="fa-duotone fa-regular fa-cart-shopping nav-icon"></i>购物</a></li>
-                <li class="nav-item"><a class="nav-link #{if $title == "订单查询"}active#{/if}" href="/user/index/query"><i class="fa-duotone fa-regular fa-folders nav-icon"></i>订单查询</a></li>
+                <li class="nav-item"><a class="nav-link #{if $title == "首页"}active#{/if}" href="/"><i
+                                class="fa-duotone fa-regular fa-cart-shopping nav-icon"></i>购物</a></li>
+                <li class="nav-item"><a class="nav-link #{if $title == "订单查询"}active#{/if}"
+                                        href="/user/index/query"><i
+                                class="fa-duotone fa-regular fa-folders nav-icon"></i>订单查询</a></li>
             </ul>
             <div class="d-none d-lg-flex search-input" role="search">
                 <div class="input-group">
-                    <span class="input-group-text"><i class="fa-duotone fa-regular fa-magnifying-glass nav-icon"></i></span>
-                    <input class="form-control item-search-input" type="search" placeholder="搜索商品关键词.." aria-label="Search">
+                    <span class="input-group-text"><i
+                                class="fa-duotone fa-regular fa-magnifying-glass nav-icon"></i></span>
+                    <input class="form-control item-search-input" type="search" placeholder="搜索商品关键词.."
+                           aria-label="Search">
                 </div>
             </div>
-            <div class="ms-2 d-none d-lg-block">
-                <!-- 未登录状态 -->
-                #{if $user}
-                    <div class="dropdown">
-                        <button class="btn btn-link text-decoration-none dropdown-toggle d-flex align-items-center"
-                                type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img id="user-avatar"
-                                 src="#{$user.avatar}"
-                                 alt="用户头像" class="rounded-circle me-2"
-                                 style="width: 32px; height: 32px; object-fit: cover; background-color: #f8f9fa;">
-                            <div class="d-flex flex-column align-items-start me-2">
+        </div>
+
+        #{if $user}
+            <div class="ms-2 user-info-box">
+                <div class="dropdown">
+                    <button class="btn btn-link text-decoration-none dropdown-toggle d-flex align-items-center"
+                            type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img id="user-avatar"
+                             src="#{$user.avatar}"
+                             alt="用户头像" class="rounded-circle me-2"
+                             style="width: 32px; height: 32px; object-fit: cover; background-color: #f8f9fa;">
+                        <div class="d-flex flex-column align-items-start me-2">
                                 <span id="username" class="fw-bold text-dark"
                                       style="font-size: 14px; line-height: 1.2;">#{$user.username}</span>
-                                <span id="user-balance" class="text-muted" style="font-size: 12px; line-height: 1.2;">余额: <span class="text-success">¥#{$user.balance}</span></span>
-                            </div>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="/user/dashboard/index"><i
-                                            class="fa-duotone fa-regular fa-user me-2"></i>个人中心</a></li>
-                            <li><a class="dropdown-item" href="/user/recharge/index"><i
-                                            class="fa-duotone fa-regular fa-wallet me-2"></i>钱包充值</a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item" href="/user/personal/purchaseRecord"><i
-                                            class="fa-duotone fa-regular fa-receipt me-2"></i>我的订单</a></li>
-                            <li><a class="dropdown-item" href="/user/security/personal"><i
-                                            class="fa-duotone fa-regular fa-gear me-2"></i>设置</a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item text-danger" href="/user/authentication/logout"><i
-                                            class="fa-duotone fa-regular fa-sign-out me-2"></i>退出登录</a></li>
-                        </ul>
-                    </div>
-                #{else}
-                    <a class="btn btn-outline-secondary btn-sm br-12" href="/user/authentication/login"><i
-                                class="fa-duotone fa-regular fa-right-to-bracket nav-icon"></i>登录</a>
-                    <a class="btn btn-primary btn-sm br-12" href="/user/authentication/register"><i
-                                class="fa-duotone fa-regular fa-user-plus nav-icon"></i>创建账号</a>
-                #{/if}
+                            <span id="user-balance" class="text-muted" style="font-size: 12px; line-height: 1.2;">余额: <span
+                                        class="text-success">¥#{$user.balance}</span></span>
+                        </div>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><a class="dropdown-item" href="/user/dashboard/index"><i
+                                        class="fa-duotone fa-regular fa-user me-2"></i>个人中心</a></li>
+                        <li><a class="dropdown-item" href="/user/recharge/index"><i
+                                        class="fa-duotone fa-regular fa-wallet me-2"></i>钱包充值</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="/user/personal/purchaseRecord"><i
+                                        class="fa-duotone fa-regular fa-receipt me-2"></i>我的订单</a></li>
+                        <li><a class="dropdown-item" href="/user/security/personal"><i
+                                        class="fa-duotone fa-regular fa-gear me-2"></i>设置</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item text-danger" href="/user/authentication/logout"><i
+                                        class="fa-duotone fa-regular fa-sign-out me-2"></i>退出登录</a></li>
+                    </ul>
+                </div>
             </div>
-        </div>
+        #{else}
+            <div class="ms-2 user-login-box">
+                <a class="btn btn-outline-secondary btn-sm br-12" href="/user/authentication/login"><i
+                            class="fa-duotone fa-regular fa-right-to-bracket nav-icon"></i>登录</a>
+                <a class="btn btn-primary btn-sm br-12" href="/user/authentication/register"><i
+                            class="fa-duotone fa-regular fa-user-plus nav-icon"></i>创建账号</a>
+            </div>
+        #{/if}
+
     </div>
 </nav>
 <div id="pjax-container">

@@ -190,7 +190,7 @@ let acg = {
     }, API: {
         secret(opt) {
             acg.$post("/user/api/index/secret", {
-                orderId: acg.property.cache.order[opt.orderId].trade_no, password: opt.password
+                tradeNo: acg.property.cache.order[opt.orderId].trade_no, password: opt.password
             }, res => {
                 typeof opt.begin === 'function' && opt.begin(res);
                 if (res.length == 0) {
@@ -206,11 +206,11 @@ let acg = {
             }, res => {
                 typeof opt.begin === 'function' && opt.begin(res);
 
-                if (res.length == 0) {
+                if (res.total == 0) {
                     typeof opt.empty === 'function' && opt.empty(res);
                     return;
                 }
-                res.forEach(item => {
+                res?.list?.forEach(item => {
                     acg.property.cache.order[item.id] = item;
                     typeof opt.success === 'function' && opt.success(item);
                 });
@@ -230,18 +230,11 @@ let acg = {
         }, trade(opt) {
             acg.$post("/user/api/order/trade", opt.data, opt.success, opt.error);
         }, tradePerform(payId) {
-            let cardId = $('input[name=card_id]:checked').val();
-            if (cardId === undefined) {
-                cardId = 0;
-            }
+            let arrayToObject = this.getPostData();
 
-            let arrayToObject = acg.Util.arrayToObject($('.commodity-form').serializeArray());
-            arrayToObject.commodity_id = acg.property.cache.currentCommodityId;
-            arrayToObject.card_id = cardId;
             arrayToObject.pay_id = payId;
             arrayToObject.device = acg.Util.device();
-            arrayToObject.from = localStorage.hasOwnProperty("from_id") ? localStorage.getItem("from_id") : 0;
-            arrayToObject.race = acg.property.cache.raceId;
+
             acg.API.trade({
                 data: arrayToObject, success: res => {
                     if (res.secret == null) {
@@ -263,14 +256,42 @@ let acg = {
                     acg.API.captcha(".captcha");
                 }
             });
-        }, tradeAmount(opt) {
-            acg.$post("/user/api/index/tradeAmount", {
-                num: opt.num,
-                cardId: opt.cardId,
-                coupon: opt.coupon,
-                commodityId: opt.commodityId,
-                race: acg.property.cache.raceId
-            }, res => {
+        },
+        getFormData(element) {
+            const formData = new FormData(
+                element instanceof HTMLFormElement ? element : document.querySelector(element)
+            );
+            return Object.fromEntries(formData.entries());
+        },
+        getPostData() {
+            const _item = acg.property.cache.item;
+            let post = this.getFormData('.commodity-form');
+            post["item_id"] = _item?.id;
+
+            if (!this.isEmptyOrNotJson(_item?.config?.category)) {
+                //商品分类
+                post["race"] = $(`.sku-race.checked`).data("id");
+            }
+
+            //获取SKU
+            if (!this.isEmptyOrNotJson(_item?.config?.sku)) {
+                for (const name in _item?.config?.sku) {
+                    const $sku = $(`.sku[data-sku="${name}"].checked`);
+                    post["sku"] = post["sku"] || {};
+                    post["sku"][name] = $sku.data("value");
+                }
+            }
+
+            //自选卡密
+            let cardId = $('input[name=card_id]:checked').val();
+            if (cardId > 0) {
+                post['card_id'] = cardId;
+            }
+
+            return post;
+        },
+        tradeAmount(opt) {
+            acg.$post("/user/api/index/valuation", this.getPostData(), res => {
                 typeof opt.success === 'function' && opt.success(res);
             }, opt.error);
 
@@ -281,17 +302,14 @@ let acg = {
                 num = 1;
             }
             let cardId = $('input[name=card_id]:checked').val();
-            let coupon = $('input[name=coupon]').val();
-            if (cardId === undefined) {
-                cardId = 0;
+
+            if (cardId > 0) {
+                $("input[name=num]").val(1);
             }
+
             acg.API.tradeAmount({
-                num: num,
-                cardId: cardId,
-                coupon: coupon,
-                commodityId: acg.property.cache.currentCommodityId,
                 success: res => {
-                    $(instance).html("¥" + res.amount);
+                    $(instance).html("¥" + (res.price * $("input[name=num]").val()));
                     $('.price').html("¥" + res.price);
                     if (res.hasOwnProperty("card_count")) {
                         let instance = $('.card_count');
@@ -324,15 +342,19 @@ let acg = {
                 typeof opt.yes === 'function' && opt.yes();
             }, opt.error, acg.property.setting.cache, acg.property.setting.cache_expire);
         }, draftCard(opt) {
-            acg.$get("/user/api/index/card?commodityId=" + opt.commodityId + "&page=" + opt.page + "&limit=" + opt.limit + "&race=" + acg.property.cache.raceId, res => {
+            let data = this.getPostData();
+            data.page = opt.page;
+            data.limit = opt.limit;
+            acg.property.cache.cardPage = data.page;
+            acg.$post("/user/api/index/card", data, res => {
                 typeof opt.begin === 'function' && opt.begin(res);
 
-                if (res.data.length == 0) {
+                if (res?.total == 0) {
                     typeof opt.empty === 'function' && opt.empty(res);
                     return;
                 }
 
-                res.data.forEach(item => {
+                res?.list?.forEach(item => {
                     typeof opt.success === 'function' && opt.success(item);
                 });
                 typeof opt.yes === 'function' && opt.yes();
@@ -340,17 +362,25 @@ let acg = {
         }, draftCardPerform(instance, commodityId, page, draft_premium) {
             acg.API.draftCard({
                 commodityId: commodityId, page: page, limit: 5, begin: res => {
-                    let next = res.current_page + 1;
-                    let prev = res.current_page - 1;
-                    if (next >= res.last_page) {
-                        next = res.last_page;
-                    }
+                    let next = acg.property.cache.cardPage + 1;
+                    let prev = acg.property.cache.cardPage - 1;
+
                     if (prev <= 1) {
                         prev = 1;
                     }
-                    $(instance).html('自选加价：<span class="draft_premium">￥' + draft_premium + '元</span><table><tbody class="draftCard"></tbody></table> <div style="margin-top: 5px;" class="page-button"><button ' + (res.current_page <= 1 ? 'disabled' : '') + ' type="button" onclick="acg.API.draftCardPerform(\'' + instance + '\',' + commodityId + ',' + prev + ',\'' + draft_premium + '\')">上一组</button> <button ' + (res.current_page >= res.last_page ? 'disabled' : '') + ' type="button" onclick="acg.API.draftCardPerform(\'' + instance + '\',' + commodityId + ',' + next + ',\'' + draft_premium + '\')">下一组</button></div>');
+                    $(instance).html('<table><tbody class="draftCard"></tbody></table> <div style="margin-top: 5px;" class="page-button"><button ' + (res.current_page <= 1 ? 'disabled' : '') + ' type="button" onclick="acg.API.draftCardPerform(\'' + instance + '\',' + commodityId + ',' + prev + ',\'' + draft_premium + '\')">上一组</button> <button ' + (res.current_page >= res.last_page ? 'disabled' : '') + ' type="button" onclick="acg.API.draftCardPerform(\'' + instance + '\',' + commodityId + ',' + next + ',\'' + draft_premium + '\')">下一组</button></div>');
                 }, success: item => {
-                    $(instance).find(".draftCard").append('<tr><td><label><input type="checkbox" onclick="acg.API.tradeAmountPerform(\'.trade_amount\')" onchange="acg.API.draftCardCheckbox(this)" name="card_id" value="' + item.id + '"> ' + item.draft + '</label></td></tr>');
+                    let premium = 0;
+
+                    if (draft_premium > 0) {
+                        premium = draft_premium;
+                    }
+
+                    if (item?.draft_premium > 0) {
+                        premium = item.draft_premium;
+                    }
+
+                    $(instance).find(".draftCard").append('<tr><td><label><input type="checkbox" onchange="acg.API.draftCardCheckbox(this)" name="card_id" value="' + item.id + '"> ' + item.draft + (premium > 0 ? `<span class="card-premium">+¥${premium}</span>` : '') + '</label></td></tr>');
                 }
             });
         }, draftCardCheckbox(obj) {
@@ -361,6 +391,7 @@ let acg = {
             } else {
                 $(obj).prop("checked", false);
             }
+            acg.API.tradeAmountPerform('.trade_amount');
         }, //获取商品列表
         commoditys(opt) {
             if (opt.categoryId === "") {
@@ -402,8 +433,11 @@ let acg = {
         //获取商品信息
         commodity(opt) {
             acg.property.cache.raceId = "";
+            acg.property.cache.cardPage = 1;
             acg.$get("/user/api/index/commodityDetail?commodityId=" + opt.commodityId, res => {
                 typeof opt.begin === 'function' && opt.begin(res);
+                acg.property.cache.item = res;
+                localStorage.setItem("_item_id", res.id);
                 acg.property.cache.currentCommodityId = opt.commodityId;
                 opt.pay && $(opt.pay).show();
                 if (opt.auto) {
@@ -411,7 +445,7 @@ let acg = {
                         let instance = $(opt.auto[autoKey]);
                         let value = res[autoKey];
                         if (autoKey == "share_url") {
-                            instance.attr("data-clipboard-text", value);
+                            instance.attr("data-clipboard-text", value + "#buy" );
                             instance.click(function () {
                                 let clipboard = new ClipboardJS(opt.auto[autoKey]);
                                 clipboard.on('success', function (e) {
@@ -430,16 +464,18 @@ let acg = {
                             continue;
                         } else if (autoKey == "race") {
                             let lotHtml = $(opt.auto['lot_status']);
-                            if (res.hasOwnProperty('race') && res.race) {
+
+                            if (!this.isEmptyOrNotJson(res?.config?.category)) {
                                 let content = instance.find("span");
                                 let raceIndex = 0;
                                 content.html("");
                                 acg.property.cache.raceId = "";
-                                for (let key in res.race) {
+                                for (let key in res?.config?.category) {
                                     if (raceIndex == 0) {
                                         acg.property.cache.raceId = key;
                                     }
-                                    content.append('<span data-id="' + key + '" class="race-click button-click ' + (raceIndex == 0 ? 'checked' : '') + '">' + key + '</span>');
+                                    const price = res?.config?.category[key];
+                                    content.append(`<span data-id="${key}" class="race-click button-click sku-race ${raceIndex == 0 ? 'checked' : ''}">${key}${price > 0 ? `<span class="badge-money">¥${price}</span>` : ''}</span>`);
                                     raceIndex++;
                                 }
                                 let categoryWholesale = function () {
@@ -466,16 +502,14 @@ let acg = {
                                     }
                                 }
                                 categoryWholesale();
-                                $('.race-click').click(function () {
+                                const _this = this;
+                                $('.sku-race').click(function () {
                                     acg.property.cache.raceId = $(this).attr("data-id");
-                                    $('.race-click').removeClass("checked");
+                                    $('.sku-race').removeClass("checked");
                                     $(this).addClass("checked");
                                     acg.API.tradeAmountPerform('.trade_amount');
-                                    if (acg.property.cache.draftStatus === true) {
-                                        $('input[name=card_id]:checked').prop("checked", false);
-                                        acg.API.draftCardPerform(opt.auto['draft_status'], res.id, 1, res.draft_premium);
-                                    }
                                     categoryWholesale();
+                                    _this.stock();
                                 });
 
                                 instance.show();
@@ -503,6 +537,34 @@ let acg = {
                             }
 
                             continue;
+                        } else if (autoKey == "sku") {
+
+                            if (!this.isEmptyOrNotJson(res?.config?.sku)) {
+                                for (const skuKey in res?.config?.sku) {
+                                    let skuHtml = ``, i = 0;
+                                    for (const typeKey in res?.config?.sku[skuKey]) {
+                                        const price = res?.config?.sku[skuKey][typeKey];
+                                        skuHtml += `<span data-sku="${skuKey}" data-value="${typeKey}" data-price="${price}" class="race-click button-click sku ${i == 0 ? 'checked' : ''}">${typeKey}${price > 0 ? `<span class="badge-money">+¥${price}</span>` : ''}</span>`;
+                                        i++;
+                                    }
+                                    instance.append(`<p class="general">${skuKey}：<span>${skuHtml}</span></p>`);
+                                }
+
+                                const _this = this;
+
+                                if (!this.isEmptyOrNotJson(res?.config?.sku)) {
+                                    for (const name in res?.config?.sku) {
+                                        const $sku = $(`.sku[data-sku="${name}"]`);
+                                        $sku.click(function () {
+                                            $sku.removeClass("checked");
+                                            $(this).addClass("checked");
+                                            acg.API.tradeAmountPerform('.trade_amount');
+                                            _this.stock();
+                                        });
+                                    }
+                                }
+                            }
+
                         } else if (autoKey == "contact_type") {
                             if (res.login) {
                                 instance.parent().hide();
@@ -533,7 +595,7 @@ let acg = {
                             continue;
                         } else if (autoKey == "password_status") {
                             //查询密码
-                            (value == 0 || res.login) ? instance.hide() : instance.show();
+                            value == 0 ? instance.hide() : instance.show();
                             continue;
                         } else if (autoKey == "seckill_status") {
                             clearInterval(acg.property.cache.seckill);
@@ -555,6 +617,7 @@ let acg = {
                                 let fnStart = () => {
                                     let langTime = acg.getLangTime(new Date().getTime(), start);
                                     timer.html("<span class='seckill_start_time'>" + langTime.days + "天" + langTime.hours + "时" + langTime.minutes + "分" + langTime.seconds + "秒后开始抢购</span>");
+                                    $(`.pay-content`).hide();
                                     if (langTime.days <= 0 && langTime.hours <= 0 && langTime.minutes <= 0 && langTime.seconds <= 0) {
                                         clearInterval(acg.property.cache.seckill);
                                         opt.pay && $(opt.pay).show();
@@ -625,66 +688,51 @@ let acg = {
                                 instance.html('¥' + res.price);
                             }
                             continue;
-                        } else if (autoKey == "draft_status") {
-                            if (res.draft_status == 1) {
-                                instance.show();
-                                acg.API.draftCardPerform(opt.auto[autoKey], res.id, 1, res.draft_premium);
-                                acg.property.cache.draftStatus = true;
-                            } else {
-                                acg.property.cache.draftStatus = false;
-                                instance.hide();
-                            }
-                            continue;
                         } else if (autoKey == "widget") {
-                            if (res.widget) {
-                                let parse = JSON.parse(res.widget);
-                                if (parse != null) {
-                                    parse.forEach(widget => {
-                                        if (widget.type == "text" || widget.type == "password" || widget.type == "number") {
-                                            instance.append('<p>' + widget.cn + '：<input class="acg-input" type="' + widget.type + '" name="' + widget.name + '" placeholder="' + widget.placeholder + '"></p>');
-                                        } else if (widget.type == "select") {
-                                            let html = '<p>' + widget.cn + '：<select name="' + widget.name + '" style="border-radius: 5px;border: 1px dashed #80b9f594;width:auto;height: auto;display: inline-block;padding: 0 0;"><option value="">' + widget.placeholder + '</option>';
-                                            let dict = widget.dict.split(",");
-                                            for (let i = 0; i < dict.length; i++) {
-                                                let sp = dict[i].split("=");
-                                                if (sp.length != 2) {
-                                                    continue;
-                                                }
-                                                html += '<option value="' + sp[1] + '">' + sp[0] + '</option>'
+                            if (!this.isEmptyOrNotJson(res.widget)) {
+                                res.widget.forEach(widget => {
+                                    if (widget.type == "text" || widget.type == "password" || widget.type == "number") {
+                                        instance.append('<p>' + widget.cn + '：<input class="acg-input" type="' + widget.type + '" name="' + widget.name + '" placeholder="' + widget.placeholder + '"></p>');
+                                    } else if (widget.type == "select") {
+                                        let html = '<p>' + widget.cn + '：<select name="' + widget.name + '" style="border-radius: 5px;border: 1px dashed #80b9f594;width:auto;height: auto;display: inline-block;padding: 0 0;"><option value="">' + widget.placeholder + '</option>';
+                                        let dict = widget.dict.split(",");
+                                        for (let i = 0; i < dict.length; i++) {
+                                            let sp = dict[i].split("=");
+                                            if (sp.length != 2) {
+                                                continue;
                                             }
-                                            html += "</select></p>"
-                                            instance.append(html);
-                                        } else if (widget.type == "textarea") {
-                                            instance.append('<p><textarea name="' + widget.name + '" placeholder="' + widget.placeholder + '" style="border-radius: 5px;border: 1px dashed #80b9f594;width: 100%;height: 100px;"></textarea></p>');
-                                        } else if (widget.type == "checkbox") {
-                                            let html = '<p>' + widget.cn + '：';
-                                            let dict = widget.dict.split(",");
-                                            for (let i = 0; i < dict.length; i++) {
-                                                let sp = dict[i].split("=");
-                                                if (sp.length != 2) {
-                                                    continue;
-                                                }
-                                                html += '<label style="margin-right: 10px;"><input name="' + widget.name + '[]" type="checkbox" value="' + sp[1] + '"> ' + sp[0] + '</label>';
-                                            }
-                                            html += '</p>';
-                                            instance.append(html);
-                                        } else if (widget.type == "radio") {
-                                            let html = '<p>' + widget.cn + '：';
-                                            let dict = widget.dict.split(",");
-                                            for (let i = 0; i < dict.length; i++) {
-                                                let sp = dict[i].split("=");
-                                                if (sp.length != 2) {
-                                                    continue;
-                                                }
-                                                html += '<label style="margin-right: 10px;"><input name="' + widget.name + '" type="radio" value="' + sp[1] + '"> ' + sp[0] + '</label>';
-                                            }
-                                            html += '</p>';
-                                            instance.append(html);
+                                            html += '<option value="' + sp[1] + '">' + sp[0] + '</option>'
                                         }
-                                    });
-                                } else {
-                                    instance.hide();
-                                }
+                                        html += "</select></p>"
+                                        instance.append(html);
+                                    } else if (widget.type == "textarea") {
+                                        instance.append('<p><textarea name="' + widget.name + '" placeholder="' + widget.placeholder + '" style="border-radius: 5px;border: 1px dashed #80b9f594;width: 100%;height: 100px;"></textarea></p>');
+                                    } else if (widget.type == "checkbox") {
+                                        let html = '<p>' + widget.cn + '：';
+                                        let dict = widget.dict.split(",");
+                                        for (let i = 0; i < dict.length; i++) {
+                                            let sp = dict[i].split("=");
+                                            if (sp.length != 2) {
+                                                continue;
+                                            }
+                                            html += '<label style="margin-right: 10px;"><input name="' + widget.name + '[]" type="checkbox" value="' + sp[1] + '"> ' + sp[0] + '</label>';
+                                        }
+                                        html += '</p>';
+                                        instance.append(html);
+                                    } else if (widget.type == "radio") {
+                                        let html = '<p>' + widget.cn + '：';
+                                        let dict = widget.dict.split(",");
+                                        for (let i = 0; i < dict.length; i++) {
+                                            let sp = dict[i].split("=");
+                                            if (sp.length != 2) {
+                                                continue;
+                                            }
+                                            html += '<label style="margin-right: 10px;"><input name="' + widget.name + '" type="radio" value="' + sp[1] + '"> ' + sp[0] + '</label>';
+                                        }
+                                        html += '</p>';
+                                        instance.append(html);
+                                    }
+                                });
                             } else {
                                 instance.hide();
                             }
@@ -723,10 +771,44 @@ let acg = {
                         $(opt.pay).show();
                     }
                 }
+                this.tradeAmountPerform(`.trade_amount`);
+                this.stock();
                 typeof opt.success === 'function' && opt.success(res);
             }, opt.error, acg.property.setting.cache, 10);
         }, captcha(obj) {
             $(obj).attr("src", "/user/captcha/image?action=trade&rand=" + Math.ceil(Math.random() * 10000000));
+        },
+        isEmptyOrNotJson(val) {
+            if (val === null || val === undefined) return true;
+
+            if (typeof val === 'object') {
+                if (Array.isArray(val) || Object.prototype.toString.call(val) === '[object Object]') {
+                    return Object.keys(val).length === 0;
+                }
+            }
+
+            // 不是对象类型，统统算 true
+            return true;
+        },
+        stock() {
+            const _item = acg.property.cache.item;
+            const $itemStock = $(`.stock`), $payContent = $(`.pay-content`), $draftStatus = $(`.draft_status`);
+            $.post("/user/api/index/stock", this.getPostData(), res => {
+                if (res.data.stock <= 0) {
+                    $itemStock.css('background', '#ff8383').html("无库存").show();
+                    $payContent.fadeOut(100);
+                    $draftStatus.fadeOut(100);
+                    return;
+                }
+
+                $itemStock.css('background', '#9259f378').html("库存: " + res.data.stock).show();
+                if (_item.draft_status == 1) {
+                    $('input[name=card_id]:checked').prop("checked", false);
+                    acg.API.draftCardPerform('.draft_status', null, 1, _item.draft_premium);
+                    $draftStatus.fadeIn(150);
+                    $payContent.fadeIn(150);
+                }
+            });
         }
     },
 }

@@ -129,7 +129,7 @@ class Form {
                 let form = item.form[j];
                 let value = util.parseStringObject(data, util.replaceDotWithHyphen(form.name));
                 if (form.required === true && value === "") {
-                    layer.msg(`「${form.title ? form.title : form.name}」${i18n('不能为空值')}`);
+                    layer.msg(`「${form.title ? util.plainText(form.title) : form.name}」${i18n('不能为空值')}`);
                     return false;
                 }
                 if (form.regex && value) {
