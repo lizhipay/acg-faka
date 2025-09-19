@@ -280,7 +280,7 @@
                                             data-control="select2" data-hide-search="true">
                                         <option value="0" #{if $config.default_category == 0} selected #{/if}>不展开
                                         </option>
-                                        <option value="-10" #{if $config.default_category == -10} selected #{/if}>推荐
+                                        <option value="recommend" #{if $config.default_category == "recommend"} selected #{/if}>推荐
                                         </option>
                                         #{foreach $category as $cate}
                                             <option value="#{$cate.id}" #{if $config.default_category == $cate.id} selected #{/if}>#{$cate.name}</option>

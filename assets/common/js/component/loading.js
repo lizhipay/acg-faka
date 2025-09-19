@@ -46,7 +46,7 @@ class Loading {
         // overlay 模式
         this._ensureOverlay();
         const ov = this._overlay;
-        ov.setAttribute('aria-hidden', 'false');
+        ov.setAttribute('mask-hidden', 'false');
 
         // 样式覆写（作用于 overlay 内的 ring）
         const ring = ov.querySelector('.chahuo-ring');
@@ -60,7 +60,7 @@ class Loading {
 
     /** 隐藏（同时清理 overlay 与 inline） */
     static hide() {
-        if (this._overlay) this._overlay.setAttribute('aria-hidden', 'true');
+        if (this._overlay) this._overlay.setAttribute('mask-hidden', 'true');
         this._unlockScroll();
         this._cleanupInline();
     }
@@ -70,7 +70,7 @@ class Loading {
         if (this._overlay) return;
         const ov = document.createElement('div');
         ov.className = 'chahuo-ring-overlay';
-        ov.setAttribute('aria-hidden', 'true');
+        ov.setAttribute('mask-hidden', 'true');
 
         const ring = document.createElement('span');
         ring.className = 'chahuo-ring';

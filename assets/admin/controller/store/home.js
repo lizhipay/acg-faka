@@ -43,7 +43,7 @@
                 </form>
               </div>`);
 
-                                $("#login-password").on("keydown", function(e) {
+                                $("#login-password").on("keydown", function (e) {
                                     if (e.key === "Enter" || e.keyCode === 13) {
                                         $(".btn-login").click();
                                     }
@@ -473,7 +473,6 @@
                                         type: row.type,
                                         plugin_id: row.id
                                     }, res => {
-
                                         setTimeout(() => {
                                             table.refresh();
                                         }, 500);

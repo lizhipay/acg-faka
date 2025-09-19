@@ -2403,7 +2403,7 @@ textarea, input {
     background: var(--chahuo-ring-overlay);
     backdrop-filter: blur(1px);
 }
-.chahuo-ring-overlay[aria-hidden="false"]{ display: grid; }
+.chahuo-ring-overlay[mask-hidden="false"]{ display: grid; }
 
 .chahuo-ring-inline{
     display: inline-grid;

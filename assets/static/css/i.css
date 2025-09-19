@@ -1284,13 +1284,70 @@ a {
     user-select: none;
     cursor: pointer;
     padding: 4px 8px;
-    margin: 0 12px 8px 0;
+    /*margin: 0 12px 8px 0;*/
     -webkit-transition: all .3s ease;
     transition: all .3s ease;
     -webkit-box-shadow: 0 1px 4px 0 #ff99e899;
     box-shadow: 0 1px 4px 0 #ff99e899;
     font-weight: bolder;
 }
+
+
+.general.race-view span {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+
+.race-click .badge-money {
+    position: absolute;
+    top: -15px;
+    right: -12px;
+    z-index: 1;
+    padding: 1px 4px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.1;
+    color: #fff;
+    background: linear-gradient(90deg, #ffb84d, #ff6b88);
+    border: 2px solid #ffffff;
+    box-shadow: 0 8px 18px rgba(255, 107, 136, .35);
+    pointer-events: none; /* 不干扰点击 SKU */
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .race-click:hover .badge-money,
+    .race-click:hover .badge-moeny,
+    .optional-card:hover {
+        transform: translateY(-1px) scale(1.05);
+        transition: transform .12s ease;
+    }
+}
+
+.stock {
+    color: white;
+    background: #9259f378;
+    padding: 2px 4px;
+    border-radius: 5px;
+    font-size: 12px;
+    margin-left: 4px;
+    display: none;
+}
+
+
+.card-premium{
+    padding: 1px 4px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
+    background: linear-gradient(90deg, #ffb84d, #ff6b88);
+    border: 2px solid #ffffff;
+    box-shadow: 0 8px 18px rgba(255, 107, 136, .35);
+}
+
 
 .checked {
     border: 1px dashed #3effb8;
