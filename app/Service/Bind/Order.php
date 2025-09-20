@@ -309,7 +309,7 @@ class Order implements \App\Service\Order
         }
 
         //返回单价
-        return $price->getAmount();
+        return $price->mul($num)->getAmount();
     }
 
 
