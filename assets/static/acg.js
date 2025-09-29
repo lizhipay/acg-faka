@@ -794,7 +794,7 @@ let acg = {
             const _item = acg.property.cache.item;
             const $itemStock = $(`.stock`), $payContent = $(`.pay-content`), $draftStatus = $(`.draft_status`);
             $.post("/user/api/index/stock", this.getPostData(), res => {
-                if (res.data.stock <= 0) {
+                if (res.data.stock_state <= 0) {
                     $itemStock.css('background', '#ff8383').html("无库存").show();
                     $payContent.fadeOut(100);
                     $draftStatus.fadeOut(100);

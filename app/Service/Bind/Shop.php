@@ -145,7 +145,7 @@ class Shop implements \App\Service\Shop
                 "status", "owner", "delivery_way", "contact_type", "password_status", "level_price",
                 "level_disable", "coupon", "shared_id", "shared_code", "shared_premium", "shared_premium_type", "seckill_status",
                 "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden",
-                "widget", "minimum", "maximum", "shared_sync", "config"])
+                "widget", "minimum", "maximum", "shared_sync", "config", "stock"])
             ->withCount(['order as order_sold' => function (Builder $relation) {
                 $relation->where("delivery_status", 1);
             }]);
@@ -247,11 +247,12 @@ class Shop implements \App\Service\Shop
     }
 
     /**
-     * @param int|string $stock
+     * @param int|string|null $stock
      * @return string
      */
-    public function getHideStock(int|string $stock): string
+    public function getHideStock(int|string|null $stock): string
     {
+        $stock = (int)$stock;
         return match (true) {
             $stock <= 0 => "已售罄",
             $stock <= 5 => "即将售罄",
@@ -262,11 +263,12 @@ class Shop implements \App\Service\Shop
     }
 
     /**
-     * @param int|string $stock
+     * @param int|string|null $stock
      * @return int
      */
-    public function getStockState(int|string $stock): int
+    public function getStockState(int|string|null $stock): int
     {
+        $stock = (int)$stock;
         return match (true) {
             $stock <= 0 => 0,
             $stock <= 5 => 1,

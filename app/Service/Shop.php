@@ -59,16 +59,16 @@ interface Shop
     public function getItemStock(int|Commodity|string $commodity, ?string $race = null, ?array $sku = []): string;
 
     /**
-     * @param int|string $stock
+     * @param int|string|null $stock
      * @return string
      */
-    public function getHideStock(int|string $stock): string;
+    public function getHideStock(int|string|null $stock): string;
 
     /**
-     * @param int|string $stock
+     * @param int|string|null $stock
      * @return int
      */
-    public function getStockState(int|string $stock): int;
+    public function getStockState(int|string|null $stock): int;
 
     /**
      * @param int|Commodity|string $commodity
