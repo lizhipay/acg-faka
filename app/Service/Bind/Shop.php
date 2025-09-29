@@ -247,6 +247,36 @@ class Shop implements \App\Service\Shop
     }
 
     /**
+     * @param int|string $stock
+     * @return string
+     */
+    public function getHideStock(int|string $stock): string
+    {
+        return match (true) {
+            $stock <= 0 => "已售罄",
+            $stock <= 5 => "即将售罄",
+            $stock <= 20 => "一般",
+            $stock <= 100 => "充足",
+            default => "非常多"
+        };
+    }
+
+    /**
+     * @param int|string $stock
+     * @return int
+     */
+    public function getStockState(int|string $stock): int
+    {
+        return match (true) {
+            $stock <= 0 => 0,
+            $stock <= 5 => 1,
+            $stock <= 20 => 2,
+            $stock <= 100 => 3,
+            default => 4
+        };
+    }
+
+    /**
      * @param int|Commodity|string $commodity
      * @param string|null $race
      * @param array|null $sku

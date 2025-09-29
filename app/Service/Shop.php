@@ -59,6 +59,18 @@ interface Shop
     public function getItemStock(int|Commodity|string $commodity, ?string $race = null, ?array $sku = []): string;
 
     /**
+     * @param int|string $stock
+     * @return string
+     */
+    public function getHideStock(int|string $stock): string;
+
+    /**
+     * @param int|string $stock
+     * @return int
+     */
+    public function getStockState(int|string $stock): int;
+
+    /**
      * @param int|Commodity|string $commodity
      * @param int $cardId
      * @return array

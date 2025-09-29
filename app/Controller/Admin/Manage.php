@@ -117,6 +117,9 @@ app/Service/Impl/SmsService.php
 app/Service/Impl/UploadService.php
 app/Service/Impl/UserSSOService.php
 app/Service/Impl/UserService.php
+app/Entity/CreateObjectEntity.php
+app/Entity/DeleteBatchEntity.php
+app/Entity/QueryTemplateEntity.php
 HTML;
 
         $arr = explode("\n", $list);

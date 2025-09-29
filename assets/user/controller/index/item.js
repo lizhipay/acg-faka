@@ -175,12 +175,13 @@
             url: "/user/api/index/stock",
             data: _getPostData(),
             done: res => {
-                if (res.data.stock <= 0) {
+                if (res.data.stock_state <= 0) {
                     $cashPay.fadeOut(150);
-                    $itemStock.removeClass("badge-soft-success").addClass("badge-soft-danger").html(`无库存`);
+                    $itemStock.removeClass("badge-soft-success").addClass("badge-soft-danger").html(`已售罄`);
                     return;
                 }
-                $itemStock.removeClass("badge-soft-danger").addClass("badge-soft-success").html(`库存 ${res.data.stock}`);
+                
+                $itemStock.removeClass("badge-soft-danger").addClass('badge-soft-success').html(`库存 ${res.data.stock}`);
                 $cashPay.fadeIn(150);
             },
             loader: false

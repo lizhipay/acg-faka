@@ -31,6 +31,7 @@ use Kernel\Annotation\Inject;
 use Kernel\Container\Di;
 use Kernel\Exception\JSONException;
 use Kernel\Exception\RuntimeException;
+use Kernel\Util\Arr;
 use Kernel\Util\Context;
 use Kernel\Util\Decimal;
 
@@ -356,19 +357,23 @@ class Order implements \App\Service\Order
 
         if ($userDefinedConfig) {
             if (key_exists("category", $userDefinedConfig['config'])) {
-                $parseConfig['category'] = array_merge($parseConfig['category'] ?? [], $userDefinedConfig['config']['category']);
+                //$parseConfig['category'] = array_merge($parseConfig['category'] ?? [], $userDefinedConfig['config']['category']);
+                $parseConfig['category'] = Arr::override($userDefinedConfig['config']['category'] ?? null, $parseConfig['category'] ?? null);
             }
 
             if (key_exists("wholesale", $userDefinedConfig['config'])) {
-                $parseConfig['wholesale'] = array_merge($parseConfig['wholesale'] ?? [], $userDefinedConfig['config']['wholesale']);
+                //$parseConfig['wholesale'] = array_merge($parseConfig['wholesale'] ?? [], $userDefinedConfig['config']['wholesale']);
+                $parseConfig['wholesale'] = Arr::override($userDefinedConfig['config']['wholesale'] ?? null, $parseConfig['wholesale'] ?? null);
             }
 
             if (key_exists("category_wholesale", $userDefinedConfig['config'])) {
-                $parseConfig['category_wholesale'] = array_merge($parseConfig['category_wholesale'] ?? [], $userDefinedConfig['config']['category_wholesale']);
+                //$parseConfig['category_wholesale'] = array_merge($parseConfig['category_wholesale'] ?? [], $userDefinedConfig['config']['category_wholesale']);
+                $parseConfig['category_wholesale'] = Arr::override($userDefinedConfig['config']['category_wholesale'] ?? null, $parseConfig['category_wholesale'] ?? null);
             }
 
             if (key_exists("sku", $userDefinedConfig['config'])) {
-                $parseConfig['sku'] = array_merge($parseConfig['sku'] ?? [], $userDefinedConfig['config']['sku']);
+                //$parseConfig['sku'] = array_merge($parseConfig['sku'] ?? [], $userDefinedConfig['config']['sku']);
+                $parseConfig['sku'] = Arr::override($userDefinedConfig['config']['sku'] ?? null, $parseConfig['sku'] ?? null);
             }
         }
 

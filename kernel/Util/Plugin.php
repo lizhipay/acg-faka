@@ -125,6 +125,8 @@ class Plugin
     {
         if (Context::get(Base::STORE_STATUS) && Context::get(Base::IS_INSTALL)) {
             $list = (Plugin::$container['hook'] ?? [])[$point] ?? [];
+            $results = "";
+
             foreach ($list as $item) {
                 if (!is_dir(BASE_PATH . "/app/Plugin/{$item['pluginName']}")) continue;
                 if (!class_exists($item['namespace'])) continue;
@@ -132,10 +134,17 @@ class Plugin
                 $instance = new $item['namespace'];
                 Di::inst()->inject($instance);
                 $result = call_user_func_array([$instance, $item['method']], $args);
-                if ($result) {
-                    return $result;
+                if (is_string($result)) {
+                    $results .= $result;
+                } elseif (is_array($result)) {
+                    if ($results === "") {
+                        $results = [];
+                    }
+                    $results[] = $result;
                 }
             }
+
+            return $results;
         }
     }
 

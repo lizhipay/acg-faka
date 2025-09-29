@@ -777,7 +777,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月
         },
     ]);
 
-    table.setFloatMessage([
+    table.setButtonDetail([
         {field: 'id', title: '商品ID'},
         {
             field: 'card_success_count', title: '已出售'

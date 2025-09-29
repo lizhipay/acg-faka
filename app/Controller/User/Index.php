@@ -57,6 +57,19 @@ class Index extends User
     public function item(): string
     {
         $item = $this->shop->getItem((int)$_GET['mid'], $this->getUser(), $this->getUserGroup());
+        hook(Hook::USER_API_INDEX_COMMODITY_DETAIL_INFO, $item);
+
+        $item['is_stock'] = $item['stock'] > 0;
+        if ($item['inventory_hidden'] == 1) {
+            $item['stock'] = match (true) {
+                $item['stock'] <= 0 => "已售罄",
+                $item['stock'] <= 5 => "所剩无几",
+                $item['stock'] <= 20 => "数量有限",
+                $item['stock'] <= 100 => "现货充足",
+                default => "库存爆棚"
+            };
+        }
+
         return $this->theme(strip_tags($item['name']), "ITEM", "Index/Item.html", [
             'user' => $this->getUser(),
             'from' => (int)$_GET['from'],

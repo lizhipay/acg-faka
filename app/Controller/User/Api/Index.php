@@ -128,7 +128,7 @@ class Index extends User
                 'id', 'name', 'cover',
                 'status', 'delivery_way', 'price',
                 'user_price',
-                'level_disable', 'level_price', 'hide', 'owner', "recommend", 'category_id', 'stock', 'shared_id'
+                'level_disable', 'level_price', 'hide', 'owner', 'inventory_hidden', "recommend", 'category_id', 'stock', 'shared_id'
             ])
             ->withCount(['order as order_sold' => function (Builder $relation) {
                 $relation->where("delivery_status", 1);
@@ -195,6 +195,12 @@ class Index extends User
                     $data[$key]['name'] = $var->name;
                 }
             }
+
+            //隐藏库存
+            $data[$key]['stock_state'] = $this->shop->getStockState($data[$key]['stock']);
+            if ($val['inventory_hidden'] == 1) {
+                $data[$key]['stock'] = $this->shop->getHideStock($data[$key]['stock']);
+            }
         }
 
         $data = array_values($data);
@@ -212,6 +218,12 @@ class Index extends User
     {
         $array = $this->shop->getItem($commodityId, $this->getUser(), $this->getUserGroup());
         hook(Hook::USER_API_INDEX_COMMODITY_DETAIL_INFO, $array);
+
+        $array['stock_state'] = $this->shop->getStockState($array['stock']);
+        if ($array['inventory_hidden'] == 1) {
+            $array['stock'] = $this->shop->getHideStock($array['stock']);
+        }
+
         return $this->json(200, 'success', $array);
     }
 
@@ -318,8 +330,15 @@ class Index extends User
     public
     function stock(): array
     {
-        $stock = $this->shop->getItemStock((int)$this->request->post("item_id"), (string)$this->request->post("race"), (array)$this->request->post("sku"));
-        return $this->json(data: ["stock" => $stock]);
+        $commodity = Commodity::with(['shared'])->find((int)$this->request->post("item_id"));
+        $stock = $this->shop->getItemStock($commodity, (string)$this->request->post("race"), (array)$this->request->post("sku"));
+
+        $array = ["stock" => $stock];
+        $array['stock_state'] = $this->shop->getStockState($stock);
+        if ($commodity->inventory_hidden == 1) {
+            $array['stock'] = $this->shop->getHideStock($stock);
+        }
+        return $this->json(data: $array);
     }
 
     /**

@@ -50,6 +50,10 @@ class Table {
         this.isFloatMessage = false;
         this.floatMessageMap = {};
 
+        //按钮版详细内容
+        this.isShowButtonDetail = false;
+        this.buttonDetail = {}
+
         // 是否显示工具栏
         this.isShowToolbar = false;
         this.layuiForm = layui.form;
@@ -174,6 +178,92 @@ class Table {
     setFloatMessage(columnsOrCallback) {
         this.isFloatMessage = true;
         this.floatMessage = columnsOrCallback;
+    }
+
+    setButtonDetail(columnsOrCallback) {
+        this.isShowButtonDetail = true;
+        this.buttonDetail = columnsOrCallback;
+        this.columns.unshift(this.#getPreprocessColumn({
+            field: 'detail_view',
+            title: "",
+            width: 55,
+            type: 'button',
+            buttons: [{
+                icon: 'fa-duotone fa-regular fa-circle-info',
+                tips: "更多信息",
+                class: "text-primary",
+                click: (event, value, item, index) => {
+                    let html = `<table class="table table-bordered table-hover"><tbody>`;
+
+
+                    this.buttonDetail.forEach(det => {
+                        det.title && (det.title = i18n(det.title));
+                        let val = (det.formatter ? det.formatter(util.parseStringObject(item, util.replaceDotWithHyphen(det.field)), item) : util.parseStringObject(item, util.replaceDotWithHyphen(det.field)) ?? "-");
+
+                        if (det.dict) {
+                            const uuid = util.generateRandStr(10);
+                            html += `<tr><td>${det.title}</td><td><span class="${uuid}">${util.icon("fa-duotone fa-regular fa-spinner icon-spin")}</span></td></tr>`;
+                            _Dict.advanced(det.dict, res => {
+                                res.forEach(v => {
+                                    if (v.id == val) {
+                                        util.timer(() => {
+                                            return new Promise(resolve => {
+                                                if ($(`.${uuid}`).length > 0) {
+                                                    $(`.${uuid}`).html(v.name);
+                                                    resolve(false);
+                                                    return;
+                                                }
+                                                resolve(true);
+                                            });
+                                        }, 50, true);
+                                    }
+                                });
+                            });
+                        } else {
+                            if (val === "" || val === undefined || val === null) {
+                                val = "-";
+                            }
+                            html += `<tr><td>${det.title}</td><td>${val}</td></tr>`;
+                        }
+                    });
+
+
+                    html += `</tbody></table>`;
+
+
+                    component.popup({
+                        submit: false,
+                        shadeClose : true,
+                        maxmin : false,
+                        tab: [
+                            {
+                                name: util.plainText(item.name),
+                                form: [
+                                    {
+                                        title: false, name: "custom", type: "custom", complete: (form, dom) => {
+                                            dom.html(html);
+                                        }
+                                    },
+                                ]
+                            },
+                        ],
+                        autoPosition: true,
+                        content: {
+                            css: {
+                                height: "auto",
+                                overflow: "inherit"
+                            }
+                        },
+                        height: "auto",
+                        width: "400px",
+                        done: () => {
+
+                        }
+                    });
+
+                }
+            }]
+        }));
     }
 
     enableCardView() {

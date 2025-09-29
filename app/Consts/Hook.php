@@ -172,4 +172,10 @@ interface Hook
     const SERVICE_SMTP_SEND_SUCCESS = 0x3001;
     //邮件发送失败 -> array $config, string $email, string $title, string $content
     const SERVICE_SMTP_SEND_ERROR = 0x3002;
+
+
+    //order
+    public const HACK_ROUTE_TABLE_COLUMNS = 0x2005;
+    public const HACK_SUBMIT_FORM = 0x9038;
+    public const HACK_SUBMIT_TAB = 0x9039;
 }

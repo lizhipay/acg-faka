@@ -237,6 +237,14 @@ const util = new class Util {
         return paramsToJSONObject;
     }
 
+    idObjToList(array = []) {
+        let list = [];
+        array.forEach(item => {
+            list.push(item.id);
+        });
+        return list;
+    }
+
     /**
      *
      * @param url

@@ -40,7 +40,7 @@ class Commodity extends Manage
         $get = new Get(\App\Model\Commodity::class);
         $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
         $get->setWhere($map);
-        $get->setOrderBy(...$this->query->getOrderBy($map, "id", "asc"));
+        $get->setOrderBy(...$this->query->getOrderBy($map, "sort", "asc"));
 
         $data = $this->query->get($get, function (Builder $builder) use ($map) {
             if (isset($map['display_scope'])) {

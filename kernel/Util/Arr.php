@@ -110,4 +110,16 @@ class Arr
         return (array)json_decode(json_encode($xml), true) ?: [];
     }
 
+
+    /**
+     * @param mixed $primary
+     * @param mixed $fallback
+     * @return array
+     */
+    public static function override(mixed $primary, mixed $fallback): array
+    {
+        $primary = is_array($primary) ? $primary : [];
+        $fallback = is_array($fallback) ? $fallback : [];
+        return $primary + $fallback;
+    }
 }
