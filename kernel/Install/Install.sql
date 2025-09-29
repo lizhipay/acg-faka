@@ -123,7 +123,7 @@ CREATE TABLE `__PREFIX__category`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
 
-INSERT INTO `__PREFIX__category` VALUES (1, 'DEMO', 1, '2021-11-26 17:59:45', 0, '/favicon.ico', 1, 0, NULL);
+INSERT INTO `__PREFIX__category` VALUES (1, 'DEMO', 1, '2021-11-26 17:59:45', 0, '/favicon.ico', 1, 0, NULL , NULL);
 
 
 DROP TABLE IF EXISTS `__PREFIX__commodity`;
@@ -153,41 +153,41 @@ CREATE TABLE `__PREFIX__commodity`  (
                                         `shared_premium` float(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '商品加价',
                                         `shared_stock` json DEFAULT NULL COMMENT '库存信息',
                                         `stock` int(11) DEFAULT NULL COMMENT '库存',
-  `shared_premium_type` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '加价模式',
-  `seckill_status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '商品秒杀：0=关闭，1=开启',
-  `seckill_start_time` datetime NULL DEFAULT NULL COMMENT '秒杀开始时间',
-  `seckill_end_time` datetime NULL DEFAULT NULL COMMENT '秒杀结束时间',
-  `draft_status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '指定卡密购买：0=关闭，1=启用',
-  `draft_premium` decimal(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '指定卡密购买时溢价',
-  `inventory_hidden` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '隐藏库存：0=否，1=是',
-  `leave_message` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '发货留言',
-  `recommend` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '推荐商品：0=否，1=是',
-  `send_email` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '发送邮件：0=否，1=是',
-  `only_user` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '限制登录购买：0=否，1=是',
-  `purchase_count` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '限制购买数量：0=无限制',
-  `widget` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '控件',
-  `level_price` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '会员等级-定制价格',
-  `level_disable` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '禁用会员等级折扣，0=关闭，1=启用',
-  `minimum` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '最低购买数量，0=无限制',
-  `maximum` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '最大购买数量，0=无限制',
-  `shared_sync` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '同步平台价格：0=关，1=开',
-  `config` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '配置文件',
-  `hide` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '隐藏：1=隐藏，0=不隐藏',
-  `inventory_sync` tinyint NOT NULL DEFAULT 0 COMMENT '同步库存数量: 0=关，1=开',
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `code`(`code` ASC) USING BTREE,
-  INDEX `owner`(`owner` ASC) USING BTREE,
-  INDEX `status`(`status` ASC) USING BTREE,
-  INDEX `sort`(`sort` ASC) USING BTREE,
-  INDEX `category_id`(`category_id` ASC) USING BTREE,
-  INDEX `shared_id`(`shared_id` ASC) USING BTREE,
-  INDEX `seckill_status`(`seckill_status` ASC) USING BTREE,
-  INDEX `api_status`(`api_status` ASC) USING BTREE,
-  INDEX `recommend`(`recommend` ASC) USING BTREE
+                                        `shared_premium_type` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '加价模式',
+                                        `seckill_status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '商品秒杀：0=关闭，1=开启',
+                                        `seckill_start_time` datetime NULL DEFAULT NULL COMMENT '秒杀开始时间',
+                                        `seckill_end_time` datetime NULL DEFAULT NULL COMMENT '秒杀结束时间',
+                                        `draft_status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '指定卡密购买：0=关闭，1=启用',
+                                        `draft_premium` decimal(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '指定卡密购买时溢价',
+                                        `inventory_hidden` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '隐藏库存：0=否，1=是',
+                                        `leave_message` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '发货留言',
+                                        `recommend` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '推荐商品：0=否，1=是',
+                                        `send_email` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '发送邮件：0=否，1=是',
+                                        `only_user` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '限制登录购买：0=否，1=是',
+                                        `purchase_count` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '限制购买数量：0=无限制',
+                                        `widget` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '控件',
+                                        `level_price` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '会员等级-定制价格',
+                                        `level_disable` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '禁用会员等级折扣，0=关闭，1=启用',
+                                        `minimum` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '最低购买数量，0=无限制',
+                                        `maximum` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '最大购买数量，0=无限制',
+                                        `shared_sync` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '同步平台价格：0=关，1=开',
+                                        `config` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '配置文件',
+                                        `hide` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '隐藏：1=隐藏，0=不隐藏',
+                                        `inventory_sync` tinyint NOT NULL DEFAULT 0 COMMENT '同步库存数量: 0=关，1=开',
+                                        PRIMARY KEY (`id`) USING BTREE,
+                                        UNIQUE INDEX `code`(`code` ASC) USING BTREE,
+                                        INDEX `owner`(`owner` ASC) USING BTREE,
+                                        INDEX `status`(`status` ASC) USING BTREE,
+                                        INDEX `sort`(`sort` ASC) USING BTREE,
+                                        INDEX `category_id`(`category_id` ASC) USING BTREE,
+                                        INDEX `shared_id`(`shared_id` ASC) USING BTREE,
+                                        INDEX `seckill_status`(`seckill_status` ASC) USING BTREE,
+                                        INDEX `api_status`(`api_status` ASC) USING BTREE,
+                                        INDEX `recommend`(`recommend` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
+INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 1, 1, NULL, '', 0.00 , NULL,999999, 0, 0, NULL, NULL, 0, 0.00, 0, NULL, 0, 0, 0, 0, NULL, NULL, 0, 0, 0, 0, NULL, 0, 0);
 
-INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 1, 1, NULL, '', 0.00, 0, 0, NULL, NULL, 0, 0.00, 0, NULL, 0, 0, 0, 0, NULL, NULL, 0, 0, 0, 0, NULL, 0, 0);
 
 
 DROP TABLE IF EXISTS `__PREFIX__config`;
@@ -493,12 +493,12 @@ CREATE TABLE `__PREFIX__user_group`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 
-INSERT INTO `__PREFIX__user_group` VALUES (1, '一贫如洗', '/assets/static/images/group/ic_user level_1.png', 0.00, 0.30, 0.00);
-INSERT INTO `__PREFIX__user_group` VALUES (2, '小康之家', '/assets/static/images/group/ic_user level_2.png', 0.10, 0.25, 50.00);
-INSERT INTO `__PREFIX__user_group` VALUES (3, '腰缠万贯', '/assets/static/images/group/ic_user level_3.png', 0.20, 0.20, 100.00);
-INSERT INTO `__PREFIX__user_group` VALUES (4, '富甲一方', '/assets/static/images/group/ic_user level_4.png', 0.30, 0.15, 200.00);
-INSERT INTO `__PREFIX__user_group` VALUES (5, '富可敌国', '/assets/static/images/group/ic_user level_5.png', 0.40, 0.10, 300.00);
-INSERT INTO `__PREFIX__user_group` VALUES (6, '至尊', '/assets/static/images/group/ic_user level_6.png', 0.50, 0.05, 500.00);
+INSERT INTO `__PREFIX__user_group` VALUES (1, '一贫如洗', '/assets/static/images/group/ic_user level_1.png', null, 0.30, 0.00);
+INSERT INTO `__PREFIX__user_group` VALUES (2, '小康之家', '/assets/static/images/group/ic_user level_2.png', null, 0.25, 50.00);
+INSERT INTO `__PREFIX__user_group` VALUES (3, '腰缠万贯', '/assets/static/images/group/ic_user level_3.png', null, 0.20, 100.00);
+INSERT INTO `__PREFIX__user_group` VALUES (4, '富甲一方', '/assets/static/images/group/ic_user level_4.png', null, 0.15, 200.00);
+INSERT INTO `__PREFIX__user_group` VALUES (5, '富可敌国', '/assets/static/images/group/ic_user level_5.png', null, 0.10, 300.00);
+INSERT INTO `__PREFIX__user_group` VALUES (6, '至尊', '/assets/static/images/group/ic_user level_6.png', null, 0.05, 500.00);
 
 DROP TABLE IF EXISTS `__PREFIX__user_recharge`;
 CREATE TABLE `__PREFIX__user_recharge`  (
