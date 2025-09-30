@@ -2784,6 +2784,10 @@ textarea.form-control-lg {
     line-height: 1.25;
 }
 
+.form-floating > .form-control {
+    background: #ffffff45 !important;
+}
+
 .form-floating > label {
     position: absolute;
     top: 0;
