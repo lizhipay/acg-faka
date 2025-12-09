@@ -34,6 +34,7 @@ use Kernel\Exception\RuntimeException;
 use Kernel\Util\Arr;
 use Kernel\Util\Context;
 use Kernel\Util\Decimal;
+use Kernel\Util\SQL;
 
 class Order implements \App\Service\Order
 {
@@ -610,7 +611,12 @@ class Order implements \App\Service\Order
             $callbackDomain = $clientDomain;
         }
 
-        DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
+        $driver = SQL::getDriver();
+        if ($driver === 'mysql') {
+            DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
+        } elseif ($driver === 'pgsql') {
+            DB::connection()->getPdo()->exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+        }
         $result = Db::transaction(function () use ($commodity, $rebate, $divideAmount, $business, $sku, $requestNo, $user, $userGroup, $num, $contact, $device, $amount, $owner, $pay, $cardId, $password, $coupon, $from, $widget, $race, $callbackDomain, $clientDomain) {
             //生成联系方式
             if ($user) {
@@ -958,7 +964,12 @@ class Order implements \App\Service\Order
     {
         $callback = $this->callbackInitialize($handle, $map);
         $json = json_encode($map, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
+        $driver = SQL::getDriver();
+        if ($driver === 'mysql') {
+            DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
+        } elseif ($driver === 'pgsql') {
+            DB::connection()->getPdo()->exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+        }
         DB::transaction(function () use ($handle, $map, $callback, $json) {
             //获取订单
             $order = \App\Model\Order::query()->where("trade_no", $callback['trade_no'])->first();

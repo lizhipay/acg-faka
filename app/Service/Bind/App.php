@@ -67,6 +67,14 @@ class App implements \App\Service\App
         return $res['data'];
     }
 
+    private function getDatabaseConfig(): array
+    {
+        $database = config("database");
+        $driver = SQL::getDriver();
+        $port = (int)($database['port'] ?? ($driver === 'pgsql' ? 5432 : 3306));
+        return [$database, $driver, $port];
+    }
+
     /**
      * @param string $uri
      * @param array $data
@@ -184,10 +192,12 @@ class App implements \App\Service\App
         //安装完成，删除src
         unlink($src);
         //判断目标目录是否有install.sqll
-        $installSql = $pluginPath . "install.sql";
+        [$database, $driver, $port] = $this->getDatabaseConfig();
+        $installSql = $pluginPath . ($driver === 'pgsql' ? "install_pgsql.sql" : "install.sql");
         if (file_exists($installSql)) {
-            $database = config("database");
-            SQL::import($installSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
+            SQL::import($installSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix'], $driver, $port);
+        } elseif ($driver === 'pgsql' && file_exists($pluginPath . "install.sql")) {
+            throw new JSONException("当前数据库使用PostgreSQL，但该插件未提供install_pgsql.sql");
         }
 
         if ($type == 0) {
@@ -232,10 +242,12 @@ class App implements \App\Service\App
         //更新完成，删除src
         unlink($src);
         //判断目标目录是否有update.sql
-        $updateSql = $pluginPath . "update.sql";
+        [$database, $driver, $port] = $this->getDatabaseConfig();
+        $updateSql = $pluginPath . ($driver === 'pgsql' ? "update_pgsql.sql" : "update.sql");
         if (file_exists($updateSql)) {
-            $database = config("database");
-            SQL::import($updateSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
+            SQL::import($updateSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix'], $driver, $port);
+        } elseif ($driver === 'pgsql' && file_exists($pluginPath . "update.sql")) {
+            throw new JSONException("当前数据库使用PostgreSQL，但该插件未提供update_pgsql.sql");
         }
 
         if ($type == 0) {
@@ -325,12 +337,14 @@ class App implements \App\Service\App
                 }
 
                 //升级数据库
-                $sql = $zipPath . '/update.sql';
+                [$database, $driver, $port] = $this->getDatabaseConfig();
+                $sql = $zipPath . '/' . ($driver === 'pgsql' ? 'update_pgsql.sql' : 'update.sql');
 
                 if (file_exists($sql)) {
                     //导入数据库
-                    $database = config("database");
-                    SQL::import($sql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
+                    SQL::import($sql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix'], $driver, $port);
+                } elseif ($driver === 'pgsql' && file_exists($zipPath . '/update.sql')) {
+                    throw new JSONException("当前数据库使用PostgreSQL，但更新包未提供update_pgsql.sql");
                 }
 
                 //升级程序，防止sql等命令错误，通过php代码来执行sql，新增时间：2022/04/07

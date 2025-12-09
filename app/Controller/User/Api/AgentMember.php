@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
+use Kernel\Util\SQL;
 use Kernel\Waf\Filter;
 
 #[Interceptor([Waf::class, UserSession::class], Interceptor::TYPE_API)]
@@ -48,7 +49,13 @@ class AgentMember extends User
         $to = $this->request->post("id");
         $amount = $this->request->post("amount", Filter::FLOAT);
 
-        DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
+        $driver = SQL::getDriver();
+        if ($driver === 'mysql') {
+            DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
+        } elseif ($driver === 'pgsql') {
+            DB::connection()->getPdo()->exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+        }
+
         Db::transaction(function () use ($to, $amount) {
             $userId = $this->getUser()->id;
             \App\Model\Bill::create($userId, $amount, 0, "转账给ID:{$to}", 0, false);

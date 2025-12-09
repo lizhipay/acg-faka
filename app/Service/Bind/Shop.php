@@ -66,19 +66,22 @@ class Shop implements \App\Service\Shop
                     }
                 }
 
-                $category = $category->whereNotIn("id", $hideCategory)->whereRaw("(`owner`=0 or `owner`={$bus->user_id})");
+                $category = $category->whereNotIn("id", $hideCategory)
+                    ->where(function ($query) use ($bus) {
+                        $query->where('owner', 0)->orWhere('owner', $bus->user_id);
+                    });
             }
         } else {
             //主站
             if (Config::get("substation_display") == 1) {
                 //显示商家
                 $list = (array)json_decode(Config::get("substation_display_list"), true);
-                $let = "(`owner`=0 or ";
-                foreach ($list as $userId) {
-                    $let .= "`owner`={$userId} or ";
-                }
-                $let = trim(trim($let), "or") . ")";
-                $category = $category->whereRaw($let);
+                $category = $category->where(function ($query) use ($list) {
+                    $query->where('owner', 0);
+                    foreach ($list as $userId) {
+                        $query->orWhere('owner', $userId);
+                    }
+                });
             } else {
                 $category = $category->where("owner", 0);
             }

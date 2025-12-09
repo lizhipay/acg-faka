@@ -103,19 +103,22 @@ class Index extends User
                     }
                 }
 
-                $commodity = $commodity->whereNotIn("id", $hideCommodity)->whereRaw("(`owner`=0 or `owner`={$bus->user_id})");
+                $commodity = $commodity->whereNotIn("id", $hideCommodity)
+                    ->where(function ($query) use ($bus) {
+                        $query->where('owner', 0)->orWhere('owner', $bus->user_id);
+                    });
             }
         } else {
             //主站
             if (Config::get("substation_display") == 1) {
-                $let = "(`owner`=0 or ";
                 //显示商家
                 $list = (array)json_decode(Config::get("substation_display_list"), true);
-                foreach ($list as $userId) {
-                    $let .= "`owner`={$userId} or ";
-                }
-                $let = trim(trim($let), "or") . ")";
-                $commodity = $commodity->whereRaw($let);
+                $commodity = $commodity->where(function ($query) use ($list) {
+                    $query->where('owner', 0);
+                    foreach ($list as $userId) {
+                        $query->orWhere('owner', $userId);
+                    }
+                });
             } else {
                 $commodity = $commodity->where("owner", 0);
             }
@@ -358,13 +361,17 @@ class Index extends User
             $equipment = 3;
         }
 
-        $let = "(`equipment`=0 or `equipment`={$equipment})";
+        $pay = Pay::query()->orderBy("sort", "asc")
+            ->where("commodity", 1)
+            ->where(function ($query) use ($equipment) {
+                $query->where('equipment', 0)->orWhere('equipment', $equipment);
+            });
 
         if (!$this->getUser()) {
-            $let .= " and id!=1";
+            $pay = $pay->where('id', '!=', 1);
         }
 
-        $pay = Pay::query()->orderBy("sort", "asc")->where("commodity", 1)->whereRaw($let)->get(['id', 'name', 'icon', 'handle'])->toArray();
+        $pay = $pay->get(['id', 'name', 'icon', 'handle'])->toArray();
 
         hook(Hook::USER_API_INDEX_PAY_LIST, $pay);
         return $this->json(200, 'success', $pay);

@@ -278,7 +278,14 @@
             </fieldset>
             <fieldset class="section">
                 <h3 style="color: pink;font-weight: bold;">配置您的数据库信息</h3>
+                <div style="width: 80%;margin: 0 auto;text-align: left;">
+                    #{if in_array('mysql',$drivers)}<input type="radio" name="db_type" value="mysql" id="db_mysql" checked>
+                    <label for="db_mysql"><h4>MySQL</h4></label>#{/if}
+                    #{if in_array('pgsql',$drivers)}<input type="radio" name="db_type" value="pgsql" id="db_pgsql" #{if !in_array('mysql',$drivers)}checked#{/if}>
+                    <label for="db_pgsql"><h4>PostgreSQL</h4></label>#{/if}
+                </div>
                 <input type="text" name="host" placeholder="数据库地址" , value="127.0.0.1">
+                <input type="text" name="port" placeholder="端口" , value="3306">
                 <input type="text" name="database" placeholder="数据库名称">
                 <input type="text" name="username" placeholder="数据库账号">
                 <input type="text" name="password" placeholder="数据库密码">
@@ -308,6 +315,14 @@
             return $('input[name=' + name + ']').val();
         }
 
+        $('input[name="db_type"]').change(function () {
+            if ($(this).val() === 'pgsql') {
+                $('input[name="port"]').val('5432');
+            } else {
+                $('input[name="port"]').val('3306');
+            }
+        });
+
         $('.prevButton').click(function () {
             var button = $(this);
             var currentSection = button.parents(".section");
@@ -325,6 +340,7 @@
 
             let host = getValue('host');
             let database = getValue('database');
+            let port = getValue('port');
             let username = getValue('username');
             let password = getValue('password');
             let prefix = getValue('prefix');
@@ -340,6 +356,15 @@
 
             if (currentSectionIndex == 1) {
                 //验证主机
+                let driver = $('input[name="db_type"]:checked').val();
+                if (driver === undefined || (driver !== 'mysql' && driver !== 'pgsql')) {
+                    layer.msg("请选择正确的数据库类型");
+                    return;
+                }
+                if (port == '') {
+                    layer.msg("请填写数据库端口");
+                    return;
+                }
                 if (database == '') {
                     layer.msg("请填写数据库名称");
                     return;
