@@ -120,7 +120,12 @@ class Query implements \App\Service\Query
         }
 
 
-        $query = $query->orderBy($get->orderBy[0], $get->orderBy[1])->distinct();
+        $query = $query->orderBy($get->orderBy[0], $get->orderBy[1]);
+
+        $driver = config('database')['driver'] ?? 'mysql';
+        if ($driver === 'mysql') {
+            $query = $query->distinct();
+        }
 
         if ($get->paginate) {
             $paginate = $query->paginate($get->paginate[1], $get->columns, '', $get->paginate[0]);

@@ -27,13 +27,46 @@ class Decimal
     }
 
     /**
+     * @param string|float|int $a
+     * @param string|float|int $b
+     * @param string $op
+     * @param int|null $scale
+     * @return string
+     */
+    private function calc(string|float|int $a, string|float|int $b, string $op, ?int $scale = null): string
+    {
+        $scale ??= $this->scale;
+
+        //先用bcmath
+        if (function_exists('bcadd')) {
+            return match ($op) {
+                'add' => bcadd((string)$a, (string)$b, $scale),
+                'sub' => bcsub((string)$a, (string)$b, $scale),
+                'mul' => bcmul((string)$a, (string)$b, $scale),
+                'div' => bcdiv((string)$a, (string)$b, $scale),
+                default => '0',
+            };
+        }
+
+        $floatResult = match ($op) {
+            'add' => (float)$a + (float)$b,
+            'sub' => (float)$a - (float)$b,
+            'mul' => (float)$a * (float)$b,
+            'div' => (float)$a / (float)$b,
+            default => 0,
+        };
+
+        return number_format($floatResult, $scale, '.', '');
+    }
+
+    /**
      * 加法
      * @param string|float|int $other
      * @return Decimal
      */
     public function add(string|float|int $other): Decimal
     {
-        $result = bcadd($this->amount, (string)$other, $this->scale);
+        $result = $this->calc($this->amount, $other, 'add');
         return new Decimal($result, $this->scale);
     }
 
@@ -44,7 +77,7 @@ class Decimal
      */
     public function sub(string|float|int $other): Decimal
     {
-        $result = bcsub($this->amount, (string)$other, $this->scale);
+        $result = $this->calc($this->amount, $other, 'sub');
         return new Decimal($result, $this->scale);
     }
 
@@ -55,7 +88,7 @@ class Decimal
      */
     public function mul(string|float|int $factor): Decimal
     {
-        $result = bcmul($this->amount, (string)$factor, $this->scale);
+        $result = $this->calc($this->amount, $factor, 'mul');
         return new Decimal($result, $this->scale);
     }
 
@@ -66,7 +99,7 @@ class Decimal
      */
     public function div(string|float|int $divisor): Decimal
     {
-        $result = bcdiv($this->amount, (string)$divisor, $this->scale);
+        $result = $this->calc($this->amount, $divisor, 'div');
         return new Decimal($result, $this->scale);
     }
 
@@ -77,6 +110,6 @@ class Decimal
      */
     public function getAmount(?int $scale = 2): string
     {
-        return bcadd($this->amount, '0', $scale);
+        return $this->calc($this->amount, '0', 'add', $scale ?? $this->scale);
     }
 }

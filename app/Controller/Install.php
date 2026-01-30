@@ -47,20 +47,35 @@ class Install extends User
         $data['ext']['curl'] = extension_loaded("curl");
         $data['ext']['pdo'] = extension_loaded("PDO");
         $data['ext']['pdo_mysql'] = extension_loaded("pdo_mysql");
+        $data['ext']['pdo_pgsql'] = extension_loaded("pdo_pgsql");
         $data['ext']['date'] = extension_loaded("date");
         $data['ext']['json'] = extension_loaded("json");
         $data['ext']['session'] = extension_loaded("session");
         $data['ext']['zip'] = extension_loaded("zip");
+
+        $data['drivers'] = [];
+        if ($data['ext']['pdo_mysql']) {
+            $data['drivers'][] = 'mysql';
+        }
+
+        if ($data['ext']['pdo_pgsql']) {
+            $data['drivers'][] = 'pgsql';
+        }
 
 
         $data['install'] = true;
         if ($data['php_version'] < 8) {
             $data['install'] = false;
         } else {
-            foreach ($data['ext'] as $ext) {
-                if (!$ext) {
+            $requiredExt = ['gd', 'curl', 'pdo', 'date', 'json', 'session', 'zip'];
+            foreach ($requiredExt as $extName) {
+                if (!$data['ext'][$extName]) {
                     $data['install'] = false;
                 }
+            }
+
+            if (!$data['ext']['pdo_mysql'] && !$data['ext']['pdo_pgsql']) {
+                $data['install'] = false;
             }
         }
 
@@ -83,7 +98,17 @@ class Install extends User
             $map[$k] = trim((string)$v);
         }
 
+        $driver = ($map['db_type'] ?? '') == '' ? 'mysql' : $map['db_type'];
         $host = $map['host'] == '' ? 'localhost' : $map['host'];
+        $port = ($map['port'] ?? '') == '' ? ($driver == 'pgsql' ? '5432' : '3306') : $map['port'];
+
+        if ($driver === 'mysql' && !extension_loaded('pdo_mysql')) {
+            throw new JSONException("未安装MySQL的PDO驱动扩展");
+        }
+
+        if ($driver === 'pgsql' && !extension_loaded('pdo_pgsql')) {
+            throw new JSONException("未安装PostgreSQL的PDO驱动扩展");
+        }
 
         $email = $map['email'];
         $nickname = $map['nickname'];
@@ -97,7 +122,7 @@ class Install extends User
             throw new JSONException("您设置的登录密码过于简单");
         }
 
-        $sqlFile = BASE_PATH . '/kernel/Install/Install.sql';
+        $sqlFile = BASE_PATH . '/kernel/Install/' . ($driver === 'pgsql' ? 'Install_pgsql.sql' : 'Install.sql');
 
         $salt = Str::generateRandStr(32);
         $pw = Str::generatePassword($login_password, $salt);
@@ -113,22 +138,34 @@ class Install extends User
         }
 
         //导入数据库
-        SQL::import($sqlFile . ".tmp", $host, $map['database'], $map['username'], $map['password'], $map['prefix']);
+        SQL::import($sqlFile . ".tmp", $host, $map['database'], $map['username'], $map['password'], $map['prefix'], $driver, (int)$port);
         //设置数据库账号密码
         setConfig([
-            'driver' => 'mysql',
+            'driver' => $driver,
             'host' => $host,
+            'port' => $port,
             'database' => $map['database'],
             'username' => $map['username'],
             'password' => $map['password'],
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
+            'charset' => $driver == 'pgsql' ? 'utf8' : 'utf8mb4',
+            'collation' => $driver == 'pgsql' ? 'utf8_general_ci' : 'utf8mb4_unicode_ci',
             'prefix' => $map['prefix']
-        ], BASE_PATH . "/config/database.php");
+        ], BASE_PATH . "/config/database.php", true);
 
         Opcache::invalidate(BASE_PATH . "/config/database.php");
 
         unlink($sqlFile . ".tmp");
+        if ($driver === 'pgsql') {
+            file_put_contents(BASE_PATH . '/kernel/Install/pg.lock', '');
+            if (file_exists(BASE_PATH . '/kernel/Install/mysql.lock')) {
+                unlink(BASE_PATH . '/kernel/Install/mysql.lock');
+            }
+        } else {
+            file_put_contents(BASE_PATH . '/kernel/Install/mysql.lock', '');
+            if (file_exists(BASE_PATH . '/kernel/Install/pg.lock')) {
+                unlink(BASE_PATH . '/kernel/Install/pg.lock');
+            }
+        }
         file_put_contents(BASE_PATH . '/kernel/Install/Lock', "");
 
         try {

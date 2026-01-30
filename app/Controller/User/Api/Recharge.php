@@ -34,8 +34,12 @@ class Recharge extends User
             $equipment = 3;
         }
 
-        $let = "(`equipment`=0 or `equipment`={$equipment})";
-        $pay = Pay::query()->orderBy("sort", "asc")->where("recharge", 1)->whereRaw($let)->get(['id', 'name', 'icon', 'handle'])->toArray();
+        $pay = Pay::query()->orderBy("sort", "asc")
+            ->where("recharge", 1)
+            ->where(function ($query) use ($equipment) {
+                $query->where('equipment', 0)->orWhere('equipment', $equipment);
+            })
+            ->get(['id', 'name', 'icon', 'handle'])->toArray();
         return $this->json(200, 'success', $pay);
     }
 
