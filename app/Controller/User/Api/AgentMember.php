@@ -47,12 +47,24 @@ class AgentMember extends User
     {
         $to = $this->request->post("id");
         $amount = $this->request->post("amount", Filter::FLOAT);
+        $userId = $this->getUser()->id;
 
-        DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
-        Db::transaction(function () use ($to, $amount) {
-            $userId = $this->getUser()->id;
-            \App\Model\Bill::create($userId, $amount, 0, "转账给ID:{$to}", 0, false);
-            \App\Model\Bill::create($to, $amount, 1, "来自ID:{$userId}的转账", 0, false);
+        // --- 核心安全修復：攔截非法金額（徹底堵死負數刷餘額） ---
+        if ($amount <= 0) {
+            throw new JSONException("非法操作：轉帳金額必須大於 0！");
+        }
+
+        // --- 核心安全修復：禁止自己給自己轉帳 ---
+        if ($to == $userId) {
+            throw new JSONException("非法操作：不能給自己轉帳！");
+        }
+
+        // --- 核心安全修復：移除導致數據庫死鎖的串行化鎖表代碼 ---
+        // DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
+        
+        Db::transaction(function () use ($to, $amount, $userId) {
+            \App\Model\Bill::create($userId, $amount, 0, "轉帳給ID:{$to}", 0, false);
+            \App\Model\Bill::create($to, $amount, 1, "來自ID:{$userId}的轉帳", 0, false);
         });
 
         return $this->json();
