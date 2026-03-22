@@ -40,7 +40,7 @@ class Master extends User
 
         $get->setWhere($map);
         $get->setOrderBy('sort', 'asc');
-        $get->setColumn('id', 'icon', 'name');
+        $get->setColumn('id', 'icon', 'name', 'sort');
         $data = $this->query->get($get);
 
 
