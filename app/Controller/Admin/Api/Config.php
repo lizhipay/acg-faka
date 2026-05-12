@@ -59,6 +59,8 @@ class Config extends Manage
                 Client::setClientMode((int)$post['ip_get_mode']);
             }
 
+            _plugin_start($post['user_theme'], true);
+
             foreach ($keys as $index => $key) {
                 if (in_array($key, $inits)) {
                     if (!isset($post[$key])) {
@@ -71,7 +73,6 @@ class Config extends Manage
             throw new JSONException("保存失败，请检查原因");
         }
 
-        _plugin_start($post['user_theme'], true);
         ManageLog::log($this->getManage(), "修改了网站设置");
         return $this->json(200, '保存成功');
     }
