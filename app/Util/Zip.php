@@ -24,12 +24,11 @@ class Zip
             }
             $zip = new \ZipArchive();
             if ($zip->open($filePath) === true) {
-                $zip->extractTo($path);
+                $result = $zip->extractTo($path);
                 $zip->close();
-                return true;
-            } else {
-                return false;
+                return $result;
             }
+            return false;
         } catch (Exception $e) {
             throw new JSONException("解压缩失败，请安装php-zip扩展！");
         }

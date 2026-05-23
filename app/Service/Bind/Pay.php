@@ -82,9 +82,11 @@ class Pay implements \App\Service\Pay
                 $submit = file_get_contents($submitJsPath);
             }
 
-            foreach ($submit as $index => $item) {
-                if (isset($config[$item['name']])) {
-                    $submit[$index]['default'] = $config[$item['name']];
+            if (is_array($submit)) {
+                foreach ($submit as $index => $item) {
+                    if (isset($config[$item['name']])) {
+                        $submit[$index]['default'] = $config[$item['name']];
+                    }
                 }
             }
 

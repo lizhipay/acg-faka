@@ -1,0 +1,67 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: acg-faka-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "${ACG_HTTP_PORT:-8080}:80"
+    volumes:
+      - acg_config:/var/www/html/config
+      - acg_install:/var/www/html/kernel/Install
+      - acg_runtime:/var/www/html/runtime
+      - acg_assets_cache:/var/www/html/assets/cache
+      - acg_plugins:/var/www/html/app/Plugin
+      - acg_pay:/var/www/html/app/Pay
+      - acg_themes:/var/www/html/app/View/User/Theme
+
+  mysql:
+    image: mysql:8.0
+    container_name: acg-faka-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-acg_faka}
+      MYSQL_USER: ${MYSQL_USER:-acg}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-acg_password}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    volumes:
+      - acg_mysql:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    container_name: acg-faka-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - acg_redis:/data
+
+volumes:
+  acg_config:
+  acg_install:
+  acg_runtime:
+  acg_assets_cache:
+  acg_plugins:
+  acg_pay:
+  acg_themes:
+  acg_mysql:
+  acg_redis:
