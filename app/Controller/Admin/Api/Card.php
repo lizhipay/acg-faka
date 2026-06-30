@@ -296,10 +296,10 @@ class Card extends Manage
             \App\Model\Card::query()->whereIn('id', $ids)->whereRaw("status!=1")->update(['status' => 1, 'purchase_time' => Date::current()]);
         }
 
-        ManageLog::log($this->getManage(), "[卡密导出]导出卡密，共计：" . count($data));
+        ManageLog::log($this->getManage(), "[卡密导出]导出卡密，共计：" . count($data['list']));
         header('Content-Type:application/octet-stream');
         header('Content-Transfer-Encoding:binary');
-        header('Content-Disposition:attachment; filename=卡密导出(' . count($data) . ')-' . Date::current() . '.txt');
+        header('Content-Disposition:attachment; filename=卡密导出(' . count($data['list']) . ')-' . Date::current() . '.txt');
         return $card;
     }
 }
