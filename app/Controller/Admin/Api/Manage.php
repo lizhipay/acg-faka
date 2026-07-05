@@ -104,7 +104,7 @@ class Manage extends \App\Controller\Base\API\Manage
             throw new JSONException("没有移除任何数据");
         }
 
-        ManageLog::log($this->getManage(), "删除了管理员");
+        ManageLog::log($this->getManage(), "删除了管理员(ID:" . implode(",", (array)($_POST['list'] ?? [])) . ")");
         return $this->json(200, '（＾∀＾）移除成功');
     }
 
@@ -140,5 +140,74 @@ class Manage extends \App\Controller\Base\API\Manage
 
         ManageLog::log($this->getManage(), "修改了密码");
         return $this->json(200, "修改成功");
+    }
+
+
+    /**
+     * 谷歌验证器：当前账号是否已绑定
+     * @return array
+     */
+    public function googleStatus(): array
+    {
+        return $this->json(data: ["bound" => !empty($this->getManage()->google_secret)]);
+    }
+
+    /**
+     * 谷歌验证器：生成待绑定密钥（不落库，前端据 uri 生成二维码/手动录入）
+     * @return array
+     */
+    public function googleSecret(): array
+    {
+        $manage = $this->getManage();
+        $secret = \App\Util\Totp::generateSecret();
+        $issuer = (string)(\App\Model\Config::get("shop_name") ?: "ACGFAKA");
+        $uri = \App\Util\Totp::keyUri($secret, (string)$manage->email, $issuer);
+        return $this->json(data: ["secret" => $secret, "uri" => $uri]);
+    }
+
+    /**
+     * 谷歌验证器：绑定（校验一次动态码后保存密钥）
+     * @return array
+     * @throws JSONException
+     */
+    public function googleBind(): array
+    {
+        $manage = $this->getManage();
+        if (!empty($manage->google_secret)) {
+            //已绑定不允许直接覆盖，必须先解绑（防止绕过 UI 直接调接口换绑）
+            throw new JSONException("已绑定，请先解绑后再重新绑定");
+        }
+        $secret = strtoupper(trim((string)$this->request->post("secret")));
+        $code = (string)$this->request->post("code");
+        if (!preg_match('/^[A-Z2-7]{16,64}$/', $secret)) {
+            throw new JSONException("密钥格式错误");
+        }
+        if (!\App\Util\Totp::verify($secret, $code)) {
+            throw new JSONException("验证码错误，请确认手机时间已同步后重试");
+        }
+        $manage->google_secret = $secret;
+        $manage->save();
+        ManageLog::log($manage, "绑定了谷歌验证器");
+        return $this->json(200, "绑定成功");
+    }
+
+    /**
+     * 谷歌验证器：解绑（校验当前动态码后清除）
+     * @return array
+     * @throws JSONException
+     */
+    public function googleUnbind(): array
+    {
+        $manage = $this->getManage();
+        if (empty($manage->google_secret)) {
+            throw new JSONException("尚未绑定谷歌验证器");
+        }
+        if (!\App\Util\Totp::verify((string)$manage->google_secret, (string)$this->request->post("code"))) {
+            throw new JSONException("验证码错误");
+        }
+        $manage->google_secret = null;
+        $manage->save();
+        ManageLog::log($manage, "解绑了谷歌验证器");
+        return $this->json(200, "已解绑");
     }
 }

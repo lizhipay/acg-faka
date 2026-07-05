@@ -19,6 +19,7 @@ use App\Service\Query;
 use App\Service\Shared;
 use App\Service\Shop;
 use App\Util\Client;
+use App\Util\Throttle;
 use App\Util\Tree;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -391,6 +392,11 @@ class Index extends User
             throw new JSONException("无数据");
         }
 
+        //限流：挡住按订单号/联系方式批量枚举订单卡密（本接口免登录）
+        if (Throttle::tooMany("query:ip:" . Client::getAddress(), 30, 600)) {
+            throw new JSONException("请求过于频繁，请稍后再试");
+        }
+
         $get = new Get(Order::class);
         $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
         $get->setColumn('id', 'trade_no', 'sku', 'secret', 'user_id', 'password', 'amount', 'pay_id', 'commodity_id', 'create_time', 'pay_time', 'delivery_status', 'status', 'card_num', 'contact', "race");
@@ -435,6 +441,15 @@ class Index extends User
      */
     public function secret(string $tradeNo, string $password): array
     {
+        $tradeNo = trim($tradeNo);
+        $ip = Client::getAddress();
+
+        //限流：挡住卡密查询密码爆破 / 订单号枚举（本接口免登录，曾被单次刷 1 万+）
+        if (Throttle::tooMany("secret:ip:{$ip}", 40, 600)
+            || Throttle::tooMany("secret:no:{$tradeNo}:{$ip}", 8, 600)) {
+            throw new JSONException("请求过于频繁，请稍后再试");
+        }
+
         $order = Order::with(['commodity'])->where("trade_no", $tradeNo)->first();
 
         if (!$order) {
@@ -442,7 +457,8 @@ class Index extends User
         }
 
         if (!empty($order->password)) {
-            if ($password != $order->password) {
+            //定时安全比较，避免按响应时间逐字符猜测查询密码
+            if (!hash_equals((string)$order->password, (string)$password)) {
                 throw new JSONException("密码错误");
             }
         }
@@ -450,6 +466,9 @@ class Index extends User
         if ($order->status != 1) {
             throw new JSONException("订单还未支付");
         }
+
+        //验证通过，重置该订单的失败计数，避免正常用户多次查看被误伤
+        Throttle::clear("secret:no:{$tradeNo}:{$ip}");
 
         $widget = (array)json_decode((string)$order->widget, true);
         if (empty($widget)) {

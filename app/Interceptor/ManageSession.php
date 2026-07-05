@@ -95,7 +95,13 @@ class ManageSession implements InterceptorInterface
 
     #[NoReturn] private function kick(int $type): void
     {
-        setcookie(ManageConst::SESSION, "", time() - 3600, "/");
+        setcookie(ManageConst::SESSION, "", [
+            'expires' => time() - 3600,
+            'path' => '/',
+            'httponly' => true,
+            'samesite' => 'Lax',
+            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        ]);
         if ($type == Interceptor::TYPE_VIEW) {
             Client::redirect("/admin/authentication/login?goto=" . urlencode($_SERVER['REQUEST_URI']), "登录会话过期，请重新登录..");
         } else {

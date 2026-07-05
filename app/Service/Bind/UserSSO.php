@@ -42,7 +42,13 @@ class UserSSO implements \App\Service\UserSSO
             head: ["uid" => $user->id]
         ));
 
-        setcookie(\App\Consts\User::SESSION, $jwt, time() + $sessionExpire, "/");
+        //防 CSRF：跨站请求不携带会话。用户端保留可读性（部分主题前端会读取登录态），故不加 httponly。
+        setcookie(\App\Consts\User::SESSION, $jwt, [
+            'expires' => time() + $sessionExpire,
+            'path' => '/',
+            'samesite' => 'Lax',
+            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        ]);
         hook(Hook::USER_API_AUTH_LOGIN_AFTER, $user);
     }
 }

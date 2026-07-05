@@ -12,6 +12,7 @@ use App\Model\UserRecharge;
 use App\Util\Captcha;
 use App\Util\Client;
 use App\Util\Str;
+use App\Util\Throttle;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\Post;
@@ -99,9 +100,17 @@ class Order extends User
     public function state(#[Post] string $tradeNo): array
     {
         $tradeNo = trim($tradeNo);
+        //宽松限流：允许正常轮询支付状态，挡住大批量订单枚举
+        if (Throttle::tooMany("state:ip:" . Client::getAddress(), 120, 600)) {
+            throw new JSONException("请求过于频繁，请稍后再试");
+        }
         $order = \App\Model\Order::query()->where("trade_no", $tradeNo)->first(['id', 'trade_no', 'amount', 'status']);
         if (!$order) {
             $order = UserRecharge::query()->where("trade_no", $tradeNo)->first(['id', 'trade_no', 'amount', 'status']);
+        }
+        if (!$order) {
+            //原代码对不存在订单会 $order->toArray() 空指针报错（曾刷满 runtime.log）
+            throw new JSONException("未查询到相关信息");
         }
         //回显订单信息
         return $this->json(200, 'success', $order->toArray());

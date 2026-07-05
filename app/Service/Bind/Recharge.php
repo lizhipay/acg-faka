@@ -168,6 +168,8 @@ class Recharge implements \App\Service\Recharge
 
         $callback = $this->order->callbackInitialize($handle, $map);
 
+        //与订单回调一致：串行化隔离，防并发重复通知造成重复入账
+        DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
         DB::transaction(function () use ($handle, $map, $callback) {
             //获取订单
             $order = UserRecharge::query()->where("trade_no", $callback['trade_no'])->first();

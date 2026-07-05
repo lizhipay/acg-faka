@@ -27,14 +27,23 @@ class ManageSSO implements \App\Service\ManageSSO
      * @return array
      * @throws JSONException
      */
-    public function login(string $username, string $password, bool $remember = false): array
+    public function login(string $username, string $password, bool $remember = false, string $code = ''): array
     {
         $manage = Manage::query()->where("email", $username)->first();
         if (!$manage) {
             throw new JSONException("该邮箱不存在");
         }
-        if (Str::generatePassword($password, $manage->salt) != $manage->password) {
+        if (!hash_equals((string)$manage->password, Str::generatePassword($password, $manage->salt))) {
+            ManageLog::log($manage, "登录失败：密码错误");
             throw new JSONException("密码错误");
+        }
+
+        //谷歌验证器：已绑定则必须校验动态码（密码通过后才校验，避免暴露 2FA 是否开启）
+        if (!empty($manage->google_secret)) {
+            if (!\App\Util\Totp::verify((string)$manage->google_secret, $code)) {
+                ManageLog::log($manage, "登录失败：谷歌验证码错误");
+                throw new JSONException("谷歌验证码错误");
+            }
         }
 
         if ($manage->status != 1) {
@@ -75,7 +84,13 @@ class ManageSSO implements \App\Service\ManageSSO
             head: ["mid" => $manage->id]
         ));
 
-        setcookie(ManageConst::SESSION, $jwt, time() + $expire, "/");
+        setcookie(ManageConst::SESSION, $jwt, [
+            'expires' => time() + $expire,
+            'path' => '/',
+            'httponly' => true,               //禁止 JS 读取会话 Cookie（防 XSS 窃取/日志泄露复用）
+            'samesite' => 'Lax',              //防 CSRF：跨站请求不携带后台会话
+            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        ]);
 
         return ["username" => $manage->email, "avatar" => $manage->avatar, "token" => $jwt];
     }

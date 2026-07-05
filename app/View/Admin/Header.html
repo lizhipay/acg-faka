@@ -264,6 +264,12 @@
 
                         #{if $user.type == 0}
                             <div class="menu-item">
+                                <a class="menu-link #{if $title == '文件管理'}active#{/if}" href="/admin/file/index">
+                                    <span class="menu-icon"><i class="fa-duotone fa-regular fa-folder-open"></i></span>
+                                    <span class="menu-title">文件管理</span>
+                                </a>
+                            </div>
+                            <div class="menu-item">
                                 <a class="menu-link  #{if $title == '操作日志'}active#{/if}" href="/admin/log/index">
                                     <span class="menu-icon"><i class="fa-duotone fa-regular fa-scanner-gun"></i></span>
                                     <span class="menu-title">操作日志</span>

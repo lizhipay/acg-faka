@@ -1,0 +1,38 @@
+#{include file="../Header.html"}
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-fluid">
+            <div class="card mb-5 mb-xl-8">
+
+                <!--begin::Header-->
+                <div class="card-header border-0">
+                    <div class="card-toolbar">
+                        <button type="button" class="btn btn-sm btn-light-primary file-upload-btn me-3">
+                            <i class="fa-duotone fa-regular fa-cloud-arrow-up"></i> 上传文件
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light-danger file-batch-del me-3">
+                            <i class="fa-duotone fa-regular fa-trash-can"></i> 移除选中文件
+                        </button>
+                        <input type="file" id="file-upload-input" class="file-upload-input" style="display:none">
+                    </div>
+                </div>
+                <!--end::Header-->
+                <div class="card-body py-3">
+                    <table id="file-table"></table>
+                </div>
+            </div>
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+#{ready("/assets/admin/controller/file/index.js")}
+#{include file="../Footer.html"}

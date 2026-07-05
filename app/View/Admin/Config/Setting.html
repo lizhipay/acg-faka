@@ -101,6 +101,20 @@
 
                             <!--begin::Input group-->
                             <div class="row mb-6">
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">后台安全入口</label>
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="admin_entrance"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="如 /aq1314，留空则不启用" value="#{$config.admin_entrance}"/>
+                                    <div class="form-text text-danger fw-bold">
+                                        设置后必须先访问该地址通过安全验证，才能进入后台。请务必牢记，遗忘将无法进入后台。
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
                                 <!--begin::Label-->
                                 <label class="col-lg-4 col-form-label required fw-bold fs-6">PC模板</label>
                                 <!--end::Label-->

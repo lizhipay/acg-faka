@@ -104,8 +104,19 @@ try {
         Hook::inst()->load();
         //插件初始化
         hook(\App\Consts\Hook::KERNEL_INIT);
+
+        //后台安全入口（由 Entrance 插件下沉到核心，配置见 网站设置-基本设置；未配置则不启用）
+        \App\Util\AdminEntrance::guard();
     }
 
+
+    //安全响应头
+    if (!headers_sent()) {
+        header("X-Content-Type-Options: nosniff");
+        header("X-Frame-Options: SAMEORIGIN");
+        header("Referrer-Policy: strict-origin-when-cross-origin");
+        header("Content-Security-Policy: frame-ancestors 'self'; object-src 'none'; base-uri 'self'");
+    }
 
     //记录日志
     RequestLogger::logCurrentRequest(Context::get(\Kernel\Context\Interface\Request::class));

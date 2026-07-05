@@ -62,6 +62,19 @@
                         </svg>
                     </button>
                 </div>
+                <div class="ay-field">
+                    <input id="ay-captcha" name="captcha" class="ay-input" type="text" inputmode="numeric"
+                           maxlength="4" autocomplete="off" placeholder=" " required>
+                    <span class="ay-label">验证码</span>
+                    <img id="ay-captcha-img" class="ay-captcha" src="/user/captcha/image?action=adminLogin"
+                         onclick="this.src='/user/captcha/image?action=adminLogin&t='+Date.now()"
+                         title="看不清？点我刷新" alt="验证码">
+                </div>
+                <div class="ay-field">
+                    <input id="ay-code" name="code" class="ay-input" type="text" inputmode="numeric"
+                           autocomplete="one-time-code" maxlength="6" placeholder=" ">
+                    <span class="ay-label">谷歌验证码（未绑定可留空）</span>
+                </div>
 
                 <div class="ay-row">
                     <label class="ay-check"><input type="checkbox" id="ay-remember" name="remember" value="1">保持登录(365天)</label>

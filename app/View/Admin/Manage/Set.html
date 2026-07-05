@@ -121,6 +121,16 @@
               </div>
               <!--end::Input group-->
 
+              <!--begin::Input group 谷歌验证器-->
+              <div class="row mb-6">
+                <label class="col-lg-4 col-form-label fw-bold fs-6">谷歌验证器</label>
+                <div class="col-lg-8 fv-row">
+                  <button type="button" id="g2fa-bind-btn" class="btn btn-sm btn-light-primary" style="display:none;"><i class="fa-duotone fa-regular fa-qrcode me-1"></i>绑定</button>
+                  <button type="button" id="g2fa-unbind-btn" class="btn btn-sm btn-light-danger" style="display:none;"><i class="fa-duotone fa-regular fa-link-slash me-1"></i>解绑</button>
+                </div>
+              </div>
+              <!--end::Input group 谷歌验证器-->
+
 
             </div>
             <!--end::Card body-->
@@ -144,4 +154,5 @@
 <!--end::Content-->
 
 #{ready("/assets/admin/controller/manage/set.js")}
+#{ready("/assets/admin/controller/config/google2fa.js")}
 #{include file="../Footer.html"}

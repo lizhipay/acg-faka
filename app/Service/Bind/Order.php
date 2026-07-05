@@ -875,6 +875,12 @@ class Order implements \App\Service\Order
 
         //检测签名验证是否开启
         if ($callback[\App\Consts\Pay::IS_SIGN]) {
+            //核心兜底：验签已开启，但插件未配置任何凭据（密钥/密文/公钥）时直接拒绝，
+            //防止空密钥导致 md5(data.'') 之类可被伪造的回调通过验签。
+            if (!self::payCredentialConfigured($payConfig)) {
+                PayConfig::log($handle, "CALLBACK", "支付凭据未配置，拒绝回调");
+                throw new JSONException("pay credential not configured");
+            }
             $class = "\\App\\Pay\\{$handle}\\Impl\\Signature";
             if (!class_exists($class)) {
                 PayConfig::log($handle, "CALLBACK", "插件未实现接口");
@@ -899,6 +905,33 @@ class Order implements \App\Service\Order
 
         //拿到订单号和金额
         return ["trade_no" => $map[$callback[\App\Consts\Pay::FIELD_ORDER_KEY]], "amount" => $map[$callback[\App\Consts\Pay::FIELD_AMOUNT_KEY]], "success" => $callback[\App\Consts\Pay::FIELD_RESPONSE]];
+    }
+
+
+    /**
+     * 判断支付插件是否配置了可用于验签的凭据（密钥/密文/公钥）。
+     * 凭据字段名按各插件配置动态识别，不写死为 key。
+     * 仅当"存在凭据字段但全部为空"时返回 false（拒绝回调）；若插件根本没有凭据字段，
+     * 则不干预（返回 true，交由插件自身 verification 判定），避免误伤非常规插件。
+     * @param array|null $config
+     * @return bool
+     */
+    private static function payCredentialConfigured(?array $config): bool
+    {
+        if (empty($config)) {
+            return true; //无配置则不干预，交由插件自身判定
+        }
+        $pattern = '/(secret|token|private_?key|public_?key|app_?secret|api_?key|mch_?key|md5_?key|(^|_)key$)/i';
+        $found = false;
+        foreach ($config as $k => $v) {
+            if (is_string($k) && preg_match($pattern, $k)) {
+                $found = true;
+                if (is_string($v) && trim($v) !== '') {
+                    return true; //至少有一个非空凭据
+                }
+            }
+        }
+        return !$found; //有凭据字段但全空→false(拒绝)；无凭据字段→true(不干预)
     }
 
 

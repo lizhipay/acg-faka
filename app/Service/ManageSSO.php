@@ -17,7 +17,8 @@ interface ManageSSO
      * @param string $username
      * @param string $password
      * @param bool $remember
+     * @param string $code 谷歌验证器动态码（已绑定时必填）
      * @return array
      */
-    public function login(string $username, string $password, bool $remember = false): array;
+    public function login(string $username, string $password, bool $remember = false, string $code = ''): array;
 }

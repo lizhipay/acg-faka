@@ -259,6 +259,34 @@ if (!function_exists("debug")) {
 }
 
 
+if (!function_exists("maskSensitive")) {
+    /**
+     * 递归屏蔽数组中的敏感字段，用于日志脱敏，避免明文密钥/密码/令牌落盘。
+     * 字段名匹配敏感模式时其值一律替换为 ***（不改变结构，仅隐去值）。
+     * @param mixed $data
+     * @return mixed
+     */
+    function maskSensitive(mixed $data): mixed
+    {
+        if (!is_array($data)) {
+            return $data;
+        }
+        static $pattern = '/(pass|pwd|secret|token|cookie|authorization|salt|private_?key|public_?key|app_?secret|api_?key|mch_?key|md5_?key|(^|_)key$|(^|_)sign$)/i';
+        $masked = [];
+        foreach ($data as $k => $v) {
+            if (is_array($v)) {
+                $masked[$k] = maskSensitive($v);
+            } elseif (is_string($k) && $v !== null && $v !== '' && preg_match($pattern, $k)) {
+                $masked[$k] = '***';
+            } else {
+                $masked[$k] = $v;
+            }
+        }
+        return $masked;
+    }
+}
+
+
 if (!function_exists("getPluginConfig")) {
     function getPluginConfig(string $name)
     {

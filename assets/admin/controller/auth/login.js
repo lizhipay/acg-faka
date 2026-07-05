@@ -64,11 +64,15 @@
                 error: res => {
                     btn.disabled = false;
                     btn.textContent = "确认登入";
+                    const _c = document.getElementById('ay-captcha-img');
+                    if (_c) _c.src = '/user/captcha/image?action=adminLogin&t=' + Date.now();
                     message.error(res.msg);
                 },
                 fail: () => {
                     btn.disabled = false;
                     btn.textContent = "确认登入";
+                    const _c = document.getElementById('ay-captcha-img');
+                    if (_c) _c.src = '/user/captcha/image?action=adminLogin&t=' + Date.now();
                     message.error("网络错误");
                 }
             });
