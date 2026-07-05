@@ -53,10 +53,12 @@
 - 以上步骤完成后，然后配置伪静态，Apache无需配置，根目录已经有.htaccess文件了，但如果你是Nginx，则需要配置伪静态。
 - 下面是Nginx伪静态规则：
 ```
+location ~* ^/(runtime|kernel|config|vendor)/                { return 404; }
+location ~  /\.(?!well-known)                                { return 404; }
+location ~* \.(log|sql|sqlite|db|db-wal|db-shm|bak|old|save|orig|swp|swo|tmp|ini|lock)$  { return 404; }
+location ~* (~|composer\.(json|lock)|package(-lock)?\.json)$ { return 404; }
 location / {
-      if (!-e $request_filename){
-              rewrite ^(.*)$ /index.php?s=$1 last; break;
-      }
+    try_files $uri $uri/ /index.php?s=$uri&$args;
 }
 ```
 - Windows IIS服务器环境，可以使用下面伪静态规则：
