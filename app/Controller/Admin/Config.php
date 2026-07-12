@@ -78,6 +78,7 @@ class Config extends Manage
         return $this->render("网站设置", "Config/Setting.html", [
             "toolbar" => $this->TOOLBAR,
             "themes" => $themes,
+            "user_center_mobile_theme" => \App\Model\Config::get("user_center_mobile_theme") ?: "0",
             "ip_get_mode" => $modes,
             "ip_mode" => Client::getClientMode()
         ]);

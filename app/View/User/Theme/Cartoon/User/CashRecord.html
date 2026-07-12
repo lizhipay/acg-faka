@@ -1,15 +1,12 @@
 #{include file="../Common/Header.html"}
-<div class="layui-container fly-marginTop fly-user-main">
-    #{include file="../Common/Nav.html"}
-    <div class="fly-panel fly-panel-user" pad20>
-        <div class="layui-tab layui-tab-brief" lay-filter="user">
-            <ul class="layui-tab-title">
-                <li><a href="/user/cash/index"><i class="layui-icon">&#xe659;</i> 硬币兑现</a></li>
-                <li class="layui-this"><a href="/user/cash/record"><i class="layui-icon">&#xe63c;</i> 兑现记录</a></li>
-            </ul>
-            <div class="content-body">
-                <table id="cash-table"></table>
+<div class="uc-main">
+    <div class="uc-card uc-cash-record">
+        <div class="uc-card__body">
+            <div class="uc-subtab">
+                <a href="/user/cash/index"><span class="material-icons-outlined">payments</span>硬币兑现</a>
+                <a href="/user/cash/record" class="active"><span class="material-icons-outlined">history</span>兑现记录</a>
             </div>
+            <table id="cash-table"></table>
         </div>
     </div>
 </div>

@@ -1,0 +1,214 @@
+/*!
+ * material-tokens.css — Material Design 2 (MUI) design tokens + Bootstrap/Metronic remap
+ * Part of the acg-faka admin Material UI restyle (additive override layer).
+ *
+ * Load order: this file FIRST, then material.css. Theme is chosen via
+ * <html data-theme="light|dark" data-theme-pref="light|dark|auto"> set by the
+ * inline FOUC guard (Header/Login <head>) and material.js.
+ *
+ * NOTE: never edit the vendor bundles (_admin.css / _.css / style.bundle.css / *.min.css).
+ * All Material styling lives in material-*.css + material.js, added to BOTH css()/js()
+ * arrays so it loads in dev (DEBUG=true) and prod (DEBUG=false) alike.
+ */
+
+/* ============================================================= *
+ *  Invariant tokens (identical in every theme)
+ * ============================================================= */
+:root {
+  /* Shape */
+  /* macOS-like corner scale: softer controls (8px) + generous surfaces (12px) */
+  --md-radius: 8px;      /* buttons, inputs, selects, chips, menus, small controls */
+  --md-radius-lg: 12px;  /* cards, dialogs, panels, stat cards */
+  --md-radius-pill: 9999px;
+
+  /* Elevation — MD2 dp shadow ladder */
+  --md-e0: none;
+  --md-e1: 0 2px 1px -1px rgba(0,0,0,.2), 0 1px 1px 0 rgba(0,0,0,.14), 0 1px 3px 0 rgba(0,0,0,.12);
+  --md-e2: 0 3px 1px -2px rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 1px 5px 0 rgba(0,0,0,.12);
+  --md-e3: 0 3px 3px -2px rgba(0,0,0,.2), 0 3px 4px 0 rgba(0,0,0,.14), 0 1px 8px 0 rgba(0,0,0,.12);
+  --md-e4: 0 2px 4px -1px rgba(0,0,0,.2), 0 4px 5px 0 rgba(0,0,0,.14), 0 1px 10px 0 rgba(0,0,0,.12);
+  --md-e6: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12);
+  --md-e8: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12);
+  --md-e12: 0 7px 8px -4px rgba(0,0,0,.2), 0 12px 17px 2px rgba(0,0,0,.14), 0 5px 22px 4px rgba(0,0,0,.12);
+  --md-e16: 0 8px 10px -5px rgba(0,0,0,.2), 0 16px 24px 2px rgba(0,0,0,.14), 0 6px 30px 5px rgba(0,0,0,.12);
+  --md-e24: 0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12);
+
+  /* Motion — Material standard easing */
+  --md-ease: cubic-bezier(.4, 0, .2, 1);
+  --md-ease-out: cubic-bezier(0, 0, .2, 1);
+  --md-dur: .2s;
+  --md-dur-fast: .12s;
+
+  /* Type — keep the app's CJK face, apply Material's scale on top */
+  --md-font: "HarmonyOS Sans SC", "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ============================================================= *
+ *  Light theme
+ * ============================================================= */
+:root[data-theme="light"] {
+  --md-primary: #1976D2;
+  --md-primary-hover: #1565C0;
+  --md-primary-container: #E3F2FD;
+  --md-on-primary: #FFFFFF;
+  --md-secondary: #9C27B0;
+  --md-secondary-hover: #7B1FA2;
+  --md-on-secondary: #FFFFFF;
+
+  --md-success: #2E7D32;
+  --md-warning: #ED6C02;
+  --md-error:   #D32F2F;
+  --md-info:    #0288D1;
+
+  --md-bg: #F4F5F7;
+  --md-surface: #FFFFFF;
+  --md-surface-2: #FFFFFF;      /* raised (menus/dialogs) — white in light */
+
+  --md-on-surface:     rgba(0,0,0,.87);
+  --md-on-surface-med: rgba(0,0,0,.60);
+  --md-on-surface-dis: rgba(0,0,0,.38);
+  --md-divider: rgba(0,0,0,.12);
+  /* sidebar nav greys (matched to the nekosh reference: gray-600 / gray-500 / gray-900) */
+  --md-nav-fg:        #4b5563;
+  --md-nav-section:   #6b7280;
+  --md-nav-active-fg: #111827;
+  --md-outline: rgba(0,0,0,.23);
+
+  --md-hover-overlay:    rgba(0,0,0,.04);
+  --md-selected-overlay: rgba(25,118,210,.08);
+  --md-focus-ring:       rgba(25,118,210,.40);
+  --md-scrim:            rgba(0,0,0,.5);
+
+  /* rgb triplets for rgba() consumers (Bootstrap utilities, tints) */
+  --md-primary-rgb:   25,118,210;
+  --md-secondary-rgb: 156,39,176;
+  --md-success-rgb:   46,125,50;
+  --md-warning-rgb:   237,108,2;
+  --md-error-rgb:     211,47,47;
+  --md-info-rgb:      2,136,209;
+
+  /* Elevation — UNIFIED SOFT ladder (overrides the base MD2 ladder above). One cohesive family
+     e1→e24: cool-slate ambient, low opacity, wide blur + negative spread so shadows tuck under
+     instead of forming a hard "厚" contact line. Everything that reads var(--md-e*) inherits this. */
+  --md-e1:  0 1px 2px rgba(16,24,40,.04), 0 2px 8px -2px rgba(16,24,40,.06);
+  --md-e2:  0 1px 2px rgba(16,24,40,.04), 0 4px 12px -2px rgba(16,24,40,.08);
+  --md-e3:  0 2px 4px -1px rgba(16,24,40,.05), 0 6px 16px -3px rgba(16,24,40,.09);
+  --md-e4:  0 2px 5px -1px rgba(16,24,40,.05), 0 10px 22px -4px rgba(16,24,40,.10);
+  --md-e6:  0 3px 6px -2px rgba(16,24,40,.06), 0 14px 28px -6px rgba(16,24,40,.12);
+  --md-e8:  0 4px 8px -2px rgba(16,24,40,.07), 0 18px 36px -8px rgba(16,24,40,.14);
+  --md-e12: 0 6px 12px -3px rgba(16,24,40,.08), 0 26px 48px -10px rgba(16,24,40,.16);
+  --md-e16: 0 8px 16px -4px rgba(16,24,40,.09), 0 34px 60px -12px rgba(16,24,40,.18);
+  --md-e24: 0 12px 22px -6px rgba(16,24,40,.10), 0 48px 80px -16px rgba(16,24,40,.22);
+
+  color-scheme: light;
+}
+
+/* ============================================================= *
+ *  Dark theme — surfaces get lighter with elevation (MD2 dark)
+ * ============================================================= */
+:root[data-theme="dark"] {
+  --md-primary: #90CAF9;
+  --md-primary-hover: #64B5F6;
+  --md-primary-container: #0D47A1;
+  --md-on-primary: rgba(0,0,0,.87);
+  --md-secondary: #CE93D8;
+  --md-secondary-hover: #BA68C8;
+  --md-on-secondary: rgba(0,0,0,.87);
+
+  --md-success: #66BB6A;
+  --md-warning: #FFA726;
+  --md-error:   #F44336;
+  --md-info:    #29B6F6;
+
+  /* layered cool-charcoal palette (deep canvas → lifted surfaces → raised) */
+  --md-bg: #0e1013;
+  --md-surface: #1a1e24;
+  --md-surface-2: #232830;
+
+  --md-on-surface:     rgba(255,255,255,.92);
+  --md-on-surface-med: rgba(255,255,255,.60);
+  --md-on-surface-dis: rgba(255,255,255,.38);
+  --md-divider: rgba(255,255,255,.10);
+  --md-outline: rgba(255,255,255,.22);
+  /* sidebar nav greys (dark-mode equivalents of the reference greys) */
+  --md-nav-fg:        rgba(255,255,255,.72);
+  --md-nav-section:   rgba(255,255,255,.48);
+  --md-nav-active-fg: #ffffff;
+
+  --md-hover-overlay:    rgba(255,255,255,.08);
+  --md-selected-overlay: rgba(144,202,249,.16);
+  --md-focus-ring:       rgba(144,202,249,.50);
+  --md-scrim:            rgba(0,0,0,.7);
+
+  --md-primary-rgb:   144,202,249;
+  --md-secondary-rgb: 206,147,216;
+  --md-success-rgb:   102,187,106;
+  --md-warning-rgb:   255,167,38;
+  --md-error-rgb:     244,67,54;
+  --md-info-rgb:      41,182,246;
+
+  /* Elevation — UNIFIED SOFT ladder (dark): pure-black, graduated. Kept restrained at the low end
+     (cards/header rely on the lighter surface + hairline border; a heavy shadow on the near-black
+     canvas just muddies) and grows for true overlays (menus/drawers/dialogs). Same rung meanings as light. */
+  --md-e1:  0 1px 3px rgba(0,0,0,.3);
+  --md-e2:  0 2px 6px -1px rgba(0,0,0,.38);
+  --md-e3:  0 3px 8px -2px rgba(0,0,0,.42);
+  --md-e4:  0 4px 11px -3px rgba(0,0,0,.48);
+  --md-e6:  0 6px 15px -3px rgba(0,0,0,.52);
+  --md-e8:  0 8px 20px -4px rgba(0,0,0,.56);
+  --md-e12: 0 12px 26px -6px rgba(0,0,0,.6);
+  --md-e16: 0 16px 34px -8px rgba(0,0,0,.66);
+  --md-e24: 0 22px 46px -10px rgba(0,0,0,.72);
+
+  color-scheme: dark;
+}
+
+/* ============================================================= *
+ *  Bootstrap / Metronic (--bs-*) remap
+ *  Makes the existing Bootstrap+Metronic shell adopt the MUI
+ *  palette for free. Applied in BOTH themes.
+ *  (Metronic maps 'info' → purple, so --bs-info → MUI secondary.)
+ * ============================================================= */
+:root[data-theme] {
+  --bs-primary: var(--md-primary);
+  --bs-primary-active: var(--md-primary-hover);
+  --bs-success: var(--md-success);
+  --bs-info:    var(--md-secondary);
+  --bs-warning: var(--md-warning);
+  --bs-danger:  var(--md-error);
+
+  --bs-primary-rgb:   var(--md-primary-rgb);
+  --bs-success-rgb:   var(--md-success-rgb);
+  --bs-info-rgb:      var(--md-secondary-rgb);
+  --bs-warning-rgb:   var(--md-warning-rgb);
+  --bs-danger-rgb:    var(--md-error-rgb);
+
+  --bs-body-bg: var(--md-bg);
+  --bs-body-color: var(--md-on-surface);
+  --bs-border-color: var(--md-divider);
+
+  --bs-link-color: var(--md-primary);
+  --bs-link-hover-color: var(--md-primary-hover);
+  --bs-link-color-rgb: var(--md-primary-rgb);
+}
+
+/* Dark: invert the neutral ramp so gray-* / bg-white / text-dark utilities flip. */
+:root[data-theme="dark"] {
+  --bs-white: #1E1E1E;
+  --bs-white-rgb: 30,30,30;
+  --bs-body-bg: #121212;
+  --bs-light: #2A2A2A;
+  --bs-light-rgb: 42,42,42;
+  --bs-dark: #EDEDED;
+  --bs-dark-rgb: 237,237,237;
+
+  --bs-gray-100: #2A2A2A;
+  --bs-gray-200: #333333;
+  --bs-gray-300: #3D3D3D;
+  --bs-gray-400: #4D4D4D;
+  --bs-gray-500: #6E6E6E;
+  --bs-gray-600: #9E9E9E;
+  --bs-gray-700: #BDBDBD;
+  --bs-gray-800: #E0E0E0;
+  --bs-gray-900: #F5F5F5;
+}

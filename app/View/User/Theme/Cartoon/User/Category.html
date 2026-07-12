@@ -1,19 +1,15 @@
 #{include file="../Common/Header.html"}
-<div class="layui-container fly-marginTop fly-user-main">
-    #{include file="../Common/Nav.html"}
-    <div class="fly-panel fly-panel-user" pad20>
-        <div class="layui-tab layui-tab-brief" lay-filter="user">
-            <div class="content-header">
-                <i class="layui-icon">&#xe638;</i> 商品分类
+<div class="uc-main">
+    <div class="uc-card">
+        <div class="uc-card__head">
+            <span class="material-icons-outlined">category</span>
+            <span class="uc-card__title">商品分类</span>
+        </div>
+        <div class="uc-card__body">
+            <div class="uc-toolbar">
+                <button type="button" class="layui-btn layui-btn-sm button-add"><i class="fa-duotone fa-regular fa-circle-plus"></i> 新建分类</button>
             </div>
-
-            <div class="content-body">
-                <div style="margin-bottom: 5px;margin-top: 15px;">
-                    <button type="button" class="layui-btn layui-btn-sm layui-btn-pink button-add"><i class="fa-duotone fa-regular fa-circle-plus"></i> 新建分类
-                    </button>
-                </div>
-                <table id="category-table"></table>
-            </div>
+            <table id="category-table"></table>
         </div>
     </div>
 </div>

@@ -1,80 +1,163 @@
 #{include file="../Common/Header.html"}
-<div class="layui-container fly-marginTop fly-user-main">
-    #{include file="../Common/Nav.html"}
-    <div class="fly-panel fly-panel-user" pad20>
-        <div class="layui-tab layui-tab-brief" lay-filter="user">
-            <div class="content-header">
-                <i class="layui-icon">&#xe638;</i> 充值余额
-            </div>
-
-            <div class="content-body">
-                <blockquote class="elem-quote">
-                    当前元气：<b style="color: #0C84D1;">#{$user.recharge}</b>，您当前用户等级：<b
-                            style="color: #0C84D1;">#{$user.group.name}</b>
-                    #{if $groupNext}，升级到
-                        <b style="color: #8d16e3;">#{$groupNext.name}</b>
-                        还需要充值
-                        <b style="color: #8d16e3;">¥#{$groupNext.recharge-$user.recharge}</b>
-                    #{/if}
-                </blockquote>
-
-                <form class="layui-form" action="">
-                    <div class="form-block">
-                        #{if $config.recharge_welfare == 1 && count($welfareConfig) > 0}
-                            <div style="margin-top: 25px;">
-                                <div class="form-body">
-                                    #{foreach $welfareConfig as $wc}
-                                        <p style="color: #108d25;padding-bottom: 5px;">一次性充值<b
-                                                    style="color: #f15858;">￥#{$wc.recharge}</b>，赠送<b
-                                                    style="color: #6a71f1;">￥#{$wc.amount}</b></p>
-                                    #{/foreach}
-                                </div>
-                            </div>
-                        #{/if}
-                        <div>
-                            <div class="form-header">金额 <span
-                                        style="color: #63b584;font-size: 14px;">当前余额:￥#{$user.balance}</span></div>
-                            <div class="form-body"><input type="text" name="amount" required lay-verify="required"
-                                                          value="#{if $config.recharge_min == 0}10#{else}#{$config.recharge_min}#{/if}" autocomplete="off" class="layui-input"
-                                                          style="width: 150px;color: #ff9191;"></div>
-                        </div>
-                        <div>
-                            <div class="form-header">支付方式</div>
-                            <div class="form-body pay-list"></div>
-                        </div>
-
-                        <div style="margin-top: 25px;">
-                            <button type="button" class="layui-btn layui-btn-pink payButton">立即充值</button>
-                        </div>
-
-                        <div>
-                            <div class="form-header">会员等级划分（<span style="color: #0a53be;">说明：充值/消费可获得元气，比例1:1</span>）</div>
-                            <div class="form-body">
-                                <table class="table table-bordered table-hover">
-                                    <thead>
-                                    <tr>
-                                        <td>等级</td>
-                                        <td>所需元气</td>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    #{foreach $groups as $g}
-                                        <tr>
-                                            <td><img src="#{$g.icon}" style="height: 32px;"> <span class="layui-badge layui-bg-gray">#{$g.name}</span></td>
-                                            <td style="color: #f68b8b;font-weight: bolder;">#{$g.recharge}</td>
-                                        </tr>
-                                    #{/foreach}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+<div class="uc-main">
+    <div class="uc-topup" data-balance="#{$user.balance}" data-energy="#{$user.recharge}" data-min="#{$presets[0]}" data-max="#{$config.recharge_max}">
+        <section class="uc-card uc-topup-overview">
+            <div class="uc-card__body">
+                <span class="uc-topup-overview__glow"></span>
+                <div class="uc-topup-balance">
+                    <span class="uc-topup-balance__icon"><span class="material-icons-outlined">account_balance_wallet</span></span>
+                    <div class="uc-topup-balance__copy">
+                        <span class="uc-topup-balance__eyebrow"><span class="material-icons-outlined">add_card</span>充值中心</span>
+                        <span class="uc-topup-balance__label">账户余额</span>
+                        <div class="uc-topup-balance__value"><small>￥</small>#{$user.balance}</div>
+                        <span class="uc-topup-balance__hint">充值成功后余额即时更新，可用于购买商品</span>
                     </div>
-                </form>
+                </div>
+
+                <div class="uc-topup-progress">
+                    <div class="uc-topup-progress__head">
+                        <div>
+                            <span class="uc-topup-progress__label">会员成长</span>
+                            <span class="uc-topup-progress__level"><img src="#{$user.group.icon}" alt="">#{$user.group.name}</span>
+                        </div>
+                        <strong>#{$user.recharge}<small>元气</small></strong>
+                    </div>
+                    <div class="uc-topup-progress__track"><span style="width:#{$progress}%;"></span></div>
+                    <div class="uc-topup-progress__foot">
+                        #{if $groupNext}
+                        <span><span class="material-icons-outlined">trending_up</span>距离 <b>#{$groupNext.name}</b></span>
+                        <span>还需 <b>#{$groupNext.recharge-$user.recharge}</b> 元气</span>
+                        #{else}
+                        <span><span class="material-icons-outlined">workspace_premium</span>已达到最高等级</span>
+                        <span>全部会员权益已解锁</span>
+                        #{/if}
+                    </div>
+                </div>
             </div>
+        </section>
+
+        <div class="uc-topup-grid">
+            <section class="uc-card uc-topup-form">
+                <div class="uc-card__head">
+                    <span class="material-icons-outlined">payments</span>
+                    <div class="uc-topup-cardtitle">
+                        <span class="uc-card__title">为账户充值</span>
+                        <span class="uc-card__sub">选择金额与支付方式</span>
+                    </div>
+                </div>
+                <div class="uc-card__body">
+                    <form class="layui-form" action="">
+                        <div class="uc-topup-section">
+                            <div class="uc-topup-section__head">
+                                <div><strong>充值金额</strong><span>可选择推荐金额，也可以手动输入</span></div>
+                                <span class="uc-topup-section__step">01</span>
+                            </div>
+                            <div class="uc-topup-presets">
+                                #{foreach $presets as $p}
+                                <button type="button" class="uc-topup-preset" data-amount="#{$p}"><small>￥</small>#{$p}</button>
+                                #{/foreach}
+                            </div>
+                            <div class="uc-topup-amount">
+                                <span class="uc-topup-amount__cur">￥</span>
+                                <input type="text" name="amount" required value="#{$presets[0]}" inputmode="decimal" autocomplete="off" aria-label="充值金额" class="layui-input">
+                                <span class="uc-topup-amount__unit">人民币</span>
+                            </div>
+                            <div class="uc-topup-limit">
+                                <span class="material-icons-outlined">info</span>
+                                单次最低 <b>￥#{$presets[0]}</b>#{if $config.recharge_max > 0 && $config.recharge_max > $presets[0]}<span>·</span>单次最高 <b>￥#{$config.recharge_max}</b>#{else}<span>·</span>充值金额不设上限#{/if}
+                            </div>
+                            #{if $config.recharge_welfare == 1 && count($welfareConfig) > 0}
+                            <div class="uc-topup-bonuses">
+                                #{foreach $welfareConfig as $wc}
+                                <span class="uc-topup-bonus" data-threshold="#{$wc.recharge}" data-bonus="#{$wc.amount}"><span class="material-icons-outlined">redeem</span>满 <b>￥#{$wc.recharge}</b> 赠 <b>￥#{$wc.amount}</b></span>
+                                #{/foreach}
+                            </div>
+                            #{/if}
+                        </div>
+
+                        <div class="uc-topup-section uc-topup-section--pay">
+                            <div class="uc-topup-section__head">
+                                <div><strong>支付方式</strong><span>请选择本次使用的支付渠道</span></div>
+                                <span class="uc-topup-section__step">02</span>
+                            </div>
+                            <div class="pay-list uc-topup-methods"></div>
+                        </div>
+
+                        <div class="uc-topup-submit">
+                            <button type="button" class="uc-cta payButton" disabled aria-disabled="true">
+                                <span class="material-icons-outlined">arrow_outward</span>
+                                <span class="uc-topup-submit__label">请选择支付方式</span>
+                            </button>
+                            <span><span class="material-icons-outlined">verified_user</span>支付过程由对应渠道安全处理</span>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <aside class="uc-card uc-topup-summary">
+                <div class="uc-card__head">
+                    <span class="material-icons-outlined">receipt_long</span>
+                    <div class="uc-topup-cardtitle">
+                        <span class="uc-card__title">充值确认</span>
+                        <span class="uc-card__sub">提交前请核对本次信息</span>
+                    </div>
+                </div>
+                <div class="uc-card__body">
+                    <div class="uc-topup-summary__hero">
+                        <span>预计入账</span>
+                        <strong><small>￥</small><span class="uc-topup-total">#{$presets[0]}</span></strong>
+                        <em>含符合条件的活动赠送</em>
+                    </div>
+                    <div class="uc-topup-summary__rows">
+                        <div><span>充值金额</span><strong>￥<span class="uc-topup-principal">#{$presets[0]}</span></strong></div>
+                        <div><span>活动赠送</span><strong class="uc-topup-gift">+￥0</strong></div>
+                        <div><span>获得元气</span><strong><span class="uc-topup-energy">#{$presets[0]}</span> 元气</strong></div>
+                        <div><span>支付方式</span><strong class="uc-topup-method-name">待选择</strong></div>
+                    </div>
+                    <div class="uc-topup-summary__status is-waiting">
+                        <span class="material-icons-outlined">touch_app</span>
+                        <span class="uc-topup-status-text">请选择一种支付方式</span>
+                    </div>
+                    <div class="uc-topup-summary__note">
+                        <span class="material-icons-outlined">info</span>
+                        <div><strong>温馨提示</strong><span>支付渠道可能收取服务费，最终支付金额以收银台展示为准。</span></div>
+                    </div>
+                    <div class="uc-topup-summary__safe">
+                        <span class="material-icons-outlined">shield</span>
+                        <span>支付完成后请勿重复提交；页面会自动更新充值结果。</span>
+                    </div>
+                </div>
+            </aside>
         </div>
+
+        <section class="uc-card uc-topup-growth">
+            <div class="uc-card__head">
+                <span class="material-icons-outlined">workspace_premium</span>
+                <div class="uc-topup-cardtitle">
+                    <span class="uc-card__title">等级成长路径</span>
+                    <span class="uc-card__sub">充值或消费均可获得元气，比例 1:1</span>
+                </div>
+                <span class="uc-topup-growth__current">当前：#{$user.group.name}</span>
+                <span class="uc-topup-growth__swipe"><span class="material-icons-outlined">swipe</span>左右滑动</span>
+            </div>
+            <div class="uc-card__body">
+                <div class="uc-topup-levels">
+                    #{foreach $groups as $g}
+                    <div class="uc-topup-level#{if $user.recharge >= $g.recharge} is-unlocked#{/if}#{if $g.id == $user.group.id} is-current#{/if}">
+                        <span class="uc-topup-level__mark">
+                            <img src="#{$g.icon}" alt="">
+                            <span class="material-icons-outlined">check</span>
+                        </span>
+                        <strong>#{$g.name}</strong>
+                        <small>#{$g.recharge} 元气</small>
+                        #{if $g.id == $user.group.id}<em>当前</em>#{/if}
+                    </div>
+                    #{/foreach}
+                </div>
+            </div>
+        </section>
     </div>
 </div>
-
 
 #{ready("/assets/user/controller/user/recharge.js")}
 #{include file="../Common/Footer.html"}

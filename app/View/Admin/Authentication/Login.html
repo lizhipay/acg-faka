@@ -4,10 +4,12 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>登录 - #{$config.title}</title>
+    <script>(function(){try{var p=localStorage.getItem('admin-theme')||'auto';var d=p==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p;var e=document.documentElement;e.setAttribute('data-theme',d);e.setAttribute('data-theme-pref',p);}catch(_){document.documentElement.setAttribute('data-theme','light');}})();</script>
     #{css(
     [
     "/assets/common/css/_.css",
-    "/assets/admin/css/auth.css"
+    "/assets/admin/css/auth.css",
+    "/assets/admin/css/_material-auth.css"
     ],
     [
     "/assets/admin/css/style.bundle.css",
@@ -18,7 +20,9 @@
     "/assets/common/css/toastr.min.css",
     "/assets/common/js/table/bootstrap-table.css",
     "/assets/common/js/layer/theme/default/layer.css",
-    "/assets/admin/css/auth.css"
+    "/assets/admin/css/auth.css",
+    "/assets/common/css/md-tokens.css",
+    "/assets/admin/css/material-auth.css"
     ])}
 
     #{js("/assets/common/js/ready.js")}

@@ -66,7 +66,7 @@
     table.setColumns([
         {
             field: 'plugin_name', title: '插件名称', formatter: function (val, item) {
-                return `<span class="table-item"><img src="${item?.icon}" class="table-item-icon"><span class="table-item-name">${item.info.name}</span></span>`;
+                return `<div class="md-plugin"><img src="${item?.icon}" class="md-plugin__icon" alt=""><span class="md-plugin__name">${item?.info?.name ?? ''}</span></div>`;
             }
         }
         , {
@@ -135,7 +135,7 @@
             class: "nowrap",
             title: '<span id="updateNum">版本号</span>',
             formatter: function (val, item) {
-                return '<span class="badge badge-light">' + item?.info?.version + '</span>' + pluginUpdate.renderButton(item.id, item?.info?.version);
+                return '<span class="md-version">v' + item?.info?.version + '</span>' + pluginUpdate.renderButton(item.id, item?.info?.version);
             }
             ,
             events: {
@@ -166,9 +166,9 @@
             field: 'options', title: '功能', formatter: function (val, item) {
                 let list = [];
                 for (const key in item.info.options) {
-                    list.push('<span class="badge badge-success me-1">' + item.info.options[key] + '</span>');
+                    list.push(format.badge(item.info.options[key], "a-badge-success"));
                 }
-                return list.join("");
+                return list.length ? format.badgeGroup(list.join("")) : "-";
             }
         }
         , {
@@ -196,7 +196,7 @@
                 if (item?.info?.author == "#" || !item?.info?.author) {
                     return '-';
                 }
-                return '<span class="badge badge-light"><i class="fa-duotone fa-regular fa-circle-user"></i> ' + item?.info?.author + '</span>';
+                return '<span class="md-author"><i class="fa-duotone fa-regular fa-user"></i>' + item?.info?.author + '</span>';
             }
         }
         , {

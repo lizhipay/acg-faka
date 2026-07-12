@@ -1,0 +1,91 @@
+/*!
+ * material-auth.css — Material skin for the admin login (app/View/Admin/Authentication/Login.html).
+ * Overrides the bespoke neon-glass `ay-*` styles (auth.css) with a Material light/dark auth card.
+ * Loaded after material-tokens.css + auth.css. Theme comes from the <head> FOUC guard.
+ * Markup/JS untouched: #ay-form, #ay-captcha-img refresh, #ay-code (2FA), #ay-remember, #ay-eye.
+ */
+
+/* page → flat Material background; drop the neon dim/petals decorations */
+body.ay-bg {
+  background: var(--md-bg) !important;
+  color: var(--md-on-surface);
+  font-family: var(--md-font);
+}
+.ay-dim, .ay-petals { display: none !important; }
+
+/* card → Material surface (Paper); remove glass blur, neon border, 3D tilt */
+.ay-card {
+  width: min(420px, 92vw);
+  background: var(--md-surface) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--md-divider);
+  border-radius: var(--md-radius-lg);
+  box-shadow: var(--md-e8);
+  transform: none !important;                 /* neutralize login.js 3D perspective */
+}
+.ay-card::before, .ay-card::after { display: none !important; }
+.ay-card:hover { box-shadow: var(--md-e12); }
+
+.ay-logo { box-shadow: var(--md-e2); }
+.ay-title { color: var(--md-on-surface); font-weight: 600; letter-spacing: normal; }
+.ay-sub { color: var(--md-on-surface-med); }
+
+/* inputs → MUI outlined */
+.ay-input {
+  background: transparent;
+  border: 1px solid var(--md-outline);
+  border-radius: var(--md-radius);
+  color: var(--md-on-surface);
+}
+.ay-input:hover { border-color: var(--md-on-surface); }
+.ay-input:focus { border-color: var(--md-primary); box-shadow: 0 0 0 1px var(--md-primary); }
+
+/* floating label (reuses the placeholder-shown mechanic) */
+.ay-label { color: var(--md-on-surface-med); }
+.ay-input:focus + .ay-label,
+.ay-input:not(:placeholder-shown) + .ay-label {
+  top: -8px;
+  font-size: 12px;
+  color: var(--md-primary);
+  background: var(--md-surface);
+  border: none;
+  border-radius: 0;
+  padding: 0 4px;
+}
+
+/* password eye → Material icon button (recolor the inline-stroked svg) */
+.ay-eye { background: transparent; border: none; border-radius: var(--md-radius-pill); }
+.ay-eye:hover { background: var(--md-hover-overlay); }
+.ay-eye svg { stroke: var(--md-on-surface-med); }
+
+/* captcha image */
+.ay-captcha { border: 1px solid var(--md-divider); border-radius: var(--md-radius); }
+
+/* remember checkbox + forgot link */
+.ay-check { color: var(--md-on-surface-med); }
+.ay-check input {
+  border: 2px solid var(--md-on-surface-med);
+  border-radius: 3px;
+  background: transparent;
+}
+.ay-check input:hover { border-color: var(--md-on-surface); background: var(--md-hover-overlay); }
+.ay-check input:checked { background: var(--md-primary); border-color: var(--md-primary); }
+.ay-check input:checked::after { color: var(--md-on-primary); }
+.ay-link { color: var(--md-primary); border-bottom: none; opacity: 1; }
+.ay-link:hover { text-decoration: underline; }
+
+/* submit → contained primary button */
+.ay-btn {
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  border-radius: var(--md-radius);
+  font-weight: 500;
+  letter-spacing: normal;
+  box-shadow: var(--md-e2);
+}
+.ay-btn:hover { background: var(--md-primary-hover); box-shadow: var(--md-e4); transform: none; }
+.ay-btn:active { box-shadow: var(--md-e8); }
+.ay-btn::after { display: none !important; }
+
+.ay-foot { color: var(--md-on-surface-med); }

@@ -2,221 +2,174 @@
 #{set_script_var([
     "_business_notice_var" => $business.notice
 ])}
-<div class="layui-container fly-marginTop fly-user-main">
-    #{include file="../Common/Nav.html"}
-    <div class="fly-panel fly-panel-user" pad20>
-        <div class="layui-tab layui-tab-brief" lay-filter="user">
-            <div class="content-header">
-                <i class="layui-icon">&#xe638;</i> 我的店铺
+<div class="uc-main">
+    #{if !$business || $purchase == 1 && $business}
+        <div class="uc-card">
+            <div class="uc-card__head">
+                <span class="material-icons-outlined">#{if !$business}add_business#{else}workspace_premium#{/if}</span>
+                <span class="uc-card__title">#{if !$business}开通店铺#{else}升级店铺#{/if}</span>
+            </div>
+            <div class="uc-card__body">
+                #{if !$business}<blockquote class="elem-quote">您还没有开通店铺，选择下面的套餐即可立即开通。</blockquote>#{/if}
+                #{if $purchase == 1}<blockquote class="elem-quote">升级您的店铺，享受更多权益。</blockquote>#{/if}
+
+                <form class="layui-form" action="">
+                    <div class="uc-subhead">选择套餐 <span class="uc-hint" style="font-weight:400;">点击卡片选择，一次性开通、永久有效</span></div>
+                    <div class="uc-plans">
+                        #{foreach $level as $le}
+                        <a class="uc-plan business-group #{if $le@last && $le@total > 1}uc-plan--reco#{/if}" data-id="#{$le.id}" href="javascript:;">
+                            <span class="uc-plan__pick"><span class="material-icons-outlined">check</span></span>
+                            <div class="uc-plan__head">
+                                <img class="uc-plan__icon" src="#{$le.icon}">
+                                <span class="uc-plan__name">#{$le.name}</span>
+                                #{if $le@last && $le@total > 1}<span class="uc-plan__badge">推荐</span>#{/if}
+                            </div>
+                            <div class="uc-plan__price"><span class="uc-plan__cur">¥</span>#{$le.price}</div>
+                            <div class="uc-plan__sub">一次性开通 · 永久有效</div>
+                            <div class="uc-plan__feats">
+                                <div class="uc-plan__feat #{if $le.substation != 1}off#{/if}"><span class="material-icons-outlined">#{if $le.substation == 1}check_circle#{else}cancel#{/if}</span>分站功能</div>
+                                <div class="uc-plan__feat"><span class="material-icons-outlined">check_circle</span>分站返佣</div>
+                                <div class="uc-plan__feat #{if $le.top_domain != 1}off#{/if}"><span class="material-icons-outlined">#{if $le.top_domain == 1}check_circle#{else}cancel#{/if}</span>独立域名</div>
+                                <div class="uc-plan__feat #{if $le.supplier != 1}off#{/if}"><span class="material-icons-outlined">#{if $le.supplier == 1}check_circle#{else}cancel#{/if}</span>供货权限</div>
+                                <div class="uc-plan__feat uc-plan__feat--fee"><span>供货手续费</span><b>#{if $le.supplier == 1}#{$le.cost*100}%#{else}—#{/if}</b></div>
+                            </div>
+                        </a>
+                        #{/foreach}
+                    </div>
+
+                    <div class="uc-benefits">
+                        <div class="uc-benefit"><span class="material-icons-outlined">hub</span><div><b>分站返佣</b>开通分站后，您在分站售出的主站商品，将按差价返还佣金（实际成交金额 − 您的拿货价 = 您的佣金）。</div></div>
+                        <div class="uc-benefit"><span class="material-icons-outlined">language</span><div><b>独立域名</b>开通分站后，您可绑定自己的顶级域名，无需使用系统默认分配的子域名。</div></div>
+                        <div class="uc-benefit"><span class="material-icons-outlined">inventory_2</span><div><b>供货权限</b>您可自建商品分类并上架商品进行销售，主站也将协助推广与售卖。</div></div>
+                        <div class="uc-benefit"><span class="material-icons-outlined">receipt_long</span><div><b>供货手续费</b>针对您自主上架的商品，每笔成功交易将收取一定比例的手续费。</div></div>
+                    </div>
+
+                    <div class="uc-plan-actions">
+                        <button type="button" class="uc-cta payButton"><span class="material-icons-outlined">#{if !$business}rocket_launch#{else}workspace_premium#{/if}</span>#{if !$business}立即开通#{/if}#{if $purchase == 1}立即升级#{/if}</button>
+                        #{if $purchase == 1}<a href="/user/business/index" class="uc-cta uc-cta--ghost"><span class="material-icons-outlined">arrow_back</span>返回店铺</a>#{/if}
+                    </div>
+                </form>
+            </div>
+        </div>
+    #{else}
+        #{if $user.businessLevel.substation == 1}
+            <div class="uc-card uc-mstatus">
+                <div class="uc-mstatus__id">
+                    <span class="uc-mstatus__crown"><img src="#{$user.businessLevel.icon}" alt=""></span>
+                    <div class="uc-mstatus__meta">
+                        <div class="uc-mstatus__label">当前商户等级</div>
+                        <div class="uc-mstatus__name">#{$user.businessLevel.name}</div>
+                    </div>
+                </div>
+                <div class="uc-mstatus__feats">
+                    <div class="uc-mstatus__feat #{if $user.businessLevel.top_domain == 1}ok#{else}no#{/if}">
+                        <span class="material-icons-outlined">#{if $user.businessLevel.top_domain == 1}check_circle#{else}cancel#{/if}</span>独立域名
+                    </div>
+                    <div class="uc-mstatus__feat #{if $user.businessLevel.supplier == 1}ok#{else}no#{/if}">
+                        <span class="material-icons-outlined">#{if $user.businessLevel.supplier == 1}check_circle#{else}cancel#{/if}</span>供货权限
+                    </div>
+                    #{if $user.businessLevel.supplier == 1}
+                    <div class="uc-mstatus__feat fee">
+                        <span class="material-icons-outlined">receipt_long</span>供货手续费<b>#{$user.businessLevel.cost*100}%</b>
+                    </div>
+                    #{/if}
+                </div>
+                #{if count($level) > 0}
+                <a class="uc-mstatus__up" href="/user/business/index?purchase=1">
+                    <span class="material-icons-outlined">rocket_launch</span>我要升级
+                </a>
+                #{/if}
             </div>
 
-            <div class="content-body">
-                #{if !$business}
-                    <blockquote class="elem-quote">
-                        您还没有开通店铺
-                    </blockquote>
-                #{/if}
-                #{if $purchase == 1}
-                    <blockquote class="elem-quote">
-                        升级您的店铺，享受更多权益
-                    </blockquote>
-                #{/if}
-                #{if !$business || $purchase == 1 && $business}
-                    <form class="layui-form" action="">
-                        <div class="form-block">
-                            <div>
-                                <div class="form-header">请选择</div>
-                                <div class="form-body">
-                                    #{foreach $level as $le}
-                                        <a class="button-click business-group" data-id="#{$le.id}"
-                                           style="line-height: 22px;color: #db66ac;"> <img
-                                                    src="#{$le.icon}" class="pay-icon" style="margin-top: -5px;"> <span
-                                                    style="font-weight: bold;">#{$le.name}</span> <span
-                                                    style="font-weight: bold;">¥#{$le.price}</span>
-                                            <hr>
-                                            <div style="font-size: 12px;">
-                                                <p>分站功能：#{if $le.substation == 1}<i class="layui-icon"
-                                                                                    style="color: green;">&#xe605;</i>
-                                                    #{else}<i class="layui-icon" style="color: red;">&#x1006;</i>#{/if}
-                                                </p>
-                                                <p>分站返佣：<i class="layui-icon" style="color: green;">&#xe605;</i></p>
-                                                <p>独立域名：#{if $le.top_domain == 1}<i class="layui-icon"
-                                                                                    style="color: green;">&#xe605;</i>
-                                                    #{else}<i class="layui-icon" style="color: red;">&#x1006;</i>#{/if}
-                                                </p>
-                                                <p>供货权限：#{if $le.supplier == 1}<i class="layui-icon"
-                                                                                  style="color: green;">&#xe605;</i>
-                                                    #{else}<i class="layui-icon" style="color: red;">&#x1006;</i>#{/if}
-                                                </p>
-                                                <p>供货手续费：#{if $le.supplier == 1}#{$le.cost*100}%#{else}-#{/if}</p>
-                                            </div>
-                                        </a>
-                                    #{/foreach}
-                                </div>
-                            </div>
-                            <div style="margin-top: 10px;">
-                                <blockquote class="elem-tips" style="font-size: 12px;">
-                                    <p>• 分站返佣：开通分站后，您在分站售出的主站商品，将按差价返还佣金（实际成交金额 - 您的拿货价 = 您的佣金）。</p>
-                                    <p>• 独立域名：开通分站后，您可绑定自己的顶级域名，而无需使用系统默认分配的子域名。</p>
-                                    <p>• 供货权限：您可自建商品分类并上架商品进行销售，主站也将协助推广与售卖。</p>
-                                    <p>• 供货手续费：针对您自主上架的商品，每笔成功交易将收取一定比例的手续费。</p>
-                                </blockquote>
+            <form class="layui-form form-data">
+                <div class="uc-card">
+                    <div class="uc-tabs">
+                        <button type="button" class="uc-tab active" data-tab="info"><span class="material-icons-outlined">storefront</span>店铺信息</button>
+                        <button type="button" class="uc-tab" data-tab="commodity"><span class="material-icons-outlined">inventory_2</span>商品设置</button>
+                        <button type="button" class="uc-tab" data-tab="domain"><span class="material-icons-outlined">language</span>域名绑定</button>
+                    </div>
+                    <div class="uc-card__body">
 
-                            </div>
-                            <div style="margin-top: 25px;">
-                                <button type="button" class="layui-btn layui-btn-pink payButton">#{if !$business}立即开通
-                                    #{/if}#{if $purchase == 1}立即升级#{/if}
-                                </button>
-                                #{if $purchase == 1}
-                                    <a href="/user/business/index" class="layui-btn layui-btn-pink">返回店铺</a>
-                                #{/if}
-                            </div>
-                        </div>
-                    </form>
-                #{else}
-                    #{if $user.businessLevel.substation == 1}
-                        <blockquote class="elem-quote">
-                            当前商户等级：<img src="#{$user.businessLevel.icon}"
-                                        style="height: 16px;margin-top: -4px;">#{$user.businessLevel.name}，绑定独立域名：#{if
-                            $user.businessLevel.top_domain == 1}<b style="color: green;">✔</b>#{else}<b
-                                style="color: red;">✖</b>#{/if}，供货权限：#{if
-                            $user.businessLevel.supplier == 1}<b
-                                style="color: green;">✔</b>，供货手续费：#{$user.businessLevel.cost*100}%#{else}<b
-                                style="color: red;">✖</b>#{/if} #{if
-                            count($level) > 0}
-                                <a href="/user/business/index?purchase=1"
-                                   style="color: #a372d7;font-weight: bold;margin-left: 10px;">我要升级，变得更强！</a>
-                            #{/if}
-                        </blockquote>
-                        <form class="layui-form form-data">
+                        <div class="uc-tabpanel active" data-panel="info">
                             <div>
                                 <div class="form-header">店铺名称</div>
-                                <div class="form-body"><input type="text" value="#{$business.shop_name}"
-                                                              name="shop_name"
-                                                              required autocomplete="off" placeholder="请输入店铺名称"
-                                                              class="layui-input" style="color: #ff9191;"></div>
+                                <div class="form-body"><input type="text" value="#{$business.shop_name}" name="shop_name" required autocomplete="off" placeholder="请输入店铺名称" class="layui-input"></div>
                             </div>
                             <div>
                                 <div class="form-header">网站标题</div>
-                                <div class="form-body"><input type="text" value="#{$business.title}" name="title"
-                                                              required
-                                                              autocomplete="off" placeholder="用于显示浏览器标题"
-                                                              class="layui-input"
-                                                              style="color: #ff9191;"></div>
+                                <div class="form-body"><input type="text" value="#{$business.title}" name="title" required autocomplete="off" placeholder="用于显示浏览器标题" class="layui-input"></div>
                             </div>
                             <div>
                                 <div class="form-header">店铺公告</div>
                                 <div class="form-body">
-
-                                    <div class="editor-wrapper">
-                                        <div>
-                                            <button data-type="0" class="button-switch-notice" type="button"
-                                                    style="width: 100%;border: none;background: rgba(255, 255, 255, 0.35);border-radius: 5px 5px 0 0;color: #c9b8b8;">
-                                                <i class="fa-duotone fa-regular fa-code me-1"></i>HTML
-                                            </button>
-                                        </div>
-                                        <div class="editor-content">
-                                            <div class="toolbar-container"></div>
-                                            <div class="editor-container"></div>
-                                        </div>
-                                        <textarea class="text-container" style="display: none;"
-                                                  name="notice"></textarea>
-                                    </div>
-
+                                    <div class="notice-editor"></div>
                                 </div>
                             </div>
                             <div>
-                                <div class="form-header">显示主站商品[全局]</div>
-                                <div class="form-body"><input type="checkbox" name="master_display" title="开启" value="1"
-                                                              #{if
-                                                              $business.master_display== 1}checked#{/if}>
+                                <div class="form-header">显示主站商品 [全局]</div>
+                                <div class="form-body">
+                                    <label style="display:inline-flex;align-items:center;cursor:pointer;">
+                                        <input type="checkbox" name="master_display" lay-ignore value="1" #{if $business.master_display == 1}checked#{/if}>
+                                        <span class="uc-hint" style="margin-left:9px;">开启后，在你的店铺同时展示主站的商品</span>
+                                    </label>
                                 </div>
                             </div>
+                        </div>
 
+                        <div class="uc-tabpanel" data-panel="commodity">
                             <div>
                                 <div class="form-header">主站分类
-                                    <span class="a-badge a-badge-success category-show" data-state="1"
-                                          style="cursor:pointer;">全部显示</span>
-                                    <span class="a-badge a-badge-danger category-show" data-state="0"
-                                          style="cursor:pointer;">全部隐藏</span>
+                                    <span class="a-badge a-badge-success category-show" data-state="1" style="cursor:pointer;">全部显示</span>
+                                    <span class="a-badge a-badge-danger category-show" data-state="0" style="cursor:pointer;">全部隐藏</span>
                                 </div>
-                                <div class="form-body">
-                                    <table id="master_category" lay-filter="master_category"></table>
+                                <div class="form-body"><table id="master_category" lay-filter="master_category"></table></div>
+                            </div>
+                            <div>
+                                <div class="form-header">主站商品 <a id="commodity"></a>
+                                    <span class="a-badge a-badge-success commodity-show" data-state="1" style="cursor:pointer;">全部显示</span>
+                                    <span class="a-badge a-badge-danger commodity-show" data-state="0" style="cursor:pointer;">全部隐藏</span>
+                                    <span class="a-badge a-badge-primary commodity-premium" style="cursor:pointer;">加价</span>
+                                </div>
+                                <div class="form-body"><table id="master_commodity" lay-filter="master_commodity"></table></div>
+                            </div>
+                        </div>
+
+                        <div class="uc-tabpanel" data-panel="domain">
+                            <div class="uc-domain-row">
+                                <div style="flex:1 1 auto; min-width:0;">
+                                    <div class="form-header">子域名前缀</div>
+                                    <div class="form-body"><input type="text" value="#{$business.subdomain}" name="subdomain" autocomplete="off" placeholder="myshop" class="layui-input" #{if $business.subdomain} disabled #{/if}></div>
+                                </div>
+                                <div style="flex:0 0 170px;">
+                                    <div class="form-header">后缀域名</div>
+                                    <div class="form-body"><select name="suffix" lay-ignore #{if $business.subdomain} disabled #{/if}>#{foreach $domain as $d}<option value="#{$d}">.#{$d}</option>#{/foreach}</select></div>
                                 </div>
                             </div>
+                            <div class="uc-domain-hint">绑定后可通过 <b>前缀 . 后缀</b> 访问你的店铺#{if $business.subdomain} <span class="uc-tag uc-tag--ok">已绑定</span><a class="unbind-subdomain uc-unbind">解绑</a>#{/if}</div>
 
-                            <div>
-                                <div class="form-header">主站商品
-                                    <a id="commodity"></a>
-                                    <span class="a-badge a-badge-success commodity-show" data-state="1"
-                                          style="cursor:pointer;">全部显示</span>
-                                    <span class="a-badge a-badge-danger commodity-show" data-state="0"
-                                          style="cursor:pointer;">全部隐藏</span>
-
-                                    <span class="a-badge a-badge-primary commodity-premium"
-                                          style="cursor:pointer;">加价</span>
-                                </div>
-                                <div class="form-body">
-                                    <table id="master_commodity" lay-filter="master_commodity"></table>
-                                </div>
+                            #{if $user.businessLevel.top_domain == 1}
+                            <div style="max-width:520px; margin-top:22px;">
+                                <div class="form-header">独立域名</div>
+                                <div class="form-body"><input type="text" value="#{$business.topdomain}" name="topdomain" autocomplete="off" placeholder="shop.yourdomain.com" class="layui-input" #{if $business.topdomain} disabled #{/if}></div>
                             </div>
-                            
-                            <div>
-                                <div class="form-header">子域名 #{if $business.subdomain}
-                                        <i class="fa-duotone fa-regular fa-check text-success"></i>
-                                        <a href="javascript:void(0);" class="unbind-subdomain text-success">解绑</a>
-                                    #{/if}
-                                </div>
-                                <div class="form-body">
-                                    <div class="layui-row" style="width: 400px;">
-                                        <div class="layui-col-md5">
-                                            <input type="text" value="#{$business.subdomain}" name="subdomain" required
-                                                   autocomplete="off" placeholder="前缀" class="layui-input"
-                                                   style="color: #ff9191;" #{if $business.subdomain} disabled #{/if}>
-                                        </div>
-                                        <div class="layui-col-md7">
-                                            <select class="layui-select "
-                                                    name="suffix" #{if $business.subdomain} disabled #{/if}>
-                                                #{foreach $domain as $d}
-                                                    <option value="#{$d}">.#{$d}</option>
-                                                #{/foreach}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                #{if $user.businessLevel.top_domain == 1}
-                                    <div>
-                                        <div class="form-header">独立域名 #{if $business.topdomain}
-                                                <a href="javascript:void(0);" class="unbind-topdomain text-success">解绑</a>
-                                                [#{if gethostbyname($config.cname)
-                                                == gethostbyname($business.topdomain)}
-                                                    <b style="color: green;">正常</b>
-                                                #{else}
-                                                    <b style="color: mediumvioletred;">未检测到解析</b>
-                                                #{/if}] #{/if} <span class="text-danger">CNAME解析地址：<b
-                                                        style="color: green;">#{$config.cname}</b></span></div>
-                                        <div class="form-body"><input type="text" value="#{$business.topdomain}"
-                                                                      name="topdomain"
-                                                                      required autocomplete="off" placeholder="绑定独立域名"
-                                                                      class="layui-input"
-                                                                      style="width:260px;color: #ff9191;" #{if
-                                                    $business.topdomain} disabled #{/if}>
-                                        </div>
-                                    </div>
-                                #{/if}
-                                <div style="margin-top: 25px;">
-                                    <button type="button" class="layui-btn layui-btn-pink save-config me-1">保存设置</button>
-                                </div>
-                        </form>
-                    #{else}
-                        <blockquote class="elem-quote">
-                            您当前商户等级暂不支持店铺功能，<a href="/user/business/index?purchase=1">立即升级</a>
-                        </blockquote>
-                    #{/if}
-                #{/if}
+                            <div class="uc-domain-hint">请将该域名 CNAME 解析到 <span class="uc-cname clipboard" data-text="#{$config.cname}"><code>#{$config.cname}</code><span class="material-icons-outlined">content_copy</span></span>#{if $business.topdomain} #{if gethostbyname($config.cname) == gethostbyname($business.topdomain)}<span class="uc-tag uc-tag--ok">解析正常</span>#{else}<span class="uc-tag uc-tag--warn">未检测到解析</span>#{/if}<a class="unbind-topdomain uc-unbind">解绑</a>#{/if}</div>
+                            #{/if}
+                        </div>
+
+                        <div class="uc-save-row">
+                            <button type="button" class="uc-cta save-config"><span class="material-icons-outlined">save</span>保存设置</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        #{else}
+            <div class="uc-card">
+                <div class="uc-card__body">
+                    <blockquote class="elem-quote" style="margin-bottom:0;">您当前商户等级暂不支持店铺功能，<a href="/user/business/index?purchase=1" style="color:var(--md-primary);font-weight:700;">立即升级</a></blockquote>
+                </div>
             </div>
-        </div>
-    </div>
+        #{/if}
+    #{/if}
 </div>
 
 #{ready("/assets/user/controller/business/business.js")}

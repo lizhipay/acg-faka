@@ -43,7 +43,7 @@
             return '-';
         }
 
-        return `<span class="table-item"><img src="${plugins[handle]?.icon}" class="table-item-icon"><span class="table-item-name">${plugins[handle]?.info?.name}</span></span>`;
+        return `<div class="md-plugin"><img src="${plugins[handle]?.icon}" class="md-plugin__icon" alt=""><span class="md-plugin__name">${plugins[handle]?.info?.name ?? ''}</span></div>`;
     }
 
 
@@ -167,7 +167,10 @@
     table.setColumns([
         {checkbox: true},
         {
-            field: 'name', title: '支付名称', formatter: (_, __) => format.pay(__)
+            field: 'name', title: '支付名称', formatter: (_, __) => {
+                const icon = __.icon || '/favicon.ico';
+                return `<div class="md-pay"><img src="${icon}" class="md-pay__icon" alt=""><span class="md-pay__name">${__.name ?? ''}</span></div>`;
+            }
         }
         , {
             field: 'plugin', title: '所属插件', formatter: function (val, item) {

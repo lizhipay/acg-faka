@@ -8,7 +8,7 @@
 
     table.setColumns([
         {
-            field: 'user', title: '商家', formatter: format.user
+            field: 'user', title: '商家', formatter: (item) => mdUserCell(item)
         },
         {
             field: 'shop_name', title: '店铺名称'

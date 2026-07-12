@@ -66,6 +66,10 @@ class Form {
                         !form.uploadUrl && (form.uploadUrl = '/admin/api/upload/send');
                         d += this.editorHtml(form);
                         break;
+                    case 'editorv2':
+                        !form.uploadUrl && (form.uploadUrl = '/admin/api/upload/send');
+                        d += this.editorv2Html(form);
+                        break;
                     case 'html':
                         d += this.htmlHtml(form);
                         break;
@@ -149,8 +153,9 @@ class Form {
     }
 
     getBlockHtml(form, widgetHtml = "") {
+        const title = form.title || '';
         return `<div class="layui-form-item block-${form.name} ${this.data[form.name]['hide']}">
-            <label class="layui-form-label ${this.data[form.name].titleHide}">${form.title}${form.required === true ? util.icon('fa-duotone fa-regular fa-asterisk text-danger fs-10 ms-1 icon-top-2') : ''}</label>
+            <label class="layui-form-label ${this.data[form.name].titleHide}">${title}${form.required === true ? util.icon('fa-duotone fa-regular fa-asterisk text-danger fs-10 ms-1 icon-top-2') : ''}</label>
             <div class="${this.data[form.name].blockMarginZero} layui-input-block component-${form.name} component-content" >
             ${widgetHtml}
             </div>
@@ -183,13 +188,19 @@ class Form {
     }
 
     imageHtml(form) {
-        if (form.photoAlbumUrl) {
-            form.title = form.title ? form.title += `<a class="photo-album" style="position: relative;top: 2px;cursor:pointer;">${util.icon('fa-duotone fa-regular fa-image text-success ms-1 fs-5')}</a>` : form?.title;
+        // 相册/外链图标仅用于本次渲染;不能永久改写 form.title —— 插件配置等场景会复用同一份
+        // form 配置对象,若累加会导致多次打开弹窗后图标重复注册(叠加)。故用局部变量并渲染后还原。
+        const originalTitle = form.title;
+        let title = form.title || '';
+        if (form.photoAlbumUrl && title) {
+            title += `<a class="photo-album" style="position: relative;top: 2px;cursor:pointer;">${util.icon('fa-duotone fa-regular fa-image text-success ms-1 fs-5')}</a>`;
         }
+        title += `<a class="external-input" style="position: relative;top: 2px;cursor:pointer;">${util.icon('fa-duotone fa-regular fa-link ms-1 fs-5 text-primary')}</a>`;
 
-        form.title += `<a class="external-input" style="position: relative;top: 2px;cursor:pointer;">${util.icon('fa-duotone fa-regular fa-link ms-1 fs-5 text-primary')}</a>`;
-
-        return this.getBlockHtml(form, `<input name="${form.name}" placeholder="${i18n("输入网络图片地址")}" type="text" class="layui-input" value="${form.default ?? ""}" style="display: none;"><div class="image-render"></div>`);
+        form.title = title;
+        const html = this.getBlockHtml(form, `<input name="${form.name}" placeholder="${i18n("输入网络图片地址")}" type="text" class="layui-input" value="${form.default ?? ""}" style="display: none;"><div class="image-render"></div>`);
+        form.title = originalTitle;
+        return html;
     }
 
     fileHtml(form) {
@@ -349,25 +360,39 @@ class Form {
         }
 
 
-        let html = '' +
-            '<div class="widget-block widget-block-' + unique + '">' +
-            '<div class="widget-general widget-w120">' +
-            '<select name="type-' + name + '[]" lay-filter="widget-type-' + unique + '">' +
-            '<option ' + (val.type == "text" ? "selected" : "") + '  value="text">' + i18n("文本框") + '</option>' +
+        let isDict = (val.type == "select" || val.type == "checkbox" || val.type == "radio");
+
+        let typeOptions = '' +
+            '<option ' + (val.type == "text" ? "selected" : "") + ' value="text">' + i18n("文本框") + '</option>' +
             '<option ' + (val.type == "password" ? "selected" : "") + ' value="password">' + i18n("密码框") + '</option>' +
             '<option ' + (val.type == "number" ? "selected" : "") + ' value="number">' + i18n("数字框") + '</option>' +
             '<option ' + (val.type == "select" ? "selected" : "") + ' value="select">' + i18n("下拉框") + '</option>' +
             '<option ' + (val.type == "checkbox" ? "selected" : "") + ' value="checkbox">' + i18n("多选框") + '</option>' +
             '<option ' + (val.type == "radio" ? "selected" : "") + ' value="radio">' + i18n("单选框") + '</option>' +
-            '<option ' + (val.type == "textarea" ? "selected" : "") + ' value="textarea">' + i18n("文本域") + '</option>' +
-            '</select></div> ' +
-            '<input type="text"  name="title-' + name + '[]" placeholder="' + i18n("控件名称") + '" class="layui-input widget-general widget-w120" value="' + (val.hasOwnProperty("cn") ? val.cn : "") + '"> ' +
-            '<input value="' + (val.name ?? "") + '" name="name-' + name + '[]" type="text" placeholder="' + i18n("英文名") + '" class="layui-input widget-general widget-w140"> ' +
-            '<input value="' + (val.placeholder ?? "") + '" name="placeholder-' + name + '[]" type="text" placeholder="' + i18n("输入前提示内容") + '" class="layui-input widget-general widget-w160"> ' +
-            '<input value="' + (val.regex ?? "") + '"  name="regex-' + name + '[]" type="text" placeholder="' + i18n("正则验证") + '" class="layui-input widget-general widget-w140"> ' +
-            '<input value="' + (val.error ?? "") + '" name="error-' + name + '[]" type="text" placeholder="' + i18n("正则匹配错误提示") + '" class="layui-input widget-general widget-w160"> ' +
-            '<div style="display: inline-block;margin-left: 2px;"><i class="layui-icon widget-add-' + unique + '" style="color: #23a148;cursor: pointer;font-size: 16px;font-weight: bold;">&#xe61f;</i> <i class="layui-icon widget-del-' + unique + '" style="color: #eb8181;cursor: pointer;font-size: 16px;font-weight: bold;">&#x1006;</i></div>' +
-            '<textarea  name="data-' + name + '[]" type="text" placeholder="' + i18n("请提供配置可选择的多个数据，例子：&#10;大熊猫=dxm,小熊猫=xxm&#10;多个数据使用逗号分割，格式：[显示名称]=[数据内容]") + '" class="layui-textarea widget-data widget-data-' + unique + '">' + (val.dict ?? "") + '</textarea> ' +
+            '<option ' + (val.type == "textarea" ? "selected" : "") + ' value="textarea">' + i18n("文本域") + '</option>';
+
+        // Card-per-control: labeled fields in a grid, technical regex/error tucked into a 高级 collapse.
+        // NOTE: every input keeps its original name-*/title-*/... attribute — serialization (getData) depends on it.
+        let html = '' +
+            '<div class="widget-block widget-block-' + unique + '">' +
+            '<div class="widget-head">' +
+            '<span class="widget-title"><i class="fa-duotone fa-regular fa-pen-field"></i>' + i18n("控件") + '</span>' +
+            '<span class="widget-btn widget-del widget-del-' + unique + '" title="' + i18n("删除该控件") + '"><i class="fa-duotone fa-regular fa-trash-can"></i></span>' +
+            '</div>' +
+            '<div class="widget-grid">' +
+            '<div class="widget-field"><label>' + i18n("类型") + '</label><div class="widget-general"><select name="type-' + name + '[]" lay-filter="widget-type-' + unique + '">' + typeOptions + '</select></div></div>' +
+            '<div class="widget-field"><label>' + i18n("控件名称") + '</label><input type="text" name="title-' + name + '[]" placeholder="' + i18n("如：游戏账号") + '" class="layui-input" value="' + (val.hasOwnProperty("cn") ? val.cn : "") + '"></div>' +
+            '<div class="widget-field"><label>' + i18n("字段名（英文）") + '</label><input type="text" name="name-' + name + '[]" placeholder="' + i18n("如：username") + '" class="layui-input" value="' + (val.name ?? "") + '"></div>' +
+            '<div class="widget-field"><label>' + i18n("提示文字") + '</label><input type="text" name="placeholder-' + name + '[]" placeholder="' + i18n("购买时输入框内的浅色提示") + '" class="layui-input" value="' + (val.placeholder ?? "") + '"></div>' +
+            '</div>' +
+            '<div class="widget-field widget-data-field widget-data-' + unique + '"' + (isDict ? '' : ' style="display:none"') + '><label>' + i18n("可选项配置") + '</label><div class="widget-options widget-options-' + unique + '"></div><span class="widget-option-add widget-option-add-' + unique + '"><i class="fa-duotone fa-regular fa-plus"></i> ' + i18n("添加选项") + '</span><textarea name="data-' + name + '[]" class="widget-data-sync widget-data-sync-' + unique + '" style="display:none"></textarea></div>' +
+            '<div class="widget-advanced">' +
+            '<span class="widget-advanced-toggle"><i class="fa-duotone fa-regular fa-chevron-right"></i>' + i18n("高级设置（选填）") + '</span>' +
+            '<div class="widget-advanced-body"><div class="widget-grid">' +
+            '<div class="widget-field"><label>' + i18n("正则校验") + '</label><input type="text" name="regex-' + name + '[]" placeholder="' + i18n("如：^\\d{5,11}$") + '" class="layui-input" value="' + (val.regex ?? "") + '"></div>' +
+            '<div class="widget-field"><label>' + i18n("校验失败提示") + '</label><input type="text" name="error-' + name + '[]" placeholder="' + i18n("格式不正确时的提示") + '" class="layui-input" value="' + (val.error ?? "") + '"></div>' +
+            '</div></div>' +
+            '</div>' +
             '</div>';
 
         after ? instance.after(html) : instance.append(html);
@@ -386,27 +411,66 @@ class Form {
             }
         });
 
-        $('.widget-add-' + unique).click(function () {
-            _this.addWidget(name, $(this).parent().parent(), {});
-        });
-
         $('.widget-del-' + unique).click(function () {
             if (_this.widget.num <= 1) {
                 layer.msg("(⁎˃ᆺ˂)" + i18n("饶命，请留下最后一只独苗"));
                 return;
             }
-            let dom = $(this).parent().parent();
+            let dom = $(this).closest('.widget-block');
             dom.fadeOut('fast', function () {
                 dom.remove();
                 _this.widget.num--;
             });
         });
 
-        $('.widget-block-' + unique).show(150);
+        $('.widget-block-' + unique + ' .widget-advanced-toggle').click(function () {
+            $(this).closest('.widget-advanced').toggleClass('open');
+        });
 
-        if ((val.type == "select" || val.type == "checkbox" || val.type == "radio")) {
-            widgetDataDomInstance.show();
+        // ---- visual option editor (for 下拉框/多选框/单选框). Each row = 显示名称 + 值; they sync into
+        //      the hidden data-*[] field as comma-joined "显示名称=值" pairs — the exact format that
+        //      app/View/User/Helper.php widget_render() parses (explode ',', then '='). ----
+        let optionsWrap = $('.widget-options-' + unique);
+        let syncField = $('.widget-data-sync-' + unique);
+        function syncOptions() {
+            let pairs = [];
+            optionsWrap.find('.widget-option-row').each(function () {
+                let label = ($(this).find('.widget-opt-label').val() || '').trim();
+                let value = ($(this).find('.widget-opt-value').val() || '').trim();
+                if (label !== '' && value !== '') pairs.push(label + '=' + value);
+            });
+            syncField.val(pairs.join(','));
         }
+        function addOption(label, value) {
+            let row = $('<div class="widget-option-row">' +
+                '<div class="widget-field"><input type="text" class="layui-input widget-opt-label" placeholder="' + i18n("如：大熊猫") + '"><label>' + i18n("显示名称") + '</label></div>' +
+                '<div class="widget-field"><input type="text" class="layui-input widget-opt-value" placeholder="' + i18n("如：dxm") + '"><label>' + i18n("值") + '</label></div>' +
+                '<span class="widget-btn widget-opt-del" title="' + i18n("删除选项") + '"><i class="fa-duotone fa-regular fa-xmark"></i></span>' +
+                '</div>');
+            row.find('.widget-opt-label').val(label || '');
+            row.find('.widget-opt-value').val(value || '');
+            optionsWrap.append(row);
+            row.find('input').on('input', syncOptions);
+            row.find('.widget-opt-del').on('click', function () {
+                $(this).closest('.widget-option-row').remove();
+                syncOptions();
+            });
+        }
+        let dictStr = (val.dict ?? '').trim();
+        if (dictStr) {
+            dictStr.split(',').forEach(function (pair) {
+                pair = pair.trim();
+                if (!pair) return;
+                let eq = pair.indexOf('=');
+                addOption(eq >= 0 ? pair.slice(0, eq).trim() : pair, eq >= 0 ? pair.slice(eq + 1).trim() : '');
+            });
+        } else {
+            addOption('', '');
+        }
+        syncOptions();
+        $('.widget-option-add-' + unique).on('click', function () { addOption('', ''); });
+
+        $('.widget-block-' + unique).show(150);
 
         layui.form.render();
     }
@@ -686,6 +750,16 @@ class Form {
                     case 'html':
                         obj[form.name] = this.getMap(form.name);
                         break;
+                    case 'editorv2': {
+                        // Flush EditorV2's debounced Markdown render before serializing.
+                        // Without this, clicking submit immediately after typing can send
+                        // the previous hidden-textarea value.
+                        const editorV2 = cache.get(_this.unique + form.name + '-editorv2');
+                        if (editorV2 && typeof editorV2.getHTML === 'function') {
+                            obj[form.name] = editorV2.getHTML();
+                        }
+                        break;
+                    }
                 }
 
                 if (form.submit === false) {
@@ -744,6 +818,9 @@ class Form {
                         break;
                     case 'editor':
                         this.editorRegister(form);
+                        break;
+                    case 'editorv2':
+                        this.editorv2Register(form);
                         break;
                     case 'html':
                         this.htmlRegister(form);
@@ -901,6 +978,11 @@ class Form {
         layui.form.on('select(' + _this.unique + form.name + ')', event => {
             _this.setData(form.name, event.value);
             form.change && form.change(_this, event.value);
+            // layui 的下拉显示值是 JS 写入的（不触发 input 事件），主动派发一次让 MUI 浮动标签更新
+            setTimeout(() => {
+                const disp = document.querySelector('.' + _this.unique + ' .component-' + form.name + ' .layui-select-title .layui-input');
+                disp && disp.dispatchEvent(new Event('input', {bubbles: true}));
+            }, 0);
         });
     }
 
@@ -997,6 +1079,39 @@ class Form {
         form.complete && form.complete(_this, form.default);
         cache.set(_this.unique + form.name, editor);
 
+        layui.form.render();
+    }
+
+    editorv2Html(form) {
+        return this.getBlockHtml(form, EditorV2.buildHtml({
+            name: form.name,
+            placeholder: form.placeholder,
+            allowHtmlSource: form.allowHtmlSource,
+            allowRawHtml: form.allowRawHtml
+        }));
+    }
+
+    editorv2Register(form) {
+        const _this = this;
+        // Scope the lookup to this form row. A field named "content" otherwise
+        // collides with the generic .component-content class used by every row,
+        // which makes CodeMirror initialize against the first (wrong) field.
+        const rootEl = $(`.${_this.unique} .block-${form.name} > .component-${form.name} > .ev2-editor`).get(0);
+        if (!rootEl) {
+            throw new Error(`EditorV2 field target not found: ${form.name}`);
+        }
+        const api = EditorV2.register(rootEl, {
+            name: form.name,
+            uploadUrl: form.uploadUrl,
+            height: form.height,
+            value: form.default,   // seed the stored HTML (else the editor loads blank → saving wipes the description)
+            allowHtmlSource: form.allowHtmlSource,
+            allowRawHtml: form.allowRawHtml,
+            onChange: (html) => { form.change && form.change(_this, html); }
+        });
+        form.complete && form.complete(_this, api.getHTML());
+        cache.set(_this.unique + form.name, api.cm);
+        cache.set(_this.unique + form.name + '-editorv2', api);
         layui.form.render();
     }
 
@@ -1162,7 +1277,7 @@ class Form {
                     autoPosition: true,
                     shadeClose: true,
                     maxmin: false,
-                    width: "730px",
+                    width: "800px",
                     renderComplete: (unique, index) => {
                         popupIndex = index;
                         $(`.${unique} .layui-card-body`).css("padding-top", "0").find(".block-content").css("padding", "0");
@@ -1247,6 +1362,11 @@ class Form {
             click: function (d) {
                 $('.' + _this.unique + "  .component-" + form.name + " input[name=" + form.name + "]").val(d.current.id);
                 form.change && form.change(_this, d.current.id);
+                // treeSelect 的显示值是 JS 写入的（不触发 input 事件），主动派发一次让 MUI 浮动标签更新
+                setTimeout(() => {
+                    const disp = document.querySelector('.' + _this.unique + ' .component-' + form.name + ' .layui-select-title .layui-input');
+                    disp && disp.dispatchEvent(new Event('input', {bubbles: true}));
+                }, 0);
             },
             // 加载完成后的回调函数
             success: function (d) {
@@ -1263,6 +1383,7 @@ class Form {
 
     widgetRegister(form) {
         this.clearComponent(form.name);
+        let name = util.replaceDotWithHyphen(form.name);
         let preset = form.default ? JSON.parse(form.default) : [];
         if (preset.length <= 0) {
             this.addWidget(form.name);
@@ -1271,6 +1392,15 @@ class Form {
                 this.addWidget(form.name, null, widget);
             });
         }
+        // single "add control" button below the cards (new card appends after the last one, before this button)
+        let container = $('.' + this.unique + ' .component-' + name);
+        $('.' + this.unique + ' .widget-add-control').remove();
+        let addBtn = $('<button type="button" class="widget-add-control"><i class="fa-duotone fa-regular fa-plus"></i> ' + i18n("添加控件") + '</button>');
+        container.after(addBtn);
+        addBtn.on('click', () => {
+            let lastCard = container.find('.widget-block').last();
+            lastCard.length ? this.addWidget(form.name, lastCard, {}) : this.addWidget(form.name);
+        });
         form.complete && form.complete(this, form.default);
         layui.form.render();
     }

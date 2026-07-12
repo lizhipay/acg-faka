@@ -1,0 +1,35 @@
+#{include file="../Header.html"}
+
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    #{include file="../Toolbar.html"}
+
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <div id="kt_content_container" class="container-fluid md-message-page"
+             data-email-enabled="#{if $email_enabled}1#{else}0#{/if}">
+            <section class="card md-message-card" aria-labelledby="message-list-title">
+                <div class="card-header md-message-card__header">
+                    <div class="md-message-card__heading">
+                        <span class="md-message-card__icon" aria-hidden="true">
+                            <i class="fa-duotone fa-regular fa-bell"></i>
+                        </span>
+                        <div>
+                            <h2 id="message-list-title">站内消息</h2>
+                            <p>向全体会员、指定等级或单一会员发送消息</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-message-create">
+                        <svg class="md-message-send-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M3.5 6.5h10a2 2 0 0 1 2 2v2.25M3.5 7l5 4 5-4M3.5 6.5v9a2 2 0 0 0 2 2h7.25M14 14h6m-2.5-2.5L20 14l-2.5 2.5"/>
+                        </svg>创建消息
+                    </button>
+                </div>
+                <div class="card-body">
+                    <table id="message-table"></table>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+#{ready("/assets/admin/controller/user/message.js")}
+#{include file="../Footer.html"}

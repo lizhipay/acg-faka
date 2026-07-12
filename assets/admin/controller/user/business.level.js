@@ -66,7 +66,10 @@
 
     table.setColumns([
         {
-            field: 'name', title: '等级名称', formatter: (_, __) => format.group(__)
+            field: 'name', title: '等级名称', formatter: (_, __) => {
+                const icon = __.icon || '/favicon.ico';
+                return `<div class="md-plugin"><img src="${icon}" class="md-plugin__icon" alt=""><span class="md-plugin__name">${__.name ?? ''}</span></div>`;
+            }
         }
         , {
             field: 'price', title: '购买价格', formatter: _ => format.money(_, "green")

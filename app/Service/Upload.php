@@ -30,9 +30,10 @@ interface Upload
 
     /**
      * @param string $hash
+     * @param int|null $userId 指定后仅在该用户自己的上传记录内去重(null=全局,保持旧行为)
      * @return string|null
      */
-    public function get(string $hash): ?string;
+    public function get(string $hash, ?int $userId = null): ?string;
 
 
     /**

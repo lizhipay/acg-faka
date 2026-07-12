@@ -1,0 +1,154 @@
+#{include file="../Header.html"}
+
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    #{include file="../Toolbar.html"}
+
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <div id="kt_content_container" class="container-fluid md-ticket-page md-ticket-list-page">
+            <div class="row g-4 md-ticket-stats" aria-label="工单概览">
+                #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl" accent="warning" icon="fa-clock" label="待客服处理" vclass="ticket-stat-pending" value="—"}
+                #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl" accent="primary" icon="fa-comment" label="等待用户" vclass="ticket-stat-user" value="—"}
+                #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl" accent="success" icon="fa-circle-check" label="已解决" vclass="ticket-stat-resolved" value="—"}
+                #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl" accent="secondary" icon="fa-lock-keyhole" label="已关闭" vclass="ticket-stat-closed" value="—"}
+                #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl" accent="info" icon="fa-sparkles" label="今日新增" vclass="ticket-stat-today" value="—"}
+            </div>
+
+            <section class="card md-ticket-list-card" aria-labelledby="ticket-list-title">
+                <div class="card-header md-ticket-list-head">
+                    <div class="md-ticket-list-heading">
+                        <span class="md-ticket-list-heading__icon"><i class="fa-duotone fa-regular fa-comment"></i></span>
+                        <div>
+                            <h2 id="ticket-list-title">服务工单</h2>
+                            <p>优先处理高优先级和用户最新补充的工单</p>
+                        </div>
+                    </div>
+                    <div class="md-ticket-state-tabs" role="tablist" aria-label="按状态筛选">
+                        <button type="button" class="active" data-status="" role="tab" aria-selected="true">全部</button>
+                        <button type="button" data-status="0" role="tab" aria-selected="false">待客服</button>
+                        <button type="button" data-status="1" role="tab" aria-selected="false">等待用户</button>
+                        <button type="button" data-status="2" role="tab" aria-selected="false">已解决</button>
+                        <button type="button" data-status="3" role="tab" aria-selected="false">已关闭</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table id="ticket-table"></table>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<div class="md-ticket-drawer" data-ticket-id="" aria-hidden="true" hidden>
+    <button type="button" class="md-ticket-drawer__shade" tabindex="-1" aria-label="关闭工单详情"></button>
+
+    <aside class="md-ticket-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="ticket-drawer-title" tabindex="-1">
+        <header class="md-ticket-drawer__header">
+            <div class="md-ticket-drawer__heading">
+                <span class="md-ticket-drawer__icon" aria-hidden="true"><i class="fa-duotone fa-regular fa-headset"></i></span>
+                <div>
+                    <span class="md-ticket-section-kicker md-ticket-drawer__eyebrow">Support desk</span>
+                    <strong class="md-ticket-drawer__title">工单处理台</strong>
+                </div>
+            </div>
+            <button type="button" class="md-ticket-drawer__close" aria-label="关闭工单详情">
+                <i class="fa-duotone fa-regular fa-xmark"></i>
+            </button>
+        </header>
+
+        <div class="md-ticket-drawer__body">
+            <div class="md-ticket-detail-page">
+            <section class="md-ticket-hero md-ticket-drawer__summary" aria-labelledby="ticket-drawer-title">
+                <div class="md-ticket-hero__main">
+                    <div class="md-ticket-hero__eyebrow">
+                        <span class="md-ticket-number">正在读取工单</span>
+                        <span class="md-ticket-live-dot" aria-hidden="true"></span>
+                    </div>
+                    <h2 id="ticket-drawer-title" class="md-ticket-hero__title">请稍候…</h2>
+                    <div class="md-ticket-hero__meta">
+                        <span class="md-ticket-detail-type"></span>
+                        <span class="md-ticket-detail-priority"></span>
+                        <span class="md-ticket-detail-status"></span>
+                        <span class="md-ticket-detail-time"></span>
+                    </div>
+                </div>
+                <div class="md-ticket-hero__actions">
+                    <button type="button" class="btn btn-light-danger ticket-close-action" disabled>
+                        <i class="fa-duotone fa-regular fa-lock-keyhole"></i>直接关闭
+                    </button>
+                </div>
+            </section>
+
+            <div class="md-ticket-layout">
+                <main class="md-ticket-thread-card">
+                    <header class="md-ticket-thread-head">
+                        <div>
+                            <span class="md-ticket-section-kicker">Conversation</span>
+                            <h3>沟通记录</h3>
+                        </div>
+                        <span class="md-ticket-sync-state"><i class="fa-duotone fa-regular fa-circle-check"></i> 已同步</span>
+                    </header>
+
+                    <button type="button" class="md-ticket-history-more" hidden>
+                        <i class="fa-duotone fa-regular fa-clock-rotate-left"></i><span>加载更早的沟通记录</span>
+                    </button>
+                    <div id="ticket-message-list" class="md-ticket-messages" aria-live="polite">
+                        <div class="md-ticket-loading">
+                            <span></span><span></span><span></span>
+                            <p>正在整理沟通记录</p>
+                        </div>
+                    </div>
+
+                    <div class="md-ticket-terminal" hidden>
+                        <i class="fa-duotone fa-regular fa-lock-keyhole"></i>
+                        <div><strong>这张工单已经结束</strong><span>历史沟通仍会完整保留，当前不再接受新回复。</span></div>
+                    </div>
+
+                    <section class="md-ticket-composer" aria-label="回复工单">
+                        <div class="md-ticket-composer__label">
+                            <div><strong>回复用户</strong><span>支持 Markdown 与图片粘贴，内容会立即发送给用户</span></div>
+                            <span class="md-ticket-composer__hint"><i class="fa-duotone fa-regular fa-shield-keyhole"></i> 安全编辑</span>
+                        </div>
+                        <div id="ticket-reply-editor"></div>
+                        <div class="md-ticket-composer__actions">
+                            <span class="md-ticket-composer__tip">回复后，工单将进入“等待用户”状态</span>
+                            <div>
+                                <button type="button" class="btn btn-light-success ticket-resolve-action" disabled>
+                                    <i class="fa-duotone fa-regular fa-circle-check"></i>回复并解决
+                                </button>
+                                <button type="button" class="btn btn-primary ticket-reply-action" disabled>
+                                    <i class="fa-duotone fa-regular fa-paper-plane"></i>发送回复
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </main>
+
+                <aside class="md-ticket-context" aria-label="工单上下文">
+                    <section class="md-ticket-context-card md-ticket-customer-card">
+                        <header><span>提交用户</span><i class="fa-duotone fa-regular fa-user"></i></header>
+                        <div class="md-ticket-context-body ticket-user-context"><div class="md-ticket-context-skeleton"></div></div>
+                    </section>
+
+                    <section class="md-ticket-context-card">
+                        <header><span>关联信息</span><i class="fa-duotone fa-regular fa-receipt"></i></header>
+                        <div class="md-ticket-context-body ticket-relation-context"><div class="md-ticket-context-skeleton"></div></div>
+                    </section>
+
+                    <section class="md-ticket-context-card ticket-proof-card" hidden>
+                        <header><span>购买凭证</span><i class="fa-duotone fa-regular fa-file-image"></i></header>
+                        <div class="md-ticket-context-body ticket-proof-context"></div>
+                    </section>
+
+                    <section class="md-ticket-context-card">
+                        <header><span>时间记录</span><i class="fa-duotone fa-regular fa-clock"></i></header>
+                        <div class="md-ticket-context-body ticket-time-context"><div class="md-ticket-context-skeleton"></div></div>
+                    </section>
+                </aside>
+            </div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+#{ready("/assets/admin/controller/user/ticket.js")}
+#{include file="../Footer.html"}

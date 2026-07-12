@@ -1,17 +1,15 @@
 #{include file="../Common/Header.html"}
-<div class="layui-container fly-marginTop fly-user-main">
-    #{include file="../Common/Nav.html"}
-    <div class="fly-panel fly-panel-user" pad20>
-        <div class="layui-tab layui-tab-brief">
-            <div class="content-header">
-                <i class="layui-icon">&#xe638;</i> 我的账单
-            </div>
-
-            <div class="content-body">
-                <table id="bill-table"></table>
-            </div>
+<div class="uc-main">
+    <div class="uc-card">
+        <div class="uc-card__head">
+            <span class="material-icons-outlined">description</span>
+            <span class="uc-card__title">我的账单</span>
+        </div>
+        <div class="uc-card__body">
+            <table id="bill-table"></table>
         </div>
     </div>
 </div>
+
 #{ready("/assets/user/controller/user/bill.js")}
 #{include file="../Common/Footer.html"}

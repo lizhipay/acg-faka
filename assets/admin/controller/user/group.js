@@ -169,7 +169,8 @@
     table.setColumns([
         {
             field: 'name', title: '等级名称', formatter: (name, row) => {
-                return format.group(row)
+                const icon = row.icon || '/favicon.ico';
+                return `<div class="md-plugin"><img src="${icon}" class="md-plugin__icon" alt=""><span class="md-plugin__name">${row.name ?? ''}</span></div>`;
             }
         },
         {

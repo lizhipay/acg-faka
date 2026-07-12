@@ -36,14 +36,13 @@
     table.setUpdate("/admin/api/category/save");
     table.setColumns([
         {
-            field: 'avatar', title: '管理员', formatter: function (val, item) {
-                if (!item.avatar) {
-                    item.avatar = "/favicon.ico";
-                }
-                return '<span class="badge badge-light-dark"><img src="' + item.avatar + '"  style="width: 18px;border-radius: 100%;"/> ' + item.nickname + '</span> '
+            field: 'avatar', title: '管理员', formatter: (val, item) => {
+                const avatar = item.avatar || '/favicon.ico';
+                return `<div class="md-user-cell"><img src="${avatar}" class="md-user-cell__avatar" alt="">` +
+                    `<div class="md-user-cell__text"><span class="md-user-cell__name">${item.nickname || ''}</span>` +
+                    `<span class="md-user-cell__sub">${item.email || ''}</span></div></div>`;
             }
         }
-        , {field: 'email', title: '邮箱'}
         , {
             field: 'status', title: '状态', formatter: function (val, item) {
                 if (item.status == 1) {

@@ -402,9 +402,7 @@
             table.setColumns([
                 {
                     field: 'plugin_name', title: '软件名称', formatter: function (val, item) {
-                        return `<span class="table-item"><img src="${item?.icon}" class="table-item-icon"><span class="table-item-name">${item?.plugin_name}</span></span>`;
-
-                        return `<span class="a-badge a-badge-dark"><img src="${item.icon}"  style="width: 18px;border-radius: 5px;margin-top: -2px"> ${item.plugin_name}</span>`
+                        return `<div class="md-plugin"><img src="${item?.icon}" class="md-plugin__icon" alt=""><span class="md-plugin__name">${item?.plugin_name ?? ''}</span></div>`;
                     }
                 }
                 ,

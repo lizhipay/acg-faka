@@ -1,13 +1,14 @@
-<ul class="layui-tab-title">
-    <li #{if $title=="个人资料"} class="layui-this" #{/if}><a href="/user/security/personal"><i class="layui-icon">&#xe66f;</i> 个人资料</a></li>
-    <li #{if $title=="密码设置"} class="layui-this" #{/if}><a href="/user/security/password"><i class="layui-icon">&#xe673;</i> 密码设置</a></li>
+<div class="uc-subtab">
+    <a href="/user/security/personal" data-ptab="info" #{if $title=="个人资料"}class="active"#{/if}><span class="material-icons-outlined">badge</span>个人资料</a>
+    <a href="/user/security/personal?tab=edit" data-ptab="edit"><span class="material-icons-outlined">edit</span>修改个人信息</a>
+    <a href="/user/security/password" #{if $title=="密码设置"}class="active"#{/if}><span class="material-icons-outlined">password</span>密码设置</a>
     #{if $config.registered_type == 2}
-    <li #{if $title=="邮箱设置"} class="layui-this" #{/if}><a href="/user/security/email"><i class="layui-icon">&#xe618;</i> 邮箱设置</a></li>
+    <a href="/user/security/email" #{if $title=="邮箱设置"}class="active"#{/if}><span class="material-icons-outlined">mail</span>邮箱设置</a>
     #{/if}
     #{if $config.registered_type == 1}
-    <li #{if $title=="手机设置"} class="layui-this" #{/if}><a href="/user/security/phone"><i class="layui-icon">&#xe678;</i> 手机设置</a></li>
+    <a href="/user/security/phone" #{if $title=="手机设置"}class="active"#{/if}><span class="material-icons-outlined">smartphone</span>手机设置</a>
     #{/if}
     <!--start::HOOK-->
     #{hook(\App\Consts\Hook::USER_VIEW_SECURITY_NAV)}
     <!--end::HOOK-->
-</ul>
+</div>

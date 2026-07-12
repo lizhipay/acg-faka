@@ -1,119 +1,5 @@
 #{include file="../Header.html"}
 #{js("/assets/static/echarts.min.js")}
-<style>
-    /* 响应式优化样式 */
-    @media (max-width: 576px) {
-        .card-body {
-            padding: 1rem !important;
-        }
-
-        .fs-4 {
-            font-size: 1.25rem !important;
-        }
-
-        .card-title h6 {
-            font-size: 0.75rem !important;
-        }
-    }
-
-    /* 悬停效果 */
-    .hover-shadow:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-    }
-
-    .transition-all {
-        transition: all 0.3s ease;
-    }
-
-    /* 加载动画 */
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
-    }
-
-    .loading-pulse {
-        animation: pulse 1.5s infinite;
-    }
-
-    /* 卡片图标容器 */
-    .icon-container {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* 渐变背景 */
-    .bg-gradient-primary {
-        background: linear-gradient(135deg, #ffeeeb 0%, #ffffff 100%);
-    }
-
-    /* 用户信息卡片样式 */
-    .user-info-card {
-        position: relative;
-        overflow: hidden;
-    }
-
-    .user-info-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
-        background-size: 200% 100%;
-        animation: gradient-shift 3s ease infinite;
-    }
-
-    @keyframes gradient-shift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-
-    /* 信息项悬停效果 */
-    .info-item {
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-
-    .info-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        background-color: rgba(255, 255, 255, 0.8) !important;
-    }
-
-    /* 移动端优化 */
-    @media (max-width: 768px) {
-        .container-fluid {
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
-        }
-
-        .row.g-4 {
-            --bs-gutter-x: 0.5rem;
-            --bs-gutter-y: 0.5rem;
-        }
-
-        .card {
-            margin-bottom: 0.5rem;
-        }
-
-        /* 移动端用户信息卡片优化 */
-        .user-info-card .bg-gradient-primary {
-            padding: 1rem !important;
-        }
-
-        .user-info-card .p-4 {
-            padding: 1rem !important;
-        }
-    }
-</style>
 
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
@@ -126,393 +12,125 @@
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
             <div class="row g-4">
-                <!-- 官方公告卡片 - 独占左侧 -->
+                <!--begin::Announcements (left)-->
                 <div class="col-12 col-lg-3">
-                    <div class="card card-flush h-100 shadow-sm border-0">
+                    <div class="card h-100">
                         <div class="card-header border-0">
                             <div class="card-title">
-                                <h3 class="mb-0 fw-bold text-primary d-flex align-items-center">
-                                    <i class="fa-duotone fa-regular fa-bullhorn fs-3 me-2"></i>
-                                    <span class="d-none d-sm-inline">官方公告</span>
-                                    <span class="d-sm-none">公告</span>
+                                <h3 class="d-flex align-items-center gap-2">
+                                    <i class="fa-duotone fa-regular fa-bullhorn text-primary"></i>官方公告
                                 </h3>
                             </div>
                         </div>
-                        <div class="card-body p-4 ad-html">
-                            <div class="text-center text-muted py-4">
-                                <i class="fas fa-spinner fa-spin fs-2"></i>
-                                <div class="mt-2">加载中...</div>
+                        <div class="card-body ad-html pt-2">
+                            <div class="text-center text-muted py-5">
+                                <i class="fa-duotone fa-regular fa-spinner fa-spin fs-2"></i>
+                                <div class="mt-3">加载中...</div>
                             </div>
                         </div>
                     </div>
                 </div>
+                <!--end::Announcements-->
 
-                <!-- 主要内容区域 -->
+                <!--begin::Main-->
                 <div class="col-12 col-lg-9">
-                    <!-- 用户信息卡片 - 重新设计 -->
-                    <div class="card mb-4 shadow-sm border-0 overflow-hidden user-info-card">
-                        <!-- 背景装饰 -->
-                        <div class="position-absolute top-0 start-0 w-100 h-100 bg-gradient-primary opacity-10"></div>
-
-                        <div class="card-body p-0 position-relative">
-                            <!-- 顶部信息栏 -->
-                            <div class="bg-gradient-primary text-white p-4">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center">
-                                        <div class="position-relative me-3">
-                                            <img src="#{if $user.avatar}#{$user.avatar}#{else}/favicon.ico#{/if}"
-                                                 alt="用户头像"
-                                                 class="rounded-circle border-3 border-white shadow-sm"
-                                                 style="width: 42px; height: 42px; object-fit: cover;"/>
-                                            <div class="position-absolute bottom-0 end-0 bg-success rounded-circle border border-2 border-white"
-                                                 style="width: 16px; height: 16px;"></div>
-                                        </div>
-                                        <div>
-                                            <h5 class="mb-1 fw-bold fs-4 text-danger">#{$user.nickname}</h5>
-                                            <div class="d-flex align-items-center opacity-75">
-                                                <span class="small text-primary"><i class="fa-duotone fa-regular fa-envelope text-primary"></i> #{$user.email}</span>
-                                            </div>
-                                        </div>
+                    <!--begin::Profile card-->
+                    <div class="card mb-4 dash-profile">
+                        <div class="card-body dash-profile__body">
+                            <div class="dash-profile__identity">
+                                <div class="dash-profile__avatar-wrap">
+                                    <img src="#{if $user.avatar}#{$user.avatar}#{else}/favicon.ico#{/if}" alt="头像" class="dash-profile__avatar">
+                                    <span class="dash-profile__status" aria-hidden="true"></span>
+                                </div>
+                                <div class="dash-profile__intro">
+                                    <div class="dash-profile__eyebrow">
+                                        <span class="material-icons-outlined" aria-hidden="true">admin_panel_settings</span>
+                                        <span>管理员账户</span>
                                     </div>
-                                    <div class="d-flex">
-                                        <a href="/admin/manage/set" class="btn btn-sm btn-light btn-outline-light">
-                                            <i class="fa-duotone fa-regular fa-user-pen me-1"></i>
-                                            <span class="d-none d-sm-inline">编辑资料</span>
-                                            <span class="d-sm-none">编辑</span>
-                                        </a>
+                                    <div class="dash-profile__name-row">
+                                        <strong class="dash-profile__name">#{$user.nickname}</strong>
+                                        <span class="dash-profile__online">在线</span>
+                                    </div>
+                                    <div class="dash-profile__email">
+                                        <span class="material-icons-outlined" aria-hidden="true">mail_outline</span>
+                                        <span>#{$user.email}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 详细信息区域 -->
-                            <div class="p-4">
-                                <div class="row g-3">
-                                    <!-- 本次登录IP -->
-                                    <div class="col-12 col-sm-6">
-                                        <div class="d-flex align-items-center p-3 rounded bg-light bg-opacity-50 info-item">
-                                            <div class="flex-shrink-0 me-3">
-                                                <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                     style="width: 40px; height: 40px;">
-                                                    <i class="fa-duotone fa-regular fa-location-dot text-success"></i>
-                                                </div>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <div class="text-muted small mb-1">本次登录IP</div>
-                                                <div class="fw-medium text-success">#{$user.login_ip}</div>
-                                            </div>
-                                        </div>
+                            <div class="dash-profile__security" aria-label="登录信息">
+                                <div class="dash-profile__meta dash-profile__meta--current">
+                                    <span class="dash-profile__meta-icon material-icons-outlined" aria-hidden="true">my_location</span>
+                                    <div class="dash-profile__meta-copy">
+                                        <span class="dash-profile__meta-label">本次登录 IP</span>
+                                        <strong class="dash-profile__meta-value">#{$user.login_ip}</strong>
+                                        <span class="dash-profile__meta-note dash-profile__meta-note--live">当前会话</span>
                                     </div>
-
-                                    <!-- 上次登录信息 -->
-                                    <div class="col-12 col-sm-6">
-                                        <div class="d-flex align-items-center p-3 rounded bg-light bg-opacity-50 info-item">
-                                            <div class="flex-shrink-0 me-3">
-                                                <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                     style="width: 40px; height: 40px;">
-                                                    <i class="fa-duotone fa-regular fa-clock text-warning"></i>
-                                                </div>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <div class="text-muted small mb-1">上次登录</div>
-                                                <div class="fw-medium">
-                                                    #{if $user.last_login_ip}
-                                                        <div class="text-warning">#{$user.last_login_ip}</div>
-                                                        <div class="text-muted small">#{$user.last_login_time}</div>
-                                                    #{else}
-                                                        <div class="text-muted">暂无记录</div>
-                                                    #{/if}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-
                                 </div>
-
+                                <div class="dash-profile__meta">
+                                    <span class="dash-profile__meta-icon material-icons-outlined" aria-hidden="true">history</span>
+                                    <div class="dash-profile__meta-copy">
+                                        <span class="dash-profile__meta-label">上次登录</span>
+                                        #{if $user.last_login_ip}
+                                            <strong class="dash-profile__meta-value">#{$user.last_login_ip}</strong>
+                                            <span class="dash-profile__meta-note">#{$user.last_login_time}</span>
+                                        #{else}
+                                            <strong class="dash-profile__meta-value dash-profile__meta-value--muted">暂无记录</strong>
+                                        #{/if}
+                                    </div>
+                                </div>
                             </div>
+
                         </div>
                     </div>
+                    <!--end::Profile card-->
 
-                    <!-- 数据筛选器 -->
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="d-flex align-items-center">
-                            <select name="status" class="form-select form-select-sm dashboard-data-type" style="width: auto;">
-                                <option value="0" selected="selected">今日数据</option>
-                                <option value="1">昨日数据</option>
-                                <option value="2">本周数据</option>
-                                <option value="3">本月数据</option>
-                                <option value="4">所有数据</option>
-                            </select>
-                        </div>
+                    <!--begin::Section header + data filter-->
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <h2 class="md-section-title">数据概览</h2>
+                        <select name="status" class="form-select form-select-sm dashboard-data-type" style="width: auto;">
+                            <option value="0" selected="selected">今日数据</option>
+                            <option value="1">昨日数据</option>
+                            <option value="2">本周数据</option>
+                            <option value="3">本月数据</option>
+                            <option value="4">所有数据</option>
+                        </select>
                     </div>
+                    <!--end::Section header-->
 
-
-                    <!-- 统计卡片网格 -->
-                    <div class="row g-3 g-sm-4 mb-4">
-
-
-                        <!-- 打卡用户 -->
-                        <div class="col-6 col-sm-6 col-xl-3">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                                <div class="card-body p-3 p-sm-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="flex-shrink-0 me-3">
-                                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                 style="width: 50px; height: 50px;">
-                                                <i class="fa-duotone fa-regular fa-money-bills text-success" style="font-size: 20px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-0 text-muted small">盈利</h6>
-                                        </div>
-                                    </div>
-                                    <div class="order_profit fw-bold fs-4 text-success">...</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 交易金额 -->
-                        <div class="col-6 col-sm-6 col-xl-3">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                                <div class="card-body p-3 p-sm-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="flex-shrink-0 me-3">
-                                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                 style="width: 50px; height: 50px;">
-                                                <i class="fa-duotone fa-regular fa-circle-dollar text-primary" style="font-size: 20px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-0 text-muted small">交易金额</h6>
-                                        </div>
-                                    </div>
-                                    <div class="turnover fw-bold fs-4 text-primary">...</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 订单 -->
-                        <div class="col-6 col-sm-6 col-xl-3">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                                <div class="card-body p-3 p-sm-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="flex-shrink-0 me-3">
-                                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                 style="width: 50px; height: 50px;">
-                                                <i class="fa-duotone fa-regular fa-chart-pie-simple-circle-dollar text-success" style="font-size: 20px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-0 text-muted small">订单</h6>
-                                        </div>
-                                    </div>
-                                    <div class="order_num fw-bold fs-4 text-success">...</div>
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <!-- 子站 -->
-                        <div class="col-6 col-sm-6 col-xl-3">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                                <div class="card-body p-3 p-sm-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="flex-shrink-0 me-3">
-                                            <div class="bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                 style="width: 50px; height: 50px;">
-                                                <i class="fa-duotone fa-regular fa-house-tree text-secondary" style="font-size: 20px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-0 text-muted small">子站</h6>
-                                        </div>
-                                    </div>
-                                    <div class="business fw-bold fs-4 text-secondary">...</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 未处理提现 -->
-                        <div class="col-6 col-sm-6 col-xl-3">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                                <div class="card-body p-3 p-sm-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="flex-shrink-0 me-3">
-                                            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                 style="width: 50px; height: 50px;">
-                                                <i class="fa-duotone fa-regular fa-money-bill-wave text-danger" style="font-size: 20px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-0 text-muted small">未处理提现</h6>
-                                        </div>
-                                    </div>
-                                    <div class="cash_status_0 fw-bold fs-4 text-danger">...</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 成功提现金额 -->
-                        <div class="col-6 col-sm-6 col-xl-3">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                                <div class="card-body p-3 p-sm-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="flex-shrink-0 me-3">
-                                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                 style="width: 50px; height: 50px;">
-                                                <i class="fa-duotone fa-regular fa-money-bill-simple text-success" style="font-size: 20px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-0 text-muted small">成功提现</h6>
-                                        </div>
-                                    </div>
-                                    <div class="cash_money_status_1 fw-bold fs-4 text-success">...</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 注册用户 -->
-                        <div class="col-6 col-sm-6 col-xl-3">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                                <div class="card-body p-3 p-sm-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="flex-shrink-0 me-3">
-                                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                 style="width: 50px; height: 50px;">
-                                                <i class="fa-duotone fa-regular fa-user-plus text-primary" style="font-size: 20px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-0 text-muted small">注册用户</h6>
-                                        </div>
-                                    </div>
-                                    <div class="user_register_num fw-bold fs-4 text-primary">...</div>
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <!-- 充值金额 -->
-                        <div class="col-6 col-sm-6 col-xl-3">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                                <div class="card-body p-3 p-sm-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="flex-shrink-0 me-3">
-                                            <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                 style="width: 50px; height: 50px;">
-                                                <i class="fa-duotone fa-regular fa-file-invoice-dollar text-warning" style="font-size: 20px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-0 text-muted small">充值金额</h6>
-                                        </div>
-                                    </div>
-                                    <div class="recharge_amount fw-bold fs-4 text-warning">...</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 第三方支付 -->
-                        <div class="col-6 col-sm-6 col-xl-3">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                                <div class="card-body p-3 p-sm-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="flex-shrink-0 me-3">
-                                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                 style="width: 50px; height: 50px;">
-                                                <i class="fa-duotone fa-regular fa-display-chart-up-circle-dollar text-success" style="font-size: 20px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-0 text-muted small">第三方支付</h6>
-                                        </div>
-                                    </div>
-                                    <div class="online_amout fw-bold fs-4 text-success">...</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 推广返利 -->
-                        <div class="col-6 col-sm-6 col-xl-3">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                                <div class="card-body p-3 p-sm-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="flex-shrink-0 me-3">
-                                            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                 style="width: 50px; height: 50px;">
-                                                <i class="fa-duotone fa-regular fa-rectangle-ad text-danger" style="font-size: 20px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-0 text-muted small">推广返利</h6>
-                                        </div>
-                                    </div>
-                                    <div class="divide_amount fw-bold fs-4 text-danger">...</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!--分站佣金-->
-                        <div class="col-6 col-sm-6 col-xl-3">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                                <div class="card-body p-3 p-sm-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="flex-shrink-0 me-3">
-                                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                 style="width: 50px; height: 50px;">
-                                                <i class="fa-duotone fa-regular fa-hand-holding-dollar text-primary" style="font-size: 20px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-0 text-muted small">子站佣金</h6>
-                                        </div>
-                                    </div>
-                                    <div class="rebate fw-bold fs-4 text-primary">...</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!--供货商手续费-->
-                        <div class="col-6 col-sm-6 col-xl-3">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                                <div class="card-body p-3 p-sm-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="flex-shrink-0 me-3">
-                                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                                 style="width: 50px; height: 50px;">
-                                                <i class="fa-duotone fa-regular fa-filter-circle-dollar text-success" style="font-size: 20px;"></i>
-
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-0 text-muted small">供货手续费</h6>
-                                        </div>
-                                    </div>
-                                    <div class="cost fw-bold fs-4 text-success">...</div>
-                                </div>
-                            </div>
-                        </div>
-
-
-
+                    <!--begin::Stat grid-->
+                    <div class="row g-4 mb-4">
+                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="success" icon="fa-sack-dollar" label="盈利" vclass="order_profit" value="—"}
+                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="primary" icon="fa-circle-dollar" label="交易金额" vclass="turnover" value="—"}
+                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="success" icon="fa-receipt" label="订单" vclass="order_num" value="—"}
+                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="secondary" icon="fa-store" label="子站" vclass="business" value="—"}
+                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="danger" icon="fa-money-bill-wave" label="未处理提现" vclass="cash_status_0" value="—"}
+                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="success" icon="fa-money-bill" label="成功提现" vclass="cash_money_status_1" value="—"}
+                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="primary" icon="fa-user-plus" label="注册用户" vclass="user_register_num" value="—"}
+                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="warning" icon="fa-file-invoice-dollar" label="充值金额" vclass="recharge_amount" value="—"}
+                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="success" icon="fa-credit-card" label="第三方支付" vclass="online_amout" value="—"}
+                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="danger" icon="fa-bullhorn" label="推广返利" vclass="divide_amount" value="—"}
+                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="primary" icon="fa-hand-holding-dollar" label="子站佣金" vclass="rebate" value="—"}
+                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="success" icon="fa-filter-circle-dollar" label="供货手续费" vclass="cost" value="—"}
                     </div>
+                    <!--end::Stat grid-->
 
-                    <!-- 图表区域 -->
-                    <div class="card card-flush border-0 shadow-sm">
+                    <!--begin::Chart-->
+                    <div class="card">
                         <div class="card-header border-0">
                             <div class="card-title">
-                                <h3 class="fw-bold mb-0 text-primary">
-                                    <i class="fa-duotone fa-regular fa-database fs-3 text-primary"></i>
-                                    本周数据
+                                <h3 class="d-flex align-items-center gap-2">
+                                    <i class="fa-duotone fa-regular fa-chart-line text-primary"></i>数据趋势
                                 </h3>
                             </div>
                         </div>
-                        <div class="card-body p-4">
+                        <div class="card-body">
                             <div id="statistics" style="height: 350px; width: 100%;"></div>
                         </div>
                     </div>
+                    <!--end::Chart-->
                 </div>
+                <!--end::Main-->
             </div>
         </div>
         <!--end::Container-->
@@ -520,7 +138,6 @@
     <!--end::Post-->
 </div>
 <!--end::Content-->
-
 
 #{ready("/assets/admin/controller/dashboard/index.js")}
 #{include file="../Footer.html"}

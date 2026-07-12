@@ -1,42 +1,32 @@
 #{include file="../Common/Header.html"}
-<div class="layui-container fly-marginTop fly-user-main">
-    #{include file="../Common/Nav.html"}
-    <div class="fly-panel fly-panel-user" pad20>
-        <div class="layui-tab layui-tab-brief">
+<div class="uc-main">
+    <div class="uc-card">
+        <div class="uc-card__body">
             #{include file="../Common/SecurityNav.html"}
-            <div class="content-body">
-                <form class="layui-form form-data">
-                    <div class="form-block">
-                        <div>
-                            <div class="form-header">邮箱</div>
-                            <div class="form-body"><input type="text" value="#{$user.email}" autocomplete="off"
-                                                          class="layui-input" placeholder="未绑定"
-                                                          style="color: #ff9191;width: 320px;" disabled></div>
-                        </div>
-
-                        <div>
-                            <div class="form-header">新邮箱</div>
-                            <div class="form-body"><input type="text" name="email" autocomplete="off"
-                                                          class="layui-input" placeholder="请输入新邮箱"
-                                                          style="color: #ff9191;width: 320px;"></div>
-                        </div>
-
-                        <div>
-                            <div class="form-header">验证码</div>
-                            <div class="form-body"><input type="text" name="email_captcha" autocomplete="off"
-                                                          class="layui-input" placeholder="验证码"
-                                                          style="color: #ff9191;width: 160px;display: inline-block;">
-                                <button type="button" class="layui-btn layui-btn-pink send-captcha">获取验证码</button>
+            <form class="layui-form form-data">
+                <div class="form-block">
+                    <div>
+                        <div class="form-header">当前邮箱</div>
+                        <div class="form-body"><input type="text" value="#{$user.email}" autocomplete="off" class="layui-input" placeholder="未绑定" disabled></div>
+                    </div>
+                    <div>
+                        <div class="form-header">新邮箱</div>
+                        <div class="form-body"><input type="text" name="email" autocomplete="off" class="layui-input" placeholder="请输入新邮箱"></div>
+                    </div>
+                    <div>
+                        <div class="form-header">验证码</div>
+                        <div class="form-body">
+                            <div class="uc-captcha-row">
+                                <input type="text" name="email_captcha" autocomplete="off" class="layui-input" placeholder="请输入验证码">
+                                <button type="button" class="uc-cta uc-cta--ghost send-captcha"><span class="material-icons-outlined">send</span>获取验证码</button>
                             </div>
                         </div>
-
-                        <div style="margin-top: 25px;">
-                            <button type="button" class="layui-btn layui-btn-pink save-data">保存修改</button>
-                        </div>
-
                     </div>
-                </form>
-            </div>
+                    <div style="margin-top:24px;">
+                        <button type="button" class="uc-cta save-data"><span class="material-icons-outlined">save</span>保存修改</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>

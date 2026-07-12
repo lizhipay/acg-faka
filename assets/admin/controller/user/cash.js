@@ -5,7 +5,7 @@
 
     table.setColumns([
         {
-            field: 'user', title: '会员', formatter: format.user
+            field: 'user', title: '会员', formatter: (_, __) => mdUserCell(_)
         }
         , {
             field: 'amount', title: '提现金额', formatter: _ => format.money(_, "green")

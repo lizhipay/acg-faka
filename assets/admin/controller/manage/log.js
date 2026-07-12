@@ -6,7 +6,7 @@
     table.setColumns([
         {
             field: 'manage', title: "管理员", formatter: function (val, item) {
-                return '<span class="badge badge-light">' + item.nickname + '(' + item.email + ')' + '</span>';
+                return '<div class="md-user-cell__text"><span class="md-user-cell__name">' + item.nickname + '</span><span class="md-user-cell__sub">' + item.email + '</span></div>';
             }
         }
         , {

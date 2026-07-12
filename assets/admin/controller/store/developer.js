@@ -87,7 +87,7 @@
             ],
 
             autoPosition: true,
-            height: "auto",
+            adaptiveHeight: true,
             confirmText: `${util.icon("fa-duotone fa-regular fa-layer-plus")} 确认提交`,
             width: "680px",
             done: () => {
@@ -110,9 +110,7 @@
             table.setColumns([
                 {
                     field: 'plugin_name', title: '应用名称', formatter: function (val, item) {
-                        return `<span class="table-item"><img src="${item?.icon}" class="table-item-icon"><span class="table-item-name">${item?.plugin_name}</span></span>`;
-
-                        return `<span class="a-badge a-badge-dark"><img src="${item.icon}"  style="width: 18px;border-radius: 5px;margin-top: -2px"> ${item.plugin_name}</span>`
+                        return `<div class="md-plugin"><img src="${item?.icon}" class="md-plugin__icon" alt=""><span class="md-plugin__name">${item?.plugin_name ?? ''}</span></div>`;
                     }
                 }
                 ,
@@ -220,7 +218,7 @@
                                     ],
                                     assign: row,
                                     autoPosition: true,
-                                    height: "auto",
+                                    adaptiveHeight: true,
                                     confirmText: `${util.icon("fa-duotone fa-regular fa-cloud-arrow-up")} 确认提交`,
                                     width: "380px",
                                     done: () => {
@@ -271,7 +269,7 @@
 
                                     assign: row,
                                     autoPosition: true,
-                                    height: "auto",
+                                    adaptiveHeight: true,
                                     confirmText: `${util.icon("fa-duotone fa-regular fa-cloud-arrow-up")} 确认提交`,
                                     width: "580px",
                                     done: () => {

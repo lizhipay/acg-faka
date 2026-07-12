@@ -92,8 +92,9 @@ class Search {
     }
 
     inputHtml(item) {
-        return `<div class="layui-input-inline ${(item.hide ? 'hide' : '')} e-${item.name}" ${this.getWidth(item)}>
-                    <input type="text" class="layui-input ${this.getClass(item)}" ${this.getWidth(item)} placeholder="${item.title}" name="${item.name}" value="${item.default ?? ''}">
+        return `<div class="layui-input-inline ${(item.hide ? 'hide' : '')} e-${item.name} mui-sf" ${this.getWidth(item)}>
+                    <input type="text" class="layui-input ${this.getClass(item)}" ${this.getWidth(item)} placeholder=" " name="${item.name}" value="${item.default ?? ''}">
+                    <label class="mui-sf__label">${item.title}</label>
                 </div>`;
     }
 
@@ -112,16 +113,17 @@ class Search {
         let start = item.name.replace('between', 'betweenStart');
         let end = item.name.replace('between', 'betweenEnd');
         let width = this.getWidth(item);
+        // 用 .mui-sf + .mui-sf__label + placeholder=" "(同 inputHtml),让前/后台的 MUI notch 浮动标签机制接管
         let html = '';
-        html += ' <div class="layui-input-inline ' + (item.hide ? 'hide' : '') + ' e-' + item.name + '" ' + width + '>\n' +
-            '        <input type="text" class="layui-input between-date-' + item.name + '" name="' + start + '" placeholder="' + i18n("从") + " " + item.title + '"  value="">\n' +
-            '      </div>';
-        html += '<div class="layui-input-inline text-center' + (item.hide ? 'hide' : '') + ' e-' + item.name + '" style="width: 10px;">\n' +
-            '                            ~ \n' +
-            '                        </div>';
-        html += ' <div class="layui-input-inline ' + (item.hide ? 'hide' : '') + ' e-' + item.name + '" ' + width + '>\n' +
-            '        <input type="text" class="layui-input between-date-' + item.name + '" name="' + end + '" placeholder="' + i18n("到") + " " + item.title + '"  value="">\n' +
-            '      </div>';
+        html += '<div class="layui-input-inline ' + (item.hide ? 'hide' : '') + ' e-' + item.name + ' mui-sf" ' + width + '>\n' +
+            '    <input type="text" class="layui-input between-date-' + item.name + '" name="' + start + '" placeholder=" " value="">\n' +
+            '    <label class="mui-sf__label">' + i18n("从") + ' ' + item.title + '</label>\n' +
+            '</div>';
+        html += '<div class="layui-input-inline text-center ' + (item.hide ? 'hide' : '') + ' e-' + item.name + '" style="width: 10px;">~</div>';
+        html += '<div class="layui-input-inline ' + (item.hide ? 'hide' : '') + ' e-' + item.name + ' mui-sf" ' + width + '>\n' +
+            '    <input type="text" class="layui-input between-date-' + item.name + '" name="' + end + '" placeholder=" " value="">\n' +
+            '    <label class="mui-sf__label">' + i18n("到") + ' ' + item.title + '</label>\n' +
+            '</div>';
         return html;
     }
 
@@ -133,8 +135,9 @@ class Search {
     }
 
     selectHtml(item) {
-        return '<div class="layui-input-inline ' + (item.hide ? 'hide' : '') + ' e-' + item.name + '" ' + this.getWidth(item) + '>\n' +
+        return '<div class="layui-input-inline ' + (item.hide ? 'hide' : '') + ' e-' + item.name + ' mui-sf mui-sf--select" ' + this.getWidth(item) + '>\n' +
             '                    <select lay-filter="' + this.unique + item.name + '" ' + (item.search === true ? 'lay-search=""' : '') + '  name="' + item.name + '"></select>\n' +
+            '                    <label class="mui-sf__label">' + item.title + '</label>\n' +
             '                        </div>';
     }
 
@@ -147,7 +150,7 @@ class Search {
     selectRegister(item) {
         let _this = this;
         let selectInstance = $('.' + this.unique + ' select[name=' + item.name + ']');
-        selectInstance.html(`<option value="">${item.title}</option>`);
+        selectInstance.html(`<option value="">${i18n('全部')}</option>`);
 
         if (item.hasOwnProperty('dict')) {
             _Dict.advanced(item.dict, res => {
@@ -179,8 +182,9 @@ class Search {
 
 
     remoteSelectHtml(item) {
-        return '<div class="layui-input-inline ' + (item.hide ? 'hide' : '') + ' e-' + item.name + '" ' + this.getWidth(item) + '>\n' +
+        return '<div class="layui-input-inline ' + (item.hide ? 'hide' : '') + ' e-' + item.name + ' mui-sf mui-sf--select" ' + this.getWidth(item) + '>\n' +
             '                    <span class="' + item.name + '"></span>\n' +
+            '                    <label class="mui-sf__label">' + item.title + '</label>\n' +
             '                        </div>';
     }
 
@@ -189,7 +193,10 @@ class Search {
     }
 
     treeSelectHtml(item) {
-        return this.getBlockHtml(item, `<span class="tree-${item.name}"></span>`);
+        return `<div class="layui-input-inline ${(item.hide ? 'hide' : '')} e-${item.name} mui-sf mui-sf--select" ${this.getWidth(item)}>
+                    <span class="tree-${item.name}"></span>
+                    <label class="mui-sf__label">${item.title}</label>
+                </div>`;
     }
 
     treeSelectReload(name, dict = null) {
@@ -208,8 +215,8 @@ class Search {
             data: item.dict,
             // 异步加载方式：get/post，默认get
             //type: 'post',
-            // 占位符
-            placeholder: item.title,
+            // 占位符用「全部」，避免和上浮的 mui-sf 浮动标签（item.title）重复
+            placeholder: i18n('全部'),
             // 是否开启搜索功能：true/false，默认false
             search: true,
             // 点击回调
@@ -241,7 +248,7 @@ class Search {
             autoRow: true,
             name: item.name,
             // data: initValue,
-            tips: item.title,
+            tips: '',
             searchTips: item.title,
             //  toolbar: {show: true},
             filterable: true,

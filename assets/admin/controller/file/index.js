@@ -25,20 +25,24 @@
     table.setColumns([
         { checkbox: true },
         {
-            field: 'path', title: '预览', width: 70, formatter: function (v, row) {
-                if (row.type === 'image' && row.exists) {
-                    const u = row.thumb_url || row.path;
-                    return '<img src="' + u + '" onclick="window.open(\'' + row.path + '\')" ' +
-                        'style="width:44px;height:44px;object-fit:cover;border-radius:10px;border:1px solid #eee;cursor:pointer">';
-                }
-                return '<i class="fa-duotone fa-regular ' + fileIcon(row.type) + '" style="font-size:30px;color:#8a9bff"></i>';
-            }
-        },
-        {
-            field: 'note', title: '文件名 / 备注', formatter: function (v, row) {
+            field: 'note', title: '文件', formatter: function (v, row) {
                 const name = (row.path || '').split('/').pop();
-                const note = v ? '<div class="text-primary" style="font-size:12px">' + v + '</div>' : '';
-                return '<div><div class="text-truncate" style="max-width:280px" title="' + row.path + '">' + name + '</div>' + note + '</div>';
+                const note = v ? '<span class="md-file__note">' + v + '</span>' : '';
+                const previewable = row.type === 'image' && row.exists;
+                const thumb = previewable
+                    ? '<img src="' + (row.thumb_url || row.path) + '" class="md-file__thumb" alt="">'
+                    : '<span class="md-file__thumb md-file__thumb--icon"><i class="fa-duotone fa-regular ' + fileIcon(row.type) + '"></i></span>';
+                return '<div class="md-file' + (previewable ? ' md-file--previewable' : '') + '">' + thumb +
+                    '<div class="md-file__text"><span class="md-file__name" title="' + row.path + '">' + name + '</span>' + note + '</div></div>';
+            },
+            events: {
+                // 双击可预览的图片单元 → 放大预览
+                'dblclick .md-file--previewable': function (event, value, row) {
+                    layer.open({
+                        type: 1, title: false, closeBtn: 0, anim: 5, area: 'auto', shadeClose: true,
+                        content: '<img src="' + row.path + '" style="display:block;width:auto;max-width:90vw;max-height:90vh;">'
+                    });
+                }
             }
         },
         { field: 'type', title: '类型', formatter: function (v) { return '<span class="badge badge-light-info">' + v + '</span>'; } },
@@ -46,8 +50,8 @@
         {
             field: 'user_id', title: '归属', formatter: function (v, row) {
                 return v
-                    ? '<span class="badge badge-light-primary">' + (row.user ? row.user.username : ('用户#' + v)) + '</span>'
-                    : '<span class="badge badge-light">后台</span>';
+                    ? '<span class="a-badge a-badge-primary">' + (row.user ? row.user.username : ('用户#' + v)) + '</span>'
+                    : '<span class="a-badge a-badge-secondary">后台</span>';
             }
         },
         { field: 'create_time', title: '上传时间' },

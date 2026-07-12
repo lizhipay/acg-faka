@@ -3,7 +3,7 @@
     table.setColumns([
         {checkbox: true}
         , {
-            field: 'owner', title: '会员', formatter: format.user
+            field: 'owner', title: '会员', formatter: (_, __) => mdUserCell(_)
         }
         , {
             field: 'amount',

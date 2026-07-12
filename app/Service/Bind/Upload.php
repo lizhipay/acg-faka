@@ -33,11 +33,16 @@ class Upload implements \App\Service\Upload
 
     /**
      * @param string $hash
+     * @param int|null $userId 指定后仅在该用户自己的上传记录内去重(null=全局,保持旧行为)
      * @return string|null
      */
-    public function get(string $hash): ?string
+    public function get(string $hash, ?int $userId = null): ?string
     {
-        return (\App\Model\Upload::query()->where("hash", $hash)->first())?->path;
+        $query = \App\Model\Upload::query()->where("hash", $hash);
+        if ($userId !== null) {
+            $query->where("user_id", $userId);
+        }
+        return $query->first()?->path;
     }
 
     /**

@@ -21,14 +21,8 @@ const _Dict = new class _Dict extends _DictUtil {
                 {id: 3, "name": `<i class="fa-duotone fa-regular fa-tablet"></i> iPad`},
             ],
             "_user_status": [
-                {
-                    "id": 1,
-                    "name": `<span class="text-success"><i class="fa-duotone fa-regular fa-circle-check text-success"></i> 正常</span>`
-                },
-                {
-                    "id": 0,
-                    "name": `<span class="text-danger"><i class="fa-duotone fa-regular fa-circle-xmark text-danger"></i> 封禁</span>`
-                }
+                {"id": 1, "name": format.badge("正常", "a-badge-success")},
+                {"id": 0, "name": format.badge("封禁", "a-badge-danger")}
             ],
             "_recharge_order_status": [
                 {
@@ -72,6 +66,21 @@ const _Dict = new class _Dict extends _DictUtil {
                 {id: 1, "name": format.badge("微信", "a-badge-success")},
                 {id: 3, "name": format.badge("USDT(TRC20)", "a-badge-success")},
                 {id: 2, "name": format.badge("钱包余额", "a-badge-info")},
+            ],
+            "_ticket_status": [
+                {id: 0, "name": format.badge(`<i class="fa-duotone fa-regular fa-clock"></i> 待客服`, "a-badge-warning")},
+                {id: 1, "name": format.badge(`<i class="fa-duotone fa-regular fa-comment"></i> 等待用户`, "a-badge-primary")},
+                {id: 2, "name": format.badge(`<i class="fa-duotone fa-regular fa-circle-check"></i> 已解决`, "a-badge-success")},
+                {id: 3, "name": format.badge(`<i class="fa-duotone fa-regular fa-lock-keyhole"></i> 已关闭`, "a-badge-dark")},
+            ],
+            "_ticket_type": [
+                {id: 0, "name": format.badge("售前咨询", "a-badge-primary")},
+                {id: 1, "name": format.badge("售后支持", "a-badge-info")},
+            ],
+            "_ticket_priority": [
+                {id: 0, "name": format.badge("低优先级", "a-badge-light")},
+                {id: 1, "name": format.badge("中优先级", "a-badge-warning")},
+                {id: 2, "name": format.badge("高优先级", "a-badge-danger")},
             ],
             "_contact_type": [
                 {id: 0, "name": format.color("任意", "#de27ba")},

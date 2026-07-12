@@ -7,7 +7,7 @@
             field: 'trade_no', title: '订单号'
         }
         , {
-            field: 'user', title: '会员', formatter: format.user
+            field: 'user', title: '会员', formatter: (_, __) => mdUserCell(_)
         }
         , {
             field: 'amount', title: '充值金额', formatter: _ => format.money(_, "green")
@@ -48,8 +48,8 @@
     ]);
 
     table.onResponse(_ => {
-        $('.order_count').html(_.data.total);
-        $('.order_amount').html(_.data.order_amount);
+        $('.order_count').html(Number(_.data.total || 0).toLocaleString('en-US'));
+        $('.order_amount').html('￥' + Number(_.data.order_amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
     });
 
     table.setSearch([

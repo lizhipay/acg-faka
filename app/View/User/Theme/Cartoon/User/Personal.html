@@ -1,90 +1,106 @@
 #{include file="../Common/Header.html"}
-<div class="layui-container fly-marginTop fly-user-main">
-    #{include file="../Common/Nav.html"}
-    <div class="fly-panel fly-panel-user" pad20>
-        <div class="layui-tab layui-tab-brief">
+<div class="uc-main">
+    <div class="uc-card">
+        <div class="uc-card__body">
             #{include file="../Common/SecurityNav.html"}
-            <div class="content-body">
-                <form class="layui-form form-data">
-                    <div class="form-block">
-                        <div>
-                            <div class="form-body">
-                                <input type="file" class="avatar-input" style="display: none;">
-                                <input type="text" name="avatar" style="display: none;" value="#{$user.avatar}">
-                                <img class="avatar-img"
-                                     onclick="document.getElementsByClassName('avatar-input')[0].click()"
-                                     src="#{$user.avatar}" alt="点击修改"
-                                     style="height: 100px;width: 100px;border-radius: 100%;border: 1px solid #fba9da8c;box-shadow: 1px 1px 10px 1px #ed9b9bb3;cursor: pointer;">
-                            </div>
-                        </div>
-                        <div>
-                            <div class="form-header">QQ号</div>
-                            <div class="form-body"><input type="number" value="#{$user.qq}" name="qq" autocomplete="off"
-                                                          placeholder="请输入QQ号" class="layui-input"
-                                                          style="color: #ff9191;width: 320px;"></div>
-                        </div>
-                        <div>
-                            <div class="form-header">真实姓名(提现)</div>
-                            <div class="form-body"><input type="text" value="#{$user.nicename}" name="nicename"
-                                                          autocomplete="off"
-                                                          placeholder="请输入您的真实姓名" class="layui-input"
-                                                          style="color: #ff9191;width: 320px;"></div>
-                        </div>
-                        <div>
-                            <div class="form-header">自动结算方式</div>
-                            <div class="form-body" style="color: #ff9191;width: 320px;">
-                                <select name="settlement">
-                                    <option value="0" #{if $user.settlement == 0} selected #{/if}>支付宝</option>
-                                    <option value="1" #{if $user.settlement == 1} selected #{/if}>微信</option>
-                                    <option value="3" #{if $user.settlement == 3} selected #{/if}>USDT(TRC20)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="form-header">支付宝账号(提现)</div>
-                            <div class="form-body"><input type="text" value="#{$user.alipay}" name="alipay"
-                                                          autocomplete="off"
-                                                          placeholder="兑现使用的支付宝账号" class="layui-input"
-                                                          style="color: #ff9191;width: 320px;"></div>
-                        </div>
-                        <div>
-                            <div class="form-header">钱包地址(TRC20)</div>
-                            <div class="form-body"><input type="text" value="#{$user.wallet_address}" name="wallet_address"
-                                                          autocomplete="off"
-                                                          placeholder="兑现使用的钱包地址" class="layui-input"
-                                                          style="color: #ff9191;width: 320px;"></div>
-                        </div>
-                        <div>
-                            <div class="form-header">微信收款二维码(提现)</div>
-                            <div class="form-body">
-                                <input type="file" class="wechat-input" style="display: none;">
-                                <input type="text" name="wechat" style="display: none;" value="">
-                                #{if $user.wechat == ''}
-                                    <i class="layui-icon wx_qrcode_temp"
-                                       onclick="document.getElementsByClassName('wechat-input')[0].click()"
-                                       style="font-size: 32px;color: #0C84D1;cursor: pointer;">&#xe681;</i>
-                                #{else}
-                                    <div class="wx_qrcode"
-                                         onclick="document.getElementsByClassName('wechat-input')[0].click()"></div>
-                                #{/if}
-                            </div>
-                        </div>
 
-                        <!--start::HOOK-->
-                        #{hook(\App\Consts\Hook::USER_VIEW_PERSONAL_FORM)}
-                        <!--end::HOOK-->
-
-                        <div style="margin-top: 25px;">
-                            <button type="button" class="layui-btn layui-btn-pink save-data">保存修改</button>
+            <div class="uc-tabpanel" data-panel="profile">
+            <form class="layui-form form-data">
+                <div class="form-block">
+                    <div>
+                        <div class="form-header">头像</div>
+                        <div class="form-body">
+                            <input type="file" class="avatar-input" style="display:none;">
+                            <input type="text" name="avatar" style="display:none;" value="#{$user.avatar}">
+                            <img class="avatar-img uc-avatar-edit" onclick="document.getElementsByClassName('avatar-input')[0].click()" src="#{$user.avatar}" alt="点击修改">
                         </div>
-
                     </div>
-                </form>
+                    <div>
+                        <div class="form-header">QQ 号</div>
+                        <div class="form-body"><input type="number" value="#{$user.qq}" name="qq" autocomplete="off" placeholder="请输入 QQ 号" class="layui-input"></div>
+                    </div>
+                    <div>
+                        <div class="form-header">真实姓名（提现）</div>
+                        <div class="form-body"><input type="text" value="#{$user.nicename}" name="nicename" autocomplete="off" placeholder="请输入您的真实姓名" class="layui-input"></div>
+                    </div>
+                    <div>
+                        <div class="form-header">自动结算方式</div>
+                        <div class="form-body">
+                            <select name="settlement" lay-ignore>
+                                <option value="0" #{if $user.settlement == 0} selected #{/if}>支付宝</option>
+                                <option value="1" #{if $user.settlement == 1} selected #{/if}>微信</option>
+                                <option value="3" #{if $user.settlement == 3} selected #{/if}>USDT (TRC20)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-header">支付宝账号（提现）</div>
+                        <div class="form-body"><input type="text" value="#{$user.alipay}" name="alipay" autocomplete="off" placeholder="兑现使用的支付宝账号" class="layui-input"></div>
+                    </div>
+                    <div>
+                        <div class="form-header">钱包地址（TRC20）</div>
+                        <div class="form-body"><input type="text" value="#{$user.wallet_address}" name="wallet_address" autocomplete="off" placeholder="兑现使用的钱包地址" class="layui-input"></div>
+                    </div>
+                    <div>
+                        <div class="form-header">微信收款二维码（提现）</div>
+                        <div class="form-body">
+                            <input type="file" class="wechat-input" style="display:none;">
+                            <input type="text" name="wechat" style="display:none;" value="">
+                            #{if $user.wechat == ''}
+                            <i class="layui-icon wx_qrcode_temp" onclick="document.getElementsByClassName('wechat-input')[0].click()">&#xe681;</i>
+                            #{else}
+                            <div class="wx_qrcode" onclick="document.getElementsByClassName('wechat-input')[0].click()"></div>
+                            #{/if}
+                        </div>
+                    </div>
+
+                    <!--start::HOOK-->
+                    #{hook(\App\Consts\Hook::USER_VIEW_PERSONAL_FORM)}
+                    <!--end::HOOK-->
+
+                    <div style="margin-top:24px;">
+                        <button type="button" class="uc-cta save-data"><span class="material-icons-outlined">save</span>保存修改</button>
+                    </div>
+                </div>
+            </form>
+            </div>
+
+            <div class="uc-tabpanel active" data-panel="security">
+                <div class="uc-info">
+                    <div class="uc-info__row">
+                        <div class="uc-info__k">登录 IP 地址</div>
+                        <div class="uc-info__v"><span class="uc-ip">#{$user.login_ip}</span></div>
+                    </div>
+                    <div class="uc-info__row">
+                        <div class="uc-info__k">登录时间</div>
+                        <div class="uc-info__v">#{$user.login_time}</div>
+                    </div>
+                    <div class="uc-info__row">
+                        <div class="uc-info__k">上次登录 IP</div>
+                        <div class="uc-info__v">
+                            #{if $user.last_login_ip}<span class="uc-ip">#{$user.last_login_ip}</span>#{if $user.login_ip != $user.last_login_ip} <span class="uc-warn">（异地登录）</span>#{/if}#{else}-#{/if}
+                        </div>
+                    </div>
+                    <div class="uc-info__row">
+                        <div class="uc-info__k">上次登录时间</div>
+                        <div class="uc-info__v">#{if $user.last_login_time}#{$user.last_login_time}#{else}-#{/if}</div>
+                    </div>
+                    <div class="uc-info__row">
+                        <div class="uc-info__k">商户 ID</div>
+                        <div class="uc-info__v"><span class="uc-chip">#{$user.id}</span></div>
+                    </div>
+                    <div class="uc-info__row">
+                        <div class="uc-info__k">商户密钥</div>
+                        <div class="uc-info__v">
+                            <span class="uc-chip app-key">#{$user.app_key}</span>
+                            <span class="uc-minibtn uc-minibtn--reset reset-key"><span class="material-icons-outlined">refresh</span>重置</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
 
 #{ready("/assets/user/controller/security/personal.js" , [
 "_user_wechat" => $user.wechat

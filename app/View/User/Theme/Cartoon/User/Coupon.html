@@ -1,31 +1,22 @@
 #{include file="../Common/Header.html"}
-<div class="layui-container fly-marginTop fly-user-main">
-    #{include file="../Common/Nav.html"}
-    <div class="fly-panel fly-panel-user" pad20>
-        <div class="layui-tab layui-tab-brief" lay-filter="user">
-            <div class="content-header">
-                <i class="layui-icon">&#xe638;</i> 优惠券管理
+<div class="uc-main">
+    <div class="uc-card">
+        <div class="uc-card__head">
+            <span class="material-icons-outlined">local_offer</span>
+            <span class="uc-card__title">优惠券管理</span>
+        </div>
+        <div class="uc-card__body">
+            <div class="uc-toolbar">
+                <button type="button" class="layui-btn layui-btn-sm button-add"><i class="fa-duotone fa-regular fa-circle-plus"></i> 生成优惠券</button>
+                <button type="button" class="layui-btn layui-btn-sm button-del"><i class="fa-duotone fa-regular fa-trash-can"></i> 移除选中优惠券</button>
+                <button type="button" class="layui-btn layui-btn-sm button-lock"><i class="fa-duotone fa-regular fa-lock-keyhole"></i> 锁定选中优惠券</button>
+                <button type="button" class="layui-btn layui-btn-sm button-unlock"><i class="fa-duotone fa-regular fa-lock-open"></i> 解锁选中优惠券</button>
+                <button type="button" class="layui-btn layui-btn-sm button-export"><i class="fa-duotone fa-regular fa-file-export"></i> 导出筛选优惠券</button>
             </div>
-
-            <div class="content-body">
-                <div style="margin-bottom: 5px;margin-top: 15px;">
-                    <button type="button" class="layui-btn layui-btn-sm layui-btn-pink button-add"><i class="fa-duotone fa-regular fa-circle-plus"></i> 生成优惠券
-                    </button>
-                    <button type="button" class="layui-btn layui-btn-sm layui-btn-pink button-del"><i class="fa-duotone fa-regular fa-trash-can"></i> 移除选中优惠券
-                    </button>
-
-                    <button type="button" class="layui-btn layui-btn-sm layui-btn-pink button-lock"><i class="fa-duotone fa-regular fa-lock-keyhole"></i> 锁定选中优惠券
-                    </button>
-
-                    <button type="button" class="layui-btn layui-btn-sm layui-btn-pink button-unlock"><i class="fa-duotone fa-regular fa-lock-open"></i> 解锁选中优惠券
-                    </button>
-                    <button type="button" class="layui-btn layui-btn-sm layui-btn-pink button-export"><i class="fa-duotone fa-regular fa-file-export"></i> 导出筛选优惠券
-                    </button>
-                </div>
-                <table id="coupon-table"></table>
-            </div>
+            <table id="coupon-table"></table>
         </div>
     </div>
 </div>
+
 #{ready("/assets/user/controller/business/coupon.js")}
 #{include file="../Common/Footer.html"}

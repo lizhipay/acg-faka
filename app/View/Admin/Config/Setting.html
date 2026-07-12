@@ -11,7 +11,7 @@
     <!--begin::Post-->
     <div class="post d-flex flex-column-fluid" id="kt_post">
         <!--begin::Container-->
-        <div id="kt_content_container" class="container-xxl">
+        <div id="kt_content_container" class="container-xxl md-settings">
             <!--begin::Basic info-->
             <div class="card mb-5 mb-xl-10">
                 <!--begin::Card header-->
@@ -180,7 +180,7 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">会员中心</label>
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">PC会员中心</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-6 fv-row">
@@ -201,6 +201,39 @@
                                 <div class="col-lg-2 fv-row">
                                     <!--begin::Input-->
                                     <button type="button" class="btn btn-light theme-user-setting"><i class="fa-duotone fa-regular fa-folder-gear"></i> 模板设置
+                                    </button>
+                                    <!--end::Input-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">手机会员中心</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-6 fv-row">
+                                    <!--begin::Input-->
+                                    <select name="user_center_mobile_theme"
+                                            class="form-select form-select-solid form-select-lg"
+                                            data-control="select2" data-hide-search="true">
+                                        <option value="0" #{if "0" == $user_center_mobile_theme} selected #{/if}>跟随PC会员中心模版</option>
+                                        #{foreach $themes as $theme}
+                                            <option value="#{$theme.info.KEY}" #{if $theme.info.KEY == $user_center_mobile_theme} selected #{/if}>
+                                                #{$theme.info.NAME} (v#{$theme.info.VERSION})
+                                                #{if $theme.have_update === true}
+                                                    -> 有更新(v#{$theme.update_version}) ‹ 请前往应用商店更新 ›
+                                                #{/if}
+                                            </option>
+                                        #{/foreach}
+                                    </select>
+                                    <!--end::Input-->
+                                </div>
+                                <div class="col-lg-2 fv-row">
+                                    <!--begin::Input-->
+                                    <button type="button" class="btn btn-light theme-user-mobile-setting"><i class="fa-duotone fa-regular fa-folder-gear"></i> 模板设置
                                     </button>
                                     <!--end::Input-->
                                 </div>
@@ -346,20 +379,7 @@
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
-                                    <div class="editor-wrapper">
-                                        <div>
-                                            <button data-type="0" class="button-switch-notice" type="button"
-                                                    style="width: 100%;border: none;background: rgba(255, 255, 255, 0.35);border-radius: 5px 5px 0 0;color: #c9b8b8;">
-                                                <i class="fa-duotone fa-regular fa-code me-1"></i>HTML
-                                            </button>
-                                        </div>
-                                        <div class="editor-content">
-                                            <div class="toolbar-container"></div>
-                                            <div class="editor-container"></div>
-                                        </div>
-                                        <textarea class="text-container" style="display: none;"
-                                                  name="notice"></textarea>
-                                    </div>
+                                    <div class="notice-editor"></div>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -380,6 +400,26 @@
                                         <option value="1" #{if $config.registered_type== 1} selected #{/if}>用户名+手机
                                         </option>
                                         <option value="2" #{if $config.registered_type== 2} selected #{/if}>用户名+邮箱
+                                        </option>
+                                    </select>
+                                    <!--end::Input-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">找回密码方式</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <!--begin::Input-->
+                                    <select name="forget_type" class="form-select form-select-solid form-select-lg"
+                                            data-control="select2" data-hide-search="true">
+                                        <option value="0" #{if $config.forget_type== 0} selected #{/if}>邮箱验证码
+                                        </option>
+                                        <option value="1" #{if $config.forget_type== 1} selected #{/if}>手机验证码
                                         </option>
                                     </select>
                                     <!--end::Input-->
@@ -456,23 +496,7 @@
                                 <!--end::Col-->
                             </div>
                             <!--end::Input group-->
-                            <!--begin::Input group-->
-                            <div class="row mb-6">
-                                <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label fw-bold fs-6">注册开关</label>
-                                <!--begin::Label-->
-                                <!--begin::Label-->
-                                <div class="col-lg-8 d-flex align-items-center">
-                                    <div class="form-check form-check-solid form-switch fv-row">
-                                        <input class="form-check-input w-45px h-30px" type="checkbox"
-                                               name="registered_state"
-                                               value="1" #{if $config.registered_state== 1} checked #{/if}/>
-                                        <label class="form-check-label"></label>
-                                    </div>
-                                </div>
-                                <!--begin::Label-->
-                            </div>
-                            <!--end::Input group-->
+
 
                             <!--begin::Input group-->
                             <div class="row mb-6">
@@ -490,26 +514,6 @@
                             <!--end::Input group-->
 
 
-                            <!--begin::Input group-->
-                            <div class="row mb-6">
-                                <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">找回密码方式</label>
-                                <!--end::Label-->
-                                <!--begin::Col-->
-                                <div class="col-lg-8 fv-row">
-                                    <!--begin::Input-->
-                                    <select name="forget_type" class="form-select form-select-solid form-select-lg"
-                                            data-control="select2" data-hide-search="true">
-                                        <option value="0" #{if $config.forget_type== 0} selected #{/if}>邮箱验证码
-                                        </option>
-                                        <option value="1" #{if $config.forget_type== 1} selected #{/if}>手机验证码
-                                        </option>
-                                    </select>
-                                    <!--end::Input-->
-                                </div>
-                                <!--end::Col-->
-                            </div>
-                            <!--end::Input group-->
 
                             <!--begin::Input group-->
                             <div class="row mb-6">
@@ -523,6 +527,24 @@
                                            placeholder="请输入会话保持时间，单位/秒" value="#{$config.session_expire}"/>
                                 </div>
                                 <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">注册开关</label>
+                                <!--begin::Label-->
+                                <!--begin::Label-->
+                                <div class="col-lg-8 d-flex align-items-center">
+                                    <div class="form-check form-check-solid form-switch fv-row">
+                                        <input class="form-check-input w-45px h-30px" type="checkbox"
+                                               name="registered_state"
+                                               value="1" #{if $config.registered_state== 1} checked #{/if}/>
+                                        <label class="form-check-label"></label>
+                                    </div>
+                                </div>
+                                <!--begin::Label-->
                             </div>
                             <!--end::Input group-->
 
@@ -561,7 +583,7 @@
                         <!--end::Card body-->
                         <!--begin::Actions-->
                         <div class="card-footer d-flex justify-content-center py-6 px-9">
-                            <button type="button" class="btn btn-primary save-data">保存设置 (Save Config)</button>
+                            <button type="button" class="btn btn-primary save-data"><i class="fa-duotone fa-regular fa-floppy-disk me-2"></i>保存设置 (Save Config)</button>
                         </div>
                         <!--end::Actions-->
                     </form>

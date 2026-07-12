@@ -18,85 +18,13 @@
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
             <!--begin::Row-->
-            <div class="row g-5 g-xl-10">
-                <div class="col-xl-2">
-                    <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
-                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
-                        <!--begin::Body-->
-                        <div class="card-body">
-                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">总用户</span>
-                            <div class="fw-bolder fs-1 text-primary my-6">#{$userCount}</div>
-                        </div>
-                        <!--end::Body-->
-                    </div>
-                    <!--end::Statistics Widget 1-->
-                </div>
-                <div class="col-xl-2">
-                    <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
-                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
-                        <!--begin::Body-->
-                        <div class="card-body">
-                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">商家</span>
-                            <div class="fw-bolder fs-1 text-success my-6">#{$businessCount}</div>
-                        </div>
-                        <!--end::Body-->
-                    </div>
-                    <!--end::Statistics Widget 1-->
-                </div>
-                <div class="col-xl-2">
-                    <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
-                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
-                        <!--begin::Body-->
-                        <div class="card-body">
-                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">当前余额</span>
-                            <div class="fw-bolder fs-1 text-primary my-6">￥#{$balance}</div>
-                        </div>
-                        <!--end::Body-->
-                    </div>
-                    <!--end::Statistics Widget 1-->
-                </div>
-                <div class="col-xl-2">
-                    <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
-                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
-                        <!--begin::Body-->
-                        <div class="card-body">
-                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">总充值</span>
-                            <div class="fw-bolder fs-1 text-success my-6">#{$recharge}</div>
-                        </div>
-                        <!--end::Body-->
-                    </div>
-                    <!--end::Statistics Widget 1-->
-                </div>
-                <div class="col-xl-2">
-                    <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
-                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
-                        <!--begin::Body-->
-                        <div class="card-body">
-                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">当前硬币</span>
-                            <div class="fw-bolder fs-1 text-primary my-6">￥#{$coin}</div>
-                        </div>
-                        <!--end::Body-->
-                    </div>
-                    <!--end::Statistics Widget 1-->
-                </div>
-                <div class="col-xl-2">
-                    <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
-                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
-                        <!--begin::Body-->
-                        <div class="card-body">
-                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">总获得硬币</span>
-                            <div class="fw-bolder fs-1 text-success my-6">#{$totalCoin}</div>
-                        </div>
-                        <!--end::Body-->
-                    </div>
-                    <!--end::Statistics Widget 1-->
-                </div>
+            <div class="row g-4">
+                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="primary" icon="fa-users" label="总用户" value=$userCount}
+                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="success" icon="fa-shop" label="商家" value=$businessCount}
+                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="primary" icon="fa-wallet" label="当前余额" value=$balance}
+                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="success" icon="fa-money-bill-wave" label="总充值" value=$recharge}
+                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="warning" icon="fa-coins" label="当前硬币" value=$coin}
+                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="success" icon="fa-coins" label="总获得硬币" value=$totalCoin}
             </div>
             <!--end::Row-->
 

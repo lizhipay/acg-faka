@@ -121,7 +121,7 @@
         {checkbox: true},
         {field: 'icon', title: '', type: "image", style: "border-radius:25%;", width: 28},
         {
-            field: 'owner', title: '创建者', formatter: format.owner
+            field: 'owner', title: '创建者', formatter: (_, __) => mdOwnerCell(_)
         },
         {
             field: 'name', title: '分类名称'

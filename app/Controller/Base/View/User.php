@@ -93,7 +93,16 @@ abstract class User extends \App\Controller\Base\User
                     $theme = $cfg['user_theme'];
                 }
             } else {
-                $theme = $cfg['user_center_theme'] ?: "Cartoon";
+                $centerTheme = $cfg['user_center_theme'] ?? "Cartoon";
+                if (Client::isMobile()) {
+                    $theme = $cfg['user_center_mobile_theme'] ?? "0";
+                    if ($theme === "" || $theme === "0") {
+                        $theme = $centerTheme;
+                    }
+                } else {
+                    $theme = $centerTheme;
+                }
+                $theme = $theme ?: "Cartoon";
             }
 
             //模板静态路径

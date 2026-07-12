@@ -22,20 +22,27 @@ class Commodity extends Manage
     public function index(): string
     {
 
-        $data = [];
         //未上架
-        $data['not'] = \App\Model\Commodity::query()->where("status", 0)->count();
+        $not = \App\Model\Commodity::query()->where("status", 0)->count();
         //已上架
-        $data['shelves'] = \App\Model\Commodity::query()->where("status", 1)->count();
+        $shelves = \App\Model\Commodity::query()->where("status", 1)->count();
         //主站商品
-        $data['main'] = \App\Model\Commodity::query()->where("owner", 0)->count();
+        $main = \App\Model\Commodity::query()->where("owner", 0)->count();
         //总商品
-        $data['all'] = $data['not'] + $data['shelves'];
+        $all = $not + $shelves;
         //子站商品
-        $data['child'] = $data['all'] - $data['main'];
+        $child = $all - $main;
         //子站上架
-        $data['child_shelves'] = \App\Model\Commodity::query()->where("status", 1)->where("owner", "!=", 0)->count();
+        $childShelves = \App\Model\Commodity::query()->where("status", 1)->where("owner", "!=", 0)->count();
 
+        $data = [
+            'not' => number_format($not),
+            'shelves' => number_format($shelves),
+            'main' => number_format($main),
+            'all' => number_format($all),
+            'child' => number_format($child),
+            'child_shelves' => number_format($childShelves),
+        ];
 
         return $this->render("商品管理", "Trade/Commodity.html", $data);
     }

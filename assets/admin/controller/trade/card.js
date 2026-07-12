@@ -112,18 +112,12 @@
                             name: "general_card",
                             type: "custom",
                             complete: (form, dom) => {
-                                dom.html(`<div class="card no-shadow transparent h-100  border-0">
-        <div class="card-body p-4">
-          <p class="text-muted">一行一个库存卡密，内容随意。买家购买后直接获得该行内容。</p>
-          <div class="translucent border rounded p-3">
-            <div class="fw-bold mb-2 small text-uppercase text-secondary">示例</div>
-<pre class="mb-0" style="white-space: pre-wrap; word-break: break-all;">
-ABCDEF-GHIJK-LMNOP
-VIP-2025-0821-XYZ
-</pre>
-          </div>
-        </div>
-      </div>`);
+                                dom.html(`<div class="uc-cardtip">
+          <p>一行一个库存卡密，内容随意。买家购买后直接获得该行内容。</p>
+          <div class="uc-cardtip__label">示例</div>
+          <pre class="uc-cardtip__code">ABCDEF-GHIJK-LMNOP
+VIP-2025-0821-XYZ</pre>
+        </div>`);
                             }
                         },
                         {
@@ -132,35 +126,20 @@ VIP-2025-0821-XYZ
                             name: "account_card",
                             type: "custom",
                             complete: (form, dom) => {
-                                dom.html(` <div class="card no-shadow transparent h-100 shadow border-0">
-        <div class="card-body">
-           
-          <p class="text-muted mb-3">
-            一行一个，必须使用 <code>║</code> 分隔，结构为：  
-            <span class="text-dark fw-bold">卡密本体 ║ 预告信息 ║ 自选加价金额(可选) ║ 自选加价成本(可选)</span>
-          </p>
-
-          <ul class="list-unstyled small mb-3">
-            <li class="mb-1"><span class="a-badge a-badge-dark me-1">卡密本体</span> 买家付款后实际获得的完整内容</li>
-            <li class="mb-1"><span class="a-badge a-badge-success me-1">预告信息</span> 买家下单时可见，用于自选</li>
-            <li class="mb-1"><span class="a-badge a-badge-warning text-dark me-1">自选加价金额</span> 选填，不写默认为 0</li>
-            <li><span class="a-badge a-badge-primary text-dark me-1">自选加价成本</span> 选填，不写默认为 0</li>
+                                dom.html(`<div class="uc-cardtip">
+          <p>一行一个，必须使用 <code>║</code> 分隔，结构为：<b>卡密本体 ║ 预告信息 ║ 自选加价金额(可选) ║ 自选加价成本(可选)</b></p>
+          <ul class="uc-cardtip__legend">
+            <li><span class="a-badge a-badge-dark">卡密本体</span><span>买家付款后实际获得的完整内容</span></li>
+            <li><span class="a-badge a-badge-success">预告信息</span><span>买家下单时可见，用于自选</span></li>
+            <li><span class="a-badge a-badge-warning">自选加价金额</span><span>选填，不写默认为 0</span></li>
+            <li><span class="a-badge a-badge-primary">自选加价成本</span><span>选填，不写默认为 0</span></li>
           </ul>
-
-          <div class="translucent border rounded p-3">
-            <div class="fw-bold mb-2 small text-uppercase text-secondary">示例</div>
-<pre class="mb-0" style="white-space: pre-wrap; word-break: break-all;">
-账号:testname--密码:testpassword123║大区:神境之地--等级:100║5.5║2.5
+          <div class="uc-cardtip__label">示例</div>
+          <pre class="uc-cardtip__code">账号:testname--密码:testpassword123║大区:神境之地--等级:100║5.5║2.5
 ACC_US_12M_9F2K-7QPA-88XZ║地区:美区·时长:12个月║20║8
-ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月
-</pre>
-          </div>
-
-          <div class="alert alert-warning mt-3 mb-0 small">
-            ⚠️ 必须使用特殊符号 <strong>“║”</strong>（U+2551），不要用普通竖线“|”
-          </div>
-        </div>
-      </div>`);
+ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
+          <div class="uc-cardtip__warn"><span class="material-icons-outlined">warning_amber</span><span>必须使用特殊符号 <strong>║</strong>（U+2551），不要用普通竖线 |</span></div>
+        </div>`);
                             }
                         },
                         {
@@ -251,44 +230,54 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月
             field: 'draft', title: '预告内容'
         },
         {
-            field: 'draft_premium', title: '预选加价', formatter: _ => format.money(_)
-        },
-        {
-            field: 'cost', title: '预选成本'
+            field: 'draft_premium', title: '预选加价/成本', formatter: (_, __) => {
+                const premium = parseFloat(__.draft_premium) || 0;
+                const cost = parseFloat(__.cost) || 0;
+                if (premium <= 0 && cost <= 0) return '-';
+                const fmt = v => '¥' + format.amountRemoveTrailingZeros(v);
+                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">加价</span><span class="md-pair__v" style="color:var(--md-success);font-weight:600">${fmt(premium)}</span></div><div class="md-pair__row"><span class="md-pair__k">成本</span><span class="md-pair__v md-pair__v--muted">${fmt(cost)}</span></div></div>`;
+            }
         }
         , {
-            field: 'commodity', title: '商品', formatter: format.item
+            field: 'commodity', title: '商品', formatter: (_, __) => {
+                const c = _ || {};
+                const cover = c.cover
+                    ? `<img src="${c.cover}" class="md-commodity-cell__cover" alt="">`
+                    : `<span class="md-commodity-cell__cover md-commodity-cell__cover--ph"><i class="fa-duotone fa-regular fa-image"></i></span>`;
+                const owner = (__.owner && __.owner.username) ? __.owner.username : '主站';
+                return `<div class="md-commodity-cell md-commodity-cell--sm">${cover}<div class="md-commodity-cell__text"><span class="md-commodity-cell__name">${c.name || ''}</span><span class="md-commodity-cell__sub">${owner}</span></div></div>`;
+            }
         }
         , {
-            field: 'race', title: '类别'
+            field: 'race', title: '类别/SKU', formatter: (_, __) => {
+                const race = (__.race && __.race !== '-') ? __.race : '';
+                const hasSku = !util.isEmptyOrNotJson(__.sku);
+                if (!race && !hasSku) return '-';
+                let rows = `<div class="md-pair__row"><span class="md-pair__k">类别</span><span class="md-pair__v">${race || '-'}</span></div>`;
+                if (hasSku) {
+                    let badges = '';
+                    for (const x in __.sku) badges += format.badge(`${x}: ${__.sku[x]}`, "a-badge-info");
+                    rows += `<div class="md-pair__row"><span class="md-pair__k">SKU</span><span class="md-pair__v">${format.badgeGroup(badges)}</span></div>`;
+                }
+                return `<div class="md-pair">${rows}</div>`;
+            }
         }
-        , {field: 'create_time', title: '创建时间'}
+        , {
+            field: 'create_time', title: '创建/出售时间', formatter: (_, __) => {
+                const sold = __.purchase_time
+                    ? `<span class="md-pair__v">${__.purchase_time}</span>`
+                    : `<span class="md-pair__v md-pair__v--muted">未出售</span>`;
+                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">创建</span><span class="md-pair__v">${__.create_time || '-'}</span></div><div class="md-pair__row"><span class="md-pair__k">出售</span>${sold}</div></div>`;
+            }
+        }
         , {field: 'note', title: '备注信息'}
         , {
             field: 'status', title: '状态', dict: "_card_status"
         }
         , {
-            field: 'purchase_time', title: '出售时间'
-        }
-        , {
             field: 'order.trade_no', title: '订单号'
         }
         , {
-            field: 'sku', title: 'SKU', formatter: _ => {
-                if (!util.isEmptyOrNotJson(_)) {
-                    let h = ``;
-                    for (const x in _) {
-                        h += format.badge(`${x}: ${_[x]}`, "a-badge-info");
-                    }
-                    return format.badgeGroup(h);
-                }
-                return "-";
-            }
-        }
-        , {
-            field: 'owner', title: '所属者', formatter: format.owner
-        },
-        {
             field: 'operation', title: '操作', type: 'button', buttons: [
                 {
                     icon: 'fa-duotone fa-regular fa-pen-to-square',

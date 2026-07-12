@@ -1,59 +1,15 @@
 #{include file="../Common/Header.html"}
-<style>
-    .card-view-title {
-        color: #a26880;
-        font-weight: bolder !important;
-    }
-
-    .card-views {
-        border: none;
-        padding: 20px 20px;
-        border-radius: 20px;
-        box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
-    }
-
-    .card-views .card-view {
-        padding-top: 2px;
-        padding-bottom: 2px;
-    }
-
-    .card-views .card-view .secret {
-        border: none;
-        width: 100%;
-        height: 100px;
-        padding: 10px;
-        border-radius: 5px;
-        box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
-        background: #ffccd52e;
-        color: green;
-    }
-
-    .card-views .card-view .secret-download {
-        color: #0d8ddc;
-        border: none;
-        padding: 5px;
-        border-bottom-left-radius: 10px;
-        border-bottom-right-radius: 10px;
-        font-size: 13px;
-    }
-
-
-</style>
-
-<div class="layui-container fly-marginTop fly-user-main">
-    #{include file="../Common/Nav.html"}
-    <div class="fly-panel fly-panel-user" pad20>
-        <div class="layui-tab layui-tab-brief" lay-filter="user">
-            <div class="content-header">
-                <i class="layui-icon">&#xe638;</i> 购买记录
-            </div>
-            <div class="content-body">
-                <table id="bill-table"></table>
-            </div>
+<div class="uc-main">
+    <div class="uc-card">
+        <div class="uc-card__head">
+            <span class="material-icons-outlined">shopping_bag</span>
+            <span class="uc-card__title">购买记录</span>
+        </div>
+        <div class="uc-card__body">
+            <table id="bill-table"></table>
         </div>
     </div>
 </div>
-
 
 #{ready("/assets/user/controller/user/purchase.record.js")}
 #{include file="../Common/Footer.html"}

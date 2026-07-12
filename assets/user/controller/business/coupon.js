@@ -1,5 +1,39 @@
 !function () {
     let table, _createForms = [], _createSearchs = [];
+
+    // 生成优惠券成功后的结果弹窗(对标查看卡密 .md-secret):成功/失败徽章 + 券码块 + 复制/下载
+    const openCouponResult = (data) => {
+        const codes = data.code || '';
+        const okN = data.success || 0;
+        const failN = data.error || 0;
+        const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const meta = `<span class="a-badge a-badge-success">成功 ${okN} 张</span>`
+            + (failN > 0 ? `<span class="a-badge a-badge-danger">失败 ${failN} 张</span>` : '');
+        layer.open({
+            type: 1,
+            title: `${util.icon("fa-duotone fa-regular fa-circle-check")} 优惠券生成成功`,
+            area: util.isPc() ? '480px' : ["100%", "100%"],
+            shadeClose: true,
+            content: `<div class="md-secret"><div class="md-secret__meta">${meta}</div><div class="md-secret__code">${esc(codes)}</div><div class="md-secret__bar"><button type="button" class="md-secret__btn" data-act="copy">${util.icon("fa-duotone fa-regular fa-copy")} 复制</button><button type="button" class="md-secret__btn md-secret__btn--primary" data-act="download">${util.icon("fa-duotone fa-regular fa-download")} 下载</button></div></div>`,
+            success: (layero) => {
+                layero.find('[data-act="copy"]').on('click', () => {
+                    util.copyTextToClipboard(codes, () => message.success('优惠券已复制'));
+                });
+                layero.find('[data-act="download"]').on('click', () => {
+                    const blob = new Blob([codes], {type: 'text/plain;charset=utf-8'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `优惠券_${okN}张.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                });
+            }
+        });
+    };
+
     const createCoupon = () => {
         component.popup({
             submit: '/user/api/coupon/save',
@@ -151,13 +185,7 @@
             width: "680px",
             done: (res) => {
                 table.refresh();
-
-                layer.open({
-                    type: 1,
-                    title: "优惠券 [成功:" + res.data.success + "/失败:" + res.data.error + "]",
-                    area: util.isPc() ? ['420px', '660px'] : ["100%", "100%"],
-                    content: '<textarea class="layui-input" style="padding: 15px;height: 100%;line-height:18px;">' + res.data.code + '</textarea>'
-                });
+                openCouponResult(res.data);
             }
         });
     }

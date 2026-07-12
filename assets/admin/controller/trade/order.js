@@ -37,33 +37,41 @@
             field: 'trade_no', title: '订单号'
         }
         , {
-            field: 'owner', title: '客户', formatter: format.user
+            field: 'owner', title: '客户', formatter: (_, __) => mdUserCell(_)
         }
         , {
-            field: 'commodity', title: '商品', formatter: format.item
-        }
-        , {
-            field: 'sku', title: 'SKU', formatter: (_, __) => {
-                let d = ``;
-
-                if (__.race) {
-                    d += format.badge(`分类:${__.race}`, "a-badge-info");
-                }
-
-                if (!util.isEmptyOrNotJson(__.sku)) {
-                    for (const skuKey in __.sku) {
-                        d += format.badge(`${skuKey}:${__.sku[skuKey]}`, "a-badge-info");
-                    }
-                }
-
-                return d ? format.badgeGroup(d) : "-";
+            field: 'commodity', title: '商品', formatter: (_, __) => {
+                const c = _ || {};
+                const cover = c.cover
+                    ? `<img src="${c.cover}" class="md-commodity-cell__cover" alt="">`
+                    : `<span class="md-commodity-cell__cover md-commodity-cell__cover--ph"><i class="fa-duotone fa-regular fa-image"></i></span>`;
+                const ownerObj = __.user || __.substation_user;
+                const owner = (ownerObj && ownerObj.username) ? ownerObj.username : '主站';
+                return `<div class="md-commodity-cell md-commodity-cell--sm">${cover}<div class="md-commodity-cell__text"><span class="md-commodity-cell__name">${c.name || ''}</span><span class="md-commodity-cell__sub">${owner}</span></div></div>`;
             }
         }
         , {
-            field: 'card_num', title: '数量'
+            field: 'sku', title: '类别/SKU', formatter: (_, __) => {
+                const race = (__.race && __.race !== '-') ? __.race : '';
+                const hasSku = !util.isEmptyOrNotJson(__.sku);
+                if (!race && !hasSku) return '-';
+                let rows = `<div class="md-pair__row"><span class="md-pair__k">类别</span><span class="md-pair__v">${race || '-'}</span></div>`;
+                if (hasSku) {
+                    let badges = '';
+                    for (const x in __.sku) badges += format.badge(`${x}: ${__.sku[x]}`, "a-badge-info");
+                    rows += `<div class="md-pair__row"><span class="md-pair__k">SKU</span><span class="md-pair__v">${format.badgeGroup(badges)}</span></div>`;
+                }
+                return `<div class="md-pair">${rows}</div>`;
+            }
         }
         , {
-            field: 'amount', title: '金额', formatter: _ => format.money(_, "green")
+            field: 'card_num', title: '数量/金额', formatter: (_, __) => {
+                const amt = parseFloat(__.amount) || 0;
+                const amountHtml = amt > 0
+                    ? `<span class="md-pair__v" style="color:var(--md-success);font-weight:600">¥${format.amountRemoveTrailingZeros(amt)}</span>`
+                    : `<span class="md-pair__v md-pair__v--muted">¥0</span>`;
+                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">数量</span><span class="md-pair__v">${__.card_num ?? '-'}</span></div><div class="md-pair__row"><span class="md-pair__k">金额</span>${amountHtml}</div></div>`;
+            }
         }
         , {
             field: 'commodity.delivery_way', title: '发货方式', dict: "_order_delivery_way"
@@ -78,37 +86,29 @@
             field: 'delivery_status', title: '发货状态', dict: "_order_delivery_status"
         }
         , {
-            field: 'cost', title: '手续费', formatter: _ => format.money(_, "blue")
+            field: 'cost', title: '手续费/佣金', formatter: (_, __) => {
+                const fee = parseFloat(__.cost) || 0;
+                const rebate = parseFloat(__.rebate) || 0;
+                if (fee <= 0 && rebate <= 0) return '-';
+                const fmt = v => '¥' + format.amountRemoveTrailingZeros(v);
+                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">手续费</span><span class="md-pair__v" style="color:var(--md-info)">${fmt(fee)}</span></div><div class="md-pair__row"><span class="md-pair__k">佣金</span><span class="md-pair__v md-pair__v--muted">${fmt(rebate)}</span></div></div>`;
+            }
         }
         , {
             field: 'rent', title: '消耗成本'
         }
         , {
-            field: 'user', title: '商家/分站', formatter: (_, __) => {
-                if (_) {
-                    return format.owner(_);
-                }
-
-                return format.owner(__.substation_user);
-            }
-        }
-        , {
-            field: 'rebate', title: '分站佣金', formatter: _ => {
-                if (_ > 0) {
-                    return format.badge(_, "a-badge-primary");
-                }
-                return '-';
-            }
-        }
-        , {
-            field: 'promote', title: '推广人', formatter: format.user
-        }
-        , {
-            field: 'divide_amount', title: '推广分成', formatter: _ => {
-                if (_ > 0) {
-                    return format.badge(_, "a-badge-success");
-                }
-                return '-';
+            field: 'promote', title: '推广人/分成', formatter: (_, __) => {
+                if (!_) return '-';
+                const name = _.username || '';
+                const avatar = _.avatar
+                    ? `<img src="${_.avatar}" class="md-user-cell__avatar" alt="">`
+                    : `<span class="md-user-cell__avatar md-user-cell__avatar--ph">${(name.charAt(0) || '?').toUpperCase()}</span>`;
+                const divide = parseFloat(__.divide_amount) || 0;
+                const sub = divide > 0
+                    ? `<span class="md-user-cell__sub" style="color:var(--md-success);font-weight:600">分成 ¥${format.amountRemoveTrailingZeros(divide)}</span>`
+                    : `<span class="md-user-cell__sub">分成 ¥0</span>`;
+                return `<div class="md-user-cell">${avatar}<div class="md-user-cell__text"><span class="md-user-cell__name">${name}</span>${sub}</div></div>`;
             }
         }
         , {
@@ -119,11 +119,30 @@
                     title: "查看",
                     show: _ => _?.commodity?.delivery_way === 0 && _.delivery_status == 1,
                     click: (event, value, map, index) => {
+                        const secret = map.secret ?? '';
+                        const escaped = String(secret).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                         layer.open({
                             type: 1,
                             title: `${util.icon("fa-duotone fa-regular fa-eye")} 查看卡密`,
-                            area: util.isPc() ? ['420px', '420px'] : ["100%", "100%"],
-                            content: '<textarea class="layui-input" style="padding: 15px;height: 100%;">' + map.secret + '</textarea>'
+                            area: util.isPc() ? '480px' : ["100%", "100%"],
+                            shadeClose: true,
+                            content: `<div class="md-secret"><div class="md-secret__code">${escaped}</div><div class="md-secret__bar"><button type="button" class="md-secret__btn" data-act="copy">${util.icon("fa-duotone fa-regular fa-copy")} 复制</button><button type="button" class="md-secret__btn md-secret__btn--primary" data-act="download">${util.icon("fa-duotone fa-regular fa-download")} 下载</button></div></div>`,
+                            success: (layero) => {
+                                layero.find('[data-act="copy"]').on('click', () => {
+                                    util.copyTextToClipboard(secret, () => message.success('卡密已复制'));
+                                });
+                                layero.find('[data-act="download"]').on('click', () => {
+                                    const blob = new Blob([secret], {type: 'text/plain;charset=utf-8'});
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `卡密_${map.trade_no || 'export'}.txt`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    a.remove();
+                                    URL.revokeObjectURL(url);
+                                });
+                            }
                         });
                     }
                 },
@@ -153,27 +172,21 @@
                         return true;
                     },
                     click: (event, value, map, index) => {
-                        let html = '<div style="padding: 10px;" class="more-table">\n' +
-                            '        <table class="layui-table">\n' +
-                            '            <tbody class="widget-container">\n' +
-                            '            </tbody>\n' +
-                            '        </table>\n' +
-                            '    </div>';
                         let parse = JSON.parse(map.widget);
                         if (!parse) {
                             return;
                         }
+                        const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        let rows = '';
+                        for (const k in parse) {
+                            rows += `<div class="md-detail__row"><span class="md-detail__label">${esc(parse[k].cn)}</span><span class="md-detail__value">${esc(parse[k].value ?? '-')}</span></div>`;
+                        }
                         layer.open({
                             type: 1,
                             shadeClose: true,
-                            title: '<i class="fa-duotone fa-regular fa-diamonds-4"></i> <span style="color: gray;">Widget</span>',
-                            content: html,
-                            area: util.isPc() ? "420px" : ["100%", "100%"],
-                            success: () => {
-                                for (const parseKey in parse) {
-                                    $('.widget-container').append('<tr><td>' + parse[parseKey].cn + '</td><td>' + parse[parseKey].value + '</td></tr>');
-                                }
-                            }
+                            title: `${util.icon("fa-duotone fa-regular fa-diamonds-4")} 控件信息`,
+                            content: `<div class="md-detail" style="padding:6px 14px 14px;"><div class="md-detail__body">${rows}</div></div>`,
+                            area: util.isPc() ? "460px" : ["100%", "100%"]
                         });
                     }
                 }
@@ -181,33 +194,23 @@
         }
     ]);
 
-    table.setFloatMessage([
-        {
-            field: 'contact', title: '联系方式'
-        },
-        {
-            field: 'password', title: '查询密码'
-        },
-        {
-            field: 'create_time', title: '下单时间'
-        },
-        {
-            field: 'pay_time', title: '支付时间'
-        }
-        , {
-            field: 'create_ip', title: '客户IP'
-        }
-
-        , {
-            field: 'create_device', title: '设备', dict: "_common_device"
-        }
-        , {
-            field: 'card.secret', title: '预选卡密'
-        }
-        , {
-            field: 'coupon.code', title: '优惠券'
-        }
-    ]);
+    // 双击订单号 → MUI 详情弹窗（取代原 hover 黑色浮层 setFloatMessage）
+    table.setColumnDetail({
+        column: 'trade_no',
+        trigger: 'dblclick',
+        header: false,
+        title: (row) => row.trade_no,
+        fields: [
+        {field: 'contact', title: '联系方式'},
+        {field: 'password', title: '查询密码'},
+        {field: 'create_time', title: '下单时间'},
+        {field: 'pay_time', title: '支付时间'},
+        {field: 'create_ip', title: '客户IP'},
+        {field: 'create_device', title: '设备', dict: "_common_device"},
+        {field: 'card.secret', title: '预选卡密'},
+        {field: 'coupon.code', title: '优惠券'}
+        ]
+    });
 
     table.setSearch([
         {title: "订单号", name: "equal-trade_no", type: "input"},
@@ -231,9 +234,9 @@
     table.setState("status", "_order_status");
 
     table.onResponse(res => {
-        $('.order_count').html(res.data.total);
-        $('.order_amount').html(res.data.order_amount);
-        $('.order_cost').html(res.data.order_cost);
+        $('.order_count').html(Number(res.data.total || 0).toLocaleString('en-US'));
+        $('.order_amount').html('￥' + Number(res.data.order_amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+        $('.order_cost').html('￥' + Number(res.data.order_cost || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
     });
 
     table.render();

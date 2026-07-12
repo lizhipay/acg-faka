@@ -1,52 +1,164 @@
 #{include file="../Common/Header.html"}
-<div class="layui-container fly-marginTop fly-user-main">
-    #{include file="../Common/Nav.html"}
-    <div class="fly-panel fly-panel-user" pad20>
-        <div class="layui-tab layui-tab-brief">
+<div class="uc-main">
+    <div class="uc-cash" data-coin="#{$user.coin}" data-min="#{$config.cash_min}" data-fee="#{$config.cash_cost}">
+        <section class="uc-card uc-cash-hero">
+            <div class="uc-card__body">
+                <div class="uc-subtab">
+                    <a href="/user/cash/index" class="active"><span class="material-icons-outlined">payments</span>硬币兑现</a>
+                    <a href="/user/cash/record"><span class="material-icons-outlined">history</span>兑现记录<span class="uc-count">#{$processing}</span></a>
+                </div>
 
-            <ul class="layui-tab-title">
-                <li class="layui-this"><a href="/user/cash/index"><i class="layui-icon">&#xe659;</i> 硬币兑现</a></li>
-                <li><a href="/user/cash/record"><i class="layui-icon">&#xe63c;</i> 兑现记录<span
-                        class="layui-badge layui-bg-cash">#{$processing}</span></a></li>
-            </ul>
-
-            <div class="content-body">
-                <blockquote class="elem-quote">
-                    最低兑现金额：<b>#{$config.cash_min}元</b>，手动提现费用：<b>#{$config.cash_cost}元</b>
-                </blockquote>
-                <form class="layui-form" action="">
-                    <div class="form-block">
-                        <div>
-                            <div class="form-header">兑现硬币 <span style="color: #63b584;font-size: 14px;">当前拥有硬币:#{$user.coin}</span>
-                            </div>
-                            <div class="form-body"><input type="text" name="amount" required lay-verify="required"
-                                                          value="#{$config.cash_min}" autocomplete="off"
-                                                          class="layui-input"
-                                                          style="width: 150px;color: #ff9191;"></div>
+                <span class="uc-cash-hero__glow"></span>
+                <div class="uc-cash-hero__content">
+                    <div class="uc-cash-balance">
+                        <span class="uc-cash-balance__icon"><span class="material-icons-outlined">toll</span></span>
+                        <div class="uc-cash-balance__copy">
+                            <span class="uc-cash-balance__label">当前可用硬币</span>
+                            <div class="uc-cash-balance__value">#{$user.coin}<small>硬币</small></div>
+                            <span class="uc-cash-balance__hint">可兑换至站内钱包或已绑定的收款账户</span>
                         </div>
-                        <div>
-                            <div class="form-header">兑现方式</div>
-                            <div class="form-body pay-list">
-                                #{if $config.cash_type_alipay == 1} <a class="button-click cash-wallet-btn" data-id="0" style="line-height: 22px;color: #db66ac;"><img
-                                    src="/assets/user/images/cash/alipay.png" class="pay-icon"> 支付宝</a> #{/if}
-                                #{if $config.cash_type_wechat == 1} <a class="button-click cash-wallet-btn"  data-id="1" style="line-height: 22px;color: #db66ac;"><img
-                                    src="/assets/user/images/cash/wechat.png" class="pay-icon"> 微信</a> #{/if}
-                                #{if $config.cash_type_usdt == 1} <a class="button-click cash-wallet-btn"  data-id="3" style="line-height: 22px;color: #db66ac;"><img
-                                    src="/assets/user/images/cash/usdt.png" class="pay-icon"> USDT(TRC20)</a> #{/if}
-                                #{if $config.cash_type_balance == 1} <a class="button-click cash-wallet-btn checked"  data-id="2" style="line-height: 22px;color: #db66ac;"><img
-                                    src="/assets/static/images/wallet.png" class="pay-icon"> 钱包余额(可直接消费)</a> #{/if}
-                            </div>
-                        </div>
-
-                        <div style="margin-top: 25px;">
-                            <button type="button" class="layui-btn layui-btn-pink payButton">立即兑现</button>
-                        </div>
-
                     </div>
-                </form>
+
+                    <div class="uc-cash-metrics">
+                        <div class="uc-cash-metric">
+                            <span class="uc-cash-metric__icon"><span class="material-icons-outlined">south_east</span></span>
+                            <span class="uc-cash-metric__label">最低兑现</span>
+                            <strong>#{$config.cash_min}<small>硬币</small></strong>
+                        </div>
+                        <div class="uc-cash-metric uc-cash-metric--fee">
+                            <span class="uc-cash-metric__icon"><span class="material-icons-outlined">receipt_long</span></span>
+                            <span class="uc-cash-metric__label">本次手续费</span>
+                            <strong>#{$config.cash_cost}<small>元</small></strong>
+                        </div>
+                        <a class="uc-cash-metric uc-cash-metric--pending" href="/user/cash/record">
+                            <span class="uc-cash-metric__icon"><span class="material-icons-outlined">schedule</span></span>
+                            <span class="uc-cash-metric__label">处理中</span>
+                            <strong>#{$processing}<small>笔</small></strong>
+                        </a>
+                    </div>
+                </div>
             </div>
+        </section>
+
+        <div class="uc-cash-grid">
+            <section class="uc-card uc-cash-form">
+                <div class="uc-card__head">
+                    <span class="material-icons-outlined">currency_exchange</span>
+                    <div class="uc-cash-cardtitle">
+                        <span class="uc-card__title">发起兑现</span>
+                        <span class="uc-card__sub">填写金额并选择到账方式</span>
+                    </div>
+                </div>
+                <div class="uc-card__body">
+                    <form class="layui-form" action="">
+                        <div class="uc-cash-step">
+                            <div class="uc-cash-step__head">
+                                <span class="uc-cash-step__num">1</span>
+                                <div>
+                                    <strong>兑现多少硬币</strong>
+                                    <span>1 硬币按 1 元结算，手续费从到账金额中扣除</span>
+                                </div>
+                            </div>
+                            <div class="uc-cash-amount">
+                                <span class="material-icons-outlined uc-cash-amount__icon">toll</span>
+                                <input type="text" name="amount" required lay-verify="required" value="#{$config.cash_min}" inputmode="decimal" autocomplete="off" aria-label="兑现硬币数量" class="layui-input">
+                                <span class="uc-cash-amount__unit">硬币</span>
+                            </div>
+                            <div class="uc-cash-amount__meta">
+                                <span>可用 <b>#{$user.coin}</b> 硬币</span>
+                                <button type="button" class="uc-cash-all"#{if $user.coin <= 0} disabled#{/if}>全部兑现</button>
+                            </div>
+                        </div>
+
+                        <div class="uc-cash-step uc-cash-step--method">
+                            <div class="uc-cash-step__head">
+                                <span class="uc-cash-step__num">2</span>
+                                <div>
+                                    <strong>选择到账方式</strong>
+                                    <span>站内钱包即时到账，外部账户需要人工审核</span>
+                                </div>
+                            </div>
+                            <div class="pay-list uc-cash-methods">
+                                #{if $config.cash_type_alipay == 1}
+                                <button type="button" class="button-click cash-wallet-btn uc-cash-method#{if $user.alipay == ''} is-unbound#{/if}" data-id="0" data-name="支付宝" data-speed="manual" data-ready="#{if $user.alipay == ''}0#{else}1#{/if}">
+                                    <span class="uc-cash-method__icon"><img src="/assets/user/images/cash/alipay.png" class="pay-icon" alt=""></span>
+                                    <span class="uc-cash-method__copy"><strong>支付宝</strong><small>#{if $user.alipay == ''}尚未绑定收款账号#{else}转入已绑定支付宝#{/if}</small></span>
+                                    <span class="uc-cash-method__check"><span class="material-icons-outlined">check</span></span>
+                                </button>
+                                #{/if}
+                                #{if $config.cash_type_wechat == 1}
+                                <button type="button" class="button-click cash-wallet-btn uc-cash-method#{if $user.wechat == ''} is-unbound#{/if}" data-id="1" data-name="微信" data-speed="manual" data-ready="#{if $user.wechat == ''}0#{else}1#{/if}">
+                                    <span class="uc-cash-method__icon"><img src="/assets/user/images/cash/wechat.png" class="pay-icon" alt=""></span>
+                                    <span class="uc-cash-method__copy"><strong>微信</strong><small>#{if $user.wechat == ''}尚未绑定收款二维码#{else}转入已绑定微信#{/if}</small></span>
+                                    <span class="uc-cash-method__check"><span class="material-icons-outlined">check</span></span>
+                                </button>
+                                #{/if}
+                                #{if $config.cash_type_usdt == 1}
+                                <button type="button" class="button-click cash-wallet-btn uc-cash-method#{if $user.wallet_address == ''} is-unbound#{/if}" data-id="3" data-name="USDT (TRC20)" data-speed="manual" data-ready="#{if $user.wallet_address == ''}0#{else}1#{/if}">
+                                    <span class="uc-cash-method__icon"><img src="/assets/user/images/cash/usdt.png" class="pay-icon" alt=""></span>
+                                    <span class="uc-cash-method__copy"><strong>USDT (TRC20)</strong><small>#{if $user.wallet_address == ''}尚未绑定钱包地址#{else}转入已绑定 TRC20 地址#{/if}</small></span>
+                                    <span class="uc-cash-method__check"><span class="material-icons-outlined">check</span></span>
+                                </button>
+                                #{/if}
+                                #{if $config.cash_type_balance == 1}
+                                <button type="button" class="button-click cash-wallet-btn uc-cash-method checked" data-id="2" data-name="钱包余额" data-speed="instant" data-ready="1">
+                                    <span class="uc-cash-method__icon"><img src="/assets/static/images/wallet.png" class="pay-icon" alt=""></span>
+                                    <span class="uc-cash-method__copy"><strong>钱包余额</strong><small>即时到账，可直接消费</small></span>
+                                    <span class="uc-cash-method__check"><span class="material-icons-outlined">check</span></span>
+                                </button>
+                                #{/if}
+                            </div>
+                            <div class="uc-cash-method-help">
+                                <span class="material-icons-outlined">manage_accounts</span>
+                                外部收款信息可在<a href="/user/security/personal?tab=edit">修改个人信息</a>中维护
+                            </div>
+                        </div>
+
+                        <div class="uc-cash-submit">
+                            <button type="button" class="uc-cta payButton" disabled aria-disabled="true">
+                                <span class="material-icons-outlined">arrow_outward</span>
+                                <span class="uc-cash-submit__label">暂不可兑现</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <aside class="uc-card uc-cash-receipt">
+                <div class="uc-card__head">
+                    <span class="material-icons-outlined">request_quote</span>
+                    <div class="uc-cash-cardtitle">
+                        <span class="uc-card__title">本次结算</span>
+                        <span class="uc-card__sub">金额变化会即时更新</span>
+                    </div>
+                </div>
+                <div class="uc-card__body">
+                    <div class="uc-cash-receipt__hero">
+                        <span>预计到账</span>
+                        <strong><span class="uc-cash-net">0</span><small>元</small></strong>
+                    </div>
+                    <div class="uc-cash-receipt__rows">
+                        <div><span>兑现硬币</span><strong><span class="uc-cash-gross">0</span> 硬币</strong></div>
+                        <div><span>服务手续费</span><strong class="uc-cash-fee">-#{$config.cash_cost} 元</strong></div>
+                        <div><span>到账方式</span><strong class="uc-cash-method-name">钱包余额</strong></div>
+                    </div>
+                    <div class="uc-cash-receipt__status is-error">
+                        <span class="material-icons-outlined">info</span>
+                        <span class="uc-cash-status-text">正在检查可兑现额度</span>
+                    </div>
+                    <div class="uc-cash-receipt__note">
+                        <span class="material-icons-outlined">bolt</span>
+                        <div><strong>到账说明</strong><span class="uc-cash-method-note">站内钱包即时到账，可直接用于购买商品。</span></div>
+                    </div>
+                    <div class="uc-cash-receipt__safe">
+                        <span class="material-icons-outlined">verified_user</span>
+                        <span>提交前请确认收款信息准确；外部账户申请提交后将进入人工审核。</span>
+                    </div>
+                </div>
+            </aside>
         </div>
     </div>
 </div>
+
 #{ready("/assets/user/controller/user/cash.js")}
 #{include file="../Common/Footer.html"}

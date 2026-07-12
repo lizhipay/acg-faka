@@ -1,141 +1,154 @@
 #{include file="../Common/Header.html"}
-<div class="layui-container fly-marginTop fly-user-main">
-    #{include file="../Common/Nav.html"}
-    <div class="fly-panel fly-panel-user" pad20>
-        <div class="layui-tab layui-tab-brief" lay-filter="user">
-            <div class="content-header">
-                <i class="layui-icon">&#xe638;</i> 我的主页
-            </div>
+<div class="uc-main">
 
-            <div class="content-body">
-                <blockquote class="elem-quote">
-                    欢迎回来，#{$user.username}
-                </blockquote>
-                <div style="padding: 10px;" class="more-table">
-                    <table class="layui-table">
-                        <tbody>
-                        <tr>
-                            <td class="layui-col-md2">登录IP地址：</td>
-                            <td class="layui-col-md10" style="color: #00A3FF">#{$user.login_ip}</td>
-                        </tr>
-                        <tr>
-                            <td class="layui-col-md2">登录时间：</td>
-                            <td class="layui-col-md10">#{$user.login_time}</td>
-                        </tr>
-                        <tr>
-                            <td class="layui-col-md2">上次登录IP：</td>
-                            <td class="layui-col-md10" style="color: #00A3FF;">#{if $user.last_login_ip}#{$user.last_login_ip} #{if
-                                $user.login_ip != $user.last_login_ip} <span style="color: red;">(异地登录)</span>#{/if}#{else}-#{/if}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="layui-col-md2">上次登录时间：</td>
-                            <td class="layui-col-md10">#{if $user.last_login_time}#{$user.last_login_time}#{else}-#{/if}</td>
-                        </tr>
-                        <tr>
-                            <td class="layui-col-md2">商户ID：</td>
-                            <td class="layui-col-md10"><span class="layui-badge layui-btn-pink">#{$user.id}</span></td>
-                        </tr>
-                        <tr>
-                            <td class="layui-col-md2">商户密钥：</td>
-                            <td class="layui-col-md10"><span
-                                    class="layui-badge layui-btn-pink app-key">#{$user.app_key}</span>
-                                <span class="layui-badge layui-bg-green reset-key" style="cursor: pointer;">重置</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="layui-col-md2">推广链接：</td>
-                            <td class="layui-col-md10"><a style="cursor: pointer;color: #0C84D1;" class="clipboard"
-                                                          data-text="#{$share_url}">#{$share_url}</a> (<span
-                                    style="color: #0f6674;">通过该链接消费的人会给您丰厚的佣金</span>)
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="layui-col-md2">推广人数：</td>
-                            <td class="layui-col-md10">#{$children}</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-
-                <div class="layui-row">
-
-                    <div class="layui-col-md3 card-data">
-                        <div class="layui-card">
-                            <div class="layui-card-header"><i class="layui-icon">&#xe65e;</i> 余额</div>
-                            <div class="layui-card-body">
-                                ￥#{$user.balance}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="layui-col-md3 card-data">
-                        <div class="layui-card">
-                            <div class="layui-card-header"><i class="layui-icon">&#xe735;</i> 硬币</div>
-                            <div class="layui-card-body">
-                                ￥#{$user.coin}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="layui-col-md3 card-data">
-                        <div class="layui-card">
-                            <div class="layui-card-header"><i class="layui-icon">&#xe65e;</i> 总充值</div>
-                            <div class="layui-card-body">
-                                ￥#{$user.recharge}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="layui-col-md3 card-data">
-                        <div class="layui-card">
-                            <div class="layui-card-header"><i class="layui-icon">&#xe735;</i> 总收入(硬币)</div>
-                            <div class="layui-card-body">
-                                ￥#{$user.total_coin}
-                            </div>
-                        </div>
-                    </div>
-                    #{if $user.businessLevel}
-                    <div class="layui-col-md3 card-data">
-                        <div class="layui-card">
-                            <div class="layui-card-header"><i class="layui-icon">&#xe748;</i> 今日收入</div>
-                            <div class="layui-card-body">
-                                ￥#{$today_income}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="layui-col-md3 card-data">
-                        <div class="layui-card">
-                            <div class="layui-card-header"><i class="layui-icon">&#xe6b1;</i> 昨日收入</div>
-                            <div class="layui-card-body">
-                                ￥#{$yesterday_income}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="layui-col-md3 card-data">
-                        <div class="layui-card">
-                            <div class="layui-card-header"><i class="layui-icon">&#xe67b;</i> 本周收入</div>
-                            <div class="layui-card-body">
-                                ￥#{$week_income}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="layui-col-md3 card-data">
-                        <div class="layui-card">
-                            <div class="layui-card-header"><i class="layui-icon">&#xe659;</i> 总交易</div>
-                            <div class="layui-card-body">
-                                ￥#{$trade}
-                            </div>
-                        </div>
-                    </div>
-
-                    #{/if}
-
-                </div>
-            </div>
+    <!-- 资产 -->
+    <div class="uc-subhead">资产数据</div>
+    <div class="uc-stats">
+        <div class="uc-stat uc-stat--primary">
+            <div class="uc-stat__label"><span class="material-icons-outlined">account_balance_wallet</span>余额</div>
+            <div class="uc-stat__value"><span class="cur">￥</span>#{$user.balance}</div>
+        </div>
+        <div class="uc-stat uc-stat--coin">
+            <div class="uc-stat__label"><span class="material-icons-outlined">paid</span>硬币</div>
+            <div class="uc-stat__value"><span class="cur">￥</span>#{$user.coin}</div>
+        </div>
+        <div class="uc-stat uc-stat--info">
+            <div class="uc-stat__label"><span class="material-icons-outlined">savings</span>元气（总充值）</div>
+            <div class="uc-stat__value">#{$user.recharge}</div>
+        </div>
+        <div class="uc-stat uc-stat--success">
+            <div class="uc-stat__label"><span class="material-icons-outlined">trending_up</span>总收入（硬币）</div>
+            <div class="uc-stat__value"><span class="cur">￥</span>#{$user.total_coin}</div>
         </div>
     </div>
 
-    #{ready("/assets/user/controller/dashboard/index.js")}
-    #{include file="../Common/Footer.html"}
+    #{if $user.businessLevel}
+    <!-- 经营(商家) -->
+    <div class="uc-subhead">经营数据</div>
+    <div class="uc-stats">
+        <div class="uc-stat uc-stat--success">
+            <div class="uc-stat__label"><span class="material-icons-outlined">today</span>今日收入</div>
+            <div class="uc-stat__value"><span class="cur">￥</span>#{$today_income}</div>
+        </div>
+        <div class="uc-stat uc-stat--info">
+            <div class="uc-stat__label"><span class="material-icons-outlined">event</span>昨日收入</div>
+            <div class="uc-stat__value"><span class="cur">￥</span>#{$yesterday_income}</div>
+        </div>
+        <div class="uc-stat uc-stat--warning">
+            <div class="uc-stat__label"><span class="material-icons-outlined">date_range</span>本月收入</div>
+            <div class="uc-stat__value"><span class="cur">￥</span>#{$month_income}</div>
+        </div>
+        <div class="uc-stat uc-stat--primary">
+            <div class="uc-stat__label"><span class="material-icons-outlined">insights</span>总交易</div>
+            <div class="uc-stat__value"><span class="cur">￥</span>#{$trade}</div>
+        </div>
+    </div>
+    <div class="uc-strip">
+        <a class="uc-strip__item" href="/user/order/index">
+            <span class="material-icons-outlined">receipt_long</span>
+            <span class="uc-strip__k">今日订单</span>
+            <span class="uc-strip__v">#{$today_orders}<span class="uc-stat__unit">单</span></span>
+        </a>
+        <a class="uc-strip__item #{if $pending_delivery > 0}uc-strip__item--alert#{/if}" href="/user/order/index">
+            <span class="material-icons-outlined">local_shipping</span>
+            <span class="uc-strip__k">待发货</span>
+            <span class="uc-strip__v">#{$pending_delivery}<span class="uc-stat__unit">单</span></span>
+        </a>
+        <a class="uc-strip__item" href="/user/card/index">
+            <span class="material-icons-outlined">vpn_key</span>
+            <span class="uc-strip__k">未售卡密</span>
+            <span class="uc-strip__v">#{$card_unsold}<span class="uc-stat__unit">张</span></span>
+        </a>
+        <a class="uc-strip__item" href="/user/commodity/index">
+            <span class="material-icons-outlined">inventory_2</span>
+            <span class="uc-strip__k">在售商品</span>
+            <span class="uc-strip__v">#{$commodity_online}<span class="uc-stat__unit">/ #{$commodity_count}</span></span>
+        </a>
+    </div>
+
+    <div class="uc-cols">
+        <div class="uc-card uc-col">
+            <div class="uc-card__head">
+                <span class="material-icons-outlined">bar_chart</span>
+                <span class="uc-card__title">近 7 日收入</span>
+                <span class="uc-card__tools uc-hint">峰值 ￥#{$week_series_max}</span>
+            </div>
+            <div class="uc-card__body">
+                <div class="uc-spark">
+                    #{foreach $week_series as $d}
+                    <div class="uc-spark__col" title="#{$d.label}：￥#{$d.amount}">
+                        <div class="uc-spark__bar" style="height: #{$d.pct}%"></div>
+                        <div class="uc-spark__label">#{$d.label}</div>
+                    </div>
+                    #{/foreach}
+                </div>
+            </div>
+        </div>
+        <div class="uc-card uc-col">
+            <div class="uc-card__head">
+                <span class="material-icons-outlined">storefront</span>
+                <span class="uc-card__title">最近卖出</span>
+                <a class="uc-card__tools uc-more" href="/user/order/index">全部订单<span class="material-icons-outlined">chevron_right</span></a>
+            </div>
+            <div class="uc-card__body">
+                #{if count($recent_sales) > 0}
+                <div class="uc-list">
+                    #{foreach $recent_sales as $o}
+                    <div class="uc-list__row">
+                        <img class="uc-list__icon" src="#{$o.commodity.cover}" alt="">
+                        <div class="uc-list__main">
+                            <div class="uc-list__name">#{$o.commodity.name}</div>
+                            <div class="uc-list__time">#{$o.create_time}</div>
+                        </div>
+                        <div class="uc-list__end">
+                            <div class="uc-list__amount">￥#{$o.amount}</div>
+                            #{if $o.rebate > 0}<div class="uc-list__gain">赚 ￥#{$o.rebate}</div>#{/if}
+                        </div>
+                    </div>
+                    #{/foreach}
+                </div>
+                #{else}
+                <div class="uc-blank"><span class="material-icons-outlined">storefront</span><p>还没有卖出记录，把商品分享出去吧</p></div>
+                #{/if}
+            </div>
+        </div>
+    </div>
+    #{/if}
+
+    <!-- 消费(所有人) -->
+    <div class="uc-subhead">消费数据
+        <span class="uc-subhead__tools">
+            <a class="uc-quick" href="/" target="_blank"><span class="material-icons-outlined">shopping_cart</span>去购物</a>
+            <a class="uc-quick uc-quick--ghost" href="/user/recharge/index"><span class="material-icons-outlined">bolt</span>去充值</a>
+        </span>
+    </div>
+    <div class="uc-stats uc-stats--3">
+        <div class="uc-stat uc-stat--info">
+            <div class="uc-stat__label"><span class="material-icons-outlined">calendar_month</span>本月购物</div>
+            <div class="uc-stat__value"><span class="cur">￥</span>#{$buy_month}</div>
+        </div>
+        <div class="uc-stat uc-stat--primary">
+            <div class="uc-stat__label"><span class="material-icons-outlined">shopping_bag</span>累计购物</div>
+            <div class="uc-stat__value"><span class="cur">￥</span>#{$buy_total}</div>
+        </div>
+        <div class="uc-stat uc-stat--success">
+            <div class="uc-stat__label"><span class="material-icons-outlined">receipt</span>累计订单</div>
+            <div class="uc-stat__value">#{$buy_count}<span class="uc-stat__unit">单</span></div>
+        </div>
+    </div>
+
+    <div class="uc-card uc-recent-buys">
+        <div class="uc-card__head">
+            <span class="material-icons-outlined">history</span>
+            <span class="uc-card__title">最近购买</span>
+            <a class="uc-card__tools uc-more" href="/user/personal/purchaseRecord">全部记录<span class="material-icons-outlined">chevron_right</span></a>
+        </div>
+        <div class="uc-card__body">
+            <table id="recent-buy-table"></table>
+        </div>
+    </div>
+
+</div>
+
+#{ready("/assets/user/controller/dashboard/index.js")}
+#{include file="../Common/Footer.html"}

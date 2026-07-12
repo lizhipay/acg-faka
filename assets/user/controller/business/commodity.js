@@ -152,7 +152,7 @@
                         {
                             title: false,
                             name: "description",
-                            type: "editor",
+                            type: "editorv2",
                             placeholder: "介绍一下你的商品..",
                             required: true,
                             uploadUrl: '/user/api/upload/send',
@@ -288,7 +288,7 @@
                 }
             },
             height: "auto",
-            width: "1000px",
+            width: "820px",
             done: () => {
                 table.refresh();
             }
@@ -406,17 +406,11 @@
                             name: "general_card",
                             type: "custom",
                             complete: (form, dom) => {
-                                dom.html(`<div class="card no-shadow transparent h-100  border-0">
-        <div class="card-body p-4">
-          <p class="text-muted">一行一个库存卡密，内容随意。买家购买后直接获得该行内容，下面示例：</p>
-          <div class="translucent border rounded p-3">
-<pre class="mb-0" style="white-space: pre-wrap; word-break: break-all;">
-ABCDEF-GHIJK-LMNOP
-VIP-2025-0821-XYZ
-</pre>
-          </div>
-        </div>
-      </div>`);
+                                dom.html(`<div class="uc-cardtip">
+          <p>一行一个库存卡密，内容随意。买家购买后直接获得该行内容，下面示例：</p>
+          <pre class="uc-cardtip__code">ABCDEF-GHIJK-LMNOP
+VIP-2025-0821-XYZ</pre>
+        </div>`);
                             }
                         },
                         {
@@ -425,33 +419,18 @@ VIP-2025-0821-XYZ
                             name: "account_card",
                             type: "custom",
                             complete: (form, dom) => {
-                                dom.html(` <div class="card no-shadow transparent h-100 shadow border-0">
-        <div class="card-body">
-           
-          <p class="text-muted mb-3">
-            一行一个，必须使用 <code>║</code> 分隔，结构为：  
-            <span class="text-dark fw-bold">卡密本体 ║ 预告信息 ║ 自选加价金额(可选)</span>
-          </p>
-
-          <ul class="list-unstyled small mb-3">
-            <li class="mb-1"><span class="a-badge a-badge-dark me-1">卡密本体</span> 买家付款后实际获得的完整内容</li>
-            <li class="mb-1"><span class="a-badge a-badge-success me-1">预告信息</span> 买家下单时可见，用于自选</li>
-            <li><span class="a-badge a-badge-warning text-dark me-1">自选加价金额</span> 选填，不写默认为 0</li>
+                                dom.html(`<div class="uc-cardtip">
+          <p>一行一个，必须使用 <code>║</code> 分隔，结构为：<b>卡密本体 ║ 预告信息 ║ 自选加价金额(可选)</b></p>
+          <ul class="uc-cardtip__legend">
+            <li><span class="a-badge a-badge-dark">卡密本体</span><span>买家付款后实际获得的完整内容</span></li>
+            <li><span class="a-badge a-badge-success">预告信息</span><span>买家下单时可见，用于自选</span></li>
+            <li><span class="a-badge a-badge-warning">自选加价金额</span><span>选填，不写默认为 0</span></li>
           </ul>
-
-          <div class="translucent border rounded p-3">
-<pre class="mb-0" style="white-space: pre-wrap; word-break: break-all;">
-账号:testname--密码:testpassword123║大区:神境之地--等级:100║5.5
+          <pre class="uc-cardtip__code">账号:testname--密码:testpassword123║大区:神境之地--等级:100║5.5
 ACC_US_12M_9F2K-7QPA-88XZ║地区:美区·时长:12个月║20
-ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月
-</pre>
-          </div>
-
-          <div class="alert alert-warning mt-3 mb-0 small">
-            ⚠️ 必须使用特殊符号 <strong>“║”</strong>（U+2551），不要用普通竖线“|”
-          </div>
-        </div>
-      </div>`);
+ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
+          <div class="uc-cardtip__warn"><span class="material-icons-outlined">warning_amber</span><span>必须使用特殊符号 <strong>║</strong>（U+2551），不要用普通竖线 |</span></div>
+        </div>`);
                             }
                         },
                         {
@@ -554,7 +533,12 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月
         },
     ]);
 
-    table.setFloatMessage([
+    table.setColumnDetail({
+        column: 'name',
+        trigger: 'dblclick',
+        header: false,
+        title: (row) => row.name,
+        fields: [
         {field: 'id', title: '商品ID'},
         {
             field: 'card_success_count', title: '已出售'
@@ -610,7 +594,8 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月
         {
             field: 'create_time', title: '创建时间'
         },
-    ]);
+        ]
+    });
 
     table.setSearch([
         {title: "商品分类", name: "equal-category_id", type: "select", dict: "category", search: true},

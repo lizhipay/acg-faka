@@ -26,8 +26,8 @@
                 }
 
                 if (res.data.developer == 1) {
-                    html += format.badge(`<i class="fa-duotone fa-regular fa-code"></i> 開發者`, 'a-badge a-badge-success hide-mobile');
-                    html += format.badge(`<i class="fa-duotone fa-regular fa-yen-sign"></i> ${res.data.balance}`, 'a-badge a-badge-warning hide-mobile');
+                    html += format.badge(`<span class="material-icons-outlined md-top-pill__icon" aria-hidden="true">terminal</span> 開發者`, 'a-badge a-badge-success hide-mobile');
+                    html += format.badge(`<span class="material-icons-outlined md-top-pill__icon" aria-hidden="true">account_balance_wallet</span> ${res.data.balance}`, 'a-badge a-badge-warning hide-mobile');
                 }
 
                 $StoreText.html(format.badgeGroup(html));
@@ -45,7 +45,7 @@
                                         name: "tips_page",
                                         type: "custom",
                                         complete: (form, dom) => {
-                                            dom.html(`<div class="">               
+                                            dom.html(`<div class="">
                   <div class="alert alert-warning d-flex align-items-center" role="alert">
                     <p class="mb-0">
                     <i class="fa-duotone fa-regular fa-circle-exclamation"></i> 旧密码输入错误超过10次，将会永久封禁账户，请慎重操作。
@@ -53,15 +53,15 @@
                   </div>`);
                                         }
                                     },
-                                    {title: false, name: "old_password", type: "password", placeholder: "旧密码"},
+                                    {title: "旧密码", name: "old_password", type: "password", placeholder: "请输入旧密码"},
                                     {
-                                        title: false,
+                                        title: "新密码",
                                         name: "new_password",
                                         type: "input",
-                                        placeholder: "新密码(6位字符以上)"
+                                        placeholder: "6位字符以上"
                                     },
                                     {
-                                        title: false,
+                                        title: "踢除其他登录",
                                         name: "kick",
                                         tips: "如果开启此功能，当您修改密码时，所有已登录服务器将被强制下线，必须使用新密码重新登录。建议仅在账号可能被他人盗用时使用，平时无需勾选。",
                                         type: "switch",
@@ -193,6 +193,22 @@
         });
     }
 
+    function _LoadTicketBadge() {
+        util.post({
+            url: "/admin/api/ticket/badge",
+            loader: false,
+            error: false,
+            fail: false,
+            done: res => {
+                const count = Math.max(0, Number(res?.data?.count || 0));
+                $('.ticket-admin-badge')
+                    .text(count > 99 ? '99+' : count)
+                    .prop('hidden', count < 1)
+                    .attr('aria-label', count > 0 ? `有 ${count} 张工单等待处理` : '没有待处理工单');
+            }
+        });
+    }
+
     function _AppServerSelect() {
         $('.app-server-select').change(function () {
             util.post("/admin/api/app/setServer", {server: $(this).val()}, res => {
@@ -206,6 +222,12 @@
         $(document).pjax('a[target!=_blank]', '#pjax-container', {fragment: '#pjax-container', timeout: 8000});
         $(document).on('pjax:send', function () {
             Loading.show();
+            // 手机版:点菜单(pjax 导航)后自动收起侧栏抽屉；桌面态 aside 非 drawer-on,跳过
+            var aside = document.querySelector('#kt_aside');
+            if (aside && aside.classList.contains('drawer-on') && window.KTDrawer) {
+                var drawer = KTDrawer.getInstance(aside);
+                drawer && drawer.hide();
+            }
         });
         $(document).on('pjax:complete', function () {
             Loading.hide();
@@ -219,6 +241,13 @@
     _LoadStoreUserInfo();
     _LodLatest();
     _LoadPluginUpdates();
+    _LoadTicketBadge();
     _AppServerSelect();
     _Pjax();
+
+    $(document).off('ticket:badge-refresh.admin').on('ticket:badge-refresh.admin', _LoadTicketBadge);
+    if (window.__adminTicketBadgeTimer) {
+        clearInterval(window.__adminTicketBadgeTimer);
+    }
+    window.__adminTicketBadgeTimer = setInterval(_LoadTicketBadge, 60000);
 }();

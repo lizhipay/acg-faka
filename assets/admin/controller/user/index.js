@@ -56,8 +56,8 @@
     }
     table.setColumns([
         {checkbox: true},
-        {field: 'id', title: 'ID', width: 80}
-        , {field: 'avatar', title: '用户名', formatter: (_, __) => format.user(__)}
+        {field: 'id', title: 'ID', width: 80, visible: false}
+        , {field: 'avatar', title: '用户名', formatter: (_, __) => mdUserCell(__)}
         , {field: 'group', title: '会员等级', formatter: _ => format.group(_)}
         , {field: 'email', title: '邮箱'}
         , {field: 'phone', title: '手机号'}
@@ -118,7 +118,7 @@
                 return `${_.name} <a class="text-primary ${did}" href="javascript:void(0);">详细</a>`
             }
         }
-        , {field: 'parent', title: '上级', formatter: format.user}
+        , {field: 'parent', title: '上级', formatter: (_, __) => mdUserCell(_)}
         , {field: 'status', title: '状态', dict: "_user_status"}
         , {
             field: 'operation', title: '操作', type: 'button', buttons: [
@@ -246,7 +246,12 @@
     ]);
 
 
-    table.setFloatMessage([
+    // 用户名列（头像单元格）双击 → MUI 详情弹窗；hover 提示「双击查看详细信息」
+    table.setColumnDetail({
+        column: 'avatar',
+        trigger: 'dblclick',
+        title: '会员详细信息',
+        fields: [
         {field: 'nicename', title: '真实姓名'}
         , {field: 'total_coin', title: '总硬币'}
         , {field: 'create_time', title: '注册时间'}
@@ -293,7 +298,8 @@
                 {id: 1, name: `<span class="text-success">微信</span>`},
             ]
         }
-    ]);
+        ]
+    });
 
 
     table.setSearch([

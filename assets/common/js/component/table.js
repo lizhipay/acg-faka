@@ -1,3 +1,32 @@
+/* Shared bootstrap-table Chinese copy. Theme layers loaded after this file may
+ * replace the empty-state markup while keeping the same common defaults. */
+(function initCommonTableLocale() {
+    const $ = window.jQuery;
+    if (!$ || !$.fn || !$.fn.bootstrapTable || $.fn.bootstrapTable.__acgCommonLocale) {
+        return;
+    }
+
+    $.fn.bootstrapTable.__acgCommonLocale = true;
+    $.extend($.fn.bootstrapTable.defaults, {
+        formatNoMatches: function () {
+            return '<div class="component-table-empty">' +
+                '<span class="component-table-empty__icon" aria-hidden="true">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+                '<path d="M4 4h16v14H4z"></path><path d="M4 13h4l2 3h4l2-3h4"></path>' +
+                '</svg></span><span>' + i18n('暂无数据') + '</span></div>';
+        },
+        formatLoadingMessage: function () {
+            return i18n('正在加载') + '..';
+        },
+        formatShowingRows: function (from, to, total) {
+            return total > 0 ? '第 ' + from + ' - ' + to + ' 条 · 共 ' + total + ' 条' : '共 0 条';
+        },
+        formatRecordsPerPage: function (number) {
+            return '每页 ' + number + ' 条';
+        }
+    });
+}());
+
 class Table {
     #handleStateButtonClick($this, table) {
         $(`.${table.unique}-query .table-switch-state button`).removeClass("active");
@@ -53,6 +82,10 @@ class Table {
         //按钮版详细内容
         this.isShowButtonDetail = false;
         this.buttonDetail = {}
+
+        //列详情弹窗（绑定到某列的单击/双击）
+        this.isColumnDetail = false;
+        this.columnDetail = null;
 
         // 是否显示工具栏
         this.isShowToolbar = false;
@@ -264,6 +297,139 @@ class Table {
                 }
             }]
         }));
+    }
+
+    /**
+     * 通用「列详情弹窗」：把一套字段绑定到某一列的单击/双击事件上，MUI 风格弹窗展示；
+     * hover 该列时提示「双击/单击查看详细信息」。数据结构与 setFloatMessage/setButtonDetail 一致。
+     * 必须在 setColumns() 之后调用（改的是已预处理的列对象）。
+     * @param opt { column, trigger('dblclick'默认|'click'), title(string|(row)=>string), fields[], hint?, header?(默认true) }
+     */
+    setColumnDetail(opt) {
+        if (!opt || !opt.column) {
+            return;
+        }
+        const trigger = (opt.trigger === 'click') ? 'click' : 'dblclick';
+        const hint = i18n(opt.hint ?? (trigger === 'dblclick' ? '双击查看详细信息' : '单击查看详细信息'));
+        const tipKey = this.unique + "-coldetail-tip";
+
+        this.isColumnDetail = true;
+        this.columnDetail = {
+            column: opt.column,
+            trigger: trigger,
+            fields: opt.fields || [],
+            title: opt.title,
+            header: opt.header !== false
+        };
+
+        const column = this.handleColumns[opt.column];
+        if (!column) {
+            //必须在 setColumns() 之后调用，且列必须存在
+            util.debug("setColumnDetail: 未找到列 -> " + opt.column, "#ff4f33");
+            return;
+        }
+
+        //包裹原 formatter，套一层触发元素（保留 mdUserCell 等原有单元格样式）
+        const original = column.formatter;
+        column.formatter = (val, item) => {
+            let inner;
+            if (typeof original === "function") {
+                inner = original(val, item);
+            } else {
+                inner = (val === "" || val === undefined || val === null) ? "-" : val;
+            }
+            return `<div class="md-detail-trigger">${inner ?? ''}</div>`;
+        };
+        column.fn = {formatter: column.formatter};
+
+        //挂列级事件（随每次 body 渲染重挂，刷新/排序/翻页都不丢）
+        const events = column.events || {};
+        events[`${trigger} .md-detail-trigger`] = (event, value, row, index) => {
+            this.#openColumnDetail(row);
+        };
+        events[`mouseenter .md-detail-trigger`] = (event, value, row, index) => {
+            cache.set(tipKey, layer.tips(hint, event.currentTarget, {
+                tips: [1, '#501536'], time: 0
+            }));
+        };
+        events[`mouseleave .md-detail-trigger`] = (event, value, row, index) => {
+            layer.close(cache.get(tipKey));
+        };
+        column.events = events;
+    }
+
+    #openColumnDetail(item) {
+        const det = this.columnDetail;
+        let rows = "";
+
+        det.fields.forEach(f => {
+            f.title && (f.title = i18n(f.title));
+            let val = (f.formatter ? f.formatter(util.parseStringObject(item, util.replaceDotWithHyphen(f.field)), item) : util.parseStringObject(item, util.replaceDotWithHyphen(f.field)) ?? "-");
+
+            if (f.dict) {
+                const uuid = util.generateRandStr(10);
+                rows += `<div class="md-detail__row"><span class="md-detail__label">${f.title}</span><span class="md-detail__value"><span class="${uuid}">${util.icon("fa-duotone fa-regular fa-spinner icon-spin")}</span></span></div>`;
+                _Dict.advanced(f.dict, res => {
+                    res.forEach(v => {
+                        if (v.id == val) {
+                            util.timer(() => {
+                                return new Promise(resolve => {
+                                    if ($(`.${uuid}`).length > 0) {
+                                        $(`.${uuid}`).html(v.name);
+                                        resolve(false);
+                                        return;
+                                    }
+                                    resolve(true);
+                                });
+                            }, 50, true);
+                        }
+                    });
+                });
+            } else {
+                if (val === "" || val === undefined || val === null) {
+                    val = "-";
+                }
+                rows += `<div class="md-detail__row"><span class="md-detail__label">${f.title}</span><span class="md-detail__value">${val}</span></div>`;
+            }
+        });
+
+        //可选头部：复用 mdUserCell（头像 + 用户名 + ID）
+        const header = (det.header && typeof window.mdUserCell === "function") ? `<div class="md-detail__header">${mdUserCell(item)}</div>` : "";
+        const html = `<div class="md-detail">${header}<div class="md-detail__body">${rows}</div></div>`;
+
+        //标题：string | (row)=>string，兜底用户名
+        let title = det.title;
+        if (typeof title === "function") {
+            title = title(item);
+        }
+        title = title ? i18n(title) : (item?.username ?? item?.name ?? i18n("详细信息"));
+
+        component.popup({
+            submit: false,
+            shadeClose: true,
+            maxmin: false,
+            tab: [
+                {
+                    name: util.plainText(title),
+                    form: [
+                        {
+                            title: false, name: "custom", type: "custom", complete: (form, dom) => {
+                                dom.html(html);
+                            }
+                        },
+                    ]
+                },
+            ],
+            autoPosition: true,
+            content: {
+                css: {
+                    height: "auto",
+                    overflow: "inherit"
+                }
+            },
+            height: "auto",
+            width: "460px"
+        });
     }
 
     enableCardView() {
@@ -536,8 +702,20 @@ class Table {
                 let html = '';
                 column.buttons.forEach((s, i) => {
                     const setKey = this.unique + "-button-hover-" + i, hide = s.hide ? ' hide ' : '';
-                    html += `<a type="button" class="a-badge-glass ${hide + (s.class ?? "")} me-1 mb-1 index-${i}">${s.icon ? `<i class="${s.icon}"></i> ` : ""}<span class="btn-title">${s.title ?? ""}</span></a>`;
+                    // 语义色若写在图标(icon:'... text-danger')上而按钮没写,提到按钮 <a> 上,
+                    // 让 MUI outlined 边框(取 currentColor)与图标同色,避免"红图标+蓝边框"错配。
+                    let btnCls = s.class ?? "";
+                    const colorMatch = (s.icon ?? "").match(/\btext-(?:danger|success|primary|warning|info|secondary|dark)\b/);
+                    if (colorMatch && !btnCls.includes(colorMatch[0])) {
+                        btnCls = (btnCls + " " + colorMatch[0]).trim();
+                    }
+                    html += `<a type="button" role="button" tabindex="0" class="a-badge-glass ${hide + btnCls} me-1 mb-1 index-${i}">${s.icon ? `<i class="${s.icon}"></i> ` : ""}<span class="btn-title">${s.title ?? ""}</span></a>`;
                     events['click .index-' + i] = s.click;
+                    events['keydown .index-' + i] = function (event, value, row, index) {
+                        if (!['Enter', ' '].includes(event.key)) return;
+                        event.preventDefault();
+                        s.click && s.click(event, value, row, index);
+                    };
                     events[`mouseenter .index-${i}`] = function (event, value, row, index) {
                         if (s.tips) {
                             s.tips = i18n(s.tips);
@@ -564,7 +742,7 @@ class Table {
                     let temp = html;
                     column.buttons.forEach((s, i) => {
                         let show = s.show ? s.show(item) : true;
-                        let regex = new RegExp(`<a type="button" class="[^"]* index-${i}">[\\s\\S]*?<\/a>`, 'g');
+                        let regex = new RegExp(`<a[^>]*\\bindex-${i}\\b[^>]*>[\\s\\S]*?<\/a>`, 'g');
 
                         if (!show) {
                             temp = temp.replace(regex, '');
@@ -598,7 +776,7 @@ class Table {
                     if (val === "" || val === undefined || val === null) {
                         return '-';
                     }
-                    return `<img style="${circle}" class="render-image"  src="${val}" data-id="${item.id}" alt="放大图片">`;
+                    return `<img style="${circle}" class="render-image" role="button" tabindex="0" src="${val}" data-id="${item.id}" alt="放大图片">`;
                 }
                 break;
             default:
@@ -948,18 +1126,10 @@ class Table {
             $this.#updateDatabase(data.elem.checked ? 1 : 0, $(data.elem).attr("data-field"), $(data.elem).attr("data-id"), $(data.elem).attr("reload"));
         });
 
-        $(`.${this.unique} .render-image`).click(function () {
-            let size = 400;
-            let imageUrl = $(this).attr("src");
-            layer.open({
-                type: 1,
-                title: false,
-                closeBtn: 0,
-                anim: 5,
-                area: 'auto',
-                shadeClose: true,
-                content: `<img  src="${imageUrl}" style="width: auto;">`
-            });
+        $(`.${this.unique} .render-image`).on('click keydown', function (event) {
+            if (event.type === 'keydown' && !['Enter', ' '].includes(event.key)) return;
+            event.preventDefault();
+            component.previewImage($(this).attr("src"));
         });
 
         //排序组件
