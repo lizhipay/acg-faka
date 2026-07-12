@@ -2,6 +2,7 @@
 <html lang="en">
 <!--begin::Head-->
 <head>
+    <script>(function(){try{var p=localStorage.getItem('admin-theme')||'auto';var d=p==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p;var e=document.documentElement;e.setAttribute('data-theme',d);e.setAttribute('data-theme-pref',p);}catch(_){document.documentElement.setAttribute('data-theme','light');}})();</script>
     <title>#{$title}-#{$config.title}</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -10,7 +11,11 @@
     #{css(
     [
     "/assets/admin/css/_admin.css",
-    "/assets/common/css/_.css"
+    "/assets/common/css/_.css",
+    "/assets/static/codemirror/lib/codemirror.css",
+    "/assets/common/css/_material.css",
+    "/assets/common/fonts/material-icons.css",
+    "/assets/admin/css/_material.css"
     ],
     [
     "/assets/admin/css/style.bundle.css",
@@ -20,7 +25,13 @@
     "/assets/common/css/component.css",
     "/assets/common/css/toastr.min.css",
     "/assets/common/js/table/bootstrap-table.css",
-    "/assets/common/js/layer/theme/default/layer.css"
+    "/assets/common/js/layer/theme/default/layer.css",
+    "/assets/static/codemirror/lib/codemirror.css",
+    "/assets/common/css/md-tokens.css",
+    "/assets/common/css/md-components.css",
+    "/assets/admin/css/material.css",
+    "/assets/common/fonts/material-icons.css",
+    "/assets/common/css/mdicon.css"
     ])}
 
     #{js("/assets/common/js/ready.js")}
@@ -36,6 +47,7 @@
 <body id="kt_body"
       class="header-fixed header-tablet-and-mobile-fixed toolbar-enabled toolbar-fixed aside-enabled aside-fixed"
       style="--kt-toolbar-height:55px;--kt-toolbar-height-tablet-and-mobile:55px;background: url('#{$config.background_url}') fixed no-repeat;background-size: cover;">
+<script>(function(){try{if((!window.matchMedia||matchMedia('(min-width: 992px)').matches)&&localStorage.getItem('admin-aside-minimize')==='on'){document.body.setAttribute('data-kt-aside-minimize','on');}}catch(_){}})();</script>
 <!--begin::Main-->
 <!--begin::Root-->
 <div class="d-flex flex-column flex-root">
@@ -46,44 +58,18 @@
              data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true"
              data-kt-drawer-width="{default:'200px', '300px': '250px'}" data-kt-drawer-direction="start"
              data-kt-drawer-toggle="#kt_aside_mobile_toggle">
-            <!--begin::Brand-->
-            <div class="aside-logo flex-column-auto" id="kt_aside_logo">
-                <!--begin::Logo-->
-                <a href="/admin/dashboard/index" class="d-flex align-items-center">
-                    <img style="border-radius: 50%;height: 22px;" src="/favicon.ico">
-                    <span class="logo fw-bolder ms-2 fs-4" style="color: #919191;">#{$config.shop_name}</span>
-                </a>
-                <!--end::Logo-->
-                <!--begin::Aside toggler-->
-                <div id="kt_aside_toggle" class="btn btn-icon w-auto px-0 btn-active-color-primary aside-toggle"
-                     data-kt-toggle="true" data-kt-toggle-state="active" data-kt-toggle-target="body"
-                     data-kt-toggle-name="aside-minimize">
-                    <span class="svg-icon svg-icon-1 rotate-180">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                     fill="none">
-									<path opacity="0.5"
-                                          d="M14.2657 11.4343L18.45 7.25C18.8642 6.83579 18.8642 6.16421 18.45 5.75C18.0358 5.33579 17.3642 5.33579 16.95 5.75L11.4071 11.2929C11.0166 11.6834 11.0166 12.3166 11.4071 12.7071L16.95 18.25C17.3642 18.6642 18.0358 18.6642 18.45 18.25C18.8642 17.8358 18.8642 17.1642 18.45 16.75L14.2657 12.5657C13.9533 12.2533 13.9533 11.7467 14.2657 11.4343Z"
-                                          fill="black"/>
-									<path d="M8.2657 11.4343L12.45 7.25C12.8642 6.83579 12.8642 6.16421 12.45 5.75C12.0358 5.33579 11.3642 5.33579 10.95 5.75L5.40712 11.2929C5.01659 11.6834 5.01659 12.3166 5.40712 12.7071L10.95 18.25C11.3642 18.6642 12.0358 18.6642 12.45 18.25C12.8642 17.8358 12.8642 17.1642 12.45 16.75L8.2657 12.5657C7.95328 12.2533 7.95328 11.7467 8.2657 11.4343Z"
-                                          fill="black"/>
-								</svg>
-							</span>
-                    <!--end::Svg Icon-->
-                </div>
-                <!--end::Aside toggler-->
-            </div>
-            <!--end::Brand-->
+            <!--begin::Brand — moved into #kt_header below (full-width-header / 图2 layout) -->
             <!--begin::Aside menu-->
             <div class="aside-menu flex-column-fluid">
                 <!--begin::Aside Menu-->
                 <div class="hover-scroll-overlay-y my-5 my-lg-5" id="kt_aside_menu_wrapper" style="overflow-x: hidden;"
                      data-kt-scroll="true"
                      data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-height="auto"
-                     data-kt-scroll-dependencies="#kt_aside_logo, #kt_aside_footer"
+                     data-kt-scroll-dependencies="#kt_header"
                      data-kt-scroll-wrappers="#kt_aside_menu" data-kt-scroll-offset="0">
                     <!--begin::Menu-->
                     <div class="menu menu-column menu-title-gray-800 menu-state-title-primary menu-state-icon-primary menu-state-bullet-primary menu-arrow-gray-500"
-                         id="#kt_aside_menu" data-kt-menu="true">
+                         id="kt_aside_menu" data-kt-menu="true">
                         <div class="menu-item">
                             <div class="menu-content pb-2">
                                 <span class="menu-section text-muted text-uppercase fs-8 ls-1">Main</span>
@@ -91,7 +77,7 @@
                         </div>
                         <div class="menu-item">
                             <a class="menu-link #{if $title == '控制台'}active#{/if}" href="/admin/dashboard/index">
-                                <span class="menu-icon"><i class="fa-duotone fa-regular fa-house"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M19 5v2h-4V5h4M9 5v6H5V5h4m10 8v6h-4v-6h4M9 17v2H5v-2h4M21 3h-8v6h8V3zM11 3H3v10h8V3zm10 8h-8v10h8V11zm-10 4H3v6h8v-6z"/></svg></span>
                                 <span class="menu-title">控制台</span>
                             </a>
                         </div>
@@ -104,29 +90,42 @@
 
                         <div class="menu-item">
                             <a class="menu-link  #{if $title == '会员管理'}active#{/if}" href="/admin/user/index">
-                                <span class="menu-icon"><i class="fa-duotone fa-regular fa-user-group-crown"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M9 13.75c-2.34 0-7 1.17-7 3.5V19h14v-1.75c0-2.33-4.66-3.5-7-3.5zM4.34 17c.84-.58 2.87-1.25 4.66-1.25s3.82.67 4.66 1.25H4.34zM9 12c1.93 0 3.5-1.57 3.5-3.5S10.93 5 9 5S5.5 6.57 5.5 8.5S7.07 12 9 12zm0-5c.83 0 1.5.67 1.5 1.5S9.83 10 9 10s-1.5-.67-1.5-1.5S8.17 7 9 7zm7.04 6.81c1.16.84 1.96 1.96 1.96 3.44V19h4v-1.75c0-2.02-3.5-3.17-5.96-3.44zM15 12c1.93 0 3.5-1.57 3.5-3.5S16.93 5 15 5c-.54 0-1.04.13-1.5.35c.63.89 1 1.98 1 3.15s-.37 2.26-1 3.15c.46.22.96.35 1.5.35z"/></svg></span>
                                 <span class="menu-title">会员管理</span>
                             </a>
                         </div>
 
                         <div class="menu-item">
+                            <a class="menu-link #{if $title == '工单管理'}active#{/if}" href="/admin/ticket/index">
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M20 12a2 2 0 0 0-2-2V7c0-1.1-.9-2-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3a2 2 0 0 0 2-2zM4 7h12v3.17A3 3 0 0 0 15 12c0 .77.29 1.47.76 2H16v3H4V7zm14 6a1 1 0 1 1 0-2a1 1 0 0 1 0 2z"/><path d="M6 9h6v2H6zm0 4h6v2H6z"/></svg></span>
+                                <span class="menu-title">工单管理<span class="md-ticket-menu-badge ticket-admin-badge" hidden>0</span></span>
+                            </a>
+                        </div>
+
+                        <div class="menu-item">
+                            <a class="menu-link #{if $title == '消息管理'}active#{/if}" href="/admin/message/index">
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM7 9h10v2H7V9zm6 5H7v-2h6v2zm4-6H7V6h10v2z"/></svg></span>
+                                <span class="menu-title">消息管理</span>
+                            </a>
+                        </div>
+
+                        <div class="menu-item">
                             <a class="menu-link  #{if $title == '充值订单'}active#{/if}" href="/admin/recharge/order">
-                                <span class="menu-icon"><i class="fa-duotone fa-regular fa-messages-dollar"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M19.5 3.5L18 2l-1.5 1.5L15 2l-1.5 1.5L12 2l-1.5 1.5L9 2L7.5 3.5L6 2v14H3v3c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V2l-1.5 1.5zM15 20H6c-.55 0-1-.45-1-1v-1h10v2zm4-1c0 .55-.45 1-1 1s-1-.45-1-1v-3H8V5h11v14z"/><path d="M9 7h6v2H9zm7 0h2v2h-2zm-7 3h6v2H9zm7 0h2v2h-2z"/></svg></span>
                                 <span class="menu-title">充值订单</span>
                             </a>
                         </div>
 
                         <div class="menu-item">
                             <a class="menu-link  #{if $title == '账单管理'}active#{/if}" href="/admin/user/bill">
-                                <span class="menu-icon"><i
-                                            class="fa-duotone fa-regular fa-file-invoice-dollar"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M8 16h8v2H8zm0-4h8v2H8zm6-10H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg></span>
                                 <span class="menu-title">账单管理</span>
                             </a>
                         </div>
 
                         <div class="menu-item">
                             <a class="menu-link  #{if $title == '会员等级'}active#{/if}" href="/admin/user/group">
-                                <span class="menu-icon"><i class="fa-duotone fa-regular fa-people-group"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M9.68 13.69L12 11.93l2.31 1.76l-.88-2.85L15.75 9h-2.84L12 6.19L11.09 9H8.25l2.31 1.84l-.88 2.85zM20 10c0-4.42-3.58-8-8-8s-8 3.58-8 8c0 2.03.76 3.87 2 5.28V23l6-2l6 2v-7.72A7.96 7.96 0 0 0 20 10zm-8-6c3.31 0 6 2.69 6 6s-2.69 6-6 6s-6-2.69-6-6s2.69-6 6-6zm0 15l-4 1.02v-3.1c1.18.68 2.54 1.08 4 1.08s2.82-.4 4-1.08v3.1L12 19z"/></svg></span>
                                 <span class="menu-title">会员等级</span>
                             </a>
                         </div>
@@ -134,15 +133,14 @@
                         <div class="menu-item">
                             <a class="menu-link  #{if $title == '商户等级'}active#{/if}"
                                href="/admin/user/businessLevel">
-                                <span class="menu-icon"><i class="fa-duotone fa-regular fa-users-medical"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M18.36 9l.6 3H5.04l.6-3h12.72M20 4H4v2h16V4zm0 3H4l-1 5v2h1v6h10v-6h4v6h2v-6h1v-2l-1-5zM6 18v-4h6v4H6z"/></svg></span>
                                 <span class="menu-title">商户等级</span>
                             </a>
                         </div>
 
                         <div class="menu-item">
                             <a class="menu-link  #{if $title == '提现管理'}active#{/if}" href="/admin/cash/index">
-                                <span class="menu-icon"><i
-                                            class="fa-duotone fa-regular fa-money-bill-transfer"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M21 7.28V5c0-1.1-.9-2-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-2.28A2 2 0 0 0 22 15V9a2 2 0 0 0-1-1.72zM20 9v6h-7V9h7zM5 19V5h14v2h-6c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h6v2H5z"/><circle cx="16" cy="12" r="1.5"/></svg></span>
                                 <span class="menu-title">提现管理</span>
                             </a>
                         </div>
@@ -156,35 +154,35 @@
 
                         <div class="menu-item">
                             <a class="menu-link  #{if $title == '分类管理'}active#{/if}" href="/admin/category/index">
-                                <span class="menu-icon"><i class="fa-duotone fa-regular fa-layer-group"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5s4.5-2.01 4.5-4.5s-2.01-4.5-4.5-4.5zm0 7a2.5 2.5 0 0 1 0-5a2.5 2.5 0 0 1 0 5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/></svg></span>
                                 <span class="menu-title">分类管理</span>
                             </a>
                         </div>
 
                         <div class="menu-item">
                             <a class="menu-link  #{if $title == '商品管理'}active#{/if}" href="/admin/commodity/index">
-                                <span class="menu-icon"><i class="fa-duotone fa-regular fa-business-time"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-1 18H5V9h14v11zm1-13H4V4h16v3z"/><path d="M9 12h6v2H9z"/></svg></span>
                                 <span class="menu-title">商品管理</span>
                             </a>
                         </div>
 
                         <div class="menu-item">
                             <a class="menu-link  #{if $title == '卡密管理'}active#{/if}" href="/admin/card/index">
-                                <span class="menu-icon"><i class="fa-duotone fa-regular fa-cards-blank"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M22 19h-6v-4h-2.68c-1.14 2.42-3.6 4-6.32 4c-3.86 0-7-3.14-7-7s3.14-7 7-7c2.72 0 5.17 1.58 6.32 4H24v6h-2v4zm-4-2h2v-4h2v-2H11.94l-.23-.67C11.01 8.34 9.11 7 7 7c-2.76 0-5 2.24-5 5s2.24 5 5 5c2.11 0 4.01-1.34 4.71-3.33l.23-.67H18v4zM7 15c-1.65 0-3-1.35-3-3s1.35-3 3-3s3 1.35 3 3s-1.35 3-3 3zm0-4c-.55 0-1 .45-1 1s.45 1 1 1s1-.45 1-1s-.45-1-1-1z"/></svg></span>
                                 <span class="menu-title">卡密管理</span>
                             </a>
                         </div>
 
                         <div class="menu-item">
                             <a class="menu-link  #{if $title == '优惠卷'}active#{/if}" href="/admin/coupon/index">
-                                <span class="menu-icon"><i class="fa-duotone fa-regular fa-tickets-simple"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM13 20.01L4 11V4h7v-.01l9 9l-7 7.02z"/><circle cx="6.5" cy="6.5" r="1.5"/></svg></span>
                                 <span class="menu-title">优惠卷</span>
                             </a>
                         </div>
 
                         <div class="menu-item">
                             <a class="menu-link  #{if $title == '商品订单'}active#{/if}" href="/admin/order/index">
-                                <span class="menu-icon"><i class="fa-duotone fa-regular fa-cart-flatbed"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M15.55 13c.75 0 1.41-.41 1.75-1.03l3.58-6.49A.996.996 0 0 0 20.01 4H5.21l-.94-2H1v2h2l3.6 7.59l-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7l1.1-2h7.45zM6.16 6h12.15l-2.76 5H8.53L6.16 6zM7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2s-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2s2-.9 2-2s-.9-2-2-2z"/></svg></span>
                                 <span class="menu-title">商品订单</span>
                             </a>
                         </div>
@@ -197,7 +195,7 @@
 
                         <div class="menu-item">
                             <a class="menu-link  #{if $title == '店铺共享'}active#{/if}" href="/admin/store/index">
-                                <span class="menu-icon"><i class="fa-duotone fa-regular fa-link"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81c1.66 0 3-1.34 3-3s-1.34-3-3-3s-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65c0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92zM18 4c.55 0 1 .45 1 1s-.45 1-1 1s-1-.45-1-1s.45-1 1-1zM6 13c-.55 0-1-.45-1-1s.45-1 1-1s1 .45 1 1s-.45 1-1 1zm12 7.02c-.55 0-1-.45-1-1s.45-1 1-1s1 .45 1 1s-.45 1-1 1z"/></svg></span>
                                 <span class="menu-title">店铺共享</span>
                             </a>
                         </div>
@@ -211,7 +209,7 @@
                         <div class="menu-item">
                             <a class="menu-link  #{if in_array($title, ["网站设置" , "短信设置" , "邮箱设置" , "其他设置"])}active#{/if}"
                                href="/admin/config/index">
-                                <span class="menu-icon"><i class="fa-duotone fa-regular fa-gear"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M19.43 12.98c.04-.32.07-.64.07-.98c0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65A.488.488 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1a.566.566 0 0 0-.18-.03c-.17 0-.34.09-.43.25l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98c0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46a.5.5 0 0 0 .61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.06.02.12.03.18.03c.17 0 .34-.09.43-.25l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zm-1.98-1.71c.04.31.05.52.05.73c0 .21-.02.43-.05.73l-.14 1.13l.89.7l1.08.84l-.7 1.21l-1.27-.51l-1.04-.42l-.9.68c-.43.32-.84.56-1.25.73l-1.06.43l-.16 1.13l-.2 1.35h-1.4l-.19-1.35l-.16-1.13l-1.06-.43c-.43-.18-.83-.41-1.23-.71l-.91-.7l-1.06.43l-1.27.51l-.7-1.21l1.08-.84l.89-.7l-.14-1.13c-.03-.31-.05-.54-.05-.74s.02-.43.05-.73l.14-1.13l-.89-.7l-1.08-.84l.7-1.21l1.27.51l1.04.42l.9-.68c.43-.32.84-.56 1.25-.73l1.06-.43l.16-1.13l.2-1.35h1.39l.19 1.35l.16 1.13l1.06.43c.43.18.83.41 1.23.71l.91.7l1.06-.43l1.27-.51l.7 1.21l-1.07.85l-.89.7l.14 1.13zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4s4-1.79 4-4s-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2s2 .9 2 2s-.9 2-2 2z"/></svg></span>
                                 <span class="menu-title">网站设置<span class="update-badge theme-update"></span></span>
                             </a>
                         </div>
@@ -219,8 +217,7 @@
                         #{if $user.type == 0 || $user.type == 1}
                             <div class="menu-item">
                                 <a class="menu-link  #{if $title == '管理员'}active#{/if}" href="/admin/manage/index">
-                                    <span class="menu-icon"><i
-                                                class="fa-duotone fa-regular fa-user-beard-bolt"></i></span>
+                                    <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="17" cy="15.5" r="1.12" fill-rule="evenodd"/><path d="M17 17.5c-.73 0-2.19.36-2.24 1.08c.5.71 1.32 1.17 2.24 1.17s1.74-.46 2.24-1.17c-.05-.72-1.51-1.08-2.24-1.08z" fill-rule="evenodd"/><path d="M18 11.09V6.27L10.5 3L3 6.27v4.91c0 4.54 3.2 8.79 7.5 9.82c.55-.13 1.08-.32 1.6-.55A5.973 5.973 0 0 0 17 23c3.31 0 6-2.69 6-6c0-2.97-2.16-5.43-5-5.91zM11 17c0 .56.08 1.11.23 1.62c-.24.11-.48.22-.73.3c-3.17-1-5.5-4.24-5.5-7.74v-3.6l5.5-2.4l5.5 2.4v3.51c-2.84.48-5 2.94-5 5.91zm6 4c-2.21 0-4-1.79-4-4s1.79-4 4-4s4 1.79 4 4s-1.79 4-4 4z" fill-rule="evenodd"/></svg></span>
                                     <span class="menu-title">管理员</span>
                                 </a>
                             </div>
@@ -228,8 +225,7 @@
 
                         <div class="menu-item">
                             <a class="menu-link  #{if $title == '通用插件'}active#{/if}" href="/admin/plugin/index">
-                                <span class="menu-icon"><i
-                                            class="fa-duotone fa-regular fa-puzzle-piece-simple"></i></span>
+                                <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M10.5 4.5c.28 0 .5.22.5.5v2h6v6h2c.28 0 .5.22.5.5s-.22.5-.5.5h-2v6h-2.12c-.68-1.75-2.39-3-4.38-3s-3.7 1.25-4.38 3H4v-2.12c1.75-.68 3-2.39 3-4.38c0-1.99-1.24-3.7-2.99-4.38L4 7h6V5c0-.28.22-.5.5-.5m0-2A2.5 2.5 0 0 0 8 5H4c-1.1 0-1.99.9-1.99 2v3.8h.29c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7H2V20c0 1.1.9 2 2 2h3.8v-.3c0-1.49 1.21-2.7 2.7-2.7s2.7 1.21 2.7 2.7v.3H17c1.1 0 2-.9 2-2v-4a2.5 2.5 0 0 0 0-5V7c0-1.1-.9-2-2-2h-4a2.5 2.5 0 0 0-2.5-2.5z"/></svg></span>
                                 <span class="menu-title">通用插件<span class="update-badge general-update"></span></span>
                             </a>
                         </div>
@@ -237,7 +233,7 @@
                         <div data-kt-menu-trigger="click"
                              class="menu-item menu-accordion #{if in_array($title,['支付插件','支付设置'])} here show #{/if}">
 									<span class="menu-link">
-										<span class="menu-icon"><i class="fa-duotone fa-regular fa-message-dollar"></i></span>
+										<span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M19 14V6c0-1.1-.9-2-2-2H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zm-2 0H3V6h14v8zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3zm13 0v11c0 1.1-.9 2-2 2H4v-2h17V7h2z"/></svg></span>
 										<span class="menu-title">支付管理<span class="update-badge payPlugin-update"></span></span>
 										<span class="menu-arrow"></span>
 									</span>
@@ -265,13 +261,13 @@
                         #{if $user.type == 0}
                             <div class="menu-item">
                                 <a class="menu-link #{if $title == '文件管理'}active#{/if}" href="/admin/file/index">
-                                    <span class="menu-icon"><i class="fa-duotone fa-regular fa-folder-open"></i></span>
+                                    <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M9.17 6l2 2H20v10H4V6h5.17M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg></span>
                                     <span class="menu-title">文件管理</span>
                                 </a>
                             </div>
                             <div class="menu-item">
                                 <a class="menu-link  #{if $title == '操作日志'}active#{/if}" href="/admin/log/index">
-                                    <span class="menu-icon"><i class="fa-duotone fa-regular fa-scanner-gun"></i></span>
+                                    <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89l.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7s-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.25 2.52l.77-1.28l-3.52-2.09V8z"/></svg></span>
                                     <span class="menu-title">操作日志</span>
                                 </a>
                             </div>
@@ -297,10 +293,8 @@
                         </div>
                         <div class="menu-item">
                             <a class="menu-update">
-										<span class="menu-icon">
-											<i class="fa-duotone fa-regular fa-code"></i>
-										</span>
-                                <span class="menu-title latest-update" style="font-size: 12px;"><span
+										<span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6l6 6l1.4-1.4zm5.2 0l4.6-4.6l-4.6-4.6L16 6l6 6l-6 6l-1.4-1.4z"/></svg></span>
+                                <span class="menu-title latest-update"><span
                                             class="local-version">#{$app.version}</span> <b style="margin-left: 5px;"
                                                                                             class="latest-version"></b></span>
                             </a>
@@ -319,6 +313,19 @@
             <div id="kt_header" style="" class="header align-items-stretch">
                 <!--begin::Container-->
                 <div class="container-fluid d-flex align-items-stretch justify-content-between">
+                    <!--begin::Brand (moved from the aside — full-width-header layout, desktop only)-->
+                    <div class="aside-logo flex-column-auto d-none d-lg-flex" id="kt_aside_logo">
+                        <a href="/admin/dashboard/index" class="d-flex align-items-center">
+                            <img style="border-radius: 50%;height: 22px;" src="/favicon.ico">
+                            <span class="logo fw-bolder ms-2 fs-4" style="color: #919191;">#{$config.shop_name}</span>
+                        </a>
+                        <div id="kt_aside_toggle" class="btn btn-icon w-auto px-0 btn-active-color-primary aside-toggle"
+                             data-kt-toggle="true" data-kt-toggle-state="active" data-kt-toggle-target="body"
+                             data-kt-toggle-name="aside-minimize">
+                            <span class="svg-icon svg-icon-1 aside-toggle-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.59 18L19 16.59L14.42 12L19 7.41L17.59 6l-6 6z"/><path d="M11 18l1.41-1.41L7.83 12l4.58-4.59L11 6l-6 6z"/></svg></span>
+                        </div>
+                    </div>
+                    <!--end::Brand-->
                     <!--begin::Aside mobile toggle-->
                     <div class="d-flex align-items-center d-lg-none ms-n3 me-1" title="Show aside menu">
                         <div class="btn btn-icon btn-active-light-primary w-30px h-30px w-md-40px h-md-40px"
@@ -354,8 +361,10 @@
                                     <!--begin::Menu-->
                                     <div class="menu me-4 menu-lg-rounded menu-column menu-lg-row menu-state-bg menu-title-gray-700 menu-state-title-primary menu-state-icon-primary menu-state-bullet-primary menu-arrow-gray-400 fw-bold my-5 my-lg-0 align-items-stretch">
                                         <div class="menu-item me-lg-1 app-store app-store-main">
-                                            <a class="a-badge a-badge-success" href="/admin/store/home"><i
-                                                        class="fa-duotone fa-regular fa-splotch"></i> 应用商店</a>
+                                            <a class="a-badge a-badge-success" href="/admin/store/home">
+                                                <span class="material-icons-outlined md-top-pill__icon" aria-hidden="true">storefront</span>
+                                                <span>应用商店</span>
+                                            </a>
                                             <select class="app-server-select">
                                                 <option value="0" #{if $app.server == 0} selected #{/if}>节点:腾讯云
                                                 </option>
@@ -391,6 +400,22 @@
                         <div class="d-flex align-items-stretch flex-shrink-0">
                             <!--begin::Toolbar wrapper-->
                             <div class="d-flex align-items-stretch flex-shrink-0">
+                                <!--begin::Theme switcher-->
+                                <div class="d-flex align-items-center ms-1 ms-lg-3">
+                                    <div class="md-theme-switch">
+                                        <button type="button" id="md-theme-toggle" class="btn btn-icon w-30px h-30px w-md-40px h-md-40px" title="主题" aria-label="切换主题">
+                                            <i class="md-ico md-ico-light fa-duotone fa-regular fa-sun-bright fs-2"></i>
+                                            <i class="md-ico md-ico-dark fa-duotone fa-regular fa-moon-stars fs-2"></i>
+                                            <i class="md-ico md-ico-auto fa-duotone fa-regular fa-circle-half-stroke fs-2"></i>
+                                        </button>
+                                        <div id="md-theme-menu" class="md-theme-menu">
+                                            <div class="md-theme-opt" data-theme-value="light"><i class="fa-duotone fa-regular fa-sun-bright"></i><span>亮色</span><i class="md-check fa-duotone fa-regular fa-check"></i></div>
+                                            <div class="md-theme-opt" data-theme-value="dark"><i class="fa-duotone fa-regular fa-moon-stars"></i><span>暗色</span><i class="md-check fa-duotone fa-regular fa-check"></i></div>
+                                            <div class="md-theme-opt" data-theme-value="auto"><i class="fa-duotone fa-regular fa-circle-half-stroke"></i><span>跟随系统</span><i class="md-check fa-duotone fa-regular fa-check"></i></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--end::Theme switcher-->
                                 <!--begin::User-->
                                 <div class="d-flex align-items-center ms-1 ms-lg-3">
                                     <!--begin::Menu wrapper-->

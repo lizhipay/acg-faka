@@ -1,0 +1,2067 @@
+/*!
+ * material.css — Material Design 2 (MUI) component skin for the acg-faka admin.
+ * Loaded AFTER material-tokens.css. Additive override layer — never edits vendor CSS.
+ *
+ * Everything is scoped under :root[data-theme] for a free specificity bump over
+ * Bootstrap/Metronic/Layui single-class rules, so !important is reserved for the
+ * genuinely inline / hard-hex vendor cases only.
+ *
+ * Sections:
+ *   0. Base & theme transition        4. Topbar / header
+ *   1. Theme switcher                 5. Breadcrumb / toolbar
+ *   2. Cards / paper                  6. Buttons
+ *   3. Sidebar / aside + menu         7. Badges → chips
+ *                                     8. Dashboard
+ *                                     9. Scrollbars / links / dark legibility
+ *   [Phase 3 forms + Phase 4 tables/overlays appended below]
+ */
+
+/* ============================================================= *
+ * 0. Base & theme transition
+ * ============================================================= */
+html { background-color: var(--md-bg); }
+
+#kt_body {
+  font-family: var(--md-font);
+  background-color: var(--md-bg);
+}
+
+/* Flat clean canvas — neutralize the configured body background image in BOTH
+ * themes for a professional Material surface. The background_url config field
+ * stays functional but is intentionally inert in the admin shell. */
+:root[data-theme] body#kt_body {
+  background-image: none !important;
+  background-color: var(--md-bg) !important;
+}
+/* Metronic's style.bundle paints .flex-root (the viewport-covering root wrapper) with
+ * background: rgba(255,255,255,.5) — a white wash that muddies the dark canvas to grey.
+ * Neutralise it here (do NOT edit the vendor bundle) so the --md-bg canvas shows through. */
+:root[data-theme] .flex-root { background-color: transparent !important; }
+
+/* Gentle, non-jarring cross-fade when the theme flips */
+#kt_body, #kt_aside, #kt_header, .card, .menu-link, .btn, .badge {
+  transition: background-color var(--md-dur) var(--md-ease),
+              color var(--md-dur) var(--md-ease),
+              border-color var(--md-dur) var(--md-ease),
+              box-shadow var(--md-dur) var(--md-ease);
+}
+
+/* ============================================================= *
+ * 1. Theme switcher (topbar icon button + menu)
+ * ============================================================= */
+.md-theme-switch { position: relative; }
+
+#md-theme-toggle { color: var(--md-on-surface-med); border-radius: var(--md-radius-pill); }
+#md-theme-toggle:hover { background-color: var(--md-hover-overlay); color: var(--md-on-surface); }
+#md-theme-toggle > .md-ico { display: none; line-height: 1; }
+html[data-theme-pref="light"] #md-theme-toggle .md-ico-light,
+html[data-theme-pref="dark"]  #md-theme-toggle .md-ico-dark,
+html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-block; }
+
+.md-theme-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 168px;
+  background: var(--md-surface-2);
+  border-radius: var(--md-radius);
+  box-shadow: var(--md-e8);
+  padding: 8px 0;
+  z-index: 1050;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px) scale(.98);
+  transform-origin: top right;
+  transition: opacity var(--md-dur-fast) var(--md-ease),
+              transform var(--md-dur-fast) var(--md-ease),
+              visibility var(--md-dur-fast) var(--md-ease);
+}
+.md-theme-menu.show { opacity: 1; visibility: visible; transform: none; }
+.md-theme-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 16px;
+  font-size: 14px;
+  color: var(--md-on-surface);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--md-dur-fast) var(--md-ease);
+}
+.md-theme-opt > i:first-child { width: 18px; text-align: center; color: var(--md-on-surface-med); }
+.md-theme-opt:hover { background-color: var(--md-hover-overlay); }
+.md-theme-opt.active { color: var(--md-primary); }
+.md-theme-opt.active > i:first-child { color: var(--md-primary); }
+.md-theme-opt .md-check { margin-left: auto; opacity: 0; color: var(--md-primary); font-size: 12px; }
+.md-theme-opt.active .md-check { opacity: 1; }
+
+/* ============================================================= *
+ * 2. Cards / paper
+ * ============================================================= */
+:root[data-theme] .card {
+  background-color: var(--md-surface);
+  border: 0;
+  border-radius: var(--md-radius-lg);
+  box-shadow: var(--md-e1);
+}
+:root[data-theme] .card .card-header {
+  border-bottom: 1px solid var(--md-divider);
+  min-height: 64px;
+}
+:root[data-theme] .card .card-footer { border-top: 1px solid var(--md-divider); }
+:root[data-theme] .shadow-sm { box-shadow: var(--md-e1) !important; }
+:root[data-theme] .shadow,
+:root[data-theme] .shadow-lg { box-shadow: var(--md-e4) !important; }
+:root[data-theme] .separator { border-bottom-color: var(--md-divider); }
+
+/* On dark, shadows are near-invisible → add a hairline to define the surface. */
+:root[data-theme="dark"] .card { border: 1px solid var(--md-divider); }
+
+/* ============================================================= *
+ * 3. Sidebar / aside + menu
+ * ============================================================= */
+/* --- Aside: MUI navigation drawer --- */
+:root[data-theme] #kt_aside.aside {
+  background-color: var(--md-surface);
+  border-right: 1px solid var(--md-divider);
+}
+/* coordinate with the header: hairline border-right + a soft RIGHTWARD shadow = the unified `--md-e2`
+   token MIRRORED to the X axis (a sidebar casts sideways, so it can't use the downward token literally,
+   but these are the exact same values with the offsets swapped → one consistent family with the header). */
+:root[data-theme="light"] #kt_aside.aside { box-shadow: 1px 0 2px rgba(16,24,40,.04), 4px 0 12px -2px rgba(16,24,40,.08); }
+:root[data-theme="dark"]  #kt_aside.aside { box-shadow: 2px 0 6px -1px rgba(0,0,0,.38); }
+:root[data-theme] .aside-logo { border-bottom: none; }   /* .aside-logo now lives in #kt_header (图2 layout) */
+:root[data-theme] .aside-logo .logo { color: var(--md-on-surface) !important; letter-spacing: .2px; }
+:root[data-theme] #kt_aside .menu { padding: 4px 8px 12px; }   /* 8px list inset (ref) */
+
+/* Keep the complete navigation reachable in short desktop viewports. The menu's
+ * calculated height already excludes the fixed 65px header; use an always-active
+ * scroll area so the final version row does not depend on hover state. */
+@media (min-width: 992px) {
+  :root[data-theme] #kt_aside_menu_wrapper {
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* menu rows → compact rounded pills (ref: ~35px tall, 18px radius, 8px inset, 2px gap) */
+:root[data-theme] #kt_aside .menu-item { margin: 0; }
+:root[data-theme] #kt_aside .menu-link {
+  margin: 2px 0;
+  padding: 5px 16px;
+  min-height: 34px;
+  border-radius: 18px;
+  transition: background-color var(--md-dur-fast) var(--md-ease), color var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] #kt_aside .menu-link:hover { background-color: var(--md-hover-overlay); }
+
+/* icons + titles (ref: 20px icon, gray-600 idle; 13.5px/500 label, gray-600 idle) */
+:root[data-theme] #kt_aside .menu-icon { width: 34px; min-width: 34px; margin-right: 0; justify-content: flex-start; }
+:root[data-theme] #kt_aside .menu-icon i {
+  font-size: 20px !important;
+  color: var(--md-nav-fg);
+  transition: color var(--md-dur-fast) var(--md-ease);
+}
+/* inline Material-Icons-Outlined SVGs (1:1 with the nekosh reference) */
+:root[data-theme] #kt_aside .menu-icon svg.menu-svg {
+  width: 20px; height: 20px;
+  fill: currentColor;
+  color: var(--md-nav-fg);
+  transition: color var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] #kt_aside .menu-title {
+  font-size: 13.5px !important;
+  font-weight: 500;
+  color: var(--md-nav-fg);
+  transition: color var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] #kt_aside .menu-link:hover .menu-title,
+:root[data-theme] #kt_aside .menu-link:hover .menu-icon i,
+:root[data-theme] #kt_aside .menu-link:hover .menu-icon svg.menu-svg { color: var(--md-nav-active-fg); }
+
+/* active = subtle tonal pill + primary icon + dark label (ref keeps label weight 500) */
+:root[data-theme] #kt_aside .menu-item > .menu-link.active,
+:root[data-theme] #kt_aside .menu-sub .menu-link.active {
+  background-color: rgba(var(--md-primary-rgb), .10) !important;
+}
+:root[data-theme] #kt_aside .menu-link.active .menu-title { color: var(--md-nav-active-fg) !important; font-weight: 500; }
+:root[data-theme] #kt_aside .menu-link.active .menu-icon i,
+:root[data-theme] #kt_aside .menu-link.active .menu-icon svg.menu-svg { color: var(--md-primary) !important; background: transparent; }
+:root[data-theme] #kt_aside .menu-link.active .menu-bullet .bullet { background-color: var(--md-primary); }
+
+/* submenu (accordion) */
+:root[data-theme] #kt_aside .menu-sub .menu-link { min-height: 34px; padding-left: 46px; }
+:root[data-theme] #kt_aside .menu-accordion.here > .menu-link,
+:root[data-theme] #kt_aside .menu-accordion.hover > .menu-link { background-color: var(--md-hover-overlay); }
+:root[data-theme] #kt_aside .menu-link .menu-arrow:after { opacity: .55; }
+
+/* section overlines (ref: 11px/600, gray-500, .66px tracking, uppercase, 12px indent) */
+:root[data-theme] #kt_aside .menu-content { padding: 14px 12px 4px !important; }
+:root[data-theme] #kt_aside .menu-section {
+  font-size: 11px !important;
+  font-weight: 600;
+  letter-spacing: .66px !important;
+  line-height: 1.6;
+  color: var(--md-nav-section) !important;
+}
+
+/* (idle + active icon colours are theme-aware via --md-nav-fg / --md-primary in the base rules) */
+
+/* footer version row (.menu-update): align icon + text with the menu items above */
+:root[data-theme] #kt_aside .menu-update {
+  display: flex; align-items: center; gap: 0;
+  margin: 2px 0; padding: 6px 16px;
+  border-radius: 18px;
+  transition: background-color var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] #kt_aside .menu-title.latest-update {
+  font-size: 11px !important;
+  line-height: 1.4;
+}
+:root[data-theme] #kt_aside .menu-update:hover { background-color: var(--md-hover-overlay); }
+
+/* footer divider: span the same width as the pills (8px inset) */
+:root[data-theme] #kt_aside .menu-content:has(> .separator) { padding: 6px 0 !important; }
+:root[data-theme] #kt_aside .separator { margin-left: 0 !important; margin-right: 0 !important; border-color: var(--md-divider) !important; }
+
+/* aside collapse toggle → clean MUI double-chevron (« when expanded, » when collapsed).
+   The toggle now lives in #kt_header (图2 layout) — selectors un-scoped from #kt_aside. */
+:root[data-theme] .aside-toggle-icon svg {
+  width: 22px; height: 22px; fill: currentColor;
+  color: var(--md-nav-fg);
+  transition: color var(--md-dur-fast) var(--md-ease), transform var(--md-dur) var(--md-ease);
+}
+:root[data-theme] #kt_aside_toggle:hover .aside-toggle-icon svg { color: var(--md-primary); }
+[data-kt-aside-minimize="on"] .aside-toggle-icon svg { transform: rotate(180deg); }
+
+/* --- collapsed mini-rail (« toggle → body[data-kt-aside-minimize=on]); the
+ *     aside is `aside-hoverable`, so hovering it temporarily re-expands to full. --- */
+[data-kt-aside-minimize="on"] #kt_aside:not(:hover) .menu-title,
+[data-kt-aside-minimize="on"] #kt_aside:not(:hover) .menu-arrow,
+[data-kt-aside-minimize="on"] #kt_aside:not(:hover) .menu-section,
+[data-kt-aside-minimize="on"] #kt_aside:not(:hover) .aside-logo .logo { display: none !important; }
+/* constrain the inner menu to the rail width so centered pills stay on-screen
+ * (the wrapper is otherwise 265px and clips the auto-centered icons out of view) */
+[data-kt-aside-minimize="on"] #kt_aside:not(:hover) #kt_aside_menu_wrapper,
+[data-kt-aside-minimize="on"] #kt_aside:not(:hover) #kt_aside_menu_wrapper > .menu { width: 76px !important; min-width: 76px !important; }
+[data-kt-aside-minimize="on"] #kt_aside:not(:hover) .menu-link,
+[data-kt-aside-minimize="on"] #kt_aside:not(:hover) .menu-update {
+  justify-content: center;
+  padding: 8px;
+  margin: 2px auto;
+  width: 44px; min-width: 44px;
+}
+[data-kt-aside-minimize="on"] #kt_aside:not(:hover) .menu-icon { margin-right: 0; width: auto; min-width: 0; justify-content: center; }
+[data-kt-aside-minimize="on"] #kt_aside:not(:hover) .menu-content { min-height: 12px; padding: 0 !important; }
+[data-kt-aside-minimize="on"] #kt_aside:not(:hover) .aside-logo { justify-content: center; padding: 0; }
+/* smooth width transition for collapse + hover-expand */
+:root[data-theme] #kt_aside.aside { transition: width var(--md-dur) var(--md-ease), box-shadow var(--md-dur) var(--md-ease); }
+/* collapsed rail width — explicit + robust (id-specificity so it wins the cascade) */
+.aside-fixed[data-kt-aside-minimize="on"] #kt_aside.aside:not(:hover) { width: 75px !important; }
+/* hovering the collapsed rail re-expands it (floats over content) — pure CSS, no JS */
+[data-kt-aside-minimize="on"] #kt_aside.aside:hover {
+  width: 265px !important;
+  box-shadow: var(--md-e16) !important;
+  z-index: 110;
+}
+/* --- mobile temporary drawer (below lg): MUI elevation + proper scrim --- */
+:root[data-theme] #kt_aside.aside.drawer-on { box-shadow: var(--md-e16) !important; }
+:root[data-theme] .drawer-overlay { background-color: var(--md-scrim) !important; }
+
+/* ============================================================= *
+ * 4. Topbar / header (AppBar)
+ * ============================================================= */
+:root[data-theme] #kt_header.header {
+  background-color: var(--md-surface);
+  border-bottom: 1px solid var(--md-divider);
+}
+/* header shadow from the unified token ladder (e2 — a touch above a resting card, right for a sticky
+   bar); keeps its border-bottom. Was the heavy MD2 `--md-e1` that read as an ugly dark band. */
+:root[data-theme] #kt_header.header { box-shadow: var(--md-e2); }
+:root[data-theme] #kt_header .symbol > img { border: 2px solid var(--md-surface); box-shadow: var(--md-e1); }
+
+/* Header toggler SVGs are colored via inline fill="black" → recolor in dark. */
+:root[data-theme="dark"] #kt_header svg path[fill="black"],
+:root[data-theme="dark"] #kt_aside svg path[fill="black"] { fill: var(--md-on-surface-med); }
+
+/* ============================================================= *
+ *  Layout: FULL-WIDTH top header + sidebar BENEATH it (图2 / MUI-docs).
+ *  Desktop (≥992px) only. Flips Metronic's aside-full-height + header-left-offset:
+ *  Metronic ships `.aside-fixed .aside{top:0;z:101}`, `.…header{left:265px;z:100}`,
+ *  `.…wrapper{padding-left:265px}`. We keep the wrapper padding (content still clears
+ *  the sidebar) but make the header full-width ABOVE the aside, and drop the aside to
+ *  top:65px. The `.aside-logo` (logo + « toggle) was MOVED into #kt_header (Header.html)
+ *  so it fills the bar's top-left; IDs out-specify the vendor class rules.
+ * ============================================================= */
+@media (min-width: 992px) {
+  :root[data-theme] #kt_header.header { left: 0 !important; z-index: 102 !important; }   /* full width, above aside */
+  :root[data-theme] #kt_aside.aside   { top: 65px !important; z-index: 100 !important; } /* below the 65px header */
+  /* logo starts at the page's left edge (aligns with the sidebar column below) */
+  :root[data-theme] #kt_header > .container-fluid { padding-left: 0; }
+  /* Brand region width = the SIDEBAR's width (265px) so it forms a clean aligned column with the menu
+     below — but with NO border-right, so the only vertical line is the sidebar's, BELOW the header →
+     T-junction (丁字), not a cross (十字). Logo sits LEFT, the « toggle is pushed to the region's RIGHT
+     edge (space-between); the badges begin at the 265px boundary (= the sidebar's right edge). Tracks
+     the 75px rail on collapse (wordmark hides) so the region always equals the menu width. */
+  :root[data-theme] #kt_header .aside-logo {
+    flex: 0 0 265px; width: 265px; height: 65px; padding: 0 14px 0 25px;
+    display: flex; align-items: center; justify-content: space-between;
+    overflow: hidden;   /* the wordmark never spills past the region */
+  }
+  /* Wordmark stays ONE line (was wrapping/squishing to 2 lines while the region resized). The region
+     width SNAPS between 265/75 (NO transition) so there's no narrow mid-state where the text squishes. */
+  :root[data-theme] #kt_header .aside-logo .logo { white-space: nowrap; }
+  /* collapsed («): region = the 75px rail; favicon + » centered with a gap so they're NOT cramped */
+  .aside-fixed[data-kt-aside-minimize="on"] #kt_header .aside-logo {
+    flex-basis: 75px; width: 75px; padding: 0; justify-content: center; gap: 14px;
+  }
+  [data-kt-aside-minimize="on"] #kt_header .aside-logo .logo { display: none !important; }
+}
+
+/* ============================================================= *
+ * 5. Breadcrumb / toolbar
+ * ============================================================= */
+:root[data-theme] .toolbar { background: transparent; border-top: 0 !important; }  /* kill Metronic's ugly `.header-fixed.toolbar-fixed .toolbar{border-top:1px solid #eff2f559}` hairline */
+:root[data-theme] .breadcrumb .breadcrumb-item > a { color: var(--md-on-surface-med); }
+:root[data-theme] .breadcrumb .breadcrumb-item > a:hover { color: var(--md-primary); }
+:root[data-theme] .breadcrumb .bullet { background-color: var(--md-divider); }
+
+/* ============================================================= *
+ * 6. Buttons
+ * ============================================================= */
+:root[data-theme] .btn {
+  border-radius: var(--md-radius);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: .02em;
+}
+:root[data-theme] .btn:focus-visible { box-shadow: 0 0 0 3px var(--md-focus-ring); }
+
+/* --- contained (solid) --- */
+:root[data-theme] .btn.btn-primary   { background-color: var(--md-primary); border-color: var(--md-primary); color: var(--md-on-primary); box-shadow: var(--md-e2); }
+:root[data-theme] .btn.btn-primary:hover   { background-color: var(--md-primary-hover); border-color: var(--md-primary-hover); box-shadow: var(--md-e4); }
+:root[data-theme] .btn.btn-success   { background-color: var(--md-success); border-color: var(--md-success); color: #fff; box-shadow: var(--md-e2); }
+:root[data-theme] .btn.btn-danger    { background-color: var(--md-error); border-color: var(--md-error); color: #fff; box-shadow: var(--md-e2); }
+:root[data-theme] .btn.btn-warning   { background-color: var(--md-warning); border-color: var(--md-warning); color: #fff; box-shadow: var(--md-e2); }
+:root[data-theme] .btn.btn-info      { background-color: var(--md-secondary); border-color: var(--md-secondary); color: var(--md-on-secondary); box-shadow: var(--md-e2); }
+:root[data-theme] .btn.btn-primary:active,
+:root[data-theme] .btn.btn-success:active,
+:root[data-theme] .btn.btn-danger:active,
+:root[data-theme] .btn.btn-warning:active,
+:root[data-theme] .btn.btn-info:active { box-shadow: var(--md-e8); }
+
+/* --- tonal (light-*) = the primary style used in table toolbars --- */
+:root[data-theme] .btn.btn-light-primary { background-color: rgba(var(--md-primary-rgb), .12); color: var(--md-primary); box-shadow: none; }
+:root[data-theme] .btn.btn-light-primary:hover { background-color: rgba(var(--md-primary-rgb), .20); color: var(--md-primary); }
+:root[data-theme] .btn.btn-light-success { background-color: rgba(var(--md-success-rgb), .14); color: var(--md-success); box-shadow: none; }
+:root[data-theme] .btn.btn-light-success:hover { background-color: rgba(var(--md-success-rgb), .22); color: var(--md-success); }
+:root[data-theme] .btn.btn-light-danger  { background-color: rgba(var(--md-error-rgb), .12); color: var(--md-error); box-shadow: none; }
+:root[data-theme] .btn.btn-light-danger:hover  { background-color: rgba(var(--md-error-rgb), .20); color: var(--md-error); }
+:root[data-theme] .btn.btn-light-warning { background-color: rgba(var(--md-warning-rgb), .16); color: var(--md-warning); box-shadow: none; }
+:root[data-theme] .btn.btn-light-warning:hover { background-color: rgba(var(--md-warning-rgb), .24); color: var(--md-warning); }
+:root[data-theme] .btn.btn-light-info    { background-color: rgba(var(--md-secondary-rgb), .12); color: var(--md-secondary); box-shadow: none; }
+:root[data-theme] .btn.btn-light-info:hover    { background-color: rgba(var(--md-secondary-rgb), .20); color: var(--md-secondary); }
+:root[data-theme] .btn.btn-light-dark,
+:root[data-theme] .btn.btn-light    { background-color: rgba(0,0,0,.06); color: var(--md-on-surface); box-shadow: none; }
+:root[data-theme] .btn.btn-light-dark:hover,
+:root[data-theme] .btn.btn-light:hover { background-color: rgba(0,0,0,.10); color: var(--md-on-surface); }
+:root[data-theme="dark"] .btn.btn-light-dark,
+:root[data-theme="dark"] .btn.btn-light { background-color: rgba(255,255,255,.10); color: var(--md-on-surface); }
+:root[data-theme="dark"] .btn.btn-light-dark:hover,
+:root[data-theme="dark"] .btn.btn-light:hover { background-color: rgba(255,255,255,.16); }
+
+/* --- table-toolbar ACTION buttons → MUI Contained (solid fill + elevation), keeping the semantic
+       colour. The list-page `.card-toolbar` buttons (添加商品/上架选中/移除选中…) shipped as tonal
+       `btn-light-*`; user wants MUI contained. Scoped to `.card-toolbar` so inline tonal buttons stay. --- */
+/* 1:1 MUI Contained: 4px radius, 13.5px/500 + MUI letter-spacing, 6px 16px padding, MUI easing.
+   Buttons are CONTROLS (not surfaces) → they keep the AUTHENTIC MD2 elevation shadow (a real, visible
+   lift). We deliberately do NOT use the softened surface-token ladder here — that read nearly flat on
+   white = "not MUI". (The soft-shadow unification is for surfaces: cards/header/dialogs; a contained
+   button wants genuine elevation.) The bigger 13.5px type + line-height 1.75 also lift the height to
+   ~36px (MUI medium), so they read substantial instead of compact. */
+:root[data-theme] .card-toolbar .btn {
+  border-radius: 4px !important;
+  padding: 6px 16px !important;
+  min-width: 64px;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.75;
+  letter-spacing: .02857em;
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  transition: background-color .25s cubic-bezier(.4,0,.2,1), box-shadow .25s cubic-bezier(.4,0,.2,1), border-color .25s cubic-bezier(.4,0,.2,1) !important;
+}
+/* Metronic ships `.btn:not(.btn-shadow):not(.shadow):not(.shadow-sm):not(.shadow-lg){box-shadow:none!important}`
+   (specificity 0,0,5,0). Mirror its :not() chain under our scope → 0,0,8,0 so the MUI elevation wins. */
+:root[data-theme] .card-toolbar .btn:not(.btn-shadow):not(.shadow):not(.shadow-sm):not(.shadow-lg) {
+  box-shadow: 0 3px 1px -2px rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 1px 5px 0 rgba(0,0,0,.12) !important;   /* MUI elevation 2 */
+}
+:root[data-theme] .card-toolbar .btn:not(.btn-shadow):not(.shadow):not(.shadow-sm):not(.shadow-lg):hover {
+  box-shadow: 0 2px 4px -1px rgba(0,0,0,.2), 0 4px 5px 0 rgba(0,0,0,.14), 0 1px 10px 0 rgba(0,0,0,.12) !important;  /* MUI elevation 4 */
+}
+:root[data-theme] .card-toolbar .btn:not(.btn-shadow):not(.shadow):not(.shadow-sm):not(.shadow-lg):active {
+  box-shadow: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12) !important;  /* MUI elevation 8 */
+}
+:root[data-theme] .card-toolbar .btn:hover { background-image: linear-gradient(rgba(0,0,0,.13), rgba(0,0,0,.13)); }
+/* MUI startIcon: 18px glyph; spacing comes from the button's inline-flex `gap` (not margin),
+   so the Material glyph's wide advance-box + the HTML whitespace don't compound into a big gap. */
+:root[data-theme] .card-toolbar .btn > i,
+:root[data-theme] .card-toolbar .btn > .material-icons,
+:root[data-theme] .card-toolbar .btn > .material-icons-outlined { font-size: 18px !important; margin: 0 !important; line-height: 1; }
+:root[data-theme] .card-toolbar .btn.btn-light-primary { background-color: var(--md-primary) !important; color: var(--md-on-primary) !important; }
+:root[data-theme] .card-toolbar .btn.btn-light-success { background-color: var(--md-success) !important; }
+:root[data-theme] .card-toolbar .btn.btn-light-danger  { background-color: var(--md-error) !important; color: #fff !important; }
+:root[data-theme] .card-toolbar .btn.btn-light-warning { background-color: var(--md-warning) !important; }
+:root[data-theme] .card-toolbar .btn.btn-light-info    { background-color: var(--md-secondary) !important; color: var(--md-on-secondary) !important; }
+/* success/warning contrast text: the semantic colours are DARK in light mode (→ white text) but
+   LIGHT in dark mode (→ dark text, like MUI contrastText) — white on light-green/orange fails a11y */
+:root[data-theme="light"] .card-toolbar .btn.btn-light-success,
+:root[data-theme="light"] .card-toolbar .btn.btn-light-warning { color: #fff !important; }
+:root[data-theme="dark"] .card-toolbar .btn.btn-light-success,
+:root[data-theme="dark"] .card-toolbar .btn.btn-light-warning { color: rgba(0,0,0,.87) !important; }
+:root[data-theme="light"] .card-toolbar .btn.btn-light-dark { background-color: #5f6368 !important; color: #fff !important; }
+:root[data-theme="dark"]  .card-toolbar .btn.btn-light-dark { background-color: #464c55 !important; color: rgba(255,255,255,.92) !important; }
+/* duotone icons follow the button's (white) text instead of their fixed 2-tone colour */
+:root[data-theme] .card-toolbar .btn i { color: currentColor !important; --fa-primary-color: currentColor; --fa-secondary-color: currentColor; --fa-secondary-opacity: 1; }
+
+/* --- text button --- */
+:root[data-theme] .btn.btn-active-light-primary:hover { background-color: rgba(var(--md-primary-rgb), .12); color: var(--md-primary); }
+
+/* ============================================================= *
+ * 8. Dashboard (stat cards inherit .card; tints via remapped --bs-*-rgb)
+ *    Card-specific gradient/dark fixes handled in Phase 2 pass.
+ * ============================================================= */
+:root[data-theme] .hover-shadow:hover,
+:root[data-theme] .hover-elevate-up:hover { box-shadow: var(--md-e6) !important; }
+
+
+/* Dark legibility for Metronic hard-hex text utilities */
+:root[data-theme="dark"] .text-dark { color: var(--md-on-surface) !important; }
+:root[data-theme="dark"] .text-muted { color: var(--md-on-surface-med) !important; }
+:root[data-theme="dark"] .text-gray-900,
+:root[data-theme="dark"] .text-gray-800,
+:root[data-theme="dark"] .text-gray-700 { color: var(--md-on-surface) !important; }
+:root[data-theme="dark"] .text-gray-600,
+:root[data-theme="dark"] .text-gray-500 { color: var(--md-on-surface-med) !important; }
+:root[data-theme="dark"] .bg-body,
+:root[data-theme="dark"] .bg-white { background-color: var(--md-surface) !important; }
+
+/* Metronic solid form-controls also carry a glass !important background */
+:root[data-theme] .form-control.form-control-solid,
+:root[data-theme] .form-select.form-select-solid {
+  background: transparent !important;
+  border: 1px solid var(--md-outline) !important;
+  box-shadow: none !important;
+  color: var(--md-on-surface);
+  border-radius: var(--md-radius) !important;
+}
+/* ============================================================= *
+ * PHASE 5 polish — dashboard dark fixes + generic Bootstrap form controls
+ * ============================================================= */
+/* dashboard peach→white gradient band (Index.html .bg-gradient-primary) reads
+ * wrong in dark; the white-text header needs a dark surface behind it. */
+:root[data-theme="dark"] .bg-gradient-primary { background: var(--md-surface-2) !important; }
+:root[data-theme="dark"] .position-absolute.bg-gradient-primary.opacity-10 { background: transparent !important; opacity: 0 !important; }
+
+/* generic Bootstrap/Metronic form-select + form-control (e.g. dashboard filter) */
+:root[data-theme] .form-select,
+:root[data-theme] .form-control { border-radius: var(--md-radius); }
+:root[data-theme="dark"] .form-select,
+:root[data-theme="dark"] .form-control {
+  background-color: var(--md-surface) !important;
+  color: var(--md-on-surface);
+  border: 1px solid var(--md-outline);
+}
+:root[data-theme="dark"] .form-select option,
+:root[data-theme="dark"] .form-control option { background-color: var(--md-surface); color: var(--md-on-surface); }
+:root[data-theme] .form-control:focus,
+:root[data-theme] .form-select:focus { border-color: var(--md-primary); box-shadow: 0 0 0 1px var(--md-primary); }
+
+/* 商品介绍：HTML 源码模式使用 ACE 的浅色 chrome 主题。暗色下将源码区完整
+   映射到与 Markdown（CodeMirror）相同的 surface，避免 component.css 的半透明
+   白底叠在深色弹窗上变成灰块，同时补齐行号、选区与语法色的暗色可读性。 */
+:root[data-theme="dark"] .ev2-editor .ev2-ace.ace_editor,
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_scroller,
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_content {
+  background: var(--md-surface) !important;
+  color: var(--md-on-surface) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_text-layer {
+  color: var(--md-on-surface) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_gutter {
+  background: var(--md-surface) !important;
+  color: var(--md-on-surface-dis) !important;
+  border-right: 1px solid var(--md-divider) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_gutter-active-line {
+  background: rgba(var(--md-primary-rgb), .10) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_marker-layer .ace_active-line {
+  background: rgba(255, 255, 255, .04) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_marker-layer .ace_selection {
+  background: rgba(var(--md-primary-rgb), .28) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_marker-layer .ace_selected-word {
+  background: rgba(var(--md-primary-rgb), .10) !important;
+  border-color: rgba(var(--md-primary-rgb), .38) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_print-margin {
+  background: var(--md-divider) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_cursor {
+  color: var(--md-primary) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_invisible,
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_comment {
+  color: var(--md-on-surface-dis) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_storage,
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_keyword,
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_meta.ace_tag {
+  color: var(--md-secondary) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_string,
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_constant.ace_library,
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_support.ace_constant {
+  color: var(--md-success) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_constant,
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_constant.ace_numeric {
+  color: var(--md-warning) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_variable,
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_entity.ace_name.ace_function {
+  color: var(--md-primary) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_entity.ace_other.ace_attribute-name {
+  color: var(--md-warning) !important;
+}
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_support,
+:root[data-theme="dark"] .ev2-editor .ev2-ace .ace_keyword.ace_operator {
+  color: var(--md-info) !important;
+}
+
+/* Metronic bg-gray-* utilities that hard-code light greys (separators, bullets, fills) */
+:root[data-theme="dark"] .bg-gray-100,
+:root[data-theme="dark"] .bg-light { background-color: #2a2a2a !important; }
+:root[data-theme="dark"] .bg-gray-200 { background-color: #333333 !important; }
+:root[data-theme="dark"] .bg-gray-300 { background-color: #3d3d3d !important; }
+
+/* ============================================================= *
+ * REDESIGN v2 — page header, stat cards, global rhythm
+ * ============================================================= */
+
+/* --- Page header (Toolbar.html) --- */
+/* Metronic locks the toolbar to position:fixed + 55px height — too short for our
+ * title + tabs (they overflowed and overlapped the content). Un-fix it so it flows
+ * in-content at its natural height; the wrapper then only needs to clear the header. */
+:root[data-theme] #kt_toolbar.md-page-header {
+  position: static !important;
+  height: auto !important;
+  min-height: 0 !important;
+  top: auto !important;
+  width: auto !important;
+  z-index: auto !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 22px 0 10px !important;
+}
+:root[data-theme] #kt_wrapper { padding-top: 65px !important; }
+:root[data-theme] #pjax-container > .content { padding-top: 0 !important; }
+/* some pages (config/*) wrap content in a centered container-xxl (max 1320px) while
+ * the toolbar is full-width → title/tabs sit far left of the content. Make content
+ * full-width so everything aligns (and matches the full-width settings mockup). */
+:root[data-theme] #kt_content .container-xxl,
+:root[data-theme] #kt_content .container-xl { max-width: none !important; }
+:root[data-theme] .md-page-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  margin: 0;
+  letter-spacing: .2px;
+  line-height: 1.2;
+}
+/* $toolbar sibling-page nav → MUI tabs (primary underline indicator) */
+:root[data-theme] .md-tabs {
+  display: flex;
+  gap: 2px;
+  align-items: stretch;
+  margin: 16px 0 0;
+  border-bottom: 1px solid var(--md-divider);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+:root[data-theme] .md-tabs::-webkit-scrollbar { display: none; }
+:root[data-theme] .md-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--md-on-surface-med);
+  text-decoration: none;
+  white-space: nowrap;
+  border-radius: var(--md-radius) var(--md-radius) 0 0;
+  transition: color var(--md-dur-fast) var(--md-ease), background-color var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .md-tab:hover { color: var(--md-on-surface); background: var(--md-hover-overlay); }
+:root[data-theme] .md-tab.active { color: var(--md-primary); }
+:root[data-theme] .md-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 14px; right: 14px; bottom: -1px;
+  height: 2px;
+  background: var(--md-primary);
+  border-radius: 2px 2px 0 0;
+}
+
+/* --- Stat cards (.md-stat) : label+value LEFT, SOFT-TINT accent tile TOP-RIGHT (方案C 淡彩素雅) --- */
+:root[data-theme] .md-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  height: 100%;
+  min-height: 94px;
+  padding: 20px 22px;
+  background: var(--md-surface);
+  border: 1px solid var(--md-divider);
+  border-radius: 16px;
+  transition: border-color var(--md-dur) var(--md-ease), box-shadow var(--md-dur) var(--md-ease), transform var(--md-dur) var(--md-ease);
+  --stat: var(--md-primary);
+  --stat-rgb: var(--md-primary-rgb);
+}
+/* Shadow from the UNIFIED token ladder now that it's soft (e1 rest → e4 hover). See §Elevation in
+   material-tokens.css — the token IS the soft shadow, so cards stay in lockstep with the whole admin. */
+:root[data-theme] .md-stat { box-shadow: var(--md-e1); }
+:root[data-theme] .md-stat:hover { box-shadow: var(--md-e4); transform: translateY(-2px); border-color: rgba(var(--stat-rgb), .4); }
+:root[data-theme] .md-stat__body { order: 1; min-width: 0; flex: 1; }
+:root[data-theme] .md-stat__label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--md-on-surface-med);
+  margin: 2px 0 9px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+:root[data-theme] .md-stat__value {
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -.3px;
+  color: var(--md-on-surface);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* soft-tint tile: accent @14% fill + a delicate accent inner ring + accent-coloured glyph. The accent
+   glyph reads on BOTH themes (dark = light accent on dark tint; light = dark accent on light tint),
+   so NO per-theme contrast override is needed (unlike the old solid tile). */
+:root[data-theme] .md-stat__icon {
+  order: 2;
+  flex-shrink: 0;
+  width: 46px; height: 46px;
+  border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(var(--stat-rgb), .14);
+  box-shadow: inset 0 0 0 1px rgba(var(--stat-rgb), .28);
+  color: var(--stat);
+}
+/* Metronic ships a global `i{font-size:1rem}` (13px) that beats the tile's inherited font-size, so
+   the glyph must be sized ON the icon element (specificity .md-stat__icon>i beats the bare `i`) →
+   a proper ~26px glyph centred in the 46px tile (was rendering at 13px). */
+:root[data-theme] .md-stat__icon > i,
+:root[data-theme] .md-stat__icon > .material-icons,
+:root[data-theme] .md-stat__icon > .material-icons-outlined { font-size: 26px; line-height: 1; }
+:root[data-theme] .md-stat--primary   { --stat: var(--md-primary);   --stat-rgb: var(--md-primary-rgb); }
+:root[data-theme] .md-stat--success   { --stat: var(--md-success);   --stat-rgb: var(--md-success-rgb); }
+:root[data-theme] .md-stat--danger    { --stat: var(--md-error);     --stat-rgb: var(--md-error-rgb); }
+:root[data-theme] .md-stat--warning   { --stat: var(--md-warning);   --stat-rgb: var(--md-warning-rgb); }
+:root[data-theme] .md-stat--info      { --stat: var(--md-info);      --stat-rgb: var(--md-info-rgb); }
+:root[data-theme] .md-stat--secondary { --stat: var(--md-secondary); --stat-rgb: var(--md-secondary-rgb); }
+
+/* --- Global card-header typography + rhythm --- */
+:root[data-theme] .card .card-header .card-title,
+:root[data-theme] .card .card-header .card-title h1,
+:root[data-theme] .card .card-header .card-title h2,
+:root[data-theme] .card .card-header .card-title h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  margin: 0;
+}
+:root[data-theme] .card .card-toolbar { gap: 8px; flex-wrap: wrap; }
+
+/* --- Dashboard profile card + section title --- */
+:root[data-theme] .md-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  margin: 0;
+}
+:root[data-theme] .dash-profile {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: var(--md-surface);
+  background-image: linear-gradient(118deg, rgba(var(--md-primary-rgb), .10), transparent 34%);
+  border: 1px solid rgba(var(--md-primary-rgb), .18);
+  box-shadow: var(--md-e2);
+}
+:root[data-theme] .dash-profile::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -185px;
+  left: -95px;
+  width: 310px;
+  height: 310px;
+  border-radius: 50%;
+  background: rgba(var(--md-primary-rgb), .12);
+  filter: blur(8px);
+  pointer-events: none;
+}
+:root[data-theme] .dash-profile__body {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.1fr) minmax(440px, 1.55fr);
+  align-items: center;
+  gap: 22px;
+  min-height: 126px;
+  padding: 24px 26px;
+}
+:root[data-theme] .dash-profile__identity {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  min-width: 0;
+}
+:root[data-theme] .dash-profile__avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+:root[data-theme] .dash-profile__avatar {
+  display: block;
+  width: 66px;
+  height: 66px;
+  border-radius: 20px;
+  object-fit: cover;
+  box-shadow: 0 0 0 4px var(--md-surface), var(--md-e4);
+}
+:root[data-theme] .dash-profile__status {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--md-success);
+  border: 3px solid var(--md-surface);
+  box-shadow: 0 0 0 1px rgba(var(--md-success-rgb), .20);
+}
+:root[data-theme] .dash-profile__intro { min-width: 0; }
+:root[data-theme] .dash-profile__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 5px;
+  color: var(--md-primary);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .35px;
+}
+:root[data-theme] .dash-profile__eyebrow .material-icons-outlined { font-size: 16px; }
+:root[data-theme] .dash-profile__name-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+:root[data-theme] .dash-profile__name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--md-on-surface);
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:root[data-theme] .dash-profile__online {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border: 1px solid rgba(var(--md-success-rgb), .26);
+  border-radius: var(--md-radius-pill);
+  background: rgba(var(--md-success-rgb), .10);
+  color: var(--md-success);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+:root[data-theme] .dash-profile__email {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 5px;
+  color: var(--md-on-surface-med);
+  font-size: 13px;
+}
+:root[data-theme] .dash-profile__email .material-icons-outlined { flex-shrink: 0; font-size: 16px; }
+:root[data-theme] .dash-profile__email span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:root[data-theme] .dash-profile__security {
+  display: grid;
+  grid-template-columns: minmax(180px, .85fr) minmax(245px, 1.15fr);
+  gap: 12px;
+  min-width: 0;
+}
+:root[data-theme] .dash-profile__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 78px;
+  padding: 12px 14px;
+  border: 1px solid var(--md-divider);
+  border-radius: 14px;
+  background-color: var(--md-surface);
+  background-image: linear-gradient(0deg, var(--md-hover-overlay), var(--md-hover-overlay));
+  transition: border-color var(--md-dur-fast) var(--md-ease), background-image var(--md-dur-fast) var(--md-ease), transform var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .dash-profile__meta:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--md-primary-rgb), .34);
+  background-image: linear-gradient(0deg, var(--md-selected-overlay), var(--md-selected-overlay));
+}
+:root[data-theme] .dash-profile__meta-icon {
+  display: inline-flex;
+  flex: 0 0 38px;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(var(--md-primary-rgb), .12);
+  color: var(--md-primary);
+  font-size: 20px;
+}
+:root[data-theme] .dash-profile__meta-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+:root[data-theme] .dash-profile__meta-label {
+  margin-bottom: 2px;
+  color: var(--md-on-surface-med);
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+:root[data-theme] .dash-profile__meta-value {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--md-on-surface);
+  font-size: 14.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:root[data-theme] .dash-profile__meta-value--muted { color: var(--md-on-surface-med); font-weight: 500; }
+:root[data-theme] .dash-profile__meta-note {
+  max-width: 100%;
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--md-on-surface-med);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:root[data-theme] .dash-profile__meta-note--live { color: var(--md-success); font-weight: 500; }
+
+@media (max-width: 1599.98px) {
+  :root[data-theme] .dash-profile__body { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 767.98px) {
+  :root[data-theme] .dash-profile__body { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 21px; }
+  :root[data-theme] .dash-profile__security { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 479.98px) {
+  :root[data-theme] .dash-profile__identity { align-items: flex-start; gap: 14px; }
+  :root[data-theme] .dash-profile__avatar { width: 58px; height: 58px; border-radius: 18px; }
+  :root[data-theme] .dash-profile__name { font-size: 18px; }
+}
+
+/* --- 官方公告 (dashboard announcements) — MUI mini-cards, token-driven light/dark.
+   标题 HTML 来自商店 API（含内联着色的 <官方>/<推荐> 及蓝/绿/红文字），保留其颜色；
+   仅重做容器：surface-2 卡片 + 细边框 + 主色强调条 + hover 抬升 + 弱化时间戳。 --- */
+:root[data-theme] .ad-html { display: flex; flex-direction: column; gap: 8px; }
+:root[data-theme] .md-ad-item {
+  position: relative;
+  padding: 12px 14px 12px 18px;
+  border-radius: var(--md-radius);
+  /* surface + 中性叠加：暗色下提亮(凸起)、亮色下压暗(与白卡区分) —— surface-2 在亮色是纯白会糊 */
+  background-color: var(--md-surface);
+  background-image: linear-gradient(0deg, var(--md-hover-overlay), var(--md-hover-overlay));
+  border: 1px solid var(--md-divider);
+  overflow: hidden;
+  transition: border-color .15s ease, box-shadow .15s ease, background-image .15s ease;
+}
+:root[data-theme] .md-ad-item::before {
+  content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--md-primary); opacity: .85;
+}
+:root[data-theme] .md-ad-item:hover {
+  border-color: rgba(var(--md-primary-rgb), .40);
+  box-shadow: var(--md-e1);
+  background-image: linear-gradient(0deg, var(--md-selected-overlay), var(--md-selected-overlay));
+}
+:root[data-theme] .md-ad-item__title {
+  display: block;
+  font-size: 13.5px; font-weight: 600; line-height: 1.6;
+  color: var(--md-on-surface); text-decoration: none; word-break: break-word;
+}
+:root[data-theme] .md-ad-item__title:hover { color: var(--md-on-surface); }
+/* 拉伸链接：整卡可点（标题里的 <span>/<b> 无嵌套 <a>，安全） */
+:root[data-theme] .md-ad-item__title::after { content: ""; position: absolute; inset: 0; }
+:root[data-theme] .md-ad-item__time {
+  display: flex; align-items: center; gap: 5px; margin-top: 7px;
+  font-size: 12px; color: var(--md-on-surface-med);
+}
+:root[data-theme] .md-ad-item__time i { font-size: 12px; }
+
+/* --- Form pages (Config/*, Manage/Set): typography + rhythm --- */
+:root[data-theme] .col-form-label,
+:root[data-theme] .form-label {
+  font-weight: 500;
+  color: var(--md-on-surface);
+  font-size: 14px;
+}
+:root[data-theme] .form-text { color: var(--md-on-surface-med); }
+:root[data-theme] .card .card-footer { background: transparent; border-top: 1px solid var(--md-divider); padding: 16px 24px; }
+:root[data-theme] .card .card-header.cursor-pointer:hover { background: var(--md-hover-overlay); }
+:root[data-theme] .separator { border-bottom-color: var(--md-divider); }
+:root[data-theme] .separator.separator-dashed { border-bottom-style: dashed; }
+
+/* --- List pages: tidy the toolbar-only card header --- */
+:root[data-theme] .card > .card-header.border-0 { min-height: auto; padding-top: 18px; padding-bottom: 8px; }
+
+/* --- consistent content top rhythm --- */
+:root[data-theme] #kt_content_container { padding-top: 4px; }
+
+/* ============================================================= *
+ * Header top bar redesign — nav chips, node select, avatar
+ * ============================================================= */
+:root[data-theme] #kt_header .header-menu { align-items: center; }
+
+/* nav items (应用商店 / lizhipay / 开发者 / balance) → clean MUI pill chips */
+:root[data-theme] #kt_header .header-menu .a-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 34px; padding: 0 14px; margin: 0 3px;
+  border-radius: var(--md-radius-pill) !important;
+  font-weight: 500; font-size: 13px; line-height: 1;
+  border: none; box-shadow: none !important;
+  transition: background-color var(--md-dur-fast) var(--md-ease), filter var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] #kt_header .header-menu .a-badge-success { background: rgba(var(--md-success-rgb), .12) !important; color: var(--md-success) !important; }
+:root[data-theme] #kt_header .header-menu .a-badge-warning { background: rgba(var(--md-warning-rgb), .14) !important; color: var(--md-warning) !important; }
+:root[data-theme] #kt_header .header-menu .a-badge-light   { background: var(--md-hover-overlay) !important; color: var(--md-on-surface) !important; }
+:root[data-theme] #kt_header .app-store-main > a.a-badge  { background: rgba(var(--md-primary-rgb), .10) !important; color: var(--md-primary) !important; }
+:root[data-theme] #kt_header .header-menu a.a-badge { cursor: pointer; }
+:root[data-theme] #kt_header .header-menu a.a-badge:hover { filter: brightness(.96); }
+:root[data-theme] #kt_header .header-menu .a-badge i { font-size: 13px; }
+:root[data-theme] #kt_header .header-menu .md-top-pill__icon {
+  display: inline-flex;
+  flex: 0 0 18px;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: currentColor;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* node select → clean outlined pill */
+:root[data-theme] #kt_header .app-server-select {
+  height: 34px !important;
+  border: 1px solid var(--md-divider) !important;
+  border-radius: var(--md-radius-pill) !important;
+  background: transparent !important;
+  color: var(--md-on-surface-med) !important;
+  padding: 0 30px 0 14px !important;
+  font-size: 13px !important; font-weight: 500;
+  cursor: pointer;
+}
+
+/* avatar → circular MUI avatar with ring, hover lift + online dot */
+:root[data-theme] #kt_header .symbol { position: relative; }
+:root[data-theme] #kt_header .symbol > img {
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 2px solid var(--md-surface) !important;
+  box-shadow: 0 0 0 1px var(--md-divider), var(--md-e1) !important;
+  transition: box-shadow var(--md-dur) var(--md-ease), transform var(--md-dur) var(--md-ease);
+}
+:root[data-theme] #kt_header .symbol:hover > img {
+  box-shadow: 0 0 0 2px var(--md-primary) !important;
+  transform: translateY(-1px);
+}
+:root[data-theme] #kt_header .symbol::after {
+  content: ""; position: absolute; right: 1px; bottom: 1px;
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--md-success);
+  border: 2px solid var(--md-surface);
+  pointer-events: none;
+}
+
+/* theme toggle → circular icon button, aligned with the avatar */
+:root[data-theme] #md-theme-toggle { border-radius: 50% !important; }
+
+/* node select → custom dropdown with vendor icons (built by material.js) */
+:root[data-theme] .md-nodesel { position: relative; display: inline-flex; align-items: center; }
+:root[data-theme] .md-nodesel__btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 34px; padding: 0 12px 0 14px; margin: 0 3px;
+  border: 1px solid var(--md-divider); border-radius: var(--md-radius-pill);
+  background: transparent; color: var(--md-on-surface); cursor: pointer;
+  font-size: 13px; font-weight: 500; line-height: 1; white-space: nowrap;
+  transition: background-color var(--md-dur-fast) var(--md-ease), border-color var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .md-nodesel__btn:hover { background: var(--md-hover-overlay); border-color: var(--md-on-surface); }
+:root[data-theme] .md-nodesel__ico { width: 16px; text-align: center; font-size: 15px; flex-shrink: 0; }
+:root[data-theme] .md-nodesel__caret { font-size: 11px; color: var(--md-on-surface-med); margin-left: 2px; transition: transform var(--md-dur-fast) var(--md-ease); }
+:root[data-theme] .md-nodesel:has(.md-nodesel__menu.show) .md-nodesel__caret { transform: rotate(180deg); }
+:root[data-theme] .md-nodesel__menu {
+  position: absolute; top: calc(100% + 6px); left: 3px;
+  min-width: calc(100% - 6px); width: max-content;
+  background: var(--md-surface-2); border: 1px solid var(--md-divider);
+  border-radius: var(--md-radius); box-shadow: var(--md-e8);
+  padding: 6px; z-index: 1100;
+  opacity: 0; visibility: hidden; transform: translateY(-6px) scale(.98); transform-origin: top left;
+  transition: opacity var(--md-dur-fast) var(--md-ease), transform var(--md-dur-fast) var(--md-ease), visibility var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .md-nodesel__menu.show { opacity: 1; visibility: visible; transform: none; }
+:root[data-theme] .md-nodesel__item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: var(--md-radius); cursor: pointer;
+  font-size: 13.5px; color: var(--md-on-surface); white-space: nowrap;
+  transition: background-color var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .md-nodesel__item .md-nodesel__label { flex: 1; }
+:root[data-theme] .md-nodesel__item:hover { background: var(--md-hover-overlay); }
+:root[data-theme] .md-nodesel__item.active { background: var(--md-selected-overlay); }
+:root[data-theme] .md-nodesel__check { opacity: 0; color: var(--md-primary); font-size: 12px; }
+:root[data-theme] .md-nodesel__item.active .md-nodesel__check { opacity: 1; }
+
+/* ============================================================= *
+ * CONFIG SETTINGS → Material UI  (scoped to .md-settings)
+ * app/View/Admin/Config/{Setting,Sms,Email,Other}.html
+ * Floating outlined labels + constrained 2-col grid, CSS-only.
+ * Notch bg = --md-surface (the card body surface). Model: .widget-field.
+ * ============================================================= */
+
+/* ---- width + card + drop the redundant in-card header (title lives in .md-page-title) ---- */
+:root[data-theme] #kt_content .md-settings.container-xxl,
+:root[data-theme] #kt_content .md-settings.container-xl {
+  max-width: 1080px !important;
+  min-width: 0 !important;       /* flex item of #kt_post — let it shrink so wide grid content can't balloon it */
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+/* center the whole page: toolbar title+tabs match the centered card (config pages only) */
+:root[data-theme] #kt_content:has(.md-settings) #kt_toolbar_container {
+  max-width: 1080px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+/* unify config buttons: icon + label, MUI alignment */
+:root[data-theme] .md-settings .card-footer .btn { display: inline-flex; align-items: center; }
+:root[data-theme] .md-settings > .card { margin-bottom: 0 !important; }
+:root[data-theme] .md-settings .card > .card-header { display: none !important; }
+
+/* ---- card-body → responsive 2-col grid ---- */
+:root[data-theme] .md-settings .card-body {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 28px;
+  row-gap: 26px;
+  align-items: start;
+  padding: 32px !important;
+}
+@media (max-width: 991.98px) {
+  :root[data-theme] .md-settings .card-body { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* each .row.mb-6 = one grid cell; neutralise Bootstrap row/col geometry */
+:root[data-theme] .md-settings .card-body > .row.mb-6 {
+  display: block;
+  position: relative;
+  margin: 0 !important;
+  min-width: 0;
+}
+:root[data-theme] .md-settings .card-body > .row.mb-6 > [class*="col-"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* rows that must span BOTH columns */
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(textarea),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.notice-editor),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.image-input),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(table),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.form-check-inline),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(input[name="keywords"]),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(input[name="registered_state"]),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(input[name="callback_domain"]),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(input[name="cname"]),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(input[name="substation_display"]) {
+  grid-column: 1 / -1;
+}
+/* 其他设置 供货商 table → fill full width (its col is d-flex → force block so the table can be 100%) */
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(table) > .col-lg-8 { display: block !important; }
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(table) table,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(table) .bootstrap-table,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(table) .fixed-table-container { width: 100% !important; }
+
+:root[data-theme] .md-settings .card-body > .alert { grid-column: 1 / -1; margin: 0 0 4px !important; }
+
+/* ---- floating label (the separate .col-lg-4 label, absolutely positioned over the input) ---- */
+:root[data-theme] .md-settings .card-body > .row.mb-6 > label.col-form-label {
+  position: absolute;
+  top: 23px;
+  left: 14px;
+  transform: translateY(-50%);
+  transform-origin: left center;
+  z-index: 2;
+  margin: 0 !important;
+  padding: 0 5px !important;
+  width: auto !important;   /* the label has a col-* class → the generic col{width:100%} was stretching its notch full-width */
+  max-width: calc(100% - 34px);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 14px; line-height: 1; font-weight: 400 !important;
+  color: var(--md-on-surface-med);
+  background: transparent;
+  pointer-events: none;
+  transition: top var(--md-dur-fast) var(--md-ease),
+              transform var(--md-dur-fast) var(--md-ease),
+              color var(--md-dur-fast) var(--md-ease),
+              background-color var(--md-dur-fast) var(--md-ease),
+              max-width var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .md-settings .card-body > .row.mb-6 > label.col-form-label a {
+  pointer-events: auto; color: inherit !important; text-decoration: underline;
+}
+/* lift: on focus, or when the text input / textarea is filled, or it's a select2 (always has a value) */
+:root[data-theme] .md-settings .card-body > .row.mb-6:focus-within > label.col-form-label,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(> [class*="col-"] input:not([type=hidden]):not([type=checkbox]):not([type=file]):not(:placeholder-shown)) > label.col-form-label,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(> [class*="col-"] textarea:not(:placeholder-shown)) > label.col-form-label,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[data-control="select2"]) > label.col-form-label {
+  top: 0;
+  transform: translateY(-50%) scale(.82);
+  background: var(--md-surface);
+  max-width: calc((100% / .82) - 30px);
+}
+:root[data-theme] .md-settings .card-body > .row.mb-6:focus-within > label.col-form-label { color: var(--md-primary); }
+:root[data-theme] .md-settings .card-body > .row.mb-6 > label.required::after { color: var(--md-error); margin-left: 2px; }
+/* hide the real placeholder until focus (label acts as the placeholder) */
+:root[data-theme] .md-settings .card-body .row.mb-6 input:not([type=checkbox])::placeholder,
+:root[data-theme] .md-settings .card-body .row.mb-6 textarea::placeholder { color: transparent !important; }
+:root[data-theme] .md-settings .card-body .row.mb-6:focus-within input::placeholder,
+:root[data-theme] .md-settings .card-body .row.mb-6:focus-within textarea::placeholder { color: var(--md-on-surface-dis) !important; }
+
+/* ---- control sizing ---- */
+:root[data-theme] .md-settings .card-body .row.mb-6 .form-control,
+:root[data-theme] .md-settings .card-body .row.mb-6 .form-select { width: 100% !important; }
+:root[data-theme] .md-settings .card-body .row.mb-6 textarea.form-control { min-height: 92px; padding-top: 14px; }
+
+/* ---- select2: outlined 46px field with the floated label on its border ---- */
+:root[data-theme] .md-settings .card-body .row.mb-6 .select2-container { width: 100% !important; }
+/* the .selection wrapper is an inline span → in a flex row it collapsed the field to content
+ * width; force it block so the field fills its column and the text has room */
+:root[data-theme] .md-settings .card-body .row.mb-6 .select2-container .selection { display: block; }
+:root[data-theme] .md-settings .card-body .row.mb-6 .select2-container--default .select2-selection--single {
+  height: 46px; width: 100%; box-sizing: border-box; display: flex; align-items: center; padding: 0 14px;
+}
+:root[data-theme] .md-settings .card-body .row.mb-6 .select2-selection--single .select2-selection__rendered {
+  flex: 1 1 auto; min-width: 0; line-height: 1.5; padding: 0 22px 0 0; color: var(--md-on-surface);
+}
+:root[data-theme] .md-settings .card-body .row.mb-6 .select2-selection--single .select2-selection__arrow { height: 44px; right: 8px; }
+
+/* select/input + button rows → flex row (label still floats over the input) */
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-setting),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-mobile-setting),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-user-setting),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-user-mobile-setting),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.background-upload),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.background-mb-upload) {
+  display: flex !important; align-items: center; gap: 10px;
+}
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-setting) > .col-lg-6,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-mobile-setting) > .col-lg-6,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-user-setting) > .col-lg-6,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-user-mobile-setting) > .col-lg-6,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.background-upload) > .col-lg-6,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.background-mb-upload) > .col-lg-6 { flex: 1 1 auto !important; width: auto !important; min-width: 0; }
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-setting) > .col-lg-2,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-mobile-setting) > .col-lg-2,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-user-setting) > .col-lg-2,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-user-mobile-setting) > .col-lg-2,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.background-upload) > .col-lg-2,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.background-mb-upload) > .col-lg-2 { flex: 0 0 auto; width: auto !important; }
+
+/* ---- switch / checkbox / image / notice / table rows: STATIC label above (no float) ---- */
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.form-check) > label.col-form-label,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.form-switch) > label.col-form-label,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.image-input) > label.col-form-label,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(.notice-editor) > label.col-form-label,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(table) > label.col-form-label {
+  position: static !important;
+  transform: none !important;
+  max-width: 100% !important;
+  white-space: normal !important; overflow: visible !important;
+  display: block; margin: 0 0 8px !important;
+  padding: 0 !important; background: transparent !important;
+  font-size: 13px; font-weight: 600 !important; line-height: 1.4;
+  color: var(--md-on-surface-med) !important;
+}
+
+/* image-input action buttons (change / cancel / remove) — Metronic gives them `bg-body`, which is a
+   DARK button on the dark canvas in dark mode → the chip AND its icon vanish. Make them a visible
+   surface-2 chip + themed icon in BOTH themes (hover → primary). Global: any admin `.image-input`
+   (profile 头像, config logo/favicon/background…). */
+:root[data-theme] .image-input [data-kt-image-input-action] {
+  background-color: var(--md-surface-2) !important;
+  border: 1px solid var(--md-divider) !important;
+  box-shadow: var(--md-e2) !important;
+  color: var(--md-on-surface) !important;   /* the icon inherits this via the `.md-settings .btn i{color:currentColor}` rule */
+}
+:root[data-theme] .image-input [data-kt-image-input-action] i { color: var(--md-on-surface) !important; font-size: 12px; }
+:root[data-theme] .image-input [data-kt-image-input-action]:hover { background-color: var(--md-primary) !important; color: var(--md-on-primary) !important; }
+:root[data-theme] .image-input [data-kt-image-input-action]:hover i { color: var(--md-on-primary) !important; }
+
+/* Bootstrap switch (.form-switch .form-check-input) → MUI Switch */
+:root[data-theme] .md-settings .form-check.form-switch { padding-left: 0; min-height: 0; }
+:root[data-theme] .md-settings .form-switch .form-check-input {
+  width: 40px !important; height: 22px !important; margin: 0;
+  background-color: var(--md-on-surface-dis) !important; background-image: none !important;
+  border: none !important; border-radius: 11px !important;
+  position: relative; cursor: pointer; box-shadow: none !important;
+  transition: background-color var(--md-dur) var(--md-ease);
+  -webkit-appearance: none; appearance: none;
+}
+:root[data-theme] .md-settings .form-switch .form-check-input::before {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; box-shadow: var(--md-e2);
+  transition: left var(--md-dur) var(--md-ease), background-color var(--md-dur) var(--md-ease);
+}
+:root[data-theme] .md-settings .form-switch .form-check-input:checked { background-color: rgba(var(--md-primary-rgb), .5) !important; }
+:root[data-theme] .md-settings .form-switch .form-check-input:checked::before { left: 20px; background: var(--md-primary); }
+:root[data-theme] .md-settings .form-switch .form-check-input:focus { box-shadow: 0 0 0 4px rgba(var(--md-primary-rgb), .12) !important; }
+
+/* inline checkbox group (.form-check-inline) → MUI check */
+:root[data-theme] .md-settings .form-check-inline .form-check-input[type=checkbox] {
+  width: 18px; height: 18px; margin: 0;
+  border: 2px solid var(--md-on-surface-med) !important; border-radius: 4px !important;
+  background-color: transparent !important; box-shadow: none !important;
+  -webkit-appearance: none; appearance: none; cursor: pointer;
+  transition: background-color var(--md-dur-fast) var(--md-ease), border-color var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .md-settings .form-check-inline .form-check-input[type=checkbox]:checked {
+  background-color: var(--md-primary) !important; border-color: var(--md-primary) !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23fff' stroke-width='2.2' d='M3.5 8.5l3 3 6-7'/%3e%3c/svg%3e") !important;
+  background-size: 100% 100%; background-position: center; background-repeat: no-repeat;
+}
+:root[data-theme] .md-settings .form-check-inline { align-items: center; }
+:root[data-theme] .md-settings .form-check-inline .fw-bold { color: var(--md-on-surface); font-weight: 500 !important; }
+
+/* help text → MUI caption */
+:root[data-theme] .md-settings .card-body .row.mb-6 .form-text { margin-top: 6px; font-size: 12px; line-height: 1.5; }
+:root[data-theme] .md-settings .card-body .row.mb-6 .form-text.text-danger { color: var(--md-error) !important; }
+:root[data-theme] .md-settings .card-body .row.mb-6 .form-text.text-success { color: var(--md-success) !important; }
+
+/* LOGO image frame + alert tonal + footer */
+:root[data-theme] .md-settings .image-input-wrapper { border-radius: var(--md-radius-lg); border: 1px solid var(--md-divider); }
+:root[data-theme] .md-settings .alert.bg-light-primary {
+  background: rgba(var(--md-primary-rgb), .08) !important;
+  border: 1px solid rgba(var(--md-primary-rgb), .24);
+  border-radius: var(--md-radius); color: var(--md-on-surface);
+}
+:root[data-theme] .md-settings .alert.bg-light-primary i { color: var(--md-primary); }
+:root[data-theme] .md-settings .card-footer { justify-content: flex-start !important; padding: 20px 32px !important; }
+
+/* ---- native <select> lost its arrow (the .form-select MUI `background:transparent` wiped Bootstrap's
+ *      bg-image chevron) → paint an MUI ArrowDropDown triangle, theme-aware ---- */
+:root[data-theme] .md-settings .form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23666666' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  background-size: 22px !important;
+}
+:root[data-theme="dark"] .md-settings .form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23a0a6ad' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") !important;
+}
+
+/* ---- secondary buttons (模板设置/上传图片, .btn-light) → MUI outlined (primary border + text) ---- */
+:root[data-theme] .md-settings .btn.btn-light {
+  background: transparent !important;
+  border: 1px solid rgba(var(--md-primary-rgb), .5) !important;
+  color: var(--md-primary) !important;
+  box-shadow: none !important;
+}
+:root[data-theme] .md-settings .btn.btn-light:hover {
+  background: rgba(var(--md-primary-rgb), .08) !important;
+  border-color: var(--md-primary) !important;
+  color: var(--md-primary) !important;
+}
+/* button icons → ONE solid colour matching the button text (kill FA duotone's fixed grey 2nd layer) */
+:root[data-theme] .md-settings .btn i {
+  color: currentColor !important;
+  --fa-primary-color: currentColor; --fa-secondary-color: currentColor;
+  --fa-primary-opacity: 1; --fa-secondary-opacity: 1;
+}
+
+/* ========================================================================== *
+ * Admin search toolbar density
+ *
+ * component.css is shared with storefront themes and intentionally gives its
+ * search fields a roomier 44px height. Admin tables use the compact density:
+ * keep every Search field, xmSelect and the action button on the same 32px row.
+ * ========================================================================== */
+:root[data-theme] .table-search {
+  --md-admin-search-height: 32px;
+}
+:root[data-theme] .table-search .mui-sf > .layui-input,
+:root[data-theme] .table-search .mui-sf .layui-form-select .layui-input,
+:root[data-theme] .table-search .mui-sf .layui-treeSelect .layui-input,
+:root[data-theme] .table-search .mui-sf > span > .layui-input,
+:root[data-theme] .table-search .layui-input-inline:not(.mui-sf) > .layui-input {
+  height: var(--md-admin-search-height) !important;
+}
+:root[data-theme] .table-search xm-select[size="mini"] {
+  height: var(--md-admin-search-height) !important;
+  min-height: var(--md-admin-search-height) !important;
+  line-height: var(--md-admin-search-height) !important;
+}
+:root[data-theme] .table-search .layui-btn.query-button {
+  height: var(--md-admin-search-height) !important;
+  min-height: var(--md-admin-search-height) !important;
+  padding-inline: 12px !important;
+}
+
+/* ========================================================================== *
+ * Work orders / 工单管理
+ * ========================================================================== */
+
+/* USER menu pending count */
+:root[data-theme] #kt_aside .menu-link .menu-title:has(.md-ticket-menu-badge) {
+  display: flex; align-items: center; flex: 1 1 auto; min-width: 0;
+}
+:root[data-theme] .md-ticket-menu-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 19px; height: 19px; margin-left: auto; padding: 0 6px;
+  border-radius: 10px; background: var(--md-error); color: #fff;
+  font-size: 10px; font-weight: 700; line-height: 1; box-shadow: 0 2px 6px rgba(var(--md-error-rgb), .26);
+}
+:root[data-theme="dark"] .md-ticket-menu-badge { color: rgba(0, 0, 0, .82); }
+:root[data-theme] .md-ticket-menu-badge[hidden] { display: none !important; }
+
+/* shared page primitives */
+:root[data-theme] .md-ticket-page { color: var(--md-on-surface); }
+:root[data-theme] .md-ticket-page [hidden] { display: none !important; }
+:root[data-theme] .md-ticket-muted { color: var(--md-on-surface-dis); font-size: 12px; }
+:root[data-theme] .md-ticket-stats { margin-bottom: 20px; }
+:root[data-theme] .md-ticket-list-card {
+  overflow: hidden; margin-bottom: 32px; border: 1px solid var(--md-divider) !important;
+  box-shadow: var(--md-e2) !important;
+}
+:root[data-theme] .md-ticket-list-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  min-height: 82px !important; padding: 14px 22px !important;
+}
+:root[data-theme] .md-ticket-list-heading { display: flex; align-items: center; gap: 13px; min-width: 0; }
+:root[data-theme] .md-ticket-list-heading__icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 40px; height: 40px; border-radius: 12px;
+  color: var(--md-primary); background: rgba(var(--md-primary-rgb), .1);
+}
+:root[data-theme] .md-ticket-list-heading__icon i { font-size: 20px; }
+:root[data-theme] .md-ticket-list-heading h2 { margin: 0; color: var(--md-on-surface); font-size: 16px; font-weight: 650; }
+:root[data-theme] .md-ticket-list-heading p { margin: 3px 0 0; color: var(--md-on-surface-med); font-size: 12px; }
+:root[data-theme] .md-ticket-state-tabs {
+  display: flex; align-items: center; gap: 5px; padding: 4px;
+  border: 1px solid var(--md-divider); border-radius: 12px; background: var(--md-surface-2);
+}
+:root[data-theme] .md-ticket-state-tabs button {
+  height: 31px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--md-on-surface-med); font-size: 12px; font-weight: 550; white-space: nowrap;
+  transition: color var(--md-dur-fast) var(--md-ease), background-color var(--md-dur-fast) var(--md-ease), box-shadow var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .md-ticket-state-tabs button:hover { color: var(--md-on-surface); background: var(--md-hover-overlay); }
+:root[data-theme] .md-ticket-state-tabs button.active {
+  color: var(--md-primary); background: var(--md-surface); box-shadow: var(--md-e1);
+}
+:root[data-theme] .md-ticket-state-tabs button:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 1px; }
+:root[data-theme] .md-ticket-list-card > .card-body { padding: 8px 18px 18px !important; }
+
+/* list cells */
+:root[data-theme] .md-ticket-cell {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  min-width: 210px; max-width: 340px; padding: 4px 4px 4px 13px; color: inherit !important;
+}
+:root[data-theme] .md-ticket-cell[role="button"] { border-radius: 8px; cursor: pointer; }
+:root[data-theme] .md-ticket-cell[role="button"]:focus-visible {
+  outline: 2px solid var(--md-primary); outline-offset: 3px;
+}
+:root[data-theme] .md-ticket-cell:hover .md-ticket-cell__title { color: var(--md-primary); }
+:root[data-theme] .md-ticket-cell__top { display: flex; align-items: center; gap: 6px; min-height: 15px; }
+:root[data-theme] .md-ticket-cell__number {
+  color: var(--md-on-surface-dis); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px; font-weight: 600; letter-spacing: .025em;
+}
+:root[data-theme] .md-ticket-cell__title {
+  max-width: 100%; overflow: hidden; color: var(--md-on-surface); font-size: 13px; font-weight: 600;
+  line-height: 1.45; text-overflow: ellipsis; white-space: nowrap;
+  transition: color var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .md-ticket-cell__excerpt {
+  display: block; max-width: 100%; overflow: hidden; color: var(--md-on-surface-med);
+  font-size: 11.5px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap;
+}
+:root[data-theme] .md-ticket-unread-dot {
+  position: absolute; top: 9px; left: 0; width: 6px; height: 6px; border-radius: 50%;
+  background: transparent; box-shadow: none;
+}
+:root[data-theme] .md-ticket-cell--unread .md-ticket-unread-dot {
+  background: var(--md-error); box-shadow: 0 0 0 3px rgba(var(--md-error-rgb), .12);
+}
+:root[data-theme] .md-ticket-cell--unread .md-ticket-cell__title { font-weight: 720; }
+:root[data-theme] .md-ticket-badge-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 92px; }
+:root[data-theme] .md-ticket-relation { display: flex; align-items: center; gap: 10px; min-width: 180px; max-width: 280px; }
+:root[data-theme] .md-ticket-relation__icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 34px; height: 34px; border-radius: 10px;
+  color: var(--md-primary); background: rgba(var(--md-primary-rgb), .09);
+}
+:root[data-theme] .md-ticket-relation__icon--order { color: var(--md-info); background: rgba(var(--md-info-rgb), .1); }
+:root[data-theme] .md-ticket-relation > div:last-child { display: flex; flex-direction: column; min-width: 0; }
+:root[data-theme] .md-ticket-relation strong {
+  overflow: hidden; color: var(--md-on-surface); font-size: 11.5px; font-weight: 600; line-height: 1.45;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+:root[data-theme] .md-ticket-relation span:last-child { color: var(--md-on-surface-dis); font-size: 10.5px; }
+:root[data-theme] .md-ticket-activity { display: flex; flex-direction: column; gap: 3px; min-width: 180px; max-width: 270px; }
+:root[data-theme] .md-ticket-activity > span {
+  overflow: hidden; color: var(--md-on-surface-med); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap;
+}
+:root[data-theme] .md-ticket-activity b { color: var(--md-on-surface); font-weight: 600; }
+:root[data-theme] .md-ticket-activity time { color: var(--md-on-surface-dis); font-size: 10.5px; }
+
+/* detail drawer shell */
+:root[data-theme] body.md-ticket-drawer-open { overflow: hidden !important; }
+:root[data-theme] .md-ticket-drawer {
+  position: fixed; z-index: 1200; inset: 0; visibility: hidden; pointer-events: none;
+  transition: visibility 0s linear 320ms;
+}
+:root[data-theme] .md-ticket-drawer[hidden],
+:root[data-theme] .md-ticket-drawer [hidden] { display: none !important; }
+:root[data-theme] .md-ticket-drawer__shade {
+  position: absolute; inset: 0; border: 0; padding: 0;
+  background: color-mix(in srgb, var(--md-scrim) 88%, transparent); opacity: 0;
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  transition: opacity 220ms var(--md-ease); cursor: default;
+}
+:root[data-theme] .md-ticket-drawer__panel {
+  position: absolute; top: 0; right: 0; display: grid; grid-template-rows: auto minmax(0, 1fr);
+  width: min(840px, calc(100vw - 32px)); height: 100vh; height: 100dvh; min-width: 0; overflow: hidden;
+  border-left: 1px solid var(--md-divider); background: var(--md-bg); color: var(--md-on-surface);
+  box-shadow: -18px 0 60px rgba(13, 20, 33, .2), -3px 0 14px rgba(13, 20, 33, .09);
+  transform: translate3d(102%, 0, 0); transition: transform 290ms cubic-bezier(.2, .78, .2, 1);
+  will-change: transform;
+}
+:root[data-theme="dark"] .md-ticket-drawer__panel {
+  box-shadow: -24px 0 72px rgba(0, 0, 0, .58), -1px 0 0 rgba(255, 255, 255, .035);
+}
+:root[data-theme] .md-ticket-drawer.is-open { visibility: visible; pointer-events: auto; transition-delay: 0s; }
+:root[data-theme] .md-ticket-drawer.is-open .md-ticket-drawer__shade { opacity: 1; }
+:root[data-theme] .md-ticket-drawer.is-open .md-ticket-drawer__panel { transform: translate3d(0, 0, 0); }
+:root[data-theme] .md-ticket-drawer__header {
+  position: relative; z-index: 8; display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  min-height: 82px; padding: 15px 22px 14px 25px; border-bottom: 1px solid var(--md-divider);
+  background: color-mix(in srgb, var(--md-surface) 94%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .32);
+  backdrop-filter: saturate(1.18) blur(18px); -webkit-backdrop-filter: saturate(1.18) blur(18px);
+}
+:root[data-theme="dark"] .md-ticket-drawer__header { box-shadow: 0 1px 0 rgba(255, 255, 255, .025); }
+:root[data-theme] .md-ticket-drawer__heading { display: flex; align-items: center; gap: 13px; min-width: 0; }
+:root[data-theme] .md-ticket-drawer__heading > div { min-width: 0; }
+:root[data-theme] .md-ticket-drawer__icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 42px; height: 42px; border: 1px solid rgba(var(--md-primary-rgb), .12); border-radius: 13px;
+  background: linear-gradient(145deg, rgba(var(--md-primary-rgb), .15), rgba(var(--md-primary-rgb), .065));
+  color: var(--md-primary); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .24);
+}
+:root[data-theme] .md-ticket-drawer__icon i { font-size: 20px; }
+:root[data-theme] .md-ticket-drawer__header .md-ticket-drawer__eyebrow {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+  color: var(--md-primary); font-size: 10px; font-weight: 720; letter-spacing: .075em; text-transform: uppercase;
+}
+:root[data-theme] .md-ticket-drawer__title {
+  display: block; margin: 0; overflow: hidden; color: var(--md-on-surface); font-size: 18px; font-weight: 680;
+  letter-spacing: -.018em; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap;
+}
+:root[data-theme] .md-ticket-drawer__close {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 40px; height: 40px; margin-left: 2px; padding: 0; border: 1px solid transparent; border-radius: 50%;
+  background: var(--md-hover-overlay); color: var(--md-on-surface-med); font-size: 18px;
+  transition: color var(--md-dur-fast) var(--md-ease), background-color var(--md-dur-fast) var(--md-ease), transform var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .md-ticket-drawer__close:hover { background: rgba(var(--md-primary-rgb), .1); color: var(--md-primary); transform: rotate(4deg); }
+:root[data-theme] .md-ticket-drawer__close:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 2px; }
+:root[data-theme] .md-ticket-drawer__body { min-width: 0; min-height: 0; overflow: hidden; }
+:root[data-theme] .md-ticket-drawer__body > .md-ticket-detail-page {
+  display: grid; grid-template-rows: auto minmax(0, 1fr); width: 100%; height: 100%; min-height: 0;
+}
+:root[data-theme] .md-ticket-drawer.has-error .md-ticket-layout { grid-template-columns: minmax(0, 1fr); }
+
+/* compact ticket summary */
+:root[data-theme] .md-ticket-hero {
+  position: relative; isolation: isolate; display: flex; align-items: center; justify-content: space-between; gap: 22px;
+  min-height: 94px; margin: 14px 16px 0; padding: 16px 19px; overflow: hidden;
+  border: 1px solid var(--md-divider); border-radius: 15px; background: var(--md-surface);
+  box-shadow: var(--md-e1);
+}
+:root[data-theme] .md-ticket-hero::before {
+  content: ""; position: absolute; z-index: -1; top: -100px; right: -42px;
+  width: 280px; height: 210px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--md-primary-rgb), .11), transparent 68%);
+  pointer-events: none;
+}
+:root[data-theme] .md-ticket-hero__main { min-width: 0; }
+:root[data-theme] .md-ticket-hero__eyebrow { display: flex; align-items: center; gap: 9px; margin-bottom: 5px; }
+:root[data-theme] .md-ticket-number {
+  color: var(--md-primary); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px; font-weight: 700; letter-spacing: .055em; text-transform: uppercase;
+}
+:root[data-theme] .md-ticket-live-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--md-success);
+  box-shadow: 0 0 0 4px rgba(var(--md-success-rgb), .12);
+}
+:root[data-theme] .md-ticket-live-dot.is-terminal { background: var(--md-on-surface-dis); box-shadow: none; }
+:root[data-theme] .md-ticket-hero__title {
+  margin: 0; overflow: hidden; color: var(--md-on-surface); font-size: 16px;
+  font-weight: 660; letter-spacing: -.015em; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap;
+}
+:root[data-theme] .md-ticket-hero__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+:root[data-theme] .md-ticket-hero__meta > span:empty { display: none; }
+:root[data-theme] .md-ticket-detail-time {
+  display: inline-flex; align-items: center; gap: 5px; margin-left: 2px;
+  color: var(--md-on-surface-med); font-size: 10.5px;
+}
+:root[data-theme] .md-ticket-hero__actions { position: relative; flex: 0 0 auto; }
+:root[data-theme] .md-ticket-hero__actions .btn { min-height: 34px; padding-inline: 13px; font-size: 11.5px; }
+
+/* detail layout and conversation */
+:root[data-theme] .md-ticket-layout {
+  display: grid; grid-template-columns: minmax(0, 1fr) 236px; align-items: stretch; gap: 12px;
+  min-width: 0; min-height: 0; padding: 12px 16px 16px;
+}
+:root[data-theme] .md-ticket-thread-card,
+:root[data-theme] .md-ticket-context-card {
+  border: 1px solid var(--md-divider); border-radius: 15px; background: var(--md-surface); box-shadow: var(--md-e1);
+}
+:root[data-theme] .md-ticket-thread-card {
+  display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; min-width: 0; min-height: 0; overflow: hidden;
+}
+:root[data-theme] .md-ticket-thread-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  grid-row: 1;
+  min-height: 58px; padding: 11px 15px; border-bottom: 1px solid var(--md-divider);
+  background: color-mix(in srgb, var(--md-surface) 97%, var(--md-primary) 3%);
+}
+:root[data-theme] .md-ticket-section-kicker {
+  display: block; margin-bottom: 2px; color: var(--md-primary); font-size: 9px; font-weight: 750; letter-spacing: .11em; text-transform: uppercase;
+}
+:root[data-theme] .md-ticket-thread-head h3 { margin: 0; color: var(--md-on-surface); font-size: 13.5px; font-weight: 650; }
+:root[data-theme] .md-ticket-sync-state {
+  display: inline-flex; align-items: center; gap: 5px; color: var(--md-success); font-size: 10.5px; white-space: nowrap;
+}
+:root[data-theme] .md-ticket-sync-state.is-loading { color: var(--md-on-surface-med); }
+:root[data-theme] .md-ticket-history-more {
+  display: flex; align-items: center; justify-content: center; gap: 6px; width: max-content; min-height: 32px;
+  grid-row: 2;
+  margin: 12px auto 0; padding: 5px 11px; border: 1px solid var(--md-outline); border-radius: 10px;
+  background: transparent; color: var(--md-on-surface-med); font-size: 10.5px; font-weight: 650; cursor: pointer;
+}
+:root[data-theme] .md-ticket-history-more[hidden] { display: none; }
+:root[data-theme] .md-ticket-history-more:hover:not(:disabled) { border-color: var(--md-primary); background: rgba(var(--md-primary-rgb), .05); color: var(--md-primary); }
+:root[data-theme] .md-ticket-history-more:disabled { opacity: .62; cursor: wait; }
+:root[data-theme] .md-ticket-history-more.is-loading i { animation: md-ticket-pulse .8s infinite ease-in-out; }
+:root[data-theme] .md-ticket-messages {
+  min-width: 0; min-height: 0; height: auto; padding: 19px 16px 12px; overflow-x: hidden; overflow-y: auto;
+  grid-row: 3;
+  background: linear-gradient(180deg, rgba(var(--md-primary-rgb), .022), transparent 150px);
+  scroll-behavior: smooth; scrollbar-color: var(--md-outline) transparent; scrollbar-width: thin;
+  overscroll-behavior: contain;
+}
+:root[data-theme] .md-ticket-message { display: flex; align-items: flex-end; gap: 9px; margin: 0 0 19px; }
+:root[data-theme] .md-ticket-message--admin { flex-direction: row-reverse; }
+:root[data-theme] .md-ticket-message__avatar {
+  display: flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 31px; height: 31px;
+  overflow: hidden; border: 1px solid var(--md-divider); border-radius: 50%;
+  background: var(--md-surface-2); color: var(--md-on-surface-med); font-size: 12px; font-weight: 700;
+}
+:root[data-theme] .md-ticket-message--admin .md-ticket-message__avatar {
+  border-color: rgba(var(--md-primary-rgb), .18); background: rgba(var(--md-primary-rgb), .1); color: var(--md-primary);
+}
+:root[data-theme] .md-ticket-message__avatar img { width: 100%; height: 100%; object-fit: cover; }
+:root[data-theme] .md-ticket-message__main { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; max-width: min(86%, 680px); }
+:root[data-theme] .md-ticket-message--admin .md-ticket-message__main { align-items: flex-end; }
+:root[data-theme] .md-ticket-message__main > header {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; margin-bottom: 6px; padding: 0 3px;
+}
+:root[data-theme] .md-ticket-message__main > header > div { display: flex; align-items: center; gap: 6px; min-width: 0; }
+:root[data-theme] .md-ticket-message__main header strong { color: var(--md-on-surface); font-size: 11.5px; font-weight: 650; }
+:root[data-theme] .md-ticket-message__main header time { flex: 0 0 auto; color: var(--md-on-surface-dis); font-size: 9.5px; }
+:root[data-theme] .md-ticket-message--admin .md-ticket-message__main > header { justify-content: flex-end; }
+:root[data-theme] .md-ticket-message__bubble {
+  width: fit-content; min-width: 92px; max-width: 100%; padding: 12px 15px !important;
+  border: 1px solid var(--md-divider); border-radius: 4px 15px 15px 15px;
+  background: var(--md-surface-2) !important; color: var(--md-on-surface) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .035); font-size: 13px; line-height: 1.7; overflow-wrap: anywhere;
+}
+:root[data-theme] .md-ticket-message--admin .md-ticket-message__bubble {
+  border-color: rgba(var(--md-primary-rgb), .15); border-radius: 15px 4px 15px 15px;
+  background: rgba(var(--md-primary-rgb), .075) !important;
+}
+:root[data-theme] .md-ticket-message__bubble > :first-child { margin-top: 0 !important; }
+:root[data-theme] .md-ticket-message__bubble > :last-child { margin-bottom: 0 !important; }
+:root[data-theme] .md-ticket-message__bubble img {
+  max-width: min(100%, 520px); max-height: 430px; border: 1px solid var(--md-divider); border-radius: 10px; cursor: zoom-in;
+}
+:root[data-theme] .md-ticket-message__bubble.markdown-body { overflow-wrap: anywhere; word-break: normal; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body p { margin: 0 0 10px; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body h1,
+:root[data-theme] .md-ticket-message__bubble.markdown-body h2,
+:root[data-theme] .md-ticket-message__bubble.markdown-body h3,
+:root[data-theme] .md-ticket-message__bubble.markdown-body h4,
+:root[data-theme] .md-ticket-message__bubble.markdown-body h5,
+:root[data-theme] .md-ticket-message__bubble.markdown-body h6 {
+  margin: 15px 0 8px; color: var(--md-on-surface); font-weight: 700; line-height: 1.35;
+}
+:root[data-theme] .md-ticket-message__bubble.markdown-body h1 { font-size: 1.45em; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body h2 { font-size: 1.3em; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body h3 { font-size: 1.16em; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body h4,
+:root[data-theme] .md-ticket-message__bubble.markdown-body h5,
+:root[data-theme] .md-ticket-message__bubble.markdown-body h6 { font-size: 1em; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body ul,
+:root[data-theme] .md-ticket-message__bubble.markdown-body ol { margin: 0 0 10px; padding-left: 1.8em; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body ul { list-style: disc outside !important; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body ol { list-style: decimal outside !important; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body li { display: list-item !important; margin: .2em 0; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body blockquote {
+  margin: 0 0 10px; padding: 7px 10px; border-left: 3px solid var(--md-primary); border-radius: 0 8px 8px 0;
+  background: rgba(var(--md-primary-rgb), .055); color: var(--md-on-surface-med);
+}
+:root[data-theme] .md-ticket-message__bubble.markdown-body code {
+  padding: .15em .38em; border-radius: 5px; background: var(--md-bg); color: var(--md-on-surface);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 85%;
+}
+:root[data-theme] .md-ticket-message__bubble.markdown-body pre {
+  max-width: 100%; margin: 0 0 10px; padding: 11px 13px; overflow: auto;
+  border: 1px solid var(--md-divider); border-radius: 10px; background: var(--md-bg);
+}
+:root[data-theme] .md-ticket-message__bubble.markdown-body pre code { padding: 0; background: transparent; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body a { color: var(--md-primary); text-decoration: none; overflow-wrap: anywhere; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body a:hover { text-decoration: underline; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body table {
+  display: block; max-width: 100%; margin: 0 0 10px; overflow-x: auto; border-collapse: collapse;
+}
+:root[data-theme] .md-ticket-message__bubble.markdown-body th,
+:root[data-theme] .md-ticket-message__bubble.markdown-body td { padding: 6px 9px; border: 1px solid var(--md-divider); white-space: nowrap; }
+:root[data-theme] .md-ticket-message__bubble.markdown-body th { background: var(--md-bg); font-weight: 700; }
+:root[data-theme] .md-ticket-event { display: flex; align-items: center; justify-content: center; gap: 9px; margin: 15px 0 24px; }
+:root[data-theme] .md-ticket-event > span {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 12px;
+  background: var(--md-surface-2); color: var(--md-on-surface-med); font-size: 10.5px;
+}
+:root[data-theme] .md-ticket-event time { color: var(--md-on-surface-dis); font-size: 9.5px; }
+
+/* loading / empty */
+:root[data-theme] .md-ticket-loading,
+:root[data-theme] .md-ticket-empty {
+  display: flex; align-items: center; justify-content: center; flex-direction: column; height: 100%; color: var(--md-on-surface-med); text-align: center;
+}
+:root[data-theme] .md-ticket-loading > span { display: inline-block; width: 6px; height: 6px; margin: 2px; border-radius: 50%; background: var(--md-primary); animation: md-ticket-pulse 1.1s infinite ease-in-out; }
+:root[data-theme] .md-ticket-loading > span:nth-child(2) { animation-delay: .12s; }
+:root[data-theme] .md-ticket-loading > span:nth-child(3) { animation-delay: .24s; }
+:root[data-theme] .md-ticket-loading p { margin: 10px 0 0; font-size: 11px; }
+:root[data-theme] .md-ticket-empty i { margin-bottom: 10px; color: var(--md-on-surface-dis); font-size: 28px; }
+:root[data-theme] .md-ticket-empty strong { color: var(--md-on-surface); font-size: 13px; }
+:root[data-theme] .md-ticket-empty span { margin-top: 4px; font-size: 11px; }
+:root[data-theme] .md-ticket-empty a { margin-top: 12px; color: var(--md-primary); font-size: 12px; }
+:root[data-theme] .md-ticket-empty .md-ticket-fatal-close { margin-top: 14px; }
+:root[data-theme] .md-ticket-empty--error i { color: var(--md-error); }
+@keyframes md-ticket-pulse { 0%, 70%, 100% { opacity: .28; transform: translateY(0); } 35% { opacity: 1; transform: translateY(-3px); } }
+
+/* reply composer */
+:root[data-theme] .md-ticket-composer {
+  position: relative; z-index: 4; min-width: 0; padding: 13px 15px 14px; border: 0; border-top: 1px solid var(--md-divider);
+  grid-row: 4;
+  border-radius: 0; background: color-mix(in srgb, var(--md-surface) 97%, transparent);
+  box-shadow: 0 -8px 24px rgba(15, 23, 42, .055);
+  backdrop-filter: saturate(1.08) blur(14px); -webkit-backdrop-filter: saturate(1.08) blur(14px);
+}
+:root[data-theme="dark"] .md-ticket-composer { box-shadow: 0 -10px 28px rgba(0, 0, 0, .18); }
+:root[data-theme] .md-ticket-composer__label,
+:root[data-theme] .md-ticket-composer__actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+:root[data-theme] .md-ticket-composer__label { margin-bottom: 8px; }
+:root[data-theme] .md-ticket-composer__label > div { display: flex; flex-direction: column; }
+:root[data-theme] .md-ticket-composer__label strong { color: var(--md-on-surface); font-size: 12.5px; font-weight: 650; }
+:root[data-theme] .md-ticket-composer__label span,
+:root[data-theme] .md-ticket-composer__tip { color: var(--md-on-surface-dis); font-size: 10.5px; }
+:root[data-theme] .md-ticket-composer__hint { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+:root[data-theme] .md-ticket-composer #ticket-reply-editor { min-width: 0; }
+:root[data-theme] .md-ticket-composer #ticket-reply-editor .ev2-editor {
+  min-width: 0; border-color: var(--md-outline); border-radius: 11px; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .025);
+}
+:root[data-theme] .md-ticket-composer #ticket-reply-editor .ev2-mode-toggle { display: none !important; }
+:root[data-theme] .md-ticket-composer #ticket-reply-editor .ev2-bar { padding: 4px 6px; }
+:root[data-theme] .md-ticket-composer #ticket-reply-editor .ev2-tools { min-width: 0; overflow-x: auto; scrollbar-width: none; }
+:root[data-theme] .md-ticket-composer #ticket-reply-editor .ev2-tools::-webkit-scrollbar { display: none; }
+:root[data-theme] .md-ticket-composer #ticket-reply-editor .ev2-preview { overflow-wrap: anywhere; }
+:root[data-theme] .md-ticket-composer #ticket-reply-editor .ev2-preview pre,
+:root[data-theme] .md-ticket-composer #ticket-reply-editor .ev2-preview table { max-width: 100%; overflow-x: auto; }
+:root[data-theme] .md-ticket-composer__actions { margin-top: 10px; }
+:root[data-theme] .md-ticket-composer__actions > div { display: flex; align-items: center; gap: 8px; }
+:root[data-theme] .md-ticket-composer__actions .btn { min-height: 34px; padding: 6px 12px; font-size: 11.5px; }
+:root[data-theme] .md-ticket-terminal {
+  display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 76px; padding: 14px 18px;
+  grid-row: 4;
+  border-top: 1px solid var(--md-divider); background: var(--md-surface-2);
+}
+:root[data-theme] .md-ticket-terminal > i {
+  display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;
+  border-radius: 50%; background: var(--md-hover-overlay); color: var(--md-on-surface-med); font-size: 17px;
+}
+:root[data-theme] .md-ticket-terminal > div { display: flex; flex-direction: column; }
+:root[data-theme] .md-ticket-terminal strong { color: var(--md-on-surface); font-size: 12.5px; }
+:root[data-theme] .md-ticket-terminal span { margin-top: 2px; color: var(--md-on-surface-med); font-size: 10.5px; }
+:root[data-theme] .md-ticket-is-busy .md-ticket-composer { opacity: .84; }
+
+/* right context rail */
+:root[data-theme] .md-ticket-context {
+  position: static; display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0;
+  padding-right: 3px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-color: var(--md-outline) transparent; scrollbar-width: thin;
+}
+:root[data-theme] .md-ticket-context-card { overflow: hidden; }
+:root[data-theme] .md-ticket-context-card > header {
+  display: flex; align-items: center; justify-content: space-between; min-height: 43px; padding: 9px 12px;
+  border-bottom: 1px solid var(--md-divider); color: var(--md-on-surface-med);
+  background: color-mix(in srgb, var(--md-surface) 97%, var(--md-primary) 3%);
+}
+:root[data-theme] .md-ticket-context-card > header span { color: var(--md-on-surface); font-size: 11.5px; font-weight: 650; }
+:root[data-theme] .md-ticket-context-card > header i { color: var(--md-on-surface-dis); font-size: 15px; }
+:root[data-theme] .md-ticket-context-body { padding: 12px; }
+:root[data-theme] .md-ticket-person { display: flex; align-items: center; gap: 11px; }
+:root[data-theme] .md-ticket-person__avatar {
+  display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; overflow: hidden;
+  border: 2px solid var(--md-surface); border-radius: 13px; background: rgba(var(--md-primary-rgb), .1);
+  color: var(--md-primary); box-shadow: 0 0 0 1px var(--md-divider); font-size: 14px; font-weight: 750;
+}
+:root[data-theme] .md-ticket-person__avatar img { width: 100%; height: 100%; object-fit: cover; }
+:root[data-theme] .md-ticket-person > div:last-child { display: flex; flex-direction: column; min-width: 0; }
+:root[data-theme] .md-ticket-person strong { overflow: hidden; color: var(--md-on-surface); font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
+:root[data-theme] .md-ticket-person span { margin-top: 2px; color: var(--md-on-surface-dis); font-size: 10.5px; }
+:root[data-theme] .md-ticket-product { display: flex; align-items: center; gap: 11px; }
+:root[data-theme] .md-ticket-product__cover {
+  display: flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 49px; height: 49px; overflow: hidden;
+  border: 1px solid var(--md-divider); border-radius: 10px; background: var(--md-surface-2); color: var(--md-on-surface-dis);
+}
+:root[data-theme] .md-ticket-product__cover img { width: 100%; height: 100%; object-fit: cover; }
+:root[data-theme] .md-ticket-product > div:last-child { display: flex; flex-direction: column; min-width: 0; }
+:root[data-theme] .md-ticket-product span,
+:root[data-theme] .md-ticket-order-head > div span { color: var(--md-primary); font-size: 9.5px; font-weight: 650; }
+:root[data-theme] .md-ticket-product strong,
+:root[data-theme] .md-ticket-order-head > div strong { margin-top: 2px; color: var(--md-on-surface); font-size: 11.5px; font-weight: 620; overflow-wrap: anywhere; }
+:root[data-theme] .md-ticket-product em { margin-top: 2px; color: var(--md-on-surface-dis); font-size: 9.5px; font-style: normal; }
+:root[data-theme] .md-ticket-order-head { display: flex; align-items: center; gap: 10px; margin-bottom: 13px; }
+:root[data-theme] .md-ticket-order-head > div { display: flex; flex-direction: column; min-width: 0; }
+:root[data-theme] .md-ticket-context-rows { border-top: 1px solid var(--md-divider); }
+:root[data-theme] .md-ticket-context-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--md-divider); }
+:root[data-theme] .md-ticket-context-row:last-child { padding-bottom: 0; border-bottom: 0; }
+:root[data-theme] .md-ticket-context-row > span { flex: 0 0 auto; color: var(--md-on-surface-dis); font-size: 10.5px; }
+:root[data-theme] .md-ticket-context-row > em,
+:root[data-theme] .md-ticket-context-row > strong { color: var(--md-on-surface-med); font-size: 10.5px; font-style: normal; font-weight: 550; text-align: right; overflow-wrap: anywhere; }
+:root[data-theme] .ticket-time-context .md-ticket-context-rows { border-top: 0; }
+:root[data-theme] .md-ticket-proof {
+  position: relative; display: block; width: 100%; padding: 0; overflow: hidden; border: 1px solid var(--md-divider);
+  border-radius: 11px; background: var(--md-surface-2); cursor: zoom-in;
+}
+:root[data-theme] .md-ticket-proof img { display: block; width: 100%; max-height: 165px; object-fit: cover; transition: transform .3s var(--md-ease), opacity .3s var(--md-ease); }
+:root[data-theme] .md-ticket-proof span {
+  position: absolute; right: 9px; bottom: 9px; display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 8px; border-radius: 9px; background: rgba(10, 14, 20, .76); color: #fff; font-size: 9.5px;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+:root[data-theme] .md-ticket-proof:hover img { opacity: .9; transform: scale(1.025); }
+:root[data-theme] .md-ticket-context-skeleton {
+  width: 100%; height: 48px; border-radius: 10px;
+  background: linear-gradient(90deg, var(--md-surface-2), var(--md-hover-overlay), var(--md-surface-2));
+  background-size: 200% 100%; animation: md-ticket-shimmer 1.35s infinite linear;
+}
+@keyframes md-ticket-shimmer { to { background-position: -200% 0; } }
+
+@media (max-width: 1199px) {
+  :root[data-theme] .md-ticket-list-head { align-items: flex-start; flex-direction: column; }
+  :root[data-theme] .md-ticket-state-tabs { width: 100%; overflow-x: auto; }
+}
+@media (max-width: 899px) {
+  :root[data-theme] .md-ticket-drawer__panel { width: min(780px, calc(100vw - 20px)); }
+  :root[data-theme] .md-ticket-layout { grid-template-columns: minmax(0, 1fr) 210px; gap: 10px; padding-inline: 12px; }
+  :root[data-theme] .md-ticket-hero { margin-inline: 12px; }
+  :root[data-theme] .md-ticket-message__main { max-width: calc(100% - 38px); }
+}
+@media (max-width: 767px) {
+  :root[data-theme] .md-ticket-drawer__panel { width: 100%; border-left: 0; }
+  :root[data-theme] .md-ticket-drawer__header {
+    min-height: 74px; padding: max(11px, env(safe-area-inset-top)) 14px 10px 16px;
+  }
+  :root[data-theme] .md-ticket-drawer__icon { width: 38px; height: 38px; border-radius: 12px; }
+  :root[data-theme] .md-ticket-drawer__title { font-size: 16px; }
+  :root[data-theme] .md-ticket-drawer__close { width: 38px; height: 38px; }
+  :root[data-theme] .md-ticket-drawer__body { overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
+  :root[data-theme] .md-ticket-drawer__body > .md-ticket-detail-page { display: block; width: 100%; height: auto; min-height: 100%; }
+  :root[data-theme] .md-ticket-hero { align-items: flex-start; margin: 10px 10px 0; }
+  :root[data-theme] .md-ticket-hero__title { white-space: normal; }
+  :root[data-theme] .md-ticket-layout { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
+  :root[data-theme] .md-ticket-thread-card { flex: 0 0 auto; grid-template-rows: auto auto auto auto; }
+  :root[data-theme] .md-ticket-messages { height: 52vh; height: 52dvh; min-height: 360px; }
+  :root[data-theme] .md-ticket-context {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; padding-right: 0;
+  }
+  :root[data-theme] .md-ticket-composer {
+    padding-bottom: max(14px, env(safe-area-inset-bottom)); box-shadow: 0 -6px 20px rgba(15, 23, 42, .045);
+  }
+}
+@media (max-width: 575px) {
+  :root[data-theme] .md-ticket-list-card > .card-body { padding: 5px 10px 14px !important; }
+  :root[data-theme] .md-ticket-list-head { padding: 14px !important; }
+  :root[data-theme] .md-ticket-list-heading p { display: none; }
+  :root[data-theme] .md-ticket-state-tabs button { padding-inline: 10px; }
+  :root[data-theme] .md-ticket-drawer__heading { gap: 10px; }
+  :root[data-theme] .md-ticket-drawer__header .md-ticket-drawer__eyebrow { margin-bottom: 3px; }
+  :root[data-theme] .md-ticket-hero { flex-direction: column; min-height: 0; gap: 12px; padding: 15px; border-radius: 14px; }
+  :root[data-theme] .md-ticket-hero__actions,
+  :root[data-theme] .md-ticket-hero__actions .btn { width: 100%; }
+  :root[data-theme] .md-ticket-thread-head { padding-inline: 15px; }
+  :root[data-theme] .md-ticket-messages { height: 50vh; height: 50dvh; min-height: 340px; padding: 17px 11px; }
+  :root[data-theme] .md-ticket-message { gap: 7px; }
+  :root[data-theme] .md-ticket-message__main { max-width: calc(100% - 38px); }
+  :root[data-theme] .md-ticket-message__main > header { align-items: flex-start; flex-direction: column; gap: 2px; }
+  :root[data-theme] .md-ticket-message--admin .md-ticket-message__main > header { align-items: flex-end; }
+  :root[data-theme] .md-ticket-message__bubble { padding: 10px 12px !important; font-size: 12.5px; }
+  :root[data-theme] .md-ticket-composer { padding: 13px 11px max(12px, env(safe-area-inset-bottom)); }
+  :root[data-theme] .md-ticket-composer__hint,
+  :root[data-theme] .md-ticket-composer__tip { display: none; }
+  :root[data-theme] .md-ticket-composer__actions { justify-content: flex-end; }
+  :root[data-theme] .md-ticket-composer__actions > div { width: 100%; }
+  :root[data-theme] .md-ticket-composer__actions .btn { flex: 1 1 0; }
+  :root[data-theme] .md-ticket-context { display: flex; }
+  :root[data-theme] .md-ticket-context-card { width: 100%; }
+}
+@media (max-height: 760px) and (min-width: 768px) {
+  :root[data-theme] .md-ticket-drawer__header { min-height: 72px; padding-block: 10px; }
+  :root[data-theme] .md-ticket-hero { min-height: 82px; margin-top: 10px; padding-block: 12px; }
+  :root[data-theme] .md-ticket-layout { padding-top: 9px; }
+  :root[data-theme] .md-ticket-composer #ticket-reply-editor .CodeMirror,
+  :root[data-theme] .md-ticket-composer #ticket-reply-editor .ev2-preview { height: 150px !important; max-height: 150px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme] .md-ticket-drawer__shade,
+  :root[data-theme] .md-ticket-drawer,
+  :root[data-theme] .md-ticket-drawer__panel,
+  :root[data-theme] .md-ticket-drawer__close { transition: none; }
+  :root[data-theme] .md-ticket-drawer__panel { will-change: auto; }
+  :root[data-theme] .md-ticket-loading > span,
+  :root[data-theme] .md-ticket-context-skeleton { animation: none; }
+  :root[data-theme] .md-ticket-proof img { transition: none; }
+  :root[data-theme] .md-ticket-messages { scroll-behavior: auto; }
+}
+
+/* ========================================================================== *
+ * Messages / 消息管理
+ * ========================================================================== */
+:root[data-theme] .md-message-page { color: var(--md-on-surface); }
+:root[data-theme] .md-message-card {
+  overflow: hidden; margin-bottom: 32px; border: 1px solid var(--md-divider) !important;
+  box-shadow: var(--md-e2) !important;
+}
+:root[data-theme] .md-message-card__header {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  min-height: 88px !important; padding: 16px 22px !important;
+  background: linear-gradient(105deg, rgba(var(--md-primary-rgb), .055), transparent 48%);
+}
+:root[data-theme] .md-message-card__heading { display: flex; align-items: center; gap: 14px; min-width: 0; }
+:root[data-theme] .md-message-card__icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 44px; height: 44px; border-radius: 14px;
+  color: var(--md-primary); background: rgba(var(--md-primary-rgb), .11);
+  box-shadow: inset 0 0 0 1px rgba(var(--md-primary-rgb), .08);
+}
+:root[data-theme] .md-message-card__icon i { font-size: 21px; }
+:root[data-theme] .md-message-card__heading h2 { margin: 0; color: var(--md-on-surface); font-size: 17px; font-weight: 660; }
+:root[data-theme] .md-message-card__heading p { margin: 4px 0 0; color: var(--md-on-surface-med); font-size: 12px; }
+:root[data-theme] .md-message-card__header .btn-message-create {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 0 0 auto;
+  min-height: 38px; border-radius: 11px !important; direction: ltr;
+}
+:root[data-theme] .md-message-send-icon {
+  display: inline-block; flex: 0 0 auto; width: 18px; height: 18px;
+  fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+  vertical-align: -4px;
+}
+:root[data-theme] .layui-layer-title span:has(> .md-message-send-icon),
+:root[data-theme] .layui-layer-btn a:has(> .md-message-send-icon),
+:root[data-theme] .swal2-confirm:has(> .md-message-send-icon) {
+  display: inline-flex !important; align-items: center; justify-content: center; gap: 6px; direction: ltr;
+}
+:root[data-theme] .layui-layer-title .md-message-send-icon { width: 18px; height: 18px; }
+:root[data-theme] .layui-layer-btn .md-message-send-icon,
+:root[data-theme] .swal2-confirm .md-message-send-icon { width: 16px; height: 16px; }
+:root[data-theme] .md-message-card > .card-body { padding: 9px 18px 18px !important; }
+
+:root[data-theme] .md-message-title-cell {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  min-width: 230px; max-width: 420px; padding: 6px 8px; border-radius: 9px; cursor: pointer;
+  transition: background-color var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .md-message-title-cell:hover { background: var(--md-hover-overlay); }
+:root[data-theme] .md-message-title-cell:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 1px; }
+:root[data-theme] .md-message-title-cell strong {
+  max-width: 100%; overflow: hidden; color: var(--md-on-surface); font-size: 13px; font-weight: 650;
+  line-height: 1.4; text-overflow: ellipsis; white-space: nowrap;
+}
+:root[data-theme] .md-message-title-cell:hover strong { color: var(--md-primary); }
+:root[data-theme] .md-message-title-cell span {
+  display: -webkit-box; overflow: hidden; color: var(--md-on-surface-dis); font-size: 11px; line-height: 1.45;
+  -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+}
+:root[data-theme] .md-message-audience { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 120px; }
+:root[data-theme] .md-message-audience > span {
+  display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 999px;
+  color: var(--md-primary); background: rgba(var(--md-primary-rgb), .1); font-size: 10px; font-weight: 700;
+}
+:root[data-theme] .md-message-audience--1 > span { color: var(--md-secondary); background: rgba(var(--md-secondary-rgb), .11); }
+:root[data-theme] .md-message-audience--2 > span { color: var(--md-info); background: rgba(var(--md-info-rgb), .11); }
+:root[data-theme] .md-message-audience > strong {
+  max-width: 180px; overflow: hidden; color: var(--md-on-surface-med); font-size: 11px; font-weight: 550;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+:root[data-theme] .md-message-count { color: var(--md-on-surface-dis); font-size: 11px; white-space: nowrap; }
+:root[data-theme] .md-message-count strong { color: var(--md-on-surface); font-size: 15px; font-weight: 680; }
+:root[data-theme] .md-message-jump {
+  display: inline-flex; align-items: center; gap: 6px; color: var(--md-on-surface-dis); font-size: 11px; white-space: nowrap;
+}
+:root[data-theme] .md-message-jump.is-set { color: var(--md-success); font-weight: 600; }
+:root[data-theme] .md-message-time { display: flex; flex-direction: column; gap: 5px; min-width: 170px; }
+:root[data-theme] .md-message-time span { display: flex; align-items: center; gap: 6px; color: var(--md-on-surface-dis); font-size: 10.5px; white-space: nowrap; }
+:root[data-theme] .md-message-time span:first-child { color: var(--md-on-surface-med); }
+:root[data-theme] .md-message-time i { width: 13px; color: var(--md-primary); text-align: center; }
+
+:root[data-theme] .md-message-compose-layer .layui-layer-content { overscroll-behavior: contain; }
+:root[data-theme] .md-message-compose-layer .layui-card-body { padding: 20px 22px 10px !important; }
+:root[data-theme] .md-message-compose-layer .layui-form-item { margin-bottom: 17px; }
+:root[data-theme] .md-message-compose-layer .block-audience_preview,
+:root[data-theme] .md-message-compose-layer .block-compose_tip { margin-top: -3px; }
+:root[data-theme] .md-message-compose-layer .component-content { min-width: 0; }
+:root[data-theme] .md-message-compose-layer .component-audience-user-picker xm-select,
+:root[data-theme] .md-message-compose-layer .component-audience_user_picker xm-select {
+  min-height: 42px; border-color: var(--md-divider); border-radius: 10px;
+  background: var(--md-surface); color: var(--md-on-surface);
+}
+:root[data-theme] .md-message-compose-layer .component-audience-user-picker xm-select:hover,
+:root[data-theme] .md-message-compose-layer .component-audience_user_picker xm-select:hover { border-color: var(--md-primary); }
+:root[data-theme] .md-message-compose-layer xm-select .xm-label-block { border-radius: 7px; }
+:root[data-theme] .md-message-compose-layer xm-select .xm-body {
+  border-color: var(--md-divider); border-radius: 10px; background: var(--md-surface-2); box-shadow: var(--md-e8);
+}
+:root[data-theme] .md-message-compose-layer xm-select .xm-option { color: var(--md-on-surface); }
+:root[data-theme] .md-message-compose-layer xm-select .xm-option:hover { background: var(--md-hover-overlay); }
+:root[data-theme] .md-message-picker-error { padding: 11px 13px; border-radius: 10px; background: rgba(var(--md-error-rgb), .1); color: var(--md-error); }
+
+:root[data-theme] .md-message-audience-summary,
+:root[data-theme] .md-message-audience-readonly {
+  display: flex; align-items: flex-start; gap: 12px; padding: 14px 15px;
+  border: 1px solid var(--md-divider); border-radius: 13px; background: var(--md-surface-2);
+}
+:root[data-theme] .md-message-audience-summary__icon,
+:root[data-theme] .md-message-audience-readonly__icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 36px; height: 36px; border-radius: 11px;
+  color: var(--md-primary); background: rgba(var(--md-primary-rgb), .1);
+}
+:root[data-theme] .md-message-audience-summary > div,
+:root[data-theme] .md-message-audience-readonly > div { display: flex; flex-direction: column; min-width: 0; }
+:root[data-theme] .md-message-audience-summary > div > span { color: var(--md-on-surface-dis); font-size: 10px; font-weight: 650; text-transform: uppercase; }
+:root[data-theme] .md-message-audience-summary strong,
+:root[data-theme] .md-message-audience-readonly strong { margin-top: 1px; color: var(--md-on-surface); font-size: 14px; font-weight: 670; }
+:root[data-theme] .md-message-audience-summary p,
+:root[data-theme] .md-message-audience-readonly span { margin: 4px 0 0; color: var(--md-on-surface-med); font-size: 11px; line-height: 1.5; }
+:root[data-theme] .md-message-audience-summary.is-ready { border-color: rgba(var(--md-success-rgb), .28); background: rgba(var(--md-success-rgb), .055); }
+:root[data-theme] .md-message-audience-summary.is-ready .md-message-audience-summary__icon { color: var(--md-success); background: rgba(var(--md-success-rgb), .12); }
+:root[data-theme] .md-message-audience-summary.is-empty { border-color: rgba(var(--md-warning-rgb), .26); }
+:root[data-theme] .md-message-audience-summary.is-loading .md-message-audience-summary__icon i { animation: md-message-pulse 1.15s ease-in-out infinite; }
+:root[data-theme] .md-message-audience-readonly__icon { color: var(--md-warning); background: rgba(var(--md-warning-rgb), .12); }
+
+:root[data-theme] .md-message-compose-tip {
+  display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: 10px;
+  background: rgba(var(--md-info-rgb), .075); color: var(--md-on-surface-med); font-size: 11px; line-height: 1.55;
+}
+:root[data-theme] .md-message-compose-tip i { margin-top: 2px; color: var(--md-info); }
+:root[data-theme] .md-message-compose-layer .block-content .CodeMirror,
+:root[data-theme] .md-message-compose-layer .block-content .ev2-preview { min-height: 300px; }
+:root[data-theme] .md-message-compose-layer .layui-layer-btn0.is-loading { opacity: .62; }
+
+@keyframes md-message-pulse {
+  0%, 100% { opacity: .45; transform: scale(.92); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 767px) {
+  :root[data-theme] .md-message-card__header { align-items: flex-start; flex-direction: column; gap: 14px; }
+  :root[data-theme] .md-message-card__header .btn-message-create { width: 100%; }
+  :root[data-theme] .md-message-compose-layer .layui-card-body { padding: 16px 14px 8px !important; }
+  :root[data-theme] .md-message-compose-layer .layui-form-label {
+    float: none; width: auto; padding: 0 0 7px; border: 0; background: transparent; text-align: left;
+  }
+  :root[data-theme] .md-message-compose-layer .layui-input-block { margin-left: 0; }
+}
+@media (max-width: 575px) {
+  :root[data-theme] .md-message-card > .card-body { padding: 6px 10px 14px !important; }
+  :root[data-theme] .md-message-card__header { padding: 15px !important; }
+  :root[data-theme] .md-message-card__heading p { display: none; }
+  :root[data-theme] .md-message-card__icon { width: 40px; height: 40px; border-radius: 12px; }
+  :root[data-theme] .md-message-audience-summary,
+  :root[data-theme] .md-message-audience-readonly { padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme] .md-message-title-cell { transition: none; }
+  :root[data-theme] .md-message-audience-summary.is-loading .md-message-audience-summary__icon i { animation: none; }
+}
