@@ -1,0 +1,35 @@
+#{include file="../Common/Header.html"}
+<div class="uc-main uc-message-page">
+    <section class="uc-message-hero">
+        <div>
+            <span class="uc-message-hero__eyebrow"><span class="material-icons-outlined">mark_email_unread</span>专属消息收件箱</span>
+            <h1>消息中心</h1>
+            <p>重要通知、服务动态与专属消息，都可以在这里随时查看。</p>
+        </div>
+        <span class="uc-message-hero__art" aria-hidden="true"><span class="material-icons-outlined">notifications_active</span></span>
+    </section>
+
+    <section class="uc-card uc-message-board">
+        <div class="uc-card__head">
+            <span class="material-icons-outlined">inbox</span>
+            <div class="uc-message-board__heading">
+                <span class="uc-card__title">全部消息</span>
+                <span class="uc-card__sub">打开消息后自动标记为已读</span>
+            </div>
+            <div class="uc-message-actions">
+                <button type="button" class="uc-message-action uc-message-action--delete" data-message-action="delete-selected">
+                    <span class="material-icons-outlined">delete_sweep</span>删除选中
+                </button>
+                <button type="button" class="uc-message-action uc-message-action--clear" data-message-action="clear">
+                    <span class="material-icons-outlined">cleaning_services</span>清空全部
+                </button>
+            </div>
+        </div>
+        <div class="uc-card__body">
+            <table id="message-table"></table>
+        </div>
+    </section>
+</div>
+
+#{ready("/assets/user/controller/user/message.js")}
+#{include file="../Common/Footer.html"}

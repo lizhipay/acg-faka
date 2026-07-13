@@ -1,0 +1,128 @@
+#{include file="../Common/Header.html"}
+<div class="uc-main uc-ticket-page uc-ticket-create-page">
+    <div class="uc-ticket-create-layout">
+        <form class="uc-card uc-ticket-form" autocomplete="off" onsubmit="return false;">
+            <div class="uc-ticket-form__section">
+                <div class="uc-ticket-form__heading">
+                    <span class="uc-ticket-step">1</span>
+                    <div><strong>选择服务类型</strong></div>
+                </div>
+                <div class="uc-ticket-type-grid" role="radiogroup" aria-label="工单类型">
+                    <button type="button" class="uc-ticket-type is-active" data-ticket-type="0" role="radio" aria-checked="true">
+                        <span class="uc-ticket-type__icon"><span class="material-icons-outlined">question_answer</span></span>
+                        <span class="uc-ticket-type__copy"><strong>售前咨询</strong><small>购买、商品功能或使用方式等疑问</small></span>
+                        <span class="uc-ticket-choice"><span class="material-icons-outlined">check</span></span>
+                    </button>
+                    <button type="button" class="uc-ticket-type" data-ticket-type="1" role="radio" aria-checked="false">
+                        <span class="uc-ticket-type__icon"><span class="material-icons-outlined">handyman</span></span>
+                        <span class="uc-ticket-type__copy"><strong>售后支持</strong><small>已购商品出现异常，需要协助处理</small></span>
+                        <span class="uc-ticket-choice"><span class="material-icons-outlined">check</span></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="uc-ticket-form__section">
+                <div class="uc-ticket-form__heading">
+                    <span class="uc-ticket-step">2</span>
+                    <div><strong class="uc-ticket-relation-title">关联商品</strong><small class="uc-ticket-relation-sub">可选，关联后客服能更快理解你的问题</small></div>
+                </div>
+
+                <div class="uc-ticket-relation uc-ticket-relation--commodity">
+                    <label class="uc-ticket-field-label" for="ticket-commodity">相关商品 <em>选填</em></label>
+                    <select id="ticket-commodity" name="commodity_id" aria-label="搜索相关商品"></select>
+                    <p class="uc-ticket-field-help"><span class="material-icons-outlined">search</span>输入商品名称即可搜索当前店铺中的商品</p>
+                </div>
+
+                <div class="uc-ticket-relation uc-ticket-relation--order" hidden>
+                    <div class="uc-ticket-mode-switch" role="tablist" aria-label="订单填写方式">
+                        <button type="button" class="is-active" data-order-mode="account" role="tab" aria-selected="true"><span class="material-icons-outlined">receipt_long</span>从购买记录选择</button>
+                        <button type="button" data-order-mode="manual" role="tab" aria-selected="false"><span class="material-icons-outlined">keyboard</span>手动输入订单号</button>
+                    </div>
+                    <div class="uc-ticket-order-panel" data-order-panel="account">
+                        <label class="uc-ticket-field-label" for="ticket-order">相关订单 <b>*</b></label>
+                        <select id="ticket-order" name="order_id" aria-label="搜索本人订单"></select>
+                        <div class="uc-ticket-order-picked" hidden></div>
+                        <p class="uc-ticket-field-help"><span class="material-icons-outlined">verified_user</span>这里只会展示当前账号已经支付的订单</p>
+                    </div>
+                    <div class="uc-ticket-order-panel" data-order-panel="manual" hidden>
+                        <label class="uc-ticket-float-field">
+                            <input type="text" name="trade_no" maxlength="32" placeholder=" " inputmode="numeric">
+                            <span>订单号 <b>*</b></span>
+                        </label>
+                        <p class="uc-ticket-field-help"><span class="material-icons-outlined">info</span>仅用于游客购买的订单；其他注册会员的订单无法跨账号提交</p>
+                    </div>
+
+                    <div class="uc-ticket-proof">
+                        <div class="uc-ticket-field-label">购买凭证 <b>*</b><em>单张图片</em></div>
+                        <input type="hidden" name="proof_upload_id">
+                        <input type="hidden" name="proof_path">
+                        <button type="button" class="uc-ticket-proof__drop">
+                            <span class="uc-ticket-proof__icon"><span class="material-icons-outlined">add_photo_alternate</span></span>
+                            <span class="uc-ticket-proof__copy"><strong>上传购买凭证</strong><small>支持 JPG、PNG、WebP，文件不超过 10 MB</small></span>
+                            <span class="uc-ticket-proof__action">选择图片</span>
+                        </button>
+                        <div class="uc-ticket-proof__preview" hidden>
+                            <img src="" alt="购买凭证预览">
+                            <div><strong>凭证已添加</strong><small class="uc-ticket-proof__name"></small></div>
+                            <button type="button" class="uc-ticket-proof__remove" aria-label="移除购买凭证"><span class="material-icons-outlined">delete</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="uc-ticket-form__section">
+                <div class="uc-ticket-form__heading">
+                    <span class="uc-ticket-step">3</span>
+                    <div><strong>说明具体情况</strong><small>标题简明，正文尽量包含现象、期望结果和已尝试的方法</small></div>
+                </div>
+
+                <div class="uc-ticket-priority-block">
+                    <span class="uc-ticket-field-label">优先级 <b>*</b></span>
+                    <div class="uc-ticket-priorities" role="radiogroup" aria-label="工单优先级">
+                        <button type="button" data-priority="0" role="radio" aria-checked="false"><span class="uc-ticket-priority-dot uc-ticket-priority-dot--low"></span><span><strong>低</strong><small>一般咨询</small></span></button>
+                        <button type="button" class="is-active" data-priority="1" role="radio" aria-checked="true"><span class="uc-ticket-priority-dot uc-ticket-priority-dot--medium"></span><span><strong>中</strong><small>影响正常使用</small></span></button>
+                        <button type="button" data-priority="2" role="radio" aria-checked="false"><span class="uc-ticket-priority-dot uc-ticket-priority-dot--high"></span><span><strong>高</strong><small>购买或使用受阻</small></span></button>
+                    </div>
+                </div>
+
+                <label class="uc-ticket-float-field">
+                    <input type="text" name="title" maxlength="100" placeholder=" ">
+                    <span>工单标题 <b>*</b></span>
+                    <small class="uc-ticket-char-count"><i>0</i>/100</small>
+                </label>
+
+                <div class="uc-ticket-editor-field">
+                    <div class="uc-ticket-field-label">问题详情 <b>*</b><em>支持 Markdown 与图片</em></div>
+                    <div id="ticket-content-editor"></div>
+                </div>
+            </div>
+
+            <aside class="uc-ticket-create-aside">
+            <section class="uc-ticket-summary">
+                <div class="uc-ticket-summary__head">
+                    <span class="material-icons-outlined">fact_check</span>
+                    <strong>提交前确认</strong>
+                    <span class="uc-ticket-summary__live"><i></i>实时更新</span>
+                </div>
+                <div class="uc-ticket-summary__rows">
+                    <div class="uc-ticket-summary__type">
+                        <span>工单类型</span>
+                        <div><span class="material-icons-outlined">question_answer</span><strong>售前咨询</strong></div>
+                    </div>
+                    <div><span>优先级</span><strong data-summary="priority">中</strong></div>
+                    <div><span>关联内容</span><strong data-summary="relation">尚未选择</strong></div>
+                    <div><span>购买凭证</span><strong data-summary="proof">无需上传</strong></div>
+                </div>
+            </section>
+            </aside>
+
+            <div class="uc-ticket-submit-row">
+                <span><span class="material-icons-outlined">shield</span>工单由管理员处理，请勿提交密码或完整卡密</span>
+                <button type="button" class="uc-ticket-submit"><span class="material-icons-outlined">post_add</span><span>提交工单</span></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+#{ready("/assets/user/controller/user/ticket.create.js")}
+#{include file="../Common/Footer.html"}

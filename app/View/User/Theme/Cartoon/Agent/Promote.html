@@ -1,0 +1,94 @@
+#{include file="../Common/Header.html"}
+<div class="uc-main">
+
+    <!-- 推广链接 hero:链接 + 复制 + 二维码 + 分成规则 -->
+    <div class="uc-card">
+        <div class="uc-card__body">
+            <div class="uc-promo">
+                <div class="uc-promo__main">
+                    <div class="uc-promo__title"><span class="material-icons-outlined">share</span>我的推广链接</div>
+                    <div class="uc-promo__link">
+                        <span class="uc-promo__url">#{$share_url}</span>
+                        <button type="button" class="uc-cta uc-promo__copy clipboard" data-text="#{$share_url}"><span class="material-icons-outlined">content_copy</span>复制链接</button>
+                    </div>
+                    <div class="uc-promo__rule">
+                        <span class="material-icons-outlined">auto_awesome</span>
+                        <div>
+                            好友通过链接购买（或注册成为你的下级）后，每笔订单你都会获得分成，以硬币入账。<br>
+                            分成 = 成交价 − 你的拿货价#{if $group}，你当前等级 <b>#{$group.name}</b> 的拿货价见下表#{/if}。
+                        </div>
+                    </div>
+                </div>
+                <div class="uc-promo__qr">
+                    <div id="share-qrcode" data-url="#{$share_url}"></div>
+                    <div class="uc-promo__qrhint">扫码直达</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 推广统计 -->
+    <div class="uc-stats">
+        <div class="uc-stat uc-stat--primary">
+            <div class="uc-stat__label"><span class="material-icons-outlined">groups</span>推广人数</div>
+            <div class="uc-stat__value">#{$children}<span class="uc-stat__unit">人</span></div>
+        </div>
+        <div class="uc-stat uc-stat--info">
+            <div class="uc-stat__label"><span class="material-icons-outlined">receipt_long</span>推广订单</div>
+            <div class="uc-stat__value">#{$promote_orders}<span class="uc-stat__unit">单</span></div>
+        </div>
+        <div class="uc-stat uc-stat--warning">
+            <div class="uc-stat__label"><span class="material-icons-outlined">calendar_month</span>本月收益</div>
+            <div class="uc-stat__value"><span class="cur">￥</span>#{$promote_month}</div>
+        </div>
+        <div class="uc-stat uc-stat--success">
+            <div class="uc-stat__label"><span class="material-icons-outlined">savings</span>累计收益</div>
+            <div class="uc-stat__value"><span class="cur">￥</span>#{$promote_total}</div>
+        </div>
+    </div>
+
+    <!-- 商品预计收益表 -->
+    <div class="uc-card">
+        <div class="uc-card__head">
+            <span class="material-icons-outlined">payments</span>
+            <span class="uc-card__title">商品预计收益</span>
+            <span class="uc-card__tools uc-hint">按游客价成交估算 · 会员购买时实际分成会略低</span>
+        </div>
+        <div class="uc-card__body">
+            <table id="promote-table"></table>
+        </div>
+    </div>
+
+    <!-- 最近推广订单 -->
+    <div class="uc-card">
+        <div class="uc-card__head">
+            <span class="material-icons-outlined">history</span>
+            <span class="uc-card__title">最近推广订单</span>
+        </div>
+        <div class="uc-card__body">
+            #{if count($recent) > 0}
+            <div class="uc-list">
+                #{foreach $recent as $o}
+                <div class="uc-list__row">
+                    <img class="uc-list__icon" src="#{$o.commodity.cover}" alt="">
+                    <div class="uc-list__main">
+                        <div class="uc-list__name">#{$o.commodity.name}</div>
+                        <div class="uc-list__time">#{$o.create_time}</div>
+                    </div>
+                    <div class="uc-list__end">
+                        <div class="uc-list__amount">￥#{$o.amount}</div>
+                        #{if $o.divide_amount > 0}<div class="uc-list__gain">分成 ￥#{$o.divide_amount}</div>#{/if}
+                    </div>
+                </div>
+                #{/foreach}
+            </div>
+            #{else}
+            <div class="uc-blank"><span class="material-icons-outlined">share</span><p>还没有推广订单，把链接分享给朋友吧</p></div>
+            #{/if}
+        </div>
+    </div>
+
+</div>
+
+#{ready("/assets/user/controller/user/promote.js")}
+#{include file="../Common/Footer.html"}

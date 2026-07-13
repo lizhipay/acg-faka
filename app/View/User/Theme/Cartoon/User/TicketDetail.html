@@ -1,0 +1,100 @@
+#{include file="../Common/Header.html"}
+<div class="uc-main uc-ticket-page uc-ticket-detail-page">
+    <div class="uc-ticket-detail-loading">
+        <span class="uc-ticket-detail-loading__orb"><span class="material-icons-outlined">forum</span></span>
+        <strong>正在打开工单</strong><small>马上就好</small>
+    </div>
+
+    <div class="uc-ticket-detail-error" hidden>
+        <span class="material-icons-outlined">sentiment_dissatisfied</span>
+        <strong>没有找到这张工单</strong>
+        <p>工单可能不存在，或你没有查看权限。</p>
+    </div>
+
+    <div class="uc-ticket-detail" hidden>
+        <div class="uc-ticket-detail-layout">
+            <main class="uc-card uc-ticket-thread">
+                <header class="uc-ticket-detail-head">
+                    <div class="uc-ticket-detail-head__top">
+                        <div class="uc-ticket-detail-head__meta">
+                            <span class="uc-ticket-detail-number"></span>
+                            <span class="uc-ticket-pill uc-ticket-detail-type"></span>
+                            <span class="uc-ticket-pill uc-ticket-detail-priority"></span>
+                        </div>
+                    </div>
+                    <div class="uc-ticket-detail-head__body">
+                        <div class="uc-ticket-detail-head__copy">
+                            <h1 class="uc-ticket-detail-title"></h1>
+                        </div>
+                        <div class="uc-ticket-detail-state is-waiting" aria-label="工单当前状态">
+                            <span class="uc-ticket-detail-state__icon"><span class="material-icons-outlined">schedule</span></span>
+                            <span class="uc-ticket-detail-state__copy">
+                                <small>当前状态</small>
+                                <strong class="uc-ticket-detail-status">待客服回复</strong>
+                                <span class="uc-ticket-detail-state__hint">客服查看后会在这里回复</span>
+                            </span>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="uc-ticket-thread__head">
+                    <div><span class="material-icons-outlined">forum</span><span><strong>沟通记录</strong><small>你与客服的完整对话</small></span></div>
+                    <span class="uc-ticket-live"><i></i>自动更新</span>
+                </div>
+                <div class="uc-ticket-thread__body">
+                    <button type="button" class="uc-ticket-history-more" hidden><span class="material-icons-outlined">history</span><span>加载更早的沟通记录</span></button>
+                    <div class="uc-ticket-messages" aria-live="polite"></div>
+                    <button type="button" class="uc-ticket-new-messages" hidden><span class="material-icons-outlined">arrow_downward</span><span>有新的客服回复</span></button>
+                </div>
+
+                <div class="uc-ticket-reply">
+                    <div class="uc-ticket-reply__head">
+                        <div><span class="material-icons-outlined">add_comment</span><span><strong>补充回复</strong><small>不必等待客服回复，可以连续补充信息</small></span></div>
+                        <span>支持 Markdown 与图片</span>
+                    </div>
+                    <div id="ticket-reply-editor"></div>
+                    <div class="uc-ticket-reply__actions">
+                        <span><span class="material-icons-outlined">info</span>请勿发送密码、卡密等敏感信息</span>
+                        <button type="button" class="uc-ticket-reply__submit"><span class="material-icons-outlined">send</span><span>发送回复</span></button>
+                    </div>
+                </div>
+
+                <div class="uc-ticket-readonly" hidden>
+                    <span class="uc-ticket-readonly__icon"><span class="material-icons-outlined">lock</span></span>
+                    <div><strong>这张工单已结束</strong><p>历史沟通记录仍会保留，但已经无法继续回复。如有新的问题，请创建一张新工单。</p></div>
+                    <a href="/user/ticket/create"><span class="material-icons-outlined">add_comment</span>创建新工单</a>
+                </div>
+            </main>
+
+            <aside class="uc-ticket-context">
+                <section class="uc-card uc-ticket-context-card">
+                    <div class="uc-ticket-context-card__head"><span class="material-icons-outlined">info</span><strong>工单信息</strong></div>
+                    <div class="uc-ticket-context-rows">
+                        <div><span>创建时间</span><strong data-context="create_time">—</strong></div>
+                        <div><span>最后更新</span><strong data-context="update_time">—</strong></div>
+                        <div><span>当前状态</span><strong data-context="status">—</strong></div>
+                        <div><span>优先级</span><strong data-context="priority">—</strong></div>
+                    </div>
+                </section>
+
+                <section class="uc-card uc-ticket-context-card uc-ticket-related-card" hidden>
+                    <div class="uc-ticket-context-card__head"><span class="material-icons-outlined">link</span><strong>关联内容</strong></div>
+                    <div class="uc-ticket-related"></div>
+                </section>
+
+                <section class="uc-card uc-ticket-context-card uc-ticket-proof-card" hidden>
+                    <div class="uc-ticket-context-card__head"><span class="material-icons-outlined">verified</span><strong>购买凭证</strong></div>
+                    <button type="button" class="uc-ticket-proof-view"><img src="" alt="购买凭证"><span><span class="material-icons-outlined">zoom_in</span>点击查看大图</span></button>
+                </section>
+
+                <section class="uc-ticket-safe-note">
+                    <span class="material-icons-outlined">shield</span>
+                    <div><strong>隐私提醒</strong><p>客服不需要你的登录密码或完整卡密，请勿在回复中发送敏感信息。</p></div>
+                </section>
+            </aside>
+        </div>
+    </div>
+</div>
+
+#{ready("/assets/user/controller/user/ticket.detail.js")}
+#{include file="../Common/Footer.html"}

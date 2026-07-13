@@ -5,12 +5,13 @@ namespace App\Controller\User\Api;
 
 use App\Controller\Base\API\User;
 use App\Interceptor\UserSession;
+use App\Interceptor\Waf;
 use App\Service\Ticket as TicketService;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Waf\Filter;
 
-#[Interceptor(UserSession::class, Interceptor::TYPE_API)]
+#[Interceptor([Waf::class, UserSession::class], Interceptor::TYPE_API)]
 class Ticket extends User
 {
     #[Inject]

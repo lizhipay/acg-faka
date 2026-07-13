@@ -1,0 +1,89 @@
+#{include file="../Common/Header.html"}
+<div class="uc-main uc-ticket-page">
+    <section class="uc-ticket-hero">
+        <div class="uc-ticket-hero__copy">
+            <span class="uc-ticket-eyebrow"><span class="material-icons-outlined">verified_user</span>专属支持中心</span>
+            <h1>我的工单</h1>
+            <p>购买前有疑问，或购买后需要帮助，都可以在这里和客服持续沟通。</p>
+        </div>
+        <a class="uc-ticket-primary" href="/user/ticket/create">
+            <span class="material-icons-outlined">add_comment</span>
+            <span><strong>创建工单</strong><small>通常很快会收到回复</small></span>
+            <span class="material-icons-outlined uc-ticket-primary__arrow">arrow_forward</span>
+        </a>
+    </section>
+
+    <section class="uc-ticket-stats" aria-label="工单状态概览">
+        <button type="button" class="uc-ticket-stat is-active" data-status="">
+            <span class="uc-ticket-stat__icon"><span class="material-icons-outlined">inbox</span></span>
+            <span class="uc-ticket-stat__copy"><small>全部工单</small><strong data-stat="all">0</strong></span>
+        </button>
+        <button type="button" class="uc-ticket-stat" data-status="0">
+            <span class="uc-ticket-stat__icon uc-ticket-stat__icon--waiting"><span class="material-icons-outlined">support_agent</span></span>
+            <span class="uc-ticket-stat__copy"><small>待客服回复</small><strong data-stat="pending_admin">0</strong></span>
+        </button>
+        <button type="button" class="uc-ticket-stat" data-status="1">
+            <span class="uc-ticket-stat__icon uc-ticket-stat__icon--reply"><span class="material-icons-outlined">mark_chat_unread</span></span>
+            <span class="uc-ticket-stat__copy"><small>待我回复</small><strong data-stat="pending_user">0</strong></span>
+        </button>
+        <button type="button" class="uc-ticket-stat" data-status="2">
+            <span class="uc-ticket-stat__icon uc-ticket-stat__icon--done"><span class="material-icons-outlined">task_alt</span></span>
+            <span class="uc-ticket-stat__copy"><small>已经解决</small><strong data-stat="resolved">0</strong></span>
+        </button>
+        <button type="button" class="uc-ticket-stat" data-status="3">
+            <span class="uc-ticket-stat__icon uc-ticket-stat__icon--closed"><span class="material-icons-outlined">lock</span></span>
+            <span class="uc-ticket-stat__copy"><small>已经关闭</small><strong data-stat="closed">0</strong></span>
+        </button>
+    </section>
+
+    <section class="uc-card uc-ticket-board">
+        <div class="uc-ticket-toolbar">
+            <div class="uc-ticket-toolbar__title">
+                <span class="material-icons-outlined">forum</span>
+                <div><strong>工单记录</strong><small>点击任意工单即可查看完整沟通记录</small></div>
+            </div>
+            <div class="uc-ticket-tools">
+                <label class="uc-ticket-search">
+                    <span class="material-icons-outlined">search</span>
+                    <input type="search" name="ticket-keyword" placeholder="搜索工单号或标题" autocomplete="off">
+                    <button type="button" class="uc-ticket-search__clear" aria-label="清空搜索"><span class="material-icons-outlined">close</span></button>
+                </label>
+                <label class="uc-ticket-select">
+                    <span class="uc-ticket-select__label">类型</span>
+                    <select name="ticket-type" aria-label="按工单类型筛选">
+                        <option value="">全部类型</option>
+                        <option value="0">售前咨询</option>
+                        <option value="1">售后支持</option>
+                    </select>
+                    <span class="material-icons-outlined">expand_more</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="uc-ticket-loading" aria-live="polite">
+            <div class="uc-ticket-skeleton"></div>
+            <div class="uc-ticket-skeleton"></div>
+            <div class="uc-ticket-skeleton"></div>
+        </div>
+        <div class="uc-ticket-list" aria-live="polite"></div>
+        <div class="uc-ticket-empty" hidden>
+            <span class="uc-ticket-empty__art"><span class="material-icons-outlined">mark_chat_read</span></span>
+            <strong>这里还没有工单</strong>
+            <p>遇到疑问时，不必反复寻找客服入口，创建一张工单就能持续跟进。</p>
+            <a href="/user/ticket/create"><span class="material-icons-outlined">add</span>创建第一张工单</a>
+        </div>
+        <div class="uc-ticket-error" hidden>
+            <span class="material-icons-outlined">cloud_off</span>
+            <div><strong>暂时无法读取工单</strong><small>请检查网络后再试一次</small></div>
+            <button type="button">重新加载</button>
+        </div>
+        <div class="uc-ticket-pagination" hidden>
+            <button type="button" data-page-action="prev"><span class="material-icons-outlined">chevron_left</span>上一页</button>
+            <span class="uc-ticket-pagination__meta"></span>
+            <button type="button" data-page-action="next">下一页<span class="material-icons-outlined">chevron_right</span></button>
+        </div>
+    </section>
+</div>
+
+#{ready("/assets/user/controller/user/ticket.js")}
+#{include file="../Common/Footer.html"}
