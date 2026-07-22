@@ -10,6 +10,10 @@ body.ay-bg {
   background: var(--md-bg) !important;
   color: var(--md-on-surface);
   font-family: var(--md-font);
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 .ay-dim, .ay-petals { display: none !important; }
 
@@ -42,17 +46,35 @@ body.ay-bg {
 .ay-input:focus { border-color: var(--md-primary); box-shadow: 0 0 0 1px var(--md-primary); }
 
 /* floating label (reuses the placeholder-shown mechanic) */
-.ay-label { color: var(--md-on-surface-med); }
-.ay-input:focus + .ay-label,
-.ay-input:not(:placeholder-shown) + .ay-label {
-  top: -8px;
+.ay-label {
+  left: 10px;
+  top: 50%;
+  z-index: 1;
+  max-width: calc(100% - 20px);
+  padding: 0 4px;
+  overflow: hidden;
+  background: transparent;
+  color: var(--md-on-surface-med);
+  font-size: 13px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  transform-origin: left center;
+  transition: top var(--md-dur-fast) var(--md-ease), transform var(--md-dur-fast) var(--md-ease), font-size var(--md-dur-fast) var(--md-ease), color var(--md-dur-fast) var(--md-ease), background-color var(--md-dur-fast) var(--md-ease);
+}
+.ay-input:is(:focus, :not(:placeholder-shown), :-webkit-autofill) + .ay-label {
+  top: 0;
   font-size: 12px;
-  color: var(--md-primary);
+  line-height: 20px;
+  color: var(--md-on-surface-med);
   background: var(--md-surface);
   border: none;
   border-radius: 0;
   padding: 0 4px;
+  transform: translateY(-50%);
 }
+.ay-input:focus + .ay-label { color: var(--md-primary); }
 
 /* password eye → Material icon button (recolor the inline-stroked svg) */
 .ay-eye { background: transparent; border: none; border-radius: var(--md-radius-pill); }
@@ -63,15 +85,31 @@ body.ay-bg {
 .ay-captcha { border: 1px solid var(--md-divider); border-radius: var(--md-radius); }
 
 /* remember checkbox + forgot link */
-.ay-check { color: var(--md-on-surface-med); }
+.ay-check {
+  color: var(--md-on-surface-med);
+  position: relative;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
 .ay-check input {
   border: 2px solid var(--md-on-surface-med);
   border-radius: 3px;
   background: transparent;
+  background-color: transparent !important;
+  pointer-events: auto;
 }
 .ay-check input:hover { border-color: var(--md-on-surface); background: var(--md-hover-overlay); }
-.ay-check input:checked { background: var(--md-primary); border-color: var(--md-primary); }
-.ay-check input:checked::after { color: var(--md-on-primary); }
+.ay-check input:checked {
+  background: var(--md-primary);
+  background-color: var(--md-primary) !important;
+  border-color: var(--md-primary);
+}
+.ay-check input:checked::after {
+  color: var(--md-on-primary);
+  line-height: 1;
+  pointer-events: none;
+}
 .ay-link { color: var(--md-primary); border-bottom: none; opacity: 1; }
 .ay-link:hover { text-decoration: underline; }
 
@@ -89,3 +127,50 @@ body.ay-bg {
 .ay-btn::after { display: none !important; }
 
 .ay-foot { color: var(--md-on-surface-med); }
+
+/* Mobile auth ergonomics: the form remains reachable above the virtual keyboard
+   and every interactive control keeps an app-sized touch target. */
+@media (max-width: 991.98px) {
+  .ay-wrap {
+    min-height: 100vh;
+    min-height: 100dvh;
+    place-items: start center;
+    padding:
+      max(16px, env(safe-area-inset-top))
+      max(14px, env(safe-area-inset-right))
+      max(20px, env(safe-area-inset-bottom))
+      max(14px, env(safe-area-inset-left));
+    overflow: visible;
+  }
+  .ay-card {
+    width: min(100%, 460px);
+    margin: auto 0;
+    border-radius: 24px;
+  }
+  .ay-head { padding: 22px 18px 6px; }
+  .ay-body { padding: 12px 18px 20px; }
+  .ay-field { margin: 14px 0 20px; }
+  .ay-input,
+  .ay-btn { min-height: 48px; font-size: 16px; }
+  .ay-eye { width: 44px; height: 44px; right: 3px; }
+  .ay-captcha { min-width: 92px; height: 40px; right: 4px; }
+  .ay-check,
+  .ay-link { min-height: 44px; display: inline-flex; align-items: center; }
+  .ay-check input { width: 22px; height: 22px; flex: 0 0 22px; }
+}
+
+@media (max-width: 430px), (max-height: 720px) {
+  .ay-wrap { padding-top: max(10px, env(safe-area-inset-top)); }
+  .ay-card { margin: 0; border-radius: 20px; }
+  .ay-logo { width: 50px; height: 50px; }
+  .ay-head { padding-top: 16px; row-gap: 4px; }
+  .ay-body { padding-top: 8px; }
+  .ay-field { margin: 12px 0 17px; }
+  .ay-row { align-items: flex-start; margin-bottom: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ay-card,
+  .ay-input,
+  .ay-btn { transition: none !important; }
+}

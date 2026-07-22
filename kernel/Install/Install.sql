@@ -285,6 +285,7 @@ CREATE TABLE `__PREFIX__coupon`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 
+DROP TABLE IF EXISTS `__PREFIX__manage_session`;
 DROP TABLE IF EXISTS `__PREFIX__manage`;
 CREATE TABLE `__PREFIX__manage`  (
                                      `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -309,6 +310,27 @@ CREATE TABLE `__PREFIX__manage`  (
 
 
 INSERT INTO `__PREFIX__manage` VALUES (1, '__MANAGE_EMAIL__', '__MANAGE_PASSWORD__', NULL, '__MANAGE_NICKNAME__', '__MANAGE_SALT__', '/favicon.ico', 1, 0, '1997-01-01 00:00:00', NULL , NULL, NULL, NULL, NULL, NULL);
+
+
+CREATE TABLE `__PREFIX__manage_session` (
+                                             `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
+                                             `manage_id` int UNSIGNED NOT NULL COMMENT '管理员id',
+                                             `session_hash` char(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '会话标识SHA-256哈希',
+                                             `device_type` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '设备类型',
+                                             `device_name` varchar(96) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '设备名称',
+                                             `user_agent` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '登录User-Agent',
+                                             `login_ip` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '登录IP',
+                                             `last_ip` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '最近IP',
+                                             `created_time` datetime NOT NULL COMMENT '登录时间',
+                                             `last_seen_time` datetime NOT NULL COMMENT '最近活跃时间',
+                                             `expires_time` datetime NOT NULL COMMENT '过期时间',
+                                             `revoked_time` datetime NULL DEFAULT NULL COMMENT '撤销时间',
+                                             PRIMARY KEY (`id`) USING BTREE,
+                                             UNIQUE INDEX `session_hash`(`session_hash` ASC) USING BTREE,
+                                             INDEX `manage_active`(`manage_id` ASC, `revoked_time` ASC, `expires_time` ASC) USING BTREE,
+                                             INDEX `last_seen_time`(`last_seen_time` ASC) USING BTREE,
+                                             CONSTRAINT `__PREFIX__manage_session_ibfk_1` FOREIGN KEY (`manage_id`) REFERENCES `__PREFIX__manage` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
 
 
 DROP TABLE IF EXISTS `__PREFIX__order`;

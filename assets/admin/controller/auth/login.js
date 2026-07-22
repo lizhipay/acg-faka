@@ -32,6 +32,7 @@
     }
 
     function _Login() {
+        localStorage.removeItem("manage_token");
         let goto = decodeURIComponent(util.getParam("goto"));
 
         if (goto == "null") {
@@ -58,7 +59,6 @@
                 loader: false,
                 done: res => {
                     btn.textContent = '登录成功！正在跳转…';
-                    localStorage.setItem("manage_token", res?.data?.token);
                     window.location.href = goto;
                 },
                 error: res => {

@@ -34,6 +34,8 @@
     let pollTimer = null;
     let closeTimer = null;
     let listRefreshTimer = null;
+    let composerViewportFrame = 0;
+    let refocusComposerAfterExpand = false;
     let session = 0;
     let previousFocus = null;
     let pageDestroyed = false;
@@ -41,6 +43,59 @@
     const isTerminal = status => Number(status) >= 2;
     const isOpen = () => $drawer.hasClass('is-open') && !$drawer.prop('hidden');
     const isCurrent = (token, id) => !pageDestroyed && token === session && id === ticketId && isOpen();
+    const statusText = status => ({0: '待客服', 1: '等待用户', 2: '已解决', 3: '已关闭'})[Number(status)] || '处理中';
+
+    const setMobileMenu = open => {
+        const active = !!open && isOpen();
+        $drawer.toggleClass('is-mobile-menu-open', active);
+        $drawer.find('.md-ticket-mobile-menu').attr('aria-hidden', active ? 'false' : 'true');
+        $drawer.find('.md-ticket-mobile-more').attr('aria-expanded', active ? 'true' : 'false');
+    };
+
+    const setContextSheet = open => {
+        const active = !!open && isOpen();
+        $drawer.toggleClass('is-context-open', active);
+        $drawer.find('.md-ticket-context').attr('aria-hidden', active ? 'false' : 'true');
+    };
+
+    const setComposerExpanded = open => {
+        const $composer = $drawer.find('.md-ticket-composer');
+        const active = !!open && !$composer.prop('hidden');
+        $composer.toggleClass('is-expanded', active);
+        $composer.find('.md-ticket-composer-tools')
+            .attr('aria-expanded', active ? 'true' : 'false')
+            .attr('aria-label', active ? '收起回复工具' : '展开回复工具');
+        requestAnimationFrame(() => {
+            $panel.scrollTop(0);
+            editorApi?.cm?.refresh();
+        });
+        setTimeout(() => $panel.scrollTop(0), 80);
+    };
+
+    const syncComposerViewport = () => {
+        if (composerViewportFrame) return;
+        composerViewportFrame = requestAnimationFrame(() => {
+            composerViewportFrame = 0;
+            if (!isOpen() || !editorApi?.cm) return;
+            if (window.matchMedia && !window.matchMedia('(max-width: 991.98px)').matches) return;
+            const input = typeof editorApi.cm.getInputField === 'function'
+                ? editorApi.cm.getInputField()
+                : null;
+            if (!input || document.activeElement !== input) return;
+            editorApi.cm.refresh();
+            if (typeof editorApi.cm.scrollIntoView === 'function') {
+                editorApi.cm.scrollIntoView(editorApi.cm.getCursor(), 14);
+            }
+            const messages = $messages.get(0);
+            if (messages) messages.scrollTop = messages.scrollHeight;
+        });
+    };
+
+    const resetMobileLayers = () => {
+        setMobileMenu(false);
+        setContextSheet(false);
+        setComposerExpanded(false);
+    };
 
     const safeImageUrl = value => {
         const url = String(value || '').trim();
@@ -187,6 +242,7 @@
         if (!ticket) return;
         ticket.status = Number(status);
         $drawer.find('.md-ticket-detail-status').html(_Dict.result('_ticket_status', ticket.status) || '');
+        $drawer.find('.md-ticket-mobile-status').text(statusText(ticket.status));
 
         const terminal = isTerminal(ticket.status);
         $drawer.find('.md-ticket-composer').prop('hidden', terminal);
@@ -232,7 +288,7 @@
             + `<div class="md-ticket-message__bubble markdown-body">${sanitizeRichHtml(messageItem.content)}</div></div></article>`;
         const $node = $(html);
         $node.find('a').attr({target: '_blank', rel: 'noopener noreferrer'});
-        $node.find('img').attr('loading', 'lazy');
+        $node.find('img').attr({loading: 'lazy', role: 'button', tabindex: '0', 'aria-label': '预览工单图片'});
         return $node;
     };
 
@@ -338,8 +394,13 @@
 
     const renderTicket = current => {
         ticket = current;
+        const user = current.user || {};
+        const memberName = String(user.username || '未知用户').trim() || '未知用户';
+        const memberId = user.id == null ? '' : String(user.id).trim();
         $drawer.find('.md-ticket-number').text(current.ticket_no || `工单 #${current.id}`);
         $drawer.find('.md-ticket-hero__title').text(current.title || '未命名工单');
+        $drawer.find('.md-ticket-mobile-title').text(current.title || '未命名工单');
+        $drawer.find('.md-ticket-mobile-member').text(memberName + (memberId ? `#${memberId}` : ''));
         $drawer.find('.md-ticket-detail-type').html(_Dict.result('_ticket_type', Number(current.type)) || '');
         $drawer.find('.md-ticket-detail-priority').html(_Dict.result('_ticket_priority', Number(current.priority)) || '');
         $drawer.find('.md-ticket-detail-time').html(`<i class="fa-duotone fa-regular fa-clock"></i> 创建于 ${esc(current.create_time || '-')}`);
@@ -359,6 +420,7 @@
 
     const destroyEditor = () => {
         clearEditorState();
+        try { editorApi?.destroy?.(); } catch (error) {}
         editorApi = null;
         $editorHost.empty();
     };
@@ -405,8 +467,12 @@
         polling = false;
         historyLoading = false;
         $drawer.removeClass('has-error').addClass('is-loading');
+        resetMobileLayers();
         $drawer.find('.md-ticket-number').text('正在读取工单');
         $drawer.find('.md-ticket-hero__title').text('请稍候…');
+        $drawer.find('.md-ticket-mobile-title').text('工单处理');
+        $drawer.find('.md-ticket-mobile-member').text('正在读取…');
+        $drawer.find('.md-ticket-mobile-status').text('连接中');
         $drawer.find('.md-ticket-detail-type, .md-ticket-detail-priority, .md-ticket-detail-status, .md-ticket-detail-time').empty();
         $drawer.find('.md-ticket-live-dot').removeClass('is-terminal');
         $drawer.find('.md-ticket-hero__actions, .md-ticket-context, .md-ticket-composer').prop('hidden', false);
@@ -424,6 +490,9 @@
         $drawer.removeClass('is-loading').addClass('has-error').attr('aria-busy', 'false');
         $drawer.find('.md-ticket-number').text('读取失败');
         $drawer.find('.md-ticket-hero__title').text('无法读取这张工单');
+        $drawer.find('.md-ticket-mobile-title').text('读取失败');
+        $drawer.find('.md-ticket-mobile-member').text('请返回后重试');
+        $drawer.find('.md-ticket-mobile-status').text('连接失败');
         $drawer.find('.md-ticket-detail-type, .md-ticket-detail-priority, .md-ticket-detail-status, .md-ticket-detail-time').empty();
         $messages.html(`<div class="md-ticket-empty md-ticket-empty--error"><i class="fa-duotone fa-regular fa-circle-exclamation"></i><strong>${esc(text || '工单不存在或已失效')}</strong><span>你可以关闭抽屉后重试</span><button type="button" class="btn btn-light-primary md-ticket-fatal-close">关闭详情</button></div>`);
         $drawer.find('.md-ticket-context, .md-ticket-composer, .md-ticket-terminal, .md-ticket-hero__actions').prop('hidden', true);
@@ -592,6 +661,7 @@
                     if (data.message) appendMessages([data.message]);
                     if (data.status !== undefined) applyStatus(data.status);
                     editorApi?.setHTML('');
+                    setComposerExpanded(false);
                     message.success(mode === 'resolve' ? '回复已发送，工单已解决' : '回复已发送');
                     setBusy(false);
                 },
@@ -655,6 +725,7 @@
         previousFocus = null;
         historyLoading = false;
         busy = false;
+        resetMobileLayers();
         $drawer.removeClass('is-open is-loading md-ticket-is-busy').attr({'aria-hidden': 'true', 'aria-busy': 'false'});
         document.body.classList.remove('md-ticket-drawer-open');
         if (refresh) refreshList(0);
@@ -696,11 +767,11 @@
     ]);
 
     table.setSearch([
-        {title: '工单号或标题', name: 'keyword', type: 'input', width: 210},
+        {title: '工单号或标题', name: 'keyword', type: 'input', width: 210, inputmode: 'search', enterkeyhint: 'search'},
         {title: '工单类型', name: 'type', type: 'select', dict: '_ticket_type'},
         {title: '优先级', name: 'priority', type: 'select', dict: '_ticket_priority'},
         {title: '提交用户', name: 'equal-user_id', type: 'remoteSelect', dict: 'user,id,username', width: 190},
-        {title: '关联订单号', name: 'order_trade_no', type: 'input', width: 190},
+        {title: '关联订单号', name: 'order_trade_no', type: 'input', width: 190, inputmode: 'search', enterkeyhint: 'search'},
         {title: '创建时间', name: 'between-create_time', type: 'date'}
     ]);
 
@@ -726,27 +797,65 @@
         });
 
     $drawer.off('.mdTicketDrawer')
+        .on('focusin.mdTicketDrawer', '#ticket-reply-editor textarea', syncComposerViewport)
+        .on('pointerdown.mdTicketDrawer', '.md-ticket-composer-tools', () => {
+            const input = typeof editorApi?.cm?.getInputField === 'function'
+                ? editorApi.cm.getInputField()
+                : null;
+            refocusComposerAfterExpand = !!input && document.activeElement === input;
+        })
         .on('click.mdTicketDrawer', '.md-ticket-drawer__shade, .md-ticket-drawer__close, .md-ticket-fatal-close', () => closeDrawer())
+        .on('click.mdTicketDrawer', '.md-ticket-mobile-more', () => setMobileMenu(!$drawer.hasClass('is-mobile-menu-open')))
+        .on('click.mdTicketDrawer', '.md-ticket-mobile-menu__shade, .md-ticket-mobile-menu__cancel', () => setMobileMenu(false))
+        .on('click.mdTicketDrawer', '.md-ticket-mobile-context-action', () => {
+            setMobileMenu(false);
+            setContextSheet(true);
+        })
+        .on('click.mdTicketDrawer', '.md-ticket-context-shade, .md-ticket-context-sheet-close', () => setContextSheet(false))
+        .on('click.mdTicketDrawer', '.md-ticket-composer-tools', () => {
+            const expanding = !$drawer.find('.md-ticket-composer').hasClass('is-expanded');
+            setComposerExpanded(expanding);
+            if (expanding && refocusComposerAfterExpand) editorApi?.cm?.focus();
+            refocusComposerAfterExpand = false;
+        })
         .on('click.mdTicketDrawer', '.md-ticket-history-more', loadEarlier)
         .on('click.mdTicketDrawer', '.ticket-reply-action', () => sendReply('reply'))
         .on('click.mdTicketDrawer', '.ticket-resolve-action', () => {
             if (busy) return;
+            setMobileMenu(false);
             message.ask('这条回复会作为最终答复发送，并把工单标记为“已解决”。', () => sendReply('resolve'), '回复并解决工单？', '确认发送');
         })
-        .on('click.mdTicketDrawer', '.ticket-close-action', closeTicket)
+        .on('click.mdTicketDrawer', '.ticket-close-action', () => {
+            setMobileMenu(false);
+            closeTicket();
+        })
         .on('click.mdTicketDrawer', '.md-ticket-proof', function () {
             component.previewImage(safeImageUrl($(this).attr('data-proof')));
         })
         .on('click.mdTicketDrawer', '.markdown-body img', function () {
             component.previewImage(safeImageUrl($(this).attr('src')));
+        })
+        .on('keydown.mdTicketDrawer', '.markdown-body img', function (event) {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            component.previewImage(safeImageUrl($(this).attr('src')));
         });
 
     $(document).off('.mdTicketDrawer')
+        .on('admin:mobile:viewportchange.mdTicketDrawer', syncComposerViewport)
         .on('keydown.mdTicketDrawer', event => {
             if (!isOpen()) return;
             if (event.key === 'Escape') {
                 if ($('.layui-layer-dialog:visible, .layui-layer-page:visible').length) return;
                 event.preventDefault();
+                if ($drawer.hasClass('is-mobile-menu-open')) {
+                    setMobileMenu(false);
+                    return;
+                }
+                if ($drawer.hasClass('is-context-open')) {
+                    setContextSheet(false);
+                    return;
+                }
                 closeDrawer();
                 return;
             }
@@ -781,9 +890,14 @@
         stopPolling();
         clearTimeout(closeTimer);
         clearTimeout(listRefreshTimer);
+        if (composerViewportFrame) cancelAnimationFrame(composerViewportFrame);
+        composerViewportFrame = 0;
+        refocusComposerAfterExpand = false;
         destroyEditor();
         drafts.clear();
+        if (typeof Swal !== 'undefined') Swal.close();
         document.body.classList.remove('md-ticket-drawer-open');
+        resetMobileLayers();
         $drawer.removeClass('is-open').attr('aria-hidden', 'true').prop('hidden', true);
         $(document).off('.mdTicketDrawer');
         $(window).off('.mdTicketDrawer');

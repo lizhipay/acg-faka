@@ -30,27 +30,57 @@ class Business extends User
     public function purchase(): array
     {
         $levelId = (int)$_POST['levelId'];
-        if ($levelId == 0) {
+        if ($levelId <= 0) {
             throw new JSONException("请选择要购买的等级");
         }
 
-        $level = BusinessLevel::query()->find($levelId);
+        $userId = (int)$this->getUser()->id;
+        DB::transaction(function () use ($levelId, $userId) {
+            $observedUser = \App\Model\User::query()
+                ->select(['id', 'business_level'])
+                ->find($userId);
+            if (!$observedUser) {
+                throw new JSONException("用户不存在");
+            }
+            $currentLevelId = (int)$observedUser->business_level;
 
-        if (!$level) {
-            throw new JSONException("该等级不存在");
-        }
+            // Updating business_level touches both its old and new secondary
+            // index entries. Lock both level rows in ascending order before
+            // the user, matching BusinessLevel::del() on either side.
+            $levelIds = array_values(array_unique(array_filter(
+                [$currentLevelId, $levelId],
+                static fn(int $id): bool => $id > 0
+            )));
+            sort($levelIds, SORT_NUMERIC);
+            $lockedLevels = BusinessLevel::query()
+                ->whereIn('id', $levelIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+            $level = $lockedLevels->get($levelId);
+            if (!$level) {
+                throw new JSONException("该等级不存在");
+            }
 
-        $user = $this->getUser();
-        $businessLevel = $user->businessLevel;
-        if ($businessLevel) {
-            //判断当前等级是否
-            if ($businessLevel->id == $level->id || $businessLevel->price >= $level->price) {
+            $user = \App\Model\User::query()->lockForUpdate()->find($userId);
+            if (!$user) {
+                throw new JSONException("用户不存在");
+            }
+            if ((int)$user->business_level !== $currentLevelId) {
+                throw new JSONException("您的商户等级已发生变化，请刷新后重试");
+            }
+            if ($currentLevelId === (int)$level->id) {
                 throw new JSONException("不能购买已有等级或比自己更低的等级");
             }
-        }
 
-        //开始扣费
-        DB::transaction(function () use ($level, $user) {
+            $businessLevel = $currentLevelId > 0
+                ? $lockedLevels->get($currentLevelId)
+                : null;
+            if ($businessLevel && $businessLevel->price >= $level->price) {
+                throw new JSONException("不能购买已有等级或比自己更低的等级");
+            }
+
             //扣费
             Bill::create($user, $level->price, Bill::TYPE_SUB, "购买商户等级", 0);
             $user->business_level = $level->id;

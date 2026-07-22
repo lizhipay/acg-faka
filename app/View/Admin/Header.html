@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <!--begin::Head-->
 <head>
-    <script>(function(){try{var p=localStorage.getItem('admin-theme')||'auto';var d=p==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p;var e=document.documentElement;e.setAttribute('data-theme',d);e.setAttribute('data-theme-pref',p);}catch(_){document.documentElement.setAttribute('data-theme','light');}})();</script>
-    <title>#{$title}-#{$config.title}</title>
     <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <script>(function(){var e=document.documentElement;try{var p=localStorage.getItem('admin-theme')||'auto';var d=p==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p;e.setAttribute('data-theme',d);e.setAttribute('data-theme-pref',p);var m=localStorage.getItem('admin-layout-mode')==='desktop'?'desktop':((window.innerWidth||screen.width)<992?'mobile':'desktop');e.setAttribute('data-admin-layout',m);}catch(_){e.setAttribute('data-theme','light');e.setAttribute('data-admin-layout',(window.innerWidth||screen.width)<992?'mobile':'desktop');}})();</script>
+    <title>#{$title}-#{$config.title}</title>
     <link rel="shortcut icon" href="/favicon.ico"/>
 
     #{css(
@@ -15,7 +15,8 @@
     "/assets/static/codemirror/lib/codemirror.css",
     "/assets/common/css/_material.css",
     "/assets/common/fonts/material-icons.css",
-    "/assets/admin/css/_material.css"
+    "/assets/admin/css/_material.css",
+    "/assets/admin/css/_mobile.css"
     ],
     [
     "/assets/admin/css/style.bundle.css",
@@ -31,7 +32,8 @@
     "/assets/common/css/md-components.css",
     "/assets/admin/css/material.css",
     "/assets/common/fonts/material-icons.css",
-    "/assets/common/css/mdicon.css"
+    "/assets/common/css/mdicon.css",
+    "/assets/admin/css/mobile.css"
     ])}
 
     #{js("/assets/common/js/ready.js")}
@@ -174,9 +176,9 @@
                         </div>
 
                         <div class="menu-item">
-                            <a class="menu-link  #{if $title == '优惠卷'}active#{/if}" href="/admin/coupon/index">
+                            <a class="menu-link  #{if $title == '优惠券'}active#{/if}" href="/admin/coupon/index">
                                 <span class="menu-icon"><svg class="menu-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM13 20.01L4 11V4h7v-.01l9 9l-7 7.02z"/><circle cx="6.5" cy="6.5" r="1.5"/></svg></span>
-                                <span class="menu-title">优惠卷</span>
+                                <span class="menu-title">优惠券</span>
                             </a>
                         </div>
 

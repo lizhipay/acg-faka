@@ -1,18 +1,1021 @@
 #{include file="../Header.html"}
 
+<style>
+    @media (max-width: 991.98px) {
+        html[data-admin-layout="mobile"] .md-ticket-list-card.admin-mobile-table-card {
+            margin: 0;
+            overflow: visible;
+            border: 0 !important;
+            background: transparent;
+            box-shadow: none !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-list-card.admin-mobile-table-card > .card-body {
+            padding: 0 !important;
+        }
+
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-list-card.admin-mobile-table-card > .md-ticket-list-head {
+            display: none !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-list-card .md-ticket-list-heading {
+            display: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-list-card .md-ticket-state-tabs {
+            width: 100%;
+            gap: 2px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-list-card .md-ticket-state-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-list-card .md-ticket-state-tabs button {
+            min-width: 44px;
+            height: 44px;
+            padding-inline: 12px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer {
+            z-index: 13000 !important;
+        }
+
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-drawer__panel {
+            top: var(--admin-mobile-offset-top, 0px);
+            right: 0;
+            bottom: auto;
+            width: 100%;
+            height: var(--admin-mobile-vh, 100dvh);
+            max-height: var(--admin-mobile-vh, 100dvh);
+            border: 0;
+            background: var(--admin-mobile-bg);
+            box-shadow: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__header {
+            min-height: calc(64px + env(safe-area-inset-top));
+            padding: calc(10px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left));
+            border-bottom-color: var(--admin-mobile-line);
+            background: color-mix(in srgb, var(--admin-mobile-surface) 94%, transparent);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__icon {
+            display: none;
+        }
+
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-drawer__close {
+            width: 44px !important;
+            min-width: 44px;
+            height: 44px !important;
+            min-height: 44px;
+            border: 0;
+            background: var(--admin-mobile-surface-2);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__body {
+            background: var(--admin-mobile-bg);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-hero,
+        html[data-admin-layout="mobile"] .md-ticket-thread-card,
+        html[data-admin-layout="mobile"] .md-ticket-context-card {
+            border: 0;
+            background: var(--admin-mobile-surface);
+            box-shadow: none;
+        }
+
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-history-more,
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-hero__actions .btn,
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-composer__actions .btn {
+            min-height: 44px !important;
+        }
+
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-drawer__body,
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-messages,
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-context {
+            scrollbar-width: none;
+        }
+
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-drawer__body::-webkit-scrollbar,
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-messages::-webkit-scrollbar,
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-context::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-messages {
+            height: min(46dvh, 430px);
+            min-height: min(240px, 42dvh);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer #ticket-reply-editor .CodeMirror,
+        html[data-admin-layout="mobile"] .md-ticket-composer #ticket-reply-editor .ev2-preview {
+            height: min(30dvh, 190px) !important;
+            min-height: 142px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-context {
+            gap: 10px;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 991.98px) {
+        html[data-admin-layout="mobile"] .md-ticket-drawer__header {
+            padding-right: max(24px, env(safe-area-inset-right));
+            padding-left: max(24px, env(safe-area-inset-left));
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-hero {
+            margin-right: max(24px, env(safe-area-inset-right));
+            margin-left: max(24px, env(safe-area-inset-left));
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-layout {
+            padding-right: max(24px, env(safe-area-inset-right));
+            padding-left: max(24px, env(safe-area-inset-left));
+        }
+    }
+
+    @media (max-width: 359.98px) {
+        html[data-admin-layout="mobile"] .md-ticket-hero {
+            margin-inline: 8px;
+            padding: 13px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-layout {
+            padding-inline: 8px;
+        }
+    }
+
+    .md-ticket-drawer__mobile-back,
+    .md-ticket-drawer__mobile-heading,
+    .md-ticket-mobile-more,
+    .md-ticket-mobile-menu,
+    .md-ticket-composer-tools,
+    .md-ticket-context-shade,
+    .md-ticket-context-sheet-head {
+        display: none;
+    }
+
+    .md-ticket-drawer__mobile-back {
+        display: none !important;
+    }
+
+    @media (max-width: 991.98px) {
+        html[data-admin-layout="mobile"] body.md-ticket-drawer-open {
+            overscroll-behavior: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__panel {
+            display: flex;
+            flex-direction: column;
+            overflow: clip;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__header {
+            position: relative;
+            z-index: 5;
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr) 44px;
+            align-items: center;
+            gap: 8px;
+            min-height: calc(64px + env(safe-area-inset-top));
+            padding: calc(8px + env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
+            border-bottom: 1px solid var(--admin-mobile-line);
+            background: color-mix(in srgb, var(--admin-mobile-surface) 96%, transparent);
+            box-shadow: none;
+            backdrop-filter: blur(18px) saturate(1.15);
+            -webkit-backdrop-filter: blur(18px) saturate(1.15);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__heading,
+        html[data-admin-layout="mobile"] .md-ticket-drawer__desktop-close {
+            display: none !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__mobile-back,
+        html[data-admin-layout="mobile"] .md-ticket-mobile-more {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            width: 44px !important;
+            min-width: 44px;
+            height: 44px !important;
+            min-height: 44px;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: var(--admin-mobile-text);
+            box-shadow: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__mobile-back {
+            grid-column: 1;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-more {
+            grid-column: 3;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__mobile-back i,
+        html[data-admin-layout="mobile"] .md-ticket-mobile-more i {
+            font-size: 21px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__mobile-heading {
+            display: flex;
+            grid-column: 2;
+            flex-direction: column;
+            min-width: 0;
+            text-align: left;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-title {
+            overflow: hidden;
+            color: var(--admin-mobile-text);
+            font-size: 16px;
+            font-weight: 750;
+            line-height: 1.25;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__mobile-heading > span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            min-width: 0;
+            margin-top: 2px;
+            color: var(--admin-mobile-muted);
+            font-size: 11px;
+            line-height: 1.25;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__mobile-heading b,
+        html[data-admin-layout="mobile"] .md-ticket-drawer__mobile-heading em,
+        html[data-admin-layout="mobile"] .md-ticket-drawer__mobile-heading i {
+            overflow: hidden;
+            font-style: normal;
+            font-weight: 550;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__mobile-heading i {
+            flex: 0 0 auto;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-status {
+            color: var(--admin-mobile-primary) !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__body {
+            display: flex;
+            flex: 1 1 auto;
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden !important;
+            background: var(--admin-mobile-bg);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer__body > .md-ticket-detail-page {
+            display: flex !important;
+            flex: 1 1 auto;
+            flex-direction: column;
+            width: 100%;
+            height: 100% !important;
+            min-height: 0 !important;
+            overflow: hidden;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-hero {
+            position: relative;
+            z-index: 3;
+            display: block;
+            flex: 0 0 auto;
+            min-height: 42px;
+            margin: 0 !important;
+            padding: 7px max(14px, env(safe-area-inset-right)) 7px max(14px, env(safe-area-inset-left)) !important;
+            overflow: hidden;
+            border: 0 !important;
+            border-bottom: 1px solid var(--admin-mobile-line) !important;
+            border-radius: 0 !important;
+            background: var(--admin-mobile-surface) !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-hero::before,
+        html[data-admin-layout="mobile"] .md-ticket-hero__eyebrow,
+        html[data-admin-layout="mobile"] .md-ticket-hero__title,
+        html[data-admin-layout="mobile"] .md-ticket-hero__actions,
+        html[data-admin-layout="mobile"] .md-ticket-detail-time {
+            display: none !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-hero__meta {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 7px;
+            min-width: 0;
+            margin: 0;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-hero__meta::-webkit-scrollbar {
+            display: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-hero__meta > span:not(:empty) {
+            flex: 0 0 auto;
+            min-height: 28px;
+            white-space: nowrap;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-layout {
+            position: relative;
+            display: flex !important;
+            flex: 1 1 auto;
+            flex-direction: column;
+            gap: 0 !important;
+            min-width: 0;
+            min-height: 0;
+            padding: 0 !important;
+            overflow: hidden;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-thread-card {
+            display: flex !important;
+            flex: 1 1 auto !important;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: var(--admin-mobile-bg) !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-thread-head {
+            display: flex;
+            flex: 0 0 auto;
+            align-items: center;
+            min-height: 44px;
+            padding: 7px max(14px, env(safe-area-inset-right)) 7px max(14px, env(safe-area-inset-left));
+            border: 0;
+            background: var(--admin-mobile-bg);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-thread-head .md-ticket-section-kicker {
+            display: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-thread-head h3 {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-sync-state {
+            font-size: 10.5px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-history-more {
+            flex: 0 0 auto;
+            min-height: 44px !important;
+            margin: 4px 14px 0;
+            border-radius: 14px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-messages {
+            flex: 1 1 auto;
+            width: 100%;
+            height: auto !important;
+            min-height: 0 !important;
+            padding: 10px max(12px, env(safe-area-inset-right)) 22px max(12px, env(safe-area-inset-left)) !important;
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            background: var(--admin-mobile-bg) !important;
+            scroll-padding-bottom: 18px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-message {
+            gap: 7px;
+            margin-bottom: 14px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-message__avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-message__main,
+        html[data-admin-layout="mobile"] .md-ticket-message--user .md-ticket-message__main {
+            max-width: calc(88% - 32px);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-message--admin .md-ticket-message__avatar {
+            display: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-message--admin .md-ticket-message__main {
+            max-width: 84%;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-message__main > header,
+        html[data-admin-layout="mobile"] .md-ticket-message--admin .md-ticket-message__main > header {
+            flex-direction: row;
+            align-items: center;
+            gap: 6px;
+            min-height: 18px;
+            margin-bottom: 3px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-message__main header strong,
+        html[data-admin-layout="mobile"] .md-ticket-message__main header time {
+            font-size: 10px;
+            line-height: 1.3;
+        }
+
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-message .md-ticket-message__bubble {
+            min-width: 42px;
+            padding: 9px 12px !important;
+            border: 0 !important;
+            border-radius: 5px 17px 17px 17px !important;
+            background: var(--admin-mobile-surface) !important;
+            color: var(--admin-mobile-text) !important;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+            font-size: 13px !important;
+            line-height: 1.55;
+        }
+
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-message.md-ticket-message--admin .md-ticket-message__bubble {
+            border-radius: 17px 5px 17px 17px !important;
+            background: var(--admin-mobile-primary) !important;
+            color: var(--admin-mobile-on-primary) !important;
+        }
+
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-message.md-ticket-message--admin .md-ticket-message__bubble.markdown-body,
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-message.md-ticket-message--admin .md-ticket-message__bubble.markdown-body *:not(a) {
+            color: inherit !important;
+        }
+
+        html[data-admin-layout="mobile"][data-theme] .md-ticket-message.md-ticket-message--admin .md-ticket-message__bubble.markdown-body {
+            color: var(--admin-mobile-on-primary) !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-message__bubble img {
+            display: block;
+            max-width: 100%;
+            max-height: 48dvh;
+            margin-top: 8px;
+            border: 0;
+            border-radius: 12px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-event {
+            margin: 12px 0 18px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-event time {
+            display: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer:not([hidden]) {
+            display: grid;
+            flex: 0 0 auto;
+            grid-template-columns: 44px minmax(0, 1fr) 48px;
+            align-items: end;
+            gap: 8px;
+            padding: 8px max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+            border-top: 1px solid var(--admin-mobile-line);
+            background: color-mix(in srgb, var(--admin-mobile-surface) 96%, transparent);
+            box-shadow: none;
+            backdrop-filter: blur(18px) saturate(1.15);
+            -webkit-backdrop-filter: blur(18px) saturate(1.15);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer__label,
+        html[data-admin-layout="mobile"] .md-ticket-composer__tip,
+        html[data-admin-layout="mobile"] .md-ticket-composer__hint,
+        html[data-admin-layout="mobile"] .md-ticket-composer .ticket-resolve-action {
+            display: none !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer-tools {
+            display: inline-flex;
+            grid-column: 1;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: var(--admin-mobile-surface-2);
+            color: var(--admin-mobile-text);
+            font-size: 18px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer #ticket-reply-editor {
+            grid-column: 2;
+            min-width: 0;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer #ticket-reply-editor .ev2-editor {
+            overflow: hidden;
+            border: 1px solid var(--admin-mobile-line);
+            border-radius: 22px;
+            background: var(--admin-mobile-surface-2);
+            box-shadow: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer #ticket-reply-editor .ev2-bar {
+            display: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer:not(.is-expanded) #ticket-reply-editor .ev2-preview {
+            display: none !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer #ticket-reply-editor .CodeMirror,
+        html[data-admin-layout="mobile"] .md-ticket-composer #ticket-reply-editor .ev2-preview {
+            height: 44px !important;
+            min-height: 44px !important;
+            max-height: 96px;
+            border: 0;
+            background: transparent;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer #ticket-reply-editor .CodeMirror-scroll {
+            min-height: 44px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer__actions {
+            display: block;
+            grid-column: 3;
+            margin: 0;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer__actions > div {
+            display: block;
+            width: auto;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer__actions .ticket-reply-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            min-width: 48px;
+            height: 48px;
+            min-height: 48px !important;
+            padding: 0;
+            border-radius: 50%;
+            font-size: 0;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer__actions .ticket-reply-action svg {
+            width: 22px;
+            height: 22px;
+            margin: 0;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-send-label {
+            display: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor {
+            grid-column: 1 / -1;
+            grid-row: 1;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded .md-ticket-composer-tools,
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded .md-ticket-composer__actions {
+            grid-row: 2;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded .md-ticket-composer-tools i {
+            transform: rotate(45deg);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-editor {
+            border-radius: 16px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-bar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 48px;
+            align-items: center;
+            gap: 4px;
+            height: 52px;
+            min-height: 52px;
+            padding: 4px 5px;
+            overflow: hidden;
+            flex-wrap: nowrap;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-tools {
+            display: flex;
+            grid-column: 1;
+            flex-wrap: nowrap;
+            width: auto !important;
+            min-width: 0;
+            height: 44px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            overscroll-behavior-x: contain;
+            scrollbar-width: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-tools::-webkit-scrollbar {
+            display: none;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-tb,
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-preview-toggle {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 44px;
+            width: 44px;
+            min-width: 44px;
+            height: 44px;
+            min-height: 44px;
+            margin: 0;
+            padding: 0;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-tb i,
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-preview-toggle i {
+            display: block;
+            margin: 0;
+            line-height: 1;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-actions {
+            position: static;
+            display: flex;
+            grid-column: 2;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            min-width: 48px;
+            height: 44px;
+            margin: 0;
+            padding-left: 4px;
+            border-left: 1px solid var(--admin-mobile-line);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-body {
+            min-height: 120px;
+            overflow: hidden;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-editor:has(.ev2-preview-toggle.active) .ev2-cm {
+            display: none !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .CodeMirror,
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-preview {
+            height: 120px !important;
+            min-height: 120px !important;
+            max-height: 120px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-composer.is-expanded #ticket-reply-editor .CodeMirror-scroll {
+            min-height: 120px;
+            overflow-x: hidden !important;
+        }
+
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-hero,
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-thread-head {
+            display: none !important;
+        }
+
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-composer:not([hidden]) {
+            --ticket-keyboard-editor-height: clamp(72px, calc(var(--admin-mobile-vh, 100dvh) - 430px), 104px);
+            grid-template-columns: 44px minmax(0, 1fr) 48px;
+            padding-bottom: 8px;
+        }
+
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-composer.is-expanded #ticket-reply-editor {
+            grid-column: 1 / -1;
+            grid-row: 1;
+        }
+
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-composer.is-expanded .md-ticket-composer-tools,
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-composer.is-expanded .md-ticket-composer__actions {
+            grid-row: 2;
+        }
+
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-bar {
+            display: grid !important;
+        }
+
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-editor:has(.ev2-preview-toggle.active) .ev2-cm,
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-cm {
+            display: block !important;
+        }
+
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-preview {
+            display: none !important;
+        }
+
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-body,
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-composer.is-expanded #ticket-reply-editor .ev2-cm,
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-composer.is-expanded #ticket-reply-editor .CodeMirror,
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-composer.is-expanded #ticket-reply-editor .CodeMirror-scroll {
+            height: var(--ticket-keyboard-editor-height) !important;
+            min-height: var(--ticket-keyboard-editor-height) !important;
+            max-height: var(--ticket-keyboard-editor-height) !important;
+        }
+
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .md-ticket-composer.is-expanded #ticket-reply-editor .CodeMirror-scroll {
+            overflow-y: auto !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-terminal:not([hidden]) {
+            display: flex;
+            flex: 0 0 auto;
+            min-height: 68px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            border-top-color: var(--admin-mobile-line);
+            background: var(--admin-mobile-surface);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu {
+            position: fixed;
+            z-index: 14;
+            inset: 0;
+            display: block;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s ease, visibility .2s ease;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__shade,
+        html[data-admin-layout="mobile"] .md-ticket-context-shade {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            border: 0;
+            background: rgba(0, 0, 0, .42);
+            opacity: 0;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__sheet {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            padding: 8px max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+            border-radius: 24px 24px 0 0;
+            background: var(--admin-mobile-surface);
+            box-shadow: 0 -18px 50px rgba(0, 0, 0, .18);
+            transform: translateY(105%);
+            transition: transform .24s cubic-bezier(.2, .8, .2, 1);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__handle {
+            display: block;
+            width: 38px;
+            height: 5px;
+            margin: 0 auto 8px;
+            border-radius: 999px;
+            background: var(--admin-mobile-line);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__sheet > header {
+            display: flex;
+            flex-direction: column;
+            padding: 6px 4px 10px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__sheet > header strong {
+            color: var(--admin-mobile-text);
+            font-size: 18px;
+            font-weight: 750;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__sheet > header span {
+            margin-top: 2px;
+            color: var(--admin-mobile-muted);
+            font-size: 11px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__sheet > button:not(.md-ticket-mobile-menu__cancel) {
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr) 20px;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            min-height: 64px;
+            padding: 8px 6px;
+            border: 0;
+            border-top: 1px solid var(--admin-mobile-line);
+            background: transparent;
+            color: var(--admin-mobile-text);
+            text-align: left;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__sheet > button:not(.md-ticket-mobile-menu__cancel) > i:first-child {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: var(--admin-mobile-primary-soft);
+            color: var(--admin-mobile-primary);
+            font-size: 18px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__sheet > button > span {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__sheet > button strong {
+            color: inherit;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__sheet > button small {
+            margin-top: 2px;
+            color: var(--admin-mobile-muted);
+            font-size: 10.5px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__sheet > .md-ticket-mobile-close {
+            color: var(--admin-mobile-danger);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__sheet > .md-ticket-mobile-close > i:first-child {
+            background: color-mix(in srgb, var(--admin-mobile-danger) 12%, transparent);
+            color: var(--admin-mobile-danger);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__sheet > button:disabled {
+            opacity: .45;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-mobile-menu__cancel {
+            width: 100%;
+            min-height: 48px;
+            margin-top: 8px;
+            border: 0;
+            border-radius: 14px;
+            background: var(--admin-mobile-surface-2);
+            color: var(--admin-mobile-text);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer.is-mobile-menu-open .md-ticket-mobile-menu {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer.is-mobile-menu-open .md-ticket-mobile-menu__shade {
+            opacity: 1;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer.is-mobile-menu-open .md-ticket-mobile-menu__sheet {
+            transform: translateY(0);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-context-shade {
+            z-index: 10;
+            display: block;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity .2s ease, visibility .2s ease;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-context {
+            position: fixed !important;
+            z-index: 11;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            display: flex !important;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            height: min(72dvh, 620px);
+            min-height: 0;
+            padding: 0 max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+            overflow-x: hidden;
+            overflow-y: auto !important;
+            border-radius: 24px 24px 0 0;
+            background: var(--admin-mobile-surface);
+            box-shadow: 0 -18px 50px rgba(0, 0, 0, .18);
+            visibility: hidden;
+            opacity: 0;
+            clip-path: inset(100% 0 0);
+            pointer-events: none;
+            transition: clip-path .24s cubic-bezier(.2, .8, .2, 1), opacity .2s ease, visibility .24s ease;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-context-sheet-head {
+            position: sticky;
+            z-index: 2;
+            top: 0;
+            display: flex;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 68px;
+            margin-inline: -2px;
+            padding: 10px 2px 8px;
+            background: var(--admin-mobile-surface);
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-context-sheet-head > div {
+            display: flex;
+            flex-direction: column;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-context-sheet-head strong {
+            color: var(--admin-mobile-text);
+            font-size: 18px;
+            font-weight: 750;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-context-sheet-head span {
+            margin-top: 2px;
+            color: var(--admin-mobile-muted);
+            font-size: 11px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-context-sheet-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: var(--admin-mobile-surface-2);
+            color: var(--admin-mobile-text);
+            font-size: 19px;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-context-card {
+            flex: 0 0 auto;
+            width: 100%;
+            border: 1px solid var(--admin-mobile-line) !important;
+            border-radius: 16px;
+            background: var(--admin-mobile-surface-2) !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer.is-context-open .md-ticket-context-shade {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        html[data-admin-layout="mobile"] .md-ticket-drawer.is-context-open .md-ticket-context {
+            visibility: visible;
+            opacity: 1;
+            clip-path: inset(0);
+            pointer-events: auto;
+        }
+    }
+</style>
+
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     #{include file="../Toolbar.html"}
 
     <div class="post d-flex flex-column-fluid" id="kt_post">
         <div id="kt_content_container" class="container-fluid md-ticket-page md-ticket-list-page">
-            <div class="row g-4 md-ticket-stats" aria-label="工单概览">
-                #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl" accent="warning" icon="fa-clock" label="待客服处理" vclass="ticket-stat-pending" value="—"}
-                #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl" accent="primary" icon="fa-comment" label="等待用户" vclass="ticket-stat-user" value="—"}
-                #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl" accent="success" icon="fa-circle-check" label="已解决" vclass="ticket-stat-resolved" value="—"}
-                #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl" accent="secondary" icon="fa-lock-keyhole" label="已关闭" vclass="ticket-stat-closed" value="—"}
-                #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl" accent="info" icon="fa-sparkles" label="今日新增" vclass="ticket-stat-today" value="—"}
+            <h2 class="admin-mobile-only-section">工单概览</h2>
+            <div class="md-stat-grid md-ticket-stats" data-admin-mobile-stats="mini" role="region" aria-label="工单概览">
+                #{include file="../Component/StatCard.html" accent="warning" icon="fa-clock" label="待客服处理" vclass="ticket-stat-pending" value="—"}
+                #{include file="../Component/StatCard.html" accent="primary" icon="fa-comment" label="等待用户" vclass="ticket-stat-user" value="—"}
+                #{include file="../Component/StatCard.html" accent="success" icon="fa-circle-check" label="已解决" vclass="ticket-stat-resolved" value="—"}
+                #{include file="../Component/StatCard.html" accent="secondary" icon="fa-lock-keyhole" label="已关闭" vclass="ticket-stat-closed" value="—"}
+                #{include file="../Component/StatCard.html" accent="info" icon="fa-sparkles" label="今日新增" vclass="ticket-stat-today" value="—"}
             </div>
 
+            <h2 class="admin-mobile-only-section">工单列表</h2>
             <section class="card md-ticket-list-card" aria-labelledby="ticket-list-title">
                 <div class="card-header md-ticket-list-head">
                     <div class="md-ticket-list-heading">
@@ -43,6 +1046,9 @@
 
     <aside class="md-ticket-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="ticket-drawer-title" tabindex="-1">
         <header class="md-ticket-drawer__header">
+            <button type="button" class="md-ticket-drawer__close md-ticket-drawer__mobile-back" aria-label="返回工单列表">
+                <i class="fa-duotone fa-regular fa-arrow-left"></i>
+            </button>
             <div class="md-ticket-drawer__heading">
                 <span class="md-ticket-drawer__icon" aria-hidden="true"><i class="fa-duotone fa-regular fa-headset"></i></span>
                 <div>
@@ -50,7 +1056,14 @@
                     <strong class="md-ticket-drawer__title">工单处理台</strong>
                 </div>
             </div>
-            <button type="button" class="md-ticket-drawer__close" aria-label="关闭工单详情">
+            <div class="md-ticket-drawer__mobile-heading">
+                <strong class="md-ticket-mobile-title">工单处理</strong>
+                <span><b class="md-ticket-mobile-member">正在读取…</b><i aria-hidden="true">·</i><em class="md-ticket-mobile-status">连接中</em></span>
+            </div>
+            <button type="button" class="md-ticket-mobile-more" aria-label="工单操作" aria-expanded="false">
+                <i class="fa-duotone fa-regular fa-ellipsis"></i>
+            </button>
+            <button type="button" class="md-ticket-drawer__close md-ticket-drawer__desktop-close" aria-label="关闭工单详情">
                 <i class="fa-duotone fa-regular fa-xmark"></i>
             </button>
         </header>
@@ -108,6 +1121,9 @@
                             <div><strong>回复用户</strong><span>支持 Markdown 与图片粘贴，内容会立即发送给用户</span></div>
                             <span class="md-ticket-composer__hint"><i class="fa-duotone fa-regular fa-shield-keyhole"></i> 安全编辑</span>
                         </div>
+                        <button type="button" class="md-ticket-composer-tools" aria-label="展开回复工具" aria-expanded="false">
+                            <i class="fa-duotone fa-regular fa-plus"></i>
+                        </button>
                         <div id="ticket-reply-editor"></div>
                         <div class="md-ticket-composer__actions">
                             <span class="md-ticket-composer__tip">回复后，工单将进入“等待用户”状态</span>
@@ -115,15 +1131,22 @@
                                 <button type="button" class="btn btn-light-success ticket-resolve-action" disabled>
                                     <i class="fa-duotone fa-regular fa-circle-check"></i>回复并解决
                                 </button>
-                                <button type="button" class="btn btn-primary ticket-reply-action" disabled>
-                                    <i class="fa-duotone fa-regular fa-paper-plane"></i>发送回复
+                                <button type="button" class="btn btn-primary ticket-reply-action" aria-label="发送回复" disabled>
+                                    <svg class="md-message-send-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                        <path d="M3.5 6.5h10a2 2 0 0 1 2 2v2.25M3.5 7l5 4 5-4M3.5 6.5v9a2 2 0 0 0 2 2h7.25M14 14h6m-2.5-2.5L20 14l-2.5 2.5"/>
+                                    </svg><span class="md-ticket-send-label">发送回复</span>
                                 </button>
                             </div>
                         </div>
                     </section>
                 </main>
 
-                <aside class="md-ticket-context" aria-label="工单上下文">
+                <button type="button" class="md-ticket-context-shade" tabindex="-1" aria-label="关闭工单资料"></button>
+                <aside class="md-ticket-context" aria-label="工单资料" aria-hidden="true">
+                    <header class="md-ticket-context-sheet-head">
+                        <div><strong>工单资料</strong><span>用户、关联内容与时间记录</span></div>
+                        <button type="button" class="md-ticket-context-sheet-close" aria-label="关闭工单资料"><i class="fa-duotone fa-regular fa-xmark"></i></button>
+                    </header>
                     <section class="md-ticket-context-card md-ticket-customer-card">
                         <header><span>提交用户</span><i class="fa-duotone fa-regular fa-user"></i></header>
                         <div class="md-ticket-context-body ticket-user-context"><div class="md-ticket-context-skeleton"></div></div>
@@ -148,6 +1171,24 @@
             </div>
         </div>
     </aside>
+
+    <div class="md-ticket-mobile-menu" aria-hidden="true">
+        <button type="button" class="md-ticket-mobile-menu__shade" tabindex="-1" aria-label="关闭工单操作"></button>
+        <div class="md-ticket-mobile-menu__sheet" role="menu" aria-label="工单操作">
+            <span class="md-ticket-mobile-menu__handle" aria-hidden="true"></span>
+            <header><strong>工单操作</strong><span>选择要执行的操作</span></header>
+            <button type="button" class="md-ticket-mobile-context-action" role="menuitem">
+                <i class="fa-duotone fa-regular fa-file-lines"></i><span><strong>查看工单资料</strong><small>用户、关联内容与时间记录</small></span><i class="fa-duotone fa-regular fa-chevron-right"></i>
+            </button>
+            <button type="button" class="ticket-resolve-action md-ticket-mobile-resolve" role="menuitem" disabled>
+                <i class="fa-duotone fa-regular fa-circle-check"></i><span><strong>回复并解决</strong><small>发送当前回复并结束工单</small></span>
+            </button>
+            <button type="button" class="ticket-close-action md-ticket-mobile-close" role="menuitem" disabled>
+                <i class="fa-duotone fa-regular fa-lock-keyhole"></i><span><strong>直接关闭</strong><small>不发送回复，立即结束工单</small></span>
+            </button>
+            <button type="button" class="md-ticket-mobile-menu__cancel">取消</button>
+        </div>
+    </div>
 </div>
 
 #{ready("/assets/admin/controller/user/ticket.js")}

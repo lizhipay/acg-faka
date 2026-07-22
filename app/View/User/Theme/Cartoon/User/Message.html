@@ -1,5 +1,5 @@
 #{include file="../Common/Header.html"}
-<div class="uc-main uc-message-page">
+<div class="uc-main uc-message-page" data-cartoon-message-page>
     <section class="uc-message-hero">
         <div>
             <span class="uc-message-hero__eyebrow"><span class="material-icons-outlined">mark_email_unread</span>专属消息收件箱</span>
@@ -26,6 +26,45 @@
             </div>
         </div>
         <div class="uc-card__body">
+            <div class="uc-message-mobile" aria-label="手机消息列表">
+                <form class="uc-message-mobile-search" data-message-mobile-search role="search">
+                    <label class="uc-message-mobile-search__field">
+                        <span class="material-icons-outlined" aria-hidden="true">search</span>
+                        <input type="search" name="keyword" autocomplete="off" enterkeyhint="search" placeholder="搜索消息标题" aria-label="搜索消息标题">
+                        <button type="button" class="uc-message-mobile-search__clear" data-message-search-clear aria-label="清除搜索词" hidden>
+                            <span class="material-icons-outlined" aria-hidden="true">cancel</span>
+                        </button>
+                    </label>
+                    <button type="submit" class="uc-message-mobile-search__submit">搜索</button>
+                </form>
+
+                <div class="uc-message-mobile-filters" role="group" aria-label="消息状态筛选">
+                    <button type="button" class="is-active" data-message-status="" aria-pressed="true">全部</button>
+                    <button type="button" data-message-status="0" aria-pressed="false">未读</button>
+                    <button type="button" data-message-status="1" aria-pressed="false">已读</button>
+                </div>
+
+                <div class="uc-message-mobile-meta" aria-live="polite">
+                    <span data-message-mobile-result>正在加载消息</span>
+                    <span data-message-mobile-page></span>
+                </div>
+                <div class="uc-message-mobile-list" data-message-mobile-list aria-live="polite" aria-busy="true"></div>
+
+                <nav class="uc-message-mobile-pagination" data-message-mobile-pagination aria-label="消息分页" hidden>
+                    <button type="button" data-message-page="previous"><span class="material-icons-outlined" aria-hidden="true">chevron_left</span>上一页</button>
+                    <span data-message-page-label></span>
+                    <button type="button" data-message-page="next">下一页<span class="material-icons-outlined" aria-hidden="true">chevron_right</span></button>
+                </nav>
+
+                <div class="uc-message-selection-bar" data-message-selection-bar hidden>
+                    <button type="button" class="uc-message-selection-bar__cancel" data-message-selection-cancel>取消</button>
+                    <span data-message-selection-count>已选 0 条</span>
+                    <button type="button" data-message-selection-all>全选本页</button>
+                    <button type="button" class="uc-message-selection-bar__delete" data-message-selection-delete disabled>
+                        <span class="material-icons-outlined" aria-hidden="true">delete</span>删除
+                    </button>
+                </div>
+            </div>
             <table id="message-table"></table>
         </div>
     </section>

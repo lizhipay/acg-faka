@@ -106,6 +106,131 @@ const util = new class Util {
     }
 
     /**
+     * Create a detached, redacted snapshot for request debugging. The original
+     * value is never changed or passed to the console.
+     */
+    redactDebugValue(value, context = "", direction = "request") {
+        const redacted = "[REDACTED]", circular = "[Circular]", unreadable = "[Unreadable]";
+        const active = new WeakSet();
+        const requestContext = String(context || "").toLowerCase();
+
+        const keyWords = key => String(key || "")
+            .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+            .toLowerCase()
+            .split(/[^a-z0-9]+/)
+            .filter(Boolean);
+
+        const isSensitiveKey = (key, path = "") => {
+            const words = keyWords(key), compact = words.join("");
+            if (/(?:password|passwd|secret|token|authorization|private|credential)/.test(compact)) {
+                return true;
+            }
+            if (words.some(word => ["key", "auth", "authentication", "oauth", "otp", "totp", "captcha"].includes(word))) {
+                return true;
+            }
+            if (/(?:api|app|access|client|public|private|merchant|mch|sign|encrypt|decrypt|auth)key(?:id|secret|token|value)?$/.test(compact)) {
+                return true;
+            }
+            if (!words.includes("code") && !compact.endsWith("code")) {
+                return false;
+            }
+
+            // Keep ordinary business fields such as commodity.code visible.
+            if (words.some(word => ["verify", "verification", "captcha", "otp", "totp", "auth", "authentication", "security", "sms", "email", "phone", "mobile", "google", "twofactor", "2fa", "onetime"].includes(word))
+                || /(?:verify|verification|captcha|otp|totp|auth|authentication|security|sms|email|phone|mobile|google|twofactor|2fa|onetime)code$/.test(compact)) {
+                return true;
+            }
+            if (direction === "response" && path === "" && words.length === 1) {
+                return false; // Standard API response status: {code: 200, ...}
+            }
+            return /(?:captcha|verif(?:y|ication)|otp|totp|google(?:bind|unbind|secret)|two[-_]?factor|2fa|one[-_]?time|authentication|login|register|forget|reset[-_]?password|security)/.test(requestContext + " " + path.toLowerCase());
+        };
+
+        const defineValue = (target, key, item) => {
+            Object.defineProperty(target, key, {
+                value: item,
+                enumerable: true,
+                configurable: true,
+                writable: true
+            });
+        };
+
+        const clone = (item, path = "") => {
+            if (item === null || (typeof item !== "object" && typeof item !== "function")) {
+                return item;
+            }
+            if (active.has(item)) {
+                return circular;
+            }
+            active.add(item);
+
+            try {
+                if (typeof FormData !== "undefined" && item instanceof FormData) {
+                    const copy = new FormData();
+                    item.forEach((entry, key) => {
+                        const nextPath = path ? path + "." + key : String(key);
+                        const safeEntry = isSensitiveKey(key, path) ? redacted : clone(entry, nextPath);
+                        if (typeof File !== "undefined" && safeEntry instanceof File) {
+                            copy.append(key, safeEntry, safeEntry.name);
+                        } else {
+                            copy.append(key, safeEntry);
+                        }
+                    });
+                    return copy;
+                }
+
+                if (typeof URLSearchParams !== "undefined" && item instanceof URLSearchParams) {
+                    const copy = new URLSearchParams();
+                    item.forEach((entry, key) => {
+                        copy.append(key, isSensitiveKey(key, path) ? redacted : entry);
+                    });
+                    return copy;
+                }
+
+                if (typeof File !== "undefined" && item instanceof File) {
+                    return new File([item], item.name, {type: item.type, lastModified: item.lastModified});
+                }
+                if (typeof Blob !== "undefined" && item instanceof Blob) {
+                    return item.slice(0, item.size, item.type);
+                }
+                if (item instanceof Date) {
+                    return new Date(item.getTime());
+                }
+                if (item instanceof RegExp) {
+                    return new RegExp(item.source, item.flags);
+                }
+
+                const copy = Array.isArray(item) ? new Array(item.length) : {};
+                let formFieldName = null;
+                const nameDescriptor = Object.getOwnPropertyDescriptor(item, "name");
+                if (nameDescriptor && "value" in nameDescriptor && typeof nameDescriptor.value === "string") {
+                    formFieldName = nameDescriptor.value;
+                }
+
+                Object.keys(item).forEach(key => {
+                    const nextPath = path ? path + "." + key : key;
+                    const descriptor = Object.getOwnPropertyDescriptor(item, key);
+                    if (!descriptor || !("value" in descriptor)) {
+                        defineValue(copy, key, unreadable);
+                        return;
+                    }
+                    const hideFormValue = key === "value" && formFieldName && isSensitiveKey(formFieldName, path);
+                    defineValue(copy, key, isSensitiveKey(key, path) || hideFormValue
+                        ? redacted
+                        : clone(descriptor.value, nextPath));
+                });
+                return copy;
+            } catch (error) {
+                return unreadable;
+            } finally {
+                active.delete(item);
+            }
+        };
+
+        return clone(value);
+    }
+
+    /**
      * POST
      * @param url
      * @param data
@@ -133,7 +258,7 @@ const util = new class Util {
         }
 
         loader.enable ? Loading.show() : 0;
-        util.debug("POST(↑):" + url, "#ff4f33", data);
+        util.debugRedacted("POST(↑):" + url, "#ff4f33", data, url, "request");
         $.ajax({
             type: 'post',
             url: url,
@@ -141,7 +266,7 @@ const util = new class Util {
             success: (res, status, xhr) => {
                 Loading.hide();
                 try {
-                    util.debug("POST(↓):" + url, "#0bbf4a", res);
+                    util.debugRedacted("POST(↓):" + url, "#0bbf4a", res, url, "response");
                     if (res.code !== 200) {
                         if (typeof error === 'function') {
                             error(res);
@@ -156,7 +281,7 @@ const util = new class Util {
                     if (typeof error === 'function') {
                         error(res);
                     } else if (error !== false) {
-                        util.stdout(`POST(致命异常): ${url} | 请将下面信息截图反馈给维护人员:\n`, "red", res);
+                        util.stdout(`POST(致命异常): ${url} | 请将下面信息截图反馈给维护人员:\n`, "red", util.redactDebugValue(res, url, "response"));
                         message.error("服务器数据返回错误，可通过F12查看浏览器错误并且反馈给维护人员");
                     }
                 }
@@ -396,6 +521,13 @@ const util = new class Util {
             return;
         }
         this.stdout(message, color, ...val);
+    }
+
+    debugRedacted(message, color, value, context = "", direction = "request") {
+        if (!(typeof getVar("DEBUG") == "boolean" && getVar("DEBUG") == true)) {
+            return;
+        }
+        this.stdout(message, color, this.redactDebugValue(value, context, direction));
     }
 
 

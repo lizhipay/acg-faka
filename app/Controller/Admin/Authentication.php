@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 
 use App\Consts\Manage as ManageConst;
 use App\Controller\Base\View\Manage;
+use App\Service\ManageSessionManager;
 use App\Util\Client;
 use Kernel\Exception\ViewException;
 
@@ -28,9 +29,13 @@ class Authentication extends Manage
         return $this->render("登录", "Authentication/Login.html");
     }
 
-    public function logout()
+    public function logout(): void
     {
-        setcookie(ManageConst::SESSION, "", time() - 3600, "/");
+        $cookie = (string)($_COOKIE[ManageConst::SESSION] ?? '');
+        if ($cookie !== '') {
+            ManageSessionManager::revokeEncodedToken($cookie);
+        }
+        ManageSessionManager::clearCookie();
         Client::redirect("/admin/authentication/login", "注销成功..", 1);
     }
 }

@@ -559,20 +559,26 @@
   display: block; float: none; text-align: left;
   width: auto; max-width: 100%; height: auto;
   margin: 0; padding: 0 0 8px 1px;
+  position: static; z-index: auto;
+  overflow: visible; white-space: normal; text-overflow: clip;
+  background: transparent;
   font-size: 12.5px; line-height: 1.4; font-weight: 500;
   color: var(--md-on-surface-med);
+  pointer-events: auto; transform: none; transform-origin: initial;
 }
 :root[data-theme] .component-popup .layui-form-item:has(.layui-form-radio) > .layui-input-block,
 :root[data-theme] .component-popup .layui-form-item:has(.layui-form-switch) > .layui-input-block,
 :root[data-theme] .component-popup .layui-form-item:has(.layui-form-checkbox) > .layui-input-block,
 :root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > .ev2-editor) > .layui-input-block,
-:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > .editor-wrapper) > .layui-input-block {
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > .editor-wrapper) > .layui-input-block,
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block {
   margin-left: 0 !important; min-height: 0;
 }
 /* radio group items sit in a tidy row */
 :root[data-theme] .component-popup .layui-form-item:has(.layui-form-radio) > .layui-input-block { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; }
 
-/* xm-select is an input-like control: keep its caption in the MUI outline notch. */
+/* popup xm-select / remoteSelect follows the same MUI field states as an input:
+   empty = caption inside, focused/open/selected = caption in the outline notch. */
 :root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) {
   position: relative; margin-bottom: 22px;
 }
@@ -584,22 +590,81 @@
   overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
   color: var(--md-on-surface-med); background: var(--md-surface);
   font-size: 14px; line-height: 20px; text-align: left;
-  pointer-events: none; transform: translateY(-18px) scale(.75); transform-origin: left top;
-  transition: color var(--md-dur-fast) var(--md-ease);
+  pointer-events: none; transform: none; transform-origin: left top;
+  transition: top var(--md-dur-fast) var(--md-ease),
+              transform var(--md-dur-fast) var(--md-ease),
+              color var(--md-dur-fast) var(--md-ease),
+              background-color var(--md-dur-fast) var(--md-ease);
 }
-:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block {
-  margin-left: 0 !important; min-height: 0;
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select):focus-within > .layui-form-label:not(.hide),
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select.xm-select-show) > .layui-form-label:not(.hide),
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select .xm-label-block) > .layui-form-label:not(.hide) {
+  transform: translateY(-18px) scale(.75);
+}
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select):focus-within > .layui-form-label:not(.hide),
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select.xm-select-show) > .layui-form-label:not(.hide) {
+  color: var(--md-primary);
 }
 :root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block > xm-select {
-  min-height: 42px; border: 1px solid var(--md-outline); border-radius: var(--md-radius);
-  background: var(--md-surface); color: var(--md-on-surface);
+  box-sizing: border-box;
+  height: 38px !important; min-height: 38px !important; line-height: 38px !important;
+  border: 1px solid var(--md-outline); border-radius: var(--md-radius);
+  background: transparent !important; color: var(--md-on-surface);
+  font-size: 13px;
   transition: border-color var(--md-dur-fast) var(--md-ease), box-shadow var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block > xm-select > .xm-label,
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block > xm-select > .xm-label > .scroll,
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block > xm-select > .xm-label .label-content {
+  box-sizing: border-box; height: 36px; min-height: 36px; align-items: center;
+}
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block > xm-select .xm-label .xm-label-block {
+  display: inline-flex;
+  max-width: 100%; min-width: 0;
+  height: 26px; min-height: 26px;
+  align-items: center !important;
+  line-height: 1 !important;
+}
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block > xm-select .xm-label .xm-label-block > span {
+  display: inline-flex !important;
+  width: auto !important; min-width: 0; height: 100% !important;
+  flex: 1 1 auto; align-items: center;
+  overflow: hidden;
+  line-height: 1.35 !important;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block > xm-select .xm-label .xm-label-block > i {
+  display: inline-flex !important;
+  width: 20px; height: 100% !important;
+  flex: 0 0 20px; align-items: center; justify-content: center;
+  margin-left: 4px;
+  line-height: 1 !important;
+}
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block > xm-select .xm-label .xm-label-block > i::before {
+  display: block;
+  line-height: 1;
+}
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block > xm-select > .xm-tips {
+  height: 36px; padding: 0 42px 0 10px !important;
+  color: transparent !important; font-size: 13px; line-height: 36px;
+  opacity: 0;
+  transition: color var(--md-dur-fast) var(--md-ease), opacity var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select):focus-within > .layui-input-block > xm-select > .xm-tips,
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select.xm-select-show) > .layui-input-block > xm-select > .xm-tips {
+  color: var(--md-on-surface-dis) !important; opacity: 1;
+}
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block > xm-select > .xm-icon {
+  top: 50% !important; right: 10px; margin-top: -6px;
+}
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block > xm-select > .xm-body.absolute:not(.up) {
+  top: calc(100% + 4px) !important; bottom: auto !important;
+}
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block > xm-select > .xm-body.absolute.up {
+  top: auto !important; bottom: calc(100% + 4px) !important;
 }
 :root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select):hover > .layui-input-block > xm-select {
   border-color: var(--md-on-surface);
-}
-:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select):focus-within > .layui-form-label:not(.hide) {
-  color: var(--md-primary);
 }
 :root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select):focus-within > .layui-input-block > xm-select {
   border-color: var(--md-primary) !important; box-shadow: 0 0 0 1px var(--md-primary);
@@ -806,21 +871,121 @@
 }
 :root[data-theme] xm-select:hover { border-color: var(--md-on-surface) !important; }
 :root[data-theme] xm-select.xm-select-show { border-color: var(--md-primary) !important; box-shadow: 0 0 0 1px var(--md-primary) inset; }
-:root[data-theme] xm-select .xm-tips { color: var(--md-on-surface-med) !important; }
+:root[data-theme] xm-select > .xm-icon { border-top-color: var(--md-on-surface-med) !important; }
+:root[data-theme] xm-select .xm-tips {
+  padding: 0 42px 0 13px !important;
+  color: var(--md-on-surface-med) !important;
+  font-size: 14px;
+}
 :root[data-theme] xm-select .xm-label .xm-label-block {
   background-color: rgba(var(--md-primary-rgb), .12) !important;
   color: var(--md-primary) !important;
   border: none !important;
   border-radius: 6px !important;
 }
+:root[data-theme] xm-select .xm-label .xm-label-block > span,
+:root[data-theme] xm-select .xm-label .xm-label-block > i {
+  color: var(--md-primary) !important;
+}
+:root[data-theme] xm-select > .xm-label.auto-row > .scroll {
+  overflow: visible !important;
+}
+:root[data-theme] xm-select > .xm-label.single-row,
+:root[data-theme] xm-select > .xm-label.single-row > .scroll {
+  scrollbar-width: none;
+}
+:root[data-theme] xm-select > .xm-label.single-row::-webkit-scrollbar,
+:root[data-theme] xm-select > .xm-label.single-row > .scroll::-webkit-scrollbar {
+  display: none;
+}
 :root[data-theme] xm-select .xm-body {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  padding: 8px !important;
   border: 1px solid var(--md-divider) !important;
-  border-radius: var(--md-radius) !important;
+  border-radius: var(--md-radius-lg) !important;
   box-shadow: var(--md-e8) !important;
   background-color: var(--md-surface-2) !important;
+  color: var(--md-on-surface) !important;
 }
-:root[data-theme] xm-select .xm-body .xm-option:hover { background-color: var(--md-hover-overlay) !important; }
-:root[data-theme] xm-select .xm-body .xm-option.xm-select-this { color: var(--md-primary) !important; }
+:root[data-theme] xm-select .xm-body .xm-search {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 6px !important;
+  border: 1px solid var(--md-outline);
+  border-radius: var(--md-radius);
+  padding: 0 12px !important;
+  background: var(--md-surface) !important;
+  cursor: text;
+}
+:root[data-theme] xm-select .xm-body .xm-search > i {
+  position: static !important;
+  flex: 0 0 auto;
+  color: var(--md-on-surface-med) !important;
+}
+:root[data-theme] xm-select .xm-body .xm-search-input {
+  min-width: 0;
+  height: 40px;
+  flex: 1 1 auto;
+  border: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  color: var(--md-on-surface) !important;
+  box-shadow: none !important;
+}
+:root[data-theme] xm-select .xm-body .xm-search-input::placeholder {
+  color: var(--md-on-surface-dis) !important;
+  opacity: 1;
+}
+:root[data-theme] xm-select .xm-body .xm-option {
+  min-height: 40px;
+  border-radius: calc(var(--md-radius) - 2px);
+  color: var(--md-on-surface) !important;
+}
+:root[data-theme] xm-select .xm-body .xm-option-content {
+  color: var(--md-on-surface) !important;
+}
+:root[data-theme] xm-select .xm-body .xm-option[style*="background-color"] {
+  background-color: var(--md-hover-overlay) !important;
+}
+:root[data-theme] xm-select .xm-body .xm-option:hover,
+:root[data-theme] xm-select .xm-body .xm-option.xm-select-this {
+  background-color: var(--md-hover-overlay) !important;
+}
+:root[data-theme] xm-select .xm-body .xm-option.selected {
+  background-color: var(--md-selected-overlay) !important;
+}
+:root[data-theme] xm-select .xm-body .xm-option.selected .xm-option-content,
+:root[data-theme] xm-select .xm-body .xm-option.xm-select-this .xm-option-content {
+  color: var(--md-primary) !important;
+}
+:root[data-theme] xm-select .xm-body .xm-option-icon {
+  border-color: var(--md-outline) !important;
+}
+:root[data-theme] xm-select .xm-body .xm-option.selected > .xm-option-icon {
+  border-color: var(--md-primary) !important;
+  background: var(--md-primary) !important;
+  color: var(--md-on-primary) !important;
+}
+:root[data-theme] xm-select .xm-body .xm-select-empty {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  color: var(--md-on-surface-med) !important;
+  font-size: 13px;
+}
+:root[data-theme] xm-select .xm-body .scroll-body {
+  scrollbar-color: var(--md-on-surface-dis) transparent;
+  scrollbar-width: thin;
+}
+:root[data-theme] xm-select .xm-body .scroll-body::-webkit-scrollbar-track { background: transparent !important; }
+:root[data-theme] xm-select .xm-body .scroll-body::-webkit-scrollbar-thumb { background-color: var(--md-on-surface-dis) !important; }
 :root[data-theme] .layui-btn.query-button {
   background: transparent; border: 1px solid var(--md-primary); color: var(--md-primary);
   border-radius: var(--md-radius); box-shadow: none; font-weight: 500;

@@ -1,5 +1,55 @@
 #{include file="../Header.html"}
 
+<style>
+    @media (max-width: 991.98px) {
+        html[data-admin-layout="mobile"] .md-message-card.admin-mobile-table-card {
+            margin: 0;
+            overflow: visible;
+            border: 0 !important;
+            background: transparent;
+            box-shadow: none !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-message-card.admin-mobile-table-card > .card-body {
+            padding: 0 !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-message-compose-layer .layui-card-body {
+            padding: 0 !important;
+        }
+
+        html[data-admin-layout="mobile"] .md-message-compose-layer .block-content .CodeMirror,
+        html[data-admin-layout="mobile"] .md-message-compose-layer .block-content .ev2-preview {
+            min-height: min(38dvh, 320px);
+        }
+
+        html[data-admin-layout="mobile"] .md-message-audience-summary,
+        html[data-admin-layout="mobile"] .md-message-audience-readonly {
+            border: 0;
+            border-radius: 16px;
+            background: var(--admin-mobile-surface-2);
+        }
+
+        html[data-admin-layout="mobile"] .md-message-compose-tip {
+            border-radius: 15px;
+        }
+    }
+
+    @media (max-width: 359.98px) {
+        html[data-admin-layout="mobile"] .md-message-audience-summary,
+        html[data-admin-layout="mobile"] .md-message-audience-readonly {
+            gap: 9px;
+            padding: 11px;
+        }
+
+        html[data-admin-layout="mobile"] .md-message-audience-summary__icon,
+        html[data-admin-layout="mobile"] .md-message-audience-readonly__icon {
+            width: 32px;
+            height: 32px;
+        }
+    }
+</style>
+
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     #{include file="../Toolbar.html"}
 

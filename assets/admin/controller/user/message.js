@@ -20,6 +20,10 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 
+    const inputMeta = (name, attributes) => form => {
+        $('.' + form.unique + ' input[name="' + name + '"]').attr(attributes);
+    };
+
     const positiveInt = value => {
         const number = Number(value);
         return Number.isInteger(number) && number > 0 ? number : 0;
@@ -45,8 +49,9 @@
 
     const openMessagePreview = id => {
         id = positiveInt(id);
-        if (!id) return;
+        if (!id || !pageActive) return;
         util.post('/admin/api/message/detail', {id: id}, response => {
+            if (!pageActive) return;
             const item = detailObject(response.data);
             if (!positiveInt(item.id)) {
                 message.error('消息详情读取失败');
@@ -100,6 +105,7 @@
     };
 
     let table = null;
+    let pageActive = true;
     let composeGeneration = 0;
 
     const renderAudienceSummary = (form, state) => {
@@ -165,21 +171,21 @@
             url: '/admin/api/message/audienceCount',
             data: {audience_type: type, audience_id: audienceId},
             done: response => {
-                if (!state.active || requestNumber !== state.countRequest) return;
+                if (!pageActive || !state.active || requestNumber !== state.countRequest) return;
                 const payload = response.data || {};
                 state.loading = false;
                 state.count = Math.max(0, Number(payload.count ?? payload.audience_count ?? 0) || 0);
                 renderAudienceSummary(form, state);
             },
             error: response => {
-                if (!state.active || requestNumber !== state.countRequest) return;
+                if (!pageActive || !state.active || requestNumber !== state.countRequest) return;
                 state.loading = false;
                 state.count = null;
                 state.error = response?.msg || '统计失败，请重试';
                 renderAudienceSummary(form, state);
             },
             fail: () => {
-                if (!state.active || requestNumber !== state.countRequest) return;
+                if (!pageActive || !state.active || requestNumber !== state.countRequest) return;
                 state.loading = false;
                 state.count = null;
                 state.error = '网络异常，请重试';
@@ -240,16 +246,16 @@
                     url: '/admin/api/message/users',
                     data: {keywords: keyword, keyword: keyword, limit: 20},
                     done: response => {
-                        if (!state.active || currentRequest !== searchRequest) return;
+                        if (!pageActive || !state.active || currentRequest !== searchRequest) return;
                         callback(normalizeUsers(response.data));
                     },
                     error: response => {
-                        if (!state.active || currentRequest !== searchRequest) return;
+                        if (!pageActive || !state.active || currentRequest !== searchRequest) return;
                         callback([]);
                         message.error(response?.msg || '会员搜索失败');
                     },
                     fail: () => {
-                        if (!state.active || currentRequest !== searchRequest) return;
+                        if (!pageActive || !state.active || currentRequest !== searchRequest) return;
                         callback([]);
                         message.error('会员搜索失败，请检查网络');
                     }
@@ -263,6 +269,7 @@
                 }
             }
         });
+        return state.userPicker;
     };
 
     const validateCompose = (formData, editing, state, messageId) => {
@@ -351,6 +358,7 @@
     };
 
     const openComposer = item => {
+        if (!pageActive) return;
         const editing = positiveInt(item?.id) > 0;
         const generation = ++composeGeneration;
         const state = {
@@ -409,7 +417,9 @@
         const messageFields = [
             {
                 title: '消息标题', name: 'title', type: 'input', required: true,
-                placeholder: '请输入消息标题，最多 100 字'
+                placeholder: '请输入消息标题，最多 100 字',
+                inputmode: 'text', enterkeyhint: 'next',
+                complete: inputMeta('title', {autocomplete: 'off'})
             },
             {
                 title: '消息内容', name: 'content', type: 'editorv2', required: true,
@@ -421,7 +431,9 @@
             },
             {
                 title: '点击跳转地址', name: 'jump_url', type: 'input',
-                placeholder: '可选，例如 /user/purchase/record 或 https://example.com'
+                placeholder: '可选，例如 /user/purchase/record 或 https://example.com',
+                inputmode: 'url', enterkeyhint: 'done',
+                complete: inputMeta('jump_url', {inputmode: 'url', autocomplete: 'url', autocapitalize: 'none', spellcheck: 'false'})
             }
         ];
 
@@ -446,9 +458,9 @@
 
         const assign = editing ? {
             id: positiveInt(item.id),
-            title: escapeHtml(item.title || ''),
+            title: String(item.title || ''),
             content: String(item.content || ''),
-            jump_url: escapeHtml(item.jump_url || '')
+            jump_url: String(item.jump_url || '')
         } : {};
 
         component.popup({
@@ -477,6 +489,7 @@
                         url: '/admin/api/message/save',
                         data: payload,
                         done: response => {
+                            if (!pageActive) return;
                             layer.close(layerIndex);
                             const email = response?.data?.email;
                             if (!editing && email?.enabled) {
@@ -490,11 +503,13 @@
                             table.refresh(false);
                         },
                         error: response => {
+                            if (!pageActive) return;
                             state.saving = false;
                             setSubmitBusy(layerIndex, false);
                             message.error(response?.msg || '保存失败');
                         },
                         fail: () => {
+                            if (!pageActive) return;
                             state.saving = false;
                             setSubmitBusy(layerIndex, false);
                             message.error('保存失败，请检查网络');
@@ -539,8 +554,9 @@
 
     const loadAndEdit = id => {
         id = positiveInt(id);
-        if (!id) return;
+        if (!id || !pageActive) return;
         util.post('/admin/api/message/detail', {id: id}, response => {
+            if (!pageActive) return;
             const item = detailObject(response.data);
             if (!positiveInt(item.id)) {
                 message.error('消息详情读取失败');
@@ -552,9 +568,11 @@
 
     const removeMessage = id => {
         id = positiveInt(id);
-        if (!id) return;
+        if (!id || !pageActive) return;
         message.ask('删除后消息会从所有会员的消息中心永久消失，且无法恢复。确认删除吗？', () => {
+            if (!pageActive) return;
             util.post('/admin/api/message/del', {id: id}, response => {
+                if (!pageActive) return;
                 message.success(response.msg || '消息已永久删除');
                 table.refresh(false);
             });
@@ -626,11 +644,19 @@
         }
     ]);
     table.setSearch([
-        {title: '消息标题', name: 'keyword', type: 'input'},
+        {title: '消息标题', name: 'keyword', type: 'input', inputmode: 'search', enterkeyhint: 'search'},
         {title: '接收范围', name: 'equal-audience_type', type: 'select', dict: audienceOptions},
         {title: '发送时间', name: 'between-create_time', type: 'date'}
     ]);
     table.render();
 
     $('.btn-message-create').off('click.messageAdmin').on('click.messageAdmin', () => openComposer(null));
+    $(document)
+        .off('pjax:beforeReplace.mdMessageController')
+        .one('pjax:beforeReplace.mdMessageController', () => {
+            pageActive = false;
+            composeGeneration++;
+            $('.btn-message-create').off('click.messageAdmin');
+            if (typeof Swal !== 'undefined') Swal.close();
+        });
 }();

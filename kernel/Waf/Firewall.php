@@ -201,6 +201,35 @@ class Firewall
     }
 
     /**
+     * Filter a value that PHP has already decoded from the request body.
+     *
+     * Some payloads, such as card secrets, legitimately contain percent escape
+     * text (for example "%0A"). Passing those values through getCache() would
+     * decode them a second time and silently change the stored data.
+     *
+     * @param mixed $input
+     * @return mixed
+     * @throws \HTMLPurifier_Exception
+     * @throws \ReflectionException
+     */
+    public function xssKillerLiteral(mixed $input): mixed
+    {
+        if (is_array($input)) {
+            $cleanedArray = [];
+            foreach ($input as $key => $value) {
+                $cleanedArray[$key] = $this->xssKillerLiteral($value);
+            }
+            return $cleanedArray;
+        }
+        if (!is_string($input)) {
+            return $input;
+        }
+
+        $this->HTMLPurifierInit();
+        return $this->HTMLPurifier->purify($input);
+    }
+
+    /**
      * @param mixed $input
      * @return mixed
      * @throws RuntimeException

@@ -15,7 +15,7 @@ class Recharge extends Manage
      */
     public function order(): string
     {
-        $userId = $_GET['userId'];
+        $userId = isset($_GET['userId']) ? (int)$_GET['userId'] : null;
         return $this->render("充值订单", "User/Order.html", ["userId" => $userId]);
     }
 }

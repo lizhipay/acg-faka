@@ -1,8 +1,6 @@
 #{include file="../Header.html"}
-#{set_script_var([
-"_config" => $config,
-"_themes" => $themes
-])}
+<textarea id="md-config-notice-source" hidden aria-hidden="true">#{$config.notice|escape:'html'}</textarea>
+<textarea id="md-config-themes-source" hidden aria-hidden="true">#{$themes_json|escape:'html'}</textarea>
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     <!--begin::Toolbar-->
@@ -26,9 +24,18 @@
                 <!--begin::Content-->
                 <div id="kt_account_profile_details" class="collapse show">
                     <!--begin::Form-->
-                    <form id="data-form" class="form">
+                    <form id="data-form" class="form" data-admin-mobile-settings-page="website">
+                        <nav class="admin-mobile-settings-nav" aria-label="网站设置分区">
+                            <a href="#mobile-setting-brand">品牌与安全</a>
+                            <a href="#mobile-setting-theme">模板与网络</a>
+                            <a href="#mobile-setting-content">网站内容</a>
+                            <a href="#mobile-setting-register">注册与验证</a>
+                            <a href="#mobile-setting-access">访问状态</a>
+                        </nav>
                         <!--begin::Card body-->
                         <div class="card-body  p-9">
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-setting-brand"
+                                data-admin-mobile-description="设置网站 LOGO、请求日志和后台安全入口。">品牌与安全</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -37,7 +44,7 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8">
                                     <!--begin::Image input-->
-                                    <div class="image-input image-input-outline" data-kt-image-input="true"
+                                    <div class="image-input image-input-outline w-125px h-125px admin-mobile-image-input admin-mobile-image-input--logo" data-kt-image-input="true"
                                          style="background-image: url(/assets/admin/images/setting/blank.png)">
                                         <!--begin::Preview existing logo-->
                                         <div class="image-input-wrapper w-125px h-125px"
@@ -46,7 +53,8 @@
                                         <!--begin::Label-->
                                         <label class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
                                                data-kt-image-input-action="change" data-bs-toggle="tooltip"
-                                               title="Change logo">
+                                               data-admin-mobile-action-placement="inline"
+                                               aria-label="更换网站 LOGO" title="更换网站 LOGO">
                                             <i class="fa-duotone fa-regular fa-pen"></i>
                                             <!--begin::Inputs-->
                                             <input type="file" class="upload-logo"
@@ -58,7 +66,7 @@
                                         <!--begin::Cancel-->
                                         <span class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
                                               data-kt-image-input-action="cancel" data-bs-toggle="tooltip"
-                                              title="Cancel logo">
+                                              aria-label="取消更换网站 LOGO" title="取消更换网站 LOGO">
 																<i class="fa-duotone fa-regular fa-xmark"></i>
 															</span>
                                         <!--end::Cancel-->
@@ -91,9 +99,20 @@
 
                                 </div>
                                 <!--begin::Hint-->
-                                <div class="form-text text-success fw-bold">
+                                <div class="form-text text-success fw-bold admin-mobile-settings-request-log-copy">
                                     此配置为临时选项，将在下一个版本中移除。当前我们正在对程序进行大幅优化。为便于排查现阶段系统可能出现的问题，本版本将开启请求日志功能，以协助技术人员更快速、准确地定位问题。如您的网站出现异常，请及时联系官方人员，我们将结合相关日志信息为您进行排查与处理。
                                 </div>
+                                <details class="admin-mobile-settings-details">
+                                    <summary>
+                                        <span class="material-icons-outlined" aria-hidden="true">info</span>
+                                        <span>
+                                            <strong>为什么建议开启请求日志？</strong>
+                                            <small>用于协助定位当前版本可能出现的网站异常</small>
+                                        </span>
+                                        <span class="material-icons-outlined" aria-hidden="true">expand_more</span>
+                                    </summary>
+                                    <p>此配置为临时选项，将在下一个版本中移除。当前我们正在对程序进行大幅优化。为便于排查现阶段系统可能出现的问题，本版本将开启请求日志功能，以协助技术人员更快速、准确地定位问题。如您的网站出现异常，请及时联系官方人员，我们将结合相关日志信息为您进行排查与处理。</p>
+                                </details>
                                 <!--end::Hint-->
                                 <!--begin::Label-->
                             </div>
@@ -103,16 +122,24 @@
                             <div class="row mb-6">
                                 <label class="col-lg-4 col-form-label fw-bold fs-6">后台安全入口</label>
                                 <div class="col-lg-8 fv-row">
-                                    <input type="text" name="admin_entrance"
+                                    <input type="password" name="admin_entrance_secret"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="如 /aq1314，留空则不启用" value="#{$config.admin_entrance}"/>
+                                           autocomplete="new-password" autocapitalize="none" spellcheck="false"
+                                           maxlength="65"
+                                           placeholder="输入新入口；留空则保留现有入口" value=""/>
                                     <div class="form-text text-danger fw-bold">
-                                        设置后必须先访问该地址通过安全验证，才能进入后台。请务必牢记，遗忘将无法进入后台。
+                                        当前入口不会在页面中显示。输入新值可更换；留空不会关闭现有入口。
                                     </div>
+                                    <label class="form-check form-check-inline form-check-solid mt-3">
+                                        <input class="form-check-input" type="checkbox" name="admin_entrance_clear" value="1">
+                                        <span class="fw-bold ps-2 fs-6 text-danger">明确关闭后台安全入口</span>
+                                    </label>
                                 </div>
                             </div>
                             <!--end::Input group-->
 
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-setting-theme"
+                                data-admin-mobile-description="选择 PC、手机及会员中心模板，并配置 IP 获取方式和背景图片。">模板与网络</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -124,10 +151,10 @@
                                     <select name="user_theme" class="form-select form-select-solid form-select-lg"
                                             data-control="select2" data-hide-search="true">
                                         #{foreach $themes as $theme}
-                                            <option value="#{$theme.info.KEY}" #{if $theme.info.KEY== $config.user_theme} selected #{/if}>
-                                                #{$theme.info.NAME} (v#{$theme.info.VERSION})
+                                            <option value="#{$theme.info.KEY|escape:'html'}" #{if $theme.info.KEY== $config.user_theme} selected #{/if}>
+                                                #{$theme.info.NAME|escape:'html'} (v#{$theme.info.VERSION|escape:'html'})
                                                 #{if $theme.have_update === true}
-                                                    -> 有更新(v#{$theme.update_version}) ‹ 请前往应用商店更新 ›
+                                                    -> 有更新(v#{$theme.update_version|escape:'html'}) ‹ 请前往应用商店更新 ›
                                                 #{/if}
                                             </option>
                                         #{/foreach}
@@ -136,7 +163,9 @@
                                 </div>
                                 <div class="col-lg-2 fv-row">
                                     <!--begin::Input-->
-                                    <button type="button" class="btn btn-light theme-setting"><i class="fa-duotone fa-regular fa-folder-gear"></i> 模板设置
+                                    <button type="button" class="btn btn-light theme-setting"
+                                            data-admin-mobile-action-placement="inline"
+                                            aria-label="配置 PC 网站模板" title="配置 PC 网站模板"><i class="fa-duotone fa-regular fa-folder-gear"></i> 模板设置
                                     </button>
                                     <!--end::Input-->
                                 </div>
@@ -157,10 +186,10 @@
                                         <option value="0" #{if "0" == $config.user_mobile_theme}selected #{/if}>跟随PC模板
                                         </option>
                                         #{foreach $themes as $theme}
-                                            <option value="#{$theme.info.KEY}" #{if $theme.info.KEY== $config.user_mobile_theme}
-                                            selected #{/if}>#{$theme.info.NAME} (v#{$theme.info.VERSION})
+                                            <option value="#{$theme.info.KEY|escape:'html'}" #{if $theme.info.KEY== $config.user_mobile_theme}
+                                            selected #{/if}>#{$theme.info.NAME|escape:'html'} (v#{$theme.info.VERSION|escape:'html'})
                                                 #{if $theme.have_update === true}
-                                                    -> 有更新(v#{$theme.update_version}) ‹ 请前往应用商店更新 ›
+                                                    -> 有更新(v#{$theme.update_version|escape:'html'}) ‹ 请前往应用商店更新 ›
                                                 #{/if}
                                             </option>
                                         #{/foreach}
@@ -169,7 +198,9 @@
                                 </div>
                                 <div class="col-lg-2 fv-row">
                                     <!--begin::Input-->
-                                    <button type="button" class="btn btn-light theme-mobile-setting"><i
+                                    <button type="button" class="btn btn-light theme-mobile-setting"
+                                            data-admin-mobile-action-placement="inline"
+                                            aria-label="配置手机网站模板" title="配置手机网站模板"><i
                                                 class="fa-duotone fa-regular fa-folder-gear"></i> 模板设置
                                     </button>
                                     <!--end::Input-->
@@ -188,10 +219,10 @@
                                     <select name="user_center_theme" class="form-select form-select-solid form-select-lg"
                                             data-control="select2" data-hide-search="true">
                                         #{foreach $themes as $theme}
-                                            <option value="#{$theme.info.KEY}" #{if $theme.info.KEY== $config.user_center_theme} selected #{/if}>
-                                                #{$theme.info.NAME} (v#{$theme.info.VERSION})
+                                            <option value="#{$theme.info.KEY|escape:'html'}" #{if $theme.info.KEY== $config.user_center_theme} selected #{/if}>
+                                                #{$theme.info.NAME|escape:'html'} (v#{$theme.info.VERSION|escape:'html'})
                                                 #{if $theme.have_update === true}
-                                                    -> 有更新(v#{$theme.update_version}) ‹ 请前往应用商店更新 ›
+                                                    -> 有更新(v#{$theme.update_version|escape:'html'}) ‹ 请前往应用商店更新 ›
                                                 #{/if}
                                             </option>
                                         #{/foreach}
@@ -200,7 +231,9 @@
                                 </div>
                                 <div class="col-lg-2 fv-row">
                                     <!--begin::Input-->
-                                    <button type="button" class="btn btn-light theme-user-setting"><i class="fa-duotone fa-regular fa-folder-gear"></i> 模板设置
+                                    <button type="button" class="btn btn-light theme-user-setting"
+                                            data-admin-mobile-action-placement="inline"
+                                            aria-label="配置 PC 会员中心模板" title="配置 PC 会员中心模板"><i class="fa-duotone fa-regular fa-folder-gear"></i> 模板设置
                                     </button>
                                     <!--end::Input-->
                                 </div>
@@ -221,10 +254,10 @@
                                             data-control="select2" data-hide-search="true">
                                         <option value="0" #{if "0" == $user_center_mobile_theme} selected #{/if}>跟随PC会员中心模版</option>
                                         #{foreach $themes as $theme}
-                                            <option value="#{$theme.info.KEY}" #{if $theme.info.KEY == $user_center_mobile_theme} selected #{/if}>
-                                                #{$theme.info.NAME} (v#{$theme.info.VERSION})
+                                            <option value="#{$theme.info.KEY|escape:'html'}" #{if $theme.info.KEY == $user_center_mobile_theme} selected #{/if}>
+                                                #{$theme.info.NAME|escape:'html'} (v#{$theme.info.VERSION|escape:'html'})
                                                 #{if $theme.have_update === true}
-                                                    -> 有更新(v#{$theme.update_version}) ‹ 请前往应用商店更新 ›
+                                                    -> 有更新(v#{$theme.update_version|escape:'html'}) ‹ 请前往应用商店更新 ›
                                                 #{/if}
                                             </option>
                                         #{/foreach}
@@ -233,7 +266,9 @@
                                 </div>
                                 <div class="col-lg-2 fv-row">
                                     <!--begin::Input-->
-                                    <button type="button" class="btn btn-light theme-user-mobile-setting"><i class="fa-duotone fa-regular fa-folder-gear"></i> 模板设置
+                                    <button type="button" class="btn btn-light theme-user-mobile-setting"
+                                            data-admin-mobile-action-placement="inline"
+                                            aria-label="配置手机会员中心模板" title="配置手机会员中心模板"><i class="fa-duotone fa-regular fa-folder-gear"></i> 模板设置
                                     </button>
                                     <!--end::Input-->
                                 </div>
@@ -253,7 +288,7 @@
                                     <select name="ip_get_mode" class="form-select form-select-solid form-select-lg"
                                             data-control="select2" data-hide-search="true">
                                         #{foreach $ip_get_mode as $index => $mode}
-                                            <option value="#{$index}" #{if $index == $ip_mode} selected #{/if}>#{$mode}</option>
+                                            <option value="#{$index|escape:'html'}" #{if $index == $ip_mode} selected #{/if}>#{$mode|escape:'html'}</option>
                                         #{/foreach}
                                     </select>
                                     <!--end::Input-->
@@ -265,20 +300,27 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">PC背景图片(支持http地址或者图床api)</label>
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">
+                                    <span class="admin-mobile-setting-label-mobile">PC背景图片</span>
+                                    <span class="admin-mobile-setting-label-desktop">PC背景图片(支持http地址或者图床api)</span>
+                                    <small class="admin-mobile-setting-label-description">支持直接填写图片网址或上传本地图片。</small>
+                                </label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-6 fv-row">
                                     <input type="text" name="background_url"
+                                           inputmode="url"
                                            class="form-control form-control-lg form-control-solid"
                                            placeholder="请输入背景图床地址，可以是url"
-                                           value="#{$config.background_url}"/>
+                                           value="#{$config.background_url|escape:'html'}"/>
                                 </div>
                                 <div class="col-lg-2 fv-row">
                                     <!--begin::Input-->
                                     <input type="file" class="background-upload" style="display: none;"
                                            accept=".png, .jpg, .jpeg, .gif"/>
                                     <button type="button" class="btn btn-light background-upload"
+                                            data-admin-mobile-action-placement="inline"
+                                            aria-label="上传 PC 网站背景图片" title="上传 PC 网站背景图片"
                                             onclick="document.getElementsByClassName('background-upload')[0].click();">
                                         <i class="fa-duotone fa-regular fa-cloud-arrow-up"></i> 上传图片
                                     </button>
@@ -290,19 +332,25 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">手机背景图片</label>
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">
+                                    手机背景图片
+                                    <small class="admin-mobile-setting-label-description">留空时跟随 PC 背景图片。</small>
+                                </label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-6 fv-row">
                                     <input type="text" name="background_mobile_url"
+                                           inputmode="url"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="不设置则使用PC版配置" value="#{$config.background_mobile_url}"/>
+                                           placeholder="不设置则使用PC版配置" value="#{$config.background_mobile_url|escape:'html'}"/>
                                 </div>
                                 <div class="col-lg-2 fv-row">
                                     <!--begin::Input-->
                                     <input type="file" class="background-mobile-upload" style="display: none;"
                                            accept=".png, .jpg, .jpeg, .gif"/>
                                     <button type="button" class="btn btn-light background-mb-upload"
+                                            data-admin-mobile-action-placement="inline"
+                                            aria-label="上传手机网站背景图片" title="上传手机网站背景图片"
                                             onclick="document.getElementsByClassName('background-mobile-upload')[0].click();">
                                         <i class="fa-duotone fa-regular fa-cloud-arrow-up"></i> 上传图片
                                     </button>
@@ -312,6 +360,8 @@
                             </div>
                             <!--end::Input group-->
 
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-setting-content"
+                                data-admin-mobile-description="设置店铺名称、网站标题、搜索信息和店铺公告。">网站内容</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -321,7 +371,7 @@
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="shop_name"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入店铺名称" value="#{$config.shop_name}"/>
+                                           placeholder="请输入店铺名称" value="#{$config.shop_name|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -336,7 +386,7 @@
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="title"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入网站标题" value="#{$config.title}"/>
+                                           placeholder="请输入网站标题" value="#{$config.title|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -351,7 +401,7 @@
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="keywords"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入网站关键词" value="#{$config.keywords}"/>
+                                           placeholder="请输入网站关键词" value="#{$config.keywords|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -366,7 +416,7 @@
                                 <div class="col-lg-8 fv-row">
                                     <textarea name="description"
                                               class="form-control form-control-lg form-control-solid"
-                                              placeholder="请输入网站描述">#{$config.description}</textarea>
+                                              placeholder="请输入网站描述">#{$config.description|escape:'html'}</textarea>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -385,6 +435,8 @@
                             </div>
                             <!--end::Input group-->
 
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-setting-register"
+                                data-admin-mobile-description="设置注册、找回密码、验证码、用户名长度和会话时间。">注册与验证</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -506,8 +558,9 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="number" name="username_len"
+                                           inputmode="numeric"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入限制注册用户名长度" value="#{$config.username_len}"/>
+                                           placeholder="请输入限制注册用户名长度" value="#{$config.username_len|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -523,13 +576,16 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="number" name="session_expire"
+                                           inputmode="numeric"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入会话保持时间，单位/秒" value="#{$config.session_expire}"/>
+                                           placeholder="请输入会话保持时间，单位/秒" value="#{$config.session_expire|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
                             <!--end::Input group-->
 
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-setting-access"
+                                data-admin-mobile-description="控制会员注册、店铺维护状态及维护公告。">访问状态</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -574,7 +630,7 @@
                                 <div class="col-lg-8 fv-row">
                                     <textarea name="closed_message"
                                               class="form-control form-control-lg form-control-solid"
-                                              placeholder="请输入店铺维护公告">#{$config.closed_message}</textarea>
+                                              placeholder="请输入店铺维护公告">#{$config.closed_message|escape:'html'}</textarea>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -583,7 +639,7 @@
                         <!--end::Card body-->
                         <!--begin::Actions-->
                         <div class="card-footer d-flex justify-content-center py-6 px-9">
-                            <button type="button" class="btn btn-primary save-data"><i class="fa-duotone fa-regular fa-floppy-disk me-2"></i>保存设置 (Save Config)</button>
+                            <button type="button" class="btn btn-primary save-data"><i class="fa-duotone fa-regular fa-floppy-disk me-2"></i>保存设置</button>
                         </div>
                         <!--end::Actions-->
                     </form>

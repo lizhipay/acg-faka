@@ -13,16 +13,20 @@
         <div id="kt_content_container" class="container-fluid">
             <div class="row g-4">
                 <!--begin::Announcements (left)-->
-                <div class="col-12 col-lg-3">
-                    <div class="card h-100">
+                <div class="col-12 col-lg-3 dashboard-announcements">
+                    <div class="card h-100 dashboard-announcements__card" role="region" aria-labelledby="dashboard-announcements-title">
                         <div class="card-header border-0">
                             <div class="card-title">
-                                <h3 class="d-flex align-items-center gap-2">
+                                <h3 id="dashboard-announcements-title" class="d-flex align-items-center gap-2">
                                     <i class="fa-duotone fa-regular fa-bullhorn text-primary"></i>官方公告
                                 </h3>
+                                <span class="dashboard-announcements__subtitle d-none">平台更新、活动与重要提醒</span>
                             </div>
+                            <button type="button" class="dashboard-announcements__toggle d-none" aria-label="收起官方公告" aria-expanded="true" aria-controls="dashboard-announcements-content">
+                                <span class="material-icons-outlined" aria-hidden="true">expand_less</span>
+                            </button>
                         </div>
-                        <div class="card-body ad-html pt-2">
+                        <div class="card-body ad-html pt-2" id="dashboard-announcements-content">
                             <div class="text-center text-muted py-5">
                                 <i class="fa-duotone fa-regular fa-spinner fa-spin fs-2"></i>
                                 <div class="mt-3">加载中...</div>
@@ -33,13 +37,13 @@
                 <!--end::Announcements-->
 
                 <!--begin::Main-->
-                <div class="col-12 col-lg-9">
+                <div class="col-12 col-lg-9 dashboard-main">
                     <!--begin::Profile card-->
                     <div class="card mb-4 dash-profile">
                         <div class="card-body dash-profile__body">
                             <div class="dash-profile__identity">
                                 <div class="dash-profile__avatar-wrap">
-                                    <img src="#{if $user.avatar}#{$user.avatar}#{else}/favicon.ico#{/if}" alt="头像" class="dash-profile__avatar">
+                                    <img src="#{if $user.avatar}#{$user.avatar|escape:'html'}#{else}/favicon.ico#{/if}" alt="头像" class="dash-profile__avatar">
                                     <span class="dash-profile__status" aria-hidden="true"></span>
                                 </div>
                                 <div class="dash-profile__intro">
@@ -48,12 +52,12 @@
                                         <span>管理员账户</span>
                                     </div>
                                     <div class="dash-profile__name-row">
-                                        <strong class="dash-profile__name">#{$user.nickname}</strong>
+                                        <strong class="dash-profile__name">#{$user.nickname|escape:'html'}</strong>
                                         <span class="dash-profile__online">在线</span>
                                     </div>
                                     <div class="dash-profile__email">
                                         <span class="material-icons-outlined" aria-hidden="true">mail_outline</span>
-                                        <span>#{$user.email}</span>
+                                        <span>#{$user.email|escape:'html'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -63,7 +67,7 @@
                                     <span class="dash-profile__meta-icon material-icons-outlined" aria-hidden="true">my_location</span>
                                     <div class="dash-profile__meta-copy">
                                         <span class="dash-profile__meta-label">本次登录 IP</span>
-                                        <strong class="dash-profile__meta-value">#{$user.login_ip}</strong>
+                                        <strong class="dash-profile__meta-value">#{$user.login_ip|escape:'html'}</strong>
                                         <span class="dash-profile__meta-note dash-profile__meta-note--live">当前会话</span>
                                     </div>
                                 </div>
@@ -72,8 +76,8 @@
                                     <div class="dash-profile__meta-copy">
                                         <span class="dash-profile__meta-label">上次登录</span>
                                         #{if $user.last_login_ip}
-                                            <strong class="dash-profile__meta-value">#{$user.last_login_ip}</strong>
-                                            <span class="dash-profile__meta-note">#{$user.last_login_time}</span>
+                                            <strong class="dash-profile__meta-value">#{$user.last_login_ip|escape:'html'}</strong>
+                                            <span class="dash-profile__meta-note">#{$user.last_login_time|escape:'html'}</span>
                                         #{else}
                                             <strong class="dash-profile__meta-value dash-profile__meta-value--muted">暂无记录</strong>
                                         #{/if}
@@ -98,20 +102,22 @@
                     </div>
                     <!--end::Section header-->
 
+                    <div class="dashboard-data-feedback" role="status" aria-live="polite" hidden></div>
+
                     <!--begin::Stat grid-->
-                    <div class="row g-4 mb-4">
-                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="success" icon="fa-sack-dollar" label="盈利" vclass="order_profit" value="—"}
-                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="primary" icon="fa-circle-dollar" label="交易金额" vclass="turnover" value="—"}
-                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="success" icon="fa-receipt" label="订单" vclass="order_num" value="—"}
-                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="secondary" icon="fa-store" label="子站" vclass="business" value="—"}
-                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="danger" icon="fa-money-bill-wave" label="未处理提现" vclass="cash_status_0" value="—"}
-                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="success" icon="fa-money-bill" label="成功提现" vclass="cash_money_status_1" value="—"}
-                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="primary" icon="fa-user-plus" label="注册用户" vclass="user_register_num" value="—"}
-                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="warning" icon="fa-file-invoice-dollar" label="充值金额" vclass="recharge_amount" value="—"}
-                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="success" icon="fa-credit-card" label="第三方支付" vclass="online_amout" value="—"}
-                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="danger" icon="fa-bullhorn" label="推广返利" vclass="divide_amount" value="—"}
-                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="primary" icon="fa-hand-holding-dollar" label="子站佣金" vclass="rebate" value="—"}
-                        #{include file="../Component/StatCard.html" col="col-6 col-md-4 col-xl-3" accent="success" icon="fa-filter-circle-dollar" label="供货手续费" vclass="cost" value="—"}
+                    <div class="md-stat-grid" data-admin-mobile-stats="mini" role="region" aria-label="经营数据概览">
+                        #{include file="../Component/StatCard.html" accent="success" icon="fa-sack-dollar" label="盈利" vclass="order_profit" value="—" itemClass="md-stat-grid__item--wide"}
+                        #{include file="../Component/StatCard.html" accent="primary" icon="fa-circle-dollar" label="交易金额" vclass="turnover" value="—" itemClass="md-stat-grid__item--wide"}
+                        #{include file="../Component/StatCard.html" accent="success" icon="fa-receipt" label="订单" vclass="order_num" value="—"}
+                        #{include file="../Component/StatCard.html" accent="secondary" icon="fa-store" label="子站" vclass="business" value="—"}
+                        #{include file="../Component/StatCard.html" accent="danger" icon="fa-money-bill-wave" label="未处理提现" vclass="cash_status_0" value="—"}
+                        #{include file="../Component/StatCard.html" accent="success" icon="fa-money-bill" label="成功提现" vclass="cash_money_status_1" value="—" itemClass="md-stat-grid__item--wide"}
+                        #{include file="../Component/StatCard.html" accent="primary" icon="fa-user-plus" label="注册用户" vclass="user_register_num" value="—"}
+                        #{include file="../Component/StatCard.html" accent="warning" icon="fa-file-invoice-dollar" label="充值金额" vclass="recharge_amount" value="—" itemClass="md-stat-grid__item--wide"}
+                        #{include file="../Component/StatCard.html" accent="success" icon="fa-credit-card" label="第三方支付" vclass="online_amout" value="—" itemClass="md-stat-grid__item--wide"}
+                        #{include file="../Component/StatCard.html" accent="danger" icon="fa-bullhorn" label="推广返利" vclass="divide_amount" value="—" itemClass="md-stat-grid__item--wide"}
+                        #{include file="../Component/StatCard.html" accent="primary" icon="fa-hand-holding-dollar" label="子站佣金" vclass="rebate" value="—" itemClass="md-stat-grid__item--wide"}
+                        #{include file="../Component/StatCard.html" accent="success" icon="fa-filter-circle-dollar" label="供货手续费" vclass="cost" value="—" itemClass="md-stat-grid__item--wide"}
                     </div>
                     <!--end::Stat grid-->
 
@@ -125,6 +131,7 @@
                             </div>
                         </div>
                         <div class="card-body">
+                            <div class="dashboard-chart-feedback" role="status" aria-live="polite" hidden></div>
                             <div id="statistics" style="height: 350px; width: 100%;"></div>
                         </div>
                     </div>

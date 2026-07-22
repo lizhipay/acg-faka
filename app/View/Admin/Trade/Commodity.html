@@ -9,17 +9,19 @@
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
             <!--begin::Row-->
-            <div class="row g-4">
-                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="primary" icon="fa-box" label="总商品" value=$all}
-                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="success" icon="fa-boxes" label="已上架" value=$shelves}
-                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="danger" icon="fa-box" label="未上架" value=$not}
-                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="info" icon="fa-shop" label="主站商品" value=$main}
-                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="secondary" icon="fa-store" label="子站商品" value=$child}
-                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="success" icon="fa-cart-shopping" label="子站上架" value=$child_shelves}
+            <h2 class="admin-mobile-only-section">商品概览</h2>
+            <div class="md-stat-grid" data-admin-mobile-stats="mini" role="region" aria-label="商品数据概览">
+                #{include file="../Component/StatCard.html" accent="primary" icon="fa-box" label="总商品" value=$all}
+                #{include file="../Component/StatCard.html" accent="success" icon="fa-boxes" label="已上架" value=$shelves}
+                #{include file="../Component/StatCard.html" accent="danger" icon="fa-box" label="未上架" value=$not}
+                #{include file="../Component/StatCard.html" accent="info" icon="fa-shop" label="主站商品" value=$main}
+                #{include file="../Component/StatCard.html" accent="secondary" icon="fa-store" label="子站商品" value=$child}
+                #{include file="../Component/StatCard.html" accent="success" icon="fa-cart-shopping" label="子站上架" value=$child_shelves}
             </div>
             <!--end::Row-->
 
             <!--begin::Tables Widget 9-->
+            <h2 class="admin-mobile-only-section">商品列表</h2>
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->
                 <div class="card-header border-0">

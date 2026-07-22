@@ -1,6 +1,96 @@
 !function () {
     let table;
+    const namespace = '.mdTradeCategoryController';
+    let controllerActive = true;
+    const mobileAdminEnabled = () => Boolean(window.AdminMobile && window.AdminMobile.isEnabled && window.AdminMobile.isEnabled());
+    const escapeHtml = value => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    const confirmCategoryDelete = (rows, done) => {
+        const selected = (Array.isArray(rows) ? rows : []).filter(Boolean);
+        const ids = selected.map(row => Number(row.id)).filter(id => Number.isInteger(id) && id > 0);
+        if (!ids.length) {
+            message.error('没有可删除的分类');
+            return;
+        }
+        const names = selected.slice(0, 4).map(row => escapeHtml(row.name || `ID ${row.id}`));
+        const more = selected.length > names.length ? ` 等 ${selected.length} 个分类` : '';
+        util.post({
+            url: '/admin/api/category/deleteImpact',
+            data: {list: ids},
+            done: res => {
+                if (!controllerActive) return;
+                const impact = res?.data || {};
+                const impactSummary = `<div style="text-align:left;line-height:1.8;">
+                    <div><b>所选分类：</b>${names.join('、') || '当前所选分类'}${more}</div>
+                    <div style="margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.09);">
+                        <div><b>明确选择：</b>${escapeHtml(impact.category_count ?? 0)} 个分类</div>
+                        <div><b>未选择的下级分类：</b>${escapeHtml(impact.unselected_descendant_count ?? 0)} 个</div>
+                        <div><b>分类内商品：</b>${escapeHtml(impact.commodity_count ?? 0)} 个</div>
+                        <div><b>分类优惠券：</b>${escapeHtml(impact.coupon_count ?? 0)} 张</div>
+                        <div><b>商户分类映射：</b>${escapeHtml(impact.user_category_count ?? 0)} 条</div>
+                        <div><b>网站默认分类引用：</b>${escapeHtml(impact.config_reference_count ?? 0)} 条</div>
+                        <div><b>ThirdDockManage 克隆规则：</b>${escapeHtml(impact.third_dock_rule_count ?? 0)} 条</div>
+                    </div>`;
+                if (impact.can_delete !== true) {
+                    message.alert(
+                        `${impactSummary}<div style="margin-top:10px;color:#d14343;">系统已阻止删除，未删除任何数据。请先处理分类内商品、未选择的下级分类及上述直接引用；系统不会级联删除商品、优惠券、插件规则或历史数据。</div></div>`,
+                        'warning'
+                    );
+                    return;
+                }
+                const previewToken = String(impact.preview_token || '');
+                if (!previewToken) {
+                    message.error('服务器未返回有效的删除预览凭证，已阻止删除');
+                    return;
+                }
+                Swal.fire({
+                    title: selected.length > 1 ? `确认删除 ${selected.length} 个所选分类` : '确认删除分类',
+                    html: `${impactSummary}<div style="margin-top:10px;color:#d14343;">只会删除明确选择且不含商品、下级分类或任何业务引用的空分类。预览凭证 3 分钟内有效，范围变化会自动阻止删除；操作不可撤销。</div></div>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    cancelButtonText: '取消',
+                    confirmButtonText: '确认永久删除'
+                }).then(result => {
+                    if (result.isConfirmed === true || result.value === true) done(previewToken);
+                });
+            },
+            error: res => message.error(res?.msg || '无法计算删除影响，已阻止删除'),
+            fail: () => message.error('网络异常，已阻止删除')
+        });
+    };
+
+    if (typeof window.__mdTradeCategoryDestroy === 'function') window.__mdTradeCategoryDestroy();
+    const confirmCategoryStatus = (rows, status, done, options = {}) => {
+        const selected = (Array.isArray(rows) ? rows : []).filter(Boolean);
+        const enabling = Number(status) === 1;
+        if (!mobileAdminEnabled()) {
+            if (options.desktopConfirm) message.ask(null, done); else done();
+            return;
+        }
+        const names = selected.slice(0, 4).map(row => escapeHtml(row.name || `ID ${row.id}`));
+        Swal.fire({
+            title: enabling ? '确认启用分类' : '确认停用分类',
+            html: `<div style="text-align:left;line-height:1.8;">
+                <div><b>所选分类：</b>${names.join('、') || `共 ${selected.length} 个分类`}</div>
+                <div style="margin-top:10px;">${enabling
+                    ? '为保证层级完整，系统会同时启用所选分类尚未启用的上级分类。'
+                    : '系统会同时停用所选分类下的全部子分类，相关商品将不再通过这些分类展示。'}</div>
+            </div>`,
+            icon: enabling ? 'question' : 'warning',
+            showCancelButton: true,
+            cancelButtonText: '取消',
+            confirmButtonText: enabling ? '确认启用' : '确认停用'
+        }).then(result => {
+            if (result.isConfirmed === true || result.value === true) done();
+            else if (typeof options.cancel === 'function') options.cancel();
+        });
+    };
     const modal = (title, assign = {}) => {
+        const ownerId = Number(assign?.owner?.id ?? assign?.owner ?? 0) || 0;
         component.popup({
             submit: '/admin/api/category/save',
             tab: [
@@ -16,7 +106,7 @@
                             title: "父级分类",
                             name: "pid",
                             type: "treeSelect",
-                            dict: "category->owner=0,id,name,pid&tree=true",
+                            dict: `category->owner=${ownerId},id,name,pid&tree=true`,
                             placeholder: "父级分类，可不选",
                             parent: true
                         },
@@ -60,15 +150,16 @@
                                 dom.html(`<div class="mcy-card"><table id="category-group-table"></table></div>`);
 
                                 util.get("/admin/api/group/data", res => {
+                                    if (!controllerActive || form.isDestroyed) return;
                                     let raw = form.getData("user_level_config");
-                                    let configStr = raw ? decodeURIComponent(raw) : "{}";
                                     let config = {};
 
                                     try {
+                                        const source = raw ? String(raw) : "{}";
+                                        let configStr = source;
+                                        try { configStr = decodeURIComponent(source); } catch (error) {}
                                         config = JSON.parse(configStr);
-                                        if (typeof config != "object") {
-                                            config = {};
-                                        }
+                                        if (!config || typeof config !== "object" || Array.isArray(config)) config = {};
                                     } catch (e) {
                                         config = {};
                                     }
@@ -78,6 +169,7 @@
                                     }
 
                                     const groupTable = new Table(res.list, dom.find('#category-group-table'));
+                                    form.registerDisposable(groupTable);
 
                                     groupTable.setColumns([
                                         {
@@ -108,6 +200,9 @@
             autoPosition: true,
             height: "auto",
             width: "680px",
+            renderComplete: unique => {
+                $('.' + unique + ' input[name="sort"]').attr({inputmode: 'numeric', autocomplete: 'off'});
+            },
             done: () => {
                 table.refresh();
             }
@@ -115,7 +210,38 @@
     }
 
     table = new Table("/admin/api/category/data", "#category-table");
-    table.setUpdate("/admin/api/category/save");
+    table.setUpdate(data => {
+        const isStatus = Object.prototype.hasOwnProperty.call(data, 'status');
+        const row = table.getRows().find(item => Number(item.id) === Number(data.id));
+        const refresh = () => { if (controllerActive && table) table.refresh(true); };
+        const submit = () => {
+            const payload = isStatus
+                ? {list: [data.id], status: Number(data.status)}
+                : data;
+            util.post({
+                url: isStatus ? '/admin/api/category/status' : '/admin/api/category/save',
+                data: payload,
+                done: () => {
+                    if (!controllerActive) return;
+                    message.success('已更新 (｡•ᴗ-)');
+                    refresh();
+                },
+                error: res => {
+                    message.error(res?.msg || '分类更新失败');
+                    refresh();
+                },
+                fail: () => {
+                    message.error('网络异常，分类未更新');
+                    refresh();
+                }
+            });
+        };
+        if (isStatus) {
+            confirmCategoryStatus(row ? [row] : [], Number(data.status), submit, {cancel: refresh});
+            return;
+        }
+        submit();
+    });
     table.setTree(3);
     table.setColumns([
         {checkbox: true},
@@ -145,7 +271,7 @@
             field: 'hide', title: '隐藏', type: "switch", text: "隐藏|未隐藏"
         }
         , {
-            field: 'status', title: '状态', type: "switch", text: "启用|停用"
+            field: 'status', title: '状态', type: "switch", text: "启用|停用", mobileConfirm: false
         },
         {
             field: 'operation', title: '操作', type: 'button', buttons: [
@@ -159,8 +285,8 @@
                 {
                     icon: 'fa-duotone fa-regular fa-trash-can text-danger',
                     click: (event, value, row, index) => {
-                        message.ask("是否删除此分类？", () => {
-                            util.post('/admin/api/category/del', {list: [row.id]}, res => {
+                        confirmCategoryDelete([row], previewToken => {
+                            util.post('/admin/api/category/del', {list: [row.id], preview_token: previewToken}, res => {
                                 message.success("删除成功");
                                 table.refresh();
                             });
@@ -184,52 +310,65 @@
     table.render();
 
 
-    $('.btn-app-create').click(function () {
+    $('.btn-app-create').off(namespace).on('click' + namespace, function () {
         modal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> 添加分类`);
     });
 
-    $('.btn-app-del').click(() => {
+    $('.btn-app-del').off(namespace).on('click' + namespace, () => {
         let data = table.getSelectionIds();
         if (data.length == 0) {
             layer.msg("请至少勾选1个商品分类进行操作！");
             return;
         }
 
-        message.ask("注意，删除分类后无法恢复", () => {
-            util.post("/admin/api/category/del", {list: data}, res => {
+        confirmCategoryDelete(table.getSelections(), previewToken => {
+            util.post("/admin/api/category/del", {list: data, preview_token: previewToken}, res => {
                 message.success("删除成功")
                 table.refresh();
             });
         });
     });
 
-    $('.start').click(() => {
+    $('.start').off(namespace).on('click' + namespace, () => {
         let data = table.getSelectionIds();
         if (data.length == 0) {
             layer.msg("请至少勾选1个分类进行操作！");
             return;
         }
-        message.ask(null, () => {
+        confirmCategoryStatus(table.getSelections(), 1, () => {
             util.post("/admin/api/category/status", {list: data, status: 1}, res => {
                 message.success("启用成功");
                 table.refresh();
             });
-        });
+        }, {desktopConfirm: true});
     });
 
-    $('.stop').click(() => {
+    $('.stop').off(namespace).on('click' + namespace, () => {
         let data = table.getSelectionIds();
         if (data.length == 0) {
             layer.msg("请至少勾选1个分类进行操作！");
             return;
         }
-        message.ask(null, () => {
+        confirmCategoryStatus(table.getSelections(), 0, () => {
             util.post("/admin/api/category/status", {list: data, status: 0}, res => {
                 message.success("停用成功");
                 table.refresh();
             });
-        });
+        }, {desktopConfirm: true});
     });
+
+    function destroy() {
+        if (!controllerActive) return;
+        controllerActive = false;
+        $('.btn-app-create, .btn-app-del, .start, .stop').off(namespace);
+        $(document).off('pjax:beforeReplace' + namespace);
+        if (table && !table.isDestroyed && typeof table.destroy === 'function') table.destroy();
+        table = null;
+        if (window.__mdTradeCategoryDestroy === destroy) delete window.__mdTradeCategoryDestroy;
+    }
+
+    window.__mdTradeCategoryDestroy = destroy;
+    $(document).off('pjax:beforeReplace' + namespace).one('pjax:beforeReplace' + namespace, destroy);
 
 
 }();

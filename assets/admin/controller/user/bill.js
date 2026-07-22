@@ -1,8 +1,13 @@
 !function () {
-    const table = new Table("/admin/api/bill/data", "#bill-table");
+    const namespace = '.mdUserBillController';
+    let controllerActive = true;
+    let table;
+
+    if (typeof window.__mdUserBillDestroy === 'function') window.__mdUserBillDestroy();
+
+    table = new Table("/admin/api/bill/data", "#bill-table");
     table.setColumns([
-        {checkbox: true}
-        , {
+        {
             field: 'owner', title: '会员', formatter: (_, __) => mdUserCell(_)
         }
         , {
@@ -42,7 +47,7 @@
                 {id: 1, name: "硬币"},
             ]
         },
-        {title: "交易详情", name: "search-log", type: "input"},
+        {title: "交易详情", name: "search-log", type: "input", inputmode: 'search', enterkeyhint: 'search'},
         {title: "交易时间", name: "between-create_time", type: "date"}
     ]);
     table.setState("type", "_bill_status");
@@ -50,4 +55,16 @@
 
 
     table.render();
+
+    function destroy() {
+        if (!controllerActive) return;
+        controllerActive = false;
+        $(document).off('pjax:beforeReplace' + namespace);
+        if (table && !table.isDestroyed && typeof table.destroy === 'function') table.destroy();
+        table = null;
+        if (window.__mdUserBillDestroy === destroy) delete window.__mdUserBillDestroy;
+    }
+
+    window.__mdUserBillDestroy = destroy;
+    $(document).off('pjax:beforeReplace' + namespace).one('pjax:beforeReplace' + namespace, destroy);
 }();

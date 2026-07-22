@@ -1,5 +1,5 @@
-<!--begin::StatCard (Material icon+number) — params: col, accent, icon, label, value, vclass-->
-<div class="#{$col|default:'col-6 col-sm-4 col-xl-2'} mb-4 mb-xl-0">
+<!--begin::StatCard (Material icon+number) — params: accent, icon, label, value, vclass, itemClass-->
+<div class="md-stat-grid__item #{$itemClass|default:''}">
     <div class="md-stat md-stat--#{$accent|default:'primary'}">
         <div class="md-stat__icon"><i class="fa-duotone fa-regular #{$icon|default:'fa-chart-simple'}"></i></div>
         <div class="md-stat__body">

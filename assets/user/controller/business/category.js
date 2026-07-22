@@ -1,5 +1,14 @@
 !function () {
     let table;
+    const escapeHtml = value => String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    const safeInlineHtml = value => window.SeattleTheme && typeof window.SeattleTheme.safeInlineHtml === 'function'
+        ? window.SeattleTheme.safeInlineHtml(value)
+        : escapeHtml(value);
     const modal = (title, assign = {}) => {
         component.popup({
             submit: '/user/api/category/save',
@@ -59,11 +68,11 @@
     table.setColumns([
         {field: 'icon', title: '', type: "image", style: "border-radius:25%;", width: 28},
         {
-            field: 'name', title: '分类名称'
+            field: 'name', title: '分类名称', class: 'nowrap', width: 180, formatter: value => safeInlineHtml(value || '—')
         }
-        , {field: 'sort', title: '排序(越小越前)', sort: true, type: "input", reload: true}
+        , {field: 'sort', title: '排序(越小越前)', sort: true, type: "input", reload: true, class: 'nowrap', width: 150}
         , {
-            field: 'share_url', title: '推广链接', type: "button", buttons: [
+            field: 'share_url', title: '推广链接', type: "button", class: 'nowrap', width: 100, buttons: [
                 {
                     icon: 'fa-duotone fa-regular fa-copy',
                     class: "text-primary",
@@ -77,19 +86,21 @@
             ]
         }
         , {
-            field: 'status', title: '状态', type: "switch", text: "启用|停用", reload: true
+            field: 'status', title: '状态', type: "switch", text: "启用|停用", reload: true, class: 'nowrap', width: 96
         },
         {
-            field: 'operation', title: '操作', type: 'button', buttons: [
+            field: 'operation', title: '操作', type: 'button', class: 'nowrap', width: 140, buttons: [
                 {
                     icon: 'fa-duotone fa-regular fa-pen-to-square',
                     class: "text-primary",
+                    title: "编辑",
                     click: (event, value, row, index) => {
                         modal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + "修改分类", row);
                     }
                 },
                 {
                     icon: 'fa-duotone fa-regular fa-trash-can text-danger',
+                    title: "删除",
                     click: (event, value, row, index) => {
                         message.ask("是否删除此分类？", () => {
                             util.post('/user/api/category/del', {id: row.id}, res => {

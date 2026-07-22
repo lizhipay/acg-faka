@@ -184,6 +184,7 @@
   function setMessageCount(count) {
     count = Math.max(0, parseInt(count, 10) || 0);
     doc.querySelectorAll('.uc-message-badge, .uc-message-drawer-badge').forEach(function (badge) {
+      badge.classList.remove('is-error');
       badge.textContent = count > 99 ? '99+' : String(count);
       badge.classList.toggle('is-empty', count < 1);
       badge.setAttribute('aria-label', count > 0 ? count + ' 条未读消息' : '没有未读消息');
@@ -192,6 +193,25 @@
     if (button) button.setAttribute('aria-label', count > 0 ? count + ' 条未读消息' : '没有未读消息');
     var label = doc.querySelector('.uc-message-dropdown__count');
     if (label) label.textContent = count > 0 ? count + ' 条未读' : '暂无未读';
+  }
+
+  function renderMessageLoadFailure() {
+    var container = doc.querySelector('.uc-message-recent');
+    if (container) {
+      container.innerHTML = '<button type="button" class="uc-message-recent__retry"><span class="material-icons-outlined" aria-hidden="true">cloud_off</span><strong>消息加载失败</strong><span>点击重新加载</span></button>';
+    }
+    window.__ucMessagePendingRecent = null;
+    window.__ucMessageRecentSignature = null;
+    doc.querySelectorAll('.uc-message-badge, .uc-message-drawer-badge').forEach(function (badge) {
+      badge.textContent = '!';
+      badge.classList.remove('is-empty');
+      badge.classList.add('is-error');
+      badge.setAttribute('aria-label', '消息加载失败');
+    });
+    var button = doc.querySelector('.uc-message-btn');
+    if (button) button.setAttribute('aria-label', '消息加载失败，点击重试');
+    var label = doc.querySelector('.uc-message-dropdown__count');
+    if (label) label.textContent = '加载失败';
   }
 
   function renderRecentMessages(rows) {
@@ -223,10 +243,7 @@
       success: function (res) {
         if (version !== messageRequestVersion) return;
         if (!res || res.code !== 200) {
-          var failed = doc.querySelector('.uc-message-recent');
-          if (failed && failed.querySelector('.uc-message-recent__loading')) {
-            failed.innerHTML = '<button type="button" class="uc-message-recent__retry"><span class="material-icons-outlined">cloud_off</span><span>消息加载失败，点击重试</span></button>';
-          }
+          renderMessageLoadFailure();
           return;
         }
         var payload = res.data || {};
@@ -266,10 +283,7 @@
       },
       error: function () {
         if (version !== messageRequestVersion) return;
-        var container = doc.querySelector('.uc-message-recent');
-        if (container && container.querySelector('.uc-message-recent__loading')) {
-          container.innerHTML = '<button type="button" class="uc-message-recent__retry"><span class="material-icons-outlined">cloud_off</span><span>消息加载失败，点击重试</span></button>';
-        }
+        renderMessageLoadFailure();
       }
     });
   }

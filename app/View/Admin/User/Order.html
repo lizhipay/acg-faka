@@ -10,13 +10,15 @@
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
             <!--begin::Row-->
-            <div class="row g-4">
-                #{include file="../Component/StatCard.html" col="col-12 col-sm-6" accent="primary" icon="fa-receipt" label="订单数量" vclass="order_count" value="—"}
-                #{include file="../Component/StatCard.html" col="col-12 col-sm-6" accent="success" icon="fa-circle-dollar" label="订单金额" vclass="order_amount" value="—"}
+            <h2 class="admin-mobile-only-section">充值概览</h2>
+            <div class="md-stat-grid" data-admin-mobile-stats="mini" role="region" aria-label="会员订单数据概览">
+                #{include file="../Component/StatCard.html" accent="primary" icon="fa-receipt" label="订单数量" vclass="order_count" value="—"}
+                #{include file="../Component/StatCard.html" accent="success" icon="fa-circle-dollar" label="订单金额" vclass="order_amount" value="—"}
             </div>
             <!--end::Row-->
 
             <!--begin::Tables Widget 9-->
+            <h2 class="admin-mobile-only-section">充值订单</h2>
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->
                 <div class="card-header">

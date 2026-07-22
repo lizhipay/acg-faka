@@ -4,6 +4,34 @@
         position: relative !important;
         overflow: auto !important;
     }
+
+    .md-user-wechat-qr {
+        display: grid;
+        min-height: 245px;
+        place-items: center;
+        overflow: hidden;
+    }
+
+    @media (max-width: 991.98px) {
+        html[data-admin-layout="mobile"] .md-user-qr-layer .layui-layer-content {
+            display: grid;
+            place-items: center;
+        }
+
+        html[data-admin-layout="mobile"] .md-user-wechat-qr {
+            width: 100%;
+            min-height: 220px;
+        }
+
+        html[data-admin-layout="mobile"] .md-user-business-detail .md-detail__row {
+            grid-template-columns: minmax(82px, 32%) minmax(0, 1fr);
+        }
+
+        html[data-admin-layout="mobile"] .md-user-wechat-qr-trigger {
+            min-width: 72px;
+            min-height: 44px;
+        }
+    }
 </style>
 <!--start::HOOK-->
 #{hook(\App\Consts\Hook::ADMIN_VIEW_USER_HEADER)}
@@ -18,17 +46,19 @@
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
             <!--begin::Row-->
-            <div class="row g-4">
-                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="primary" icon="fa-users" label="总用户" value=$userCount}
-                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="success" icon="fa-shop" label="商家" value=$businessCount}
-                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="primary" icon="fa-wallet" label="当前余额" value=$balance}
-                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="success" icon="fa-money-bill-wave" label="总充值" value=$recharge}
-                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="warning" icon="fa-coins" label="当前硬币" value=$coin}
-                #{include file="../Component/StatCard.html" col="col-6 col-sm-4 col-xl-2" accent="success" icon="fa-coins" label="总获得硬币" value=$totalCoin}
+            <h2 class="admin-mobile-only-section">会员概览</h2>
+            <div class="md-stat-grid" data-admin-mobile-stats="mini" role="region" aria-label="会员数据概览">
+                #{include file="../Component/StatCard.html" accent="primary" icon="fa-users" label="总用户" value=$userCount}
+                #{include file="../Component/StatCard.html" accent="success" icon="fa-shop" label="商家" value=$businessCount}
+                #{include file="../Component/StatCard.html" accent="primary" icon="fa-wallet" label="当前余额" value=$balance itemClass="md-stat-grid__item--wide"}
+                #{include file="../Component/StatCard.html" accent="success" icon="fa-money-bill-wave" label="总充值" value=$recharge itemClass="md-stat-grid__item--wide"}
+                #{include file="../Component/StatCard.html" accent="warning" icon="fa-coins" label="当前硬币" value=$coin itemClass="md-stat-grid__item--wide"}
+                #{include file="../Component/StatCard.html" accent="success" icon="fa-coins" label="总获得硬币" value=$totalCoin itemClass="md-stat-grid__item--wide"}
             </div>
             <!--end::Row-->
 
             <!--begin::Tables Widget 9-->
+            <h2 class="admin-mobile-only-section">会员列表</h2>
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->
                 <div class="card-header">

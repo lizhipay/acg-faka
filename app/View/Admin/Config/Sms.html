@@ -1,4 +1,37 @@
 #{include file="../Header.html"}
+<style>
+    :root[data-theme] .md-config-send-test {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        direction: ltr;
+    }
+
+    :root[data-theme] .md-config-send-test .md-message-send-icon {
+        margin: 0;
+        vertical-align: 0;
+    }
+
+    @media (max-width: 991.98px) {
+        html[data-admin-layout="mobile"] .md-config-test-layer .layui-layer-input {
+            box-sizing: border-box;
+            width: 100%;
+            height: 52px;
+            border: 0;
+            border-radius: 16px;
+            padding: 0 16px;
+            background: var(--admin-mobile-surface-2);
+            color: var(--admin-mobile-text);
+            font-size: 16px;
+            outline: 0;
+        }
+
+        html[data-admin-layout="mobile"] .md-config-test-layer .layui-layer-input:focus {
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-mobile-primary) 20%, transparent);
+        }
+    }
+</style>
 
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
@@ -24,9 +57,11 @@
                 <!--begin::Content-->
                 <div id="kt_account_profile_details" class="collapse show">
                     <!--begin::Form-->
-                    <form id="data-form" class="form">
+                    <form id="data-form" class="form" data-admin-mobile-settings-page="sms">
                         <!--begin::Card body-->
                         <div class="card-body p-9">
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-sms-service"
+                                data-admin-mobile-description="选择短信平台，并填写当前平台发送验证码所需的配置信息。">短信服务配置</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -55,9 +90,11 @@
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
-                                    <input type="text" name="accessKeyId"
+                                    <input type="password" name="accessKeyId_secret"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入accessKeyId" value="#{$sms.accessKeyId}"/>
+                                           autocomplete="new-password" autocapitalize="none" spellcheck="false"
+                                           maxlength="256"
+                                           placeholder="留空则保留现有 AccessKeyId" value=""/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -69,9 +106,11 @@
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
-                                    <input type="text" name="accessKeySecret"
+                                    <input type="password" name="accessKeySecret"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入accessKeySecret" value="#{$sms.accessKeySecret}"/>
+                                           autocomplete="new-password" autocapitalize="none" spellcheck="false"
+                                           maxlength="512"
+                                           placeholder="留空则保留现有 AccessKeySecret" value=""/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -85,7 +124,7 @@
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="signName"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入签名名称" value="#{$sms.signName}"/>
+                                           placeholder="请输入签名名称" value="#{$sms.signName|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -99,7 +138,7 @@
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="templateCode"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入模板CODE" value="#{$sms.templateCode}"/>
+                                           placeholder="请输入模板CODE" value="#{$sms.templateCode|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -113,9 +152,11 @@
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
-                                    <input type="text" name="tencentSecretId"
+                                    <input type="password" name="tencentSecretId"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入secretId" value="#{$sms.tencentSecretId}"/>
+                                           autocomplete="new-password" autocapitalize="none" spellcheck="false"
+                                           maxlength="256"
+                                           placeholder="留空则保留现有 SecretId" value=""/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -127,9 +168,11 @@
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
-                                    <input type="text" name="tencentSecretKey"
+                                    <input type="password" name="tencentSecretKey"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入secretKey" value="#{$sms.tencentSecretKey}"/>
+                                           autocomplete="new-password" autocapitalize="none" spellcheck="false"
+                                           maxlength="512"
+                                           placeholder="留空则保留现有 SecretKey" value=""/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -142,8 +185,10 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="tencentSdkAppId"
+                                           inputmode="numeric"
+                                           pattern="[0-9]+"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入sdkAppId" value="#{$sms.tencentSdkAppId}"/>
+                                           placeholder="请输入sdkAppId" value="#{$sms.tencentSdkAppId|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -157,7 +202,7 @@
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="tencentSignName"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入签名名称" value="#{$sms.tencentSignName}"/>
+                                           placeholder="请输入签名名称" value="#{$sms.tencentSignName|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -170,8 +215,10 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="tencentTemplateId"
+                                           inputmode="numeric"
+                                           pattern="[0-9]+"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入模板ID" value="#{$sms.tencentTemplateId}"/>
+                                           placeholder="请输入模板ID" value="#{$sms.tencentTemplateId|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -187,7 +234,7 @@
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="dxbao_username"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入短信宝账号" value="#{$sms.dxbao_username}"/>
+                                           placeholder="请输入短信宝账号" value="#{$sms.dxbao_username|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -200,9 +247,11 @@
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
-                                    <input type="text" name="dxbao_password"
+                                    <input type="password" name="dxbao_password"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="请输入短信宝密码" value="#{$sms.dxbao_password}"/>
+                                           autocomplete="new-password" autocapitalize="none" spellcheck="false"
+                                           maxlength="512"
+                                           placeholder="留空则保留现有短信宝密码" value=""/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -217,7 +266,7 @@
                                     <input type="text" name="dxbao_template"
                                            class="form-control form-control-lg form-control-solid"
                                            placeholder="模板，如：【XXX】您的验证码为{code}，在5分钟内有效。"
-                                           value="#{$sms.dxbao_template}"/>
+                                           value="#{$sms.dxbao_template|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -227,10 +276,9 @@
                         <!--end::Card body-->
                         <!--begin::Actions-->
                         <div class="card-footer d-flex justify-content-center py-6 px-9">
-                            <button type="button" class="btn btn-success send-test-message m-1"><i class="fa-duotone fa-regular fa-paper-plane me-2"></i>发送测试短信 (Send Test
-                                Message)
+                            <button type="button" class="btn btn-success send-test-message md-config-send-test m-1"><svg class="md-message-send-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.5 6.5h10a2 2 0 0 1 2 2v2.25M3.5 7l5 4 5-4M3.5 6.5v9a2 2 0 0 0 2 2h7.25M14 14h6m-2.5-2.5L20 14l-2.5 2.5"/></svg><span>发送测试短信</span>
                             </button>
-                            <button type="button" class="btn btn-primary save-data m-1"><i class="fa-duotone fa-regular fa-floppy-disk me-2"></i>保存设置 (Save Config)</button>
+                            <button type="button" class="btn btn-primary save-data m-1"><i class="fa-duotone fa-regular fa-floppy-disk me-2"></i>保存设置</button>
                         </div>
                         <!--end::Actions-->
                     </form>

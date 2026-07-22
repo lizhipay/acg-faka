@@ -21,12 +21,19 @@ class Cash implements \App\Service\Cash
      */
     public function settlement(float $amount): void
     {
-        $users = User::query()->where("coin", ">=", $amount)->get();
+        if (!is_finite($amount) || $amount <= 0) {
+            throw new \InvalidArgumentException("最低结算金额必须大于 0");
+        }
+
+        $users = User::query()->where("coin", ">=", $amount)->where("coin", ">", 0)->get();
         $date = Date::current();
         foreach ($users as $user) {
             try {
-                DB::transaction(function () use ($date, $user) {
-                    $usr = User::query()->find($user->id);
+                DB::transaction(function () use ($amount, $date, $user) {
+                    $usr = User::query()->lockForUpdate()->find($user->id);
+                    if (!$usr || (float)$usr->coin < $amount || (float)$usr->coin <= 0) {
+                        return;
+                    }
                     $cash = new \App\Model\Cash();
                     $cash->user_id = $usr->id;
                     $cash->amount = $usr->coin;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Model;
 
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -55,6 +56,25 @@ class Order extends Model
      * @var array
      */
     protected $casts = ['amount' => 'float', 'cost' => 'float', 'rebate' => 'float', 'divide_amount' => 'float', 'rent' => 'float', 'premium' => 'float', 'user_id' => 'integer', 'substation_user_id' => 'integer', 'from' => 'integer', 'commodity_id' => 'integer', 'card_id' => 'integer', 'card_num' => 'integer', 'create_device' => 'integer', 'delivery_status' => 'integer', 'id' => 'integer', 'owner' => 'integer', 'pay_id' => 'integer', 'status' => 'integer', 'sku' => 'json'];
+
+    /**
+     * 当前商户作为供货方或实际销售分站时可见。
+     */
+    public function scopeVisibleToMerchant(Builder $query, int $userId): Builder
+    {
+        return $query->where(function (Builder $scope) use ($userId) {
+            $scope->where('user_id', $userId)
+                ->orWhere('substation_user_id', $userId);
+        });
+    }
+
+    /**
+     * 仅限真实供货方，用于交付内容和发货等敏感能力。
+     */
+    public function scopeSuppliedByMerchant(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId);
+    }
 
     public function owner(): ?HasOne
     {

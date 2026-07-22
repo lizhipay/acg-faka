@@ -15,6 +15,7 @@ use App\Util\Client;
 use App\Util\Date;
 use App\Util\Ini;
 use App\Util\Str;
+use Illuminate\Database\Capsule\Manager as DB;
 use Illuminate\Database\Eloquent\Builder;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
@@ -87,42 +88,62 @@ class Commodity extends User
     {
         $map = $request->post(flags: Filter::NORMAL);
         $user = $this->getUser();
+        $id = isset($map['id']) ? (int)$map['id'] : 0;
+        $isCreate = $id <= 0;
+        $commodity = null;
 
-
-        if (isset($map['category_id']) && !\App\Model\Category::query()->where("owner", $user->id)->where("id", $map['category_id'])->exists()) {
-            throw new JSONException("分类不存在");
+        if ($id > 0) {
+            $commodity = \App\Model\Commodity::query()
+                ->where("owner", $user->id)
+                ->find($id);
+            if (!$commodity) {
+                throw new JSONException("该商品不存在");
+            }
         }
 
-        //--验证自身
-        if (!empty($map['id']) && !\App\Model\Commodity::query()->where("id", $map['id'])->where("owner", $user->id)->exists()) {
-            throw new JSONException("该商品不存在");
+        if ($isCreate && !isset($map['category_id'])) {
+            throw new JSONException("请选择商品分类");
         }
 
-        if (isset($map['name']) && empty($map['name'])) {
+        if (($isCreate && !isset($map['name'])) || (isset($map['name']) && trim((string)$map['name']) === '')) {
             throw new JSONException("商品名称不能为空哦(｡￫‿￩｡)");
         }
 
-        if (isset($map['price']) && ($map['price'] < 0 || $map['user_price'] < 0)) {
+        if ((isset($map['price']) && (float)$map['price'] < 0)
+            || (isset($map['user_price']) && (float)$map['user_price'] < 0)) {
             throw new JSONException("商品单价不能低于0元哦(｡￫‿￩｡)");
         }
 
         //create new
-        if (!isset($map['id'])) {
+        if ($isCreate) {
+            unset($map['id']);
             $map['code'] = strtoupper(Str::generateRandStr(16));
         }
 
-
-        if (isset($map['seckill_status']) && $map['seckill_status'] == 1) {
-            if (!$map['seckill_start_time'] || !$map['seckill_end_time']) {
+        $touchesSeckill = array_key_exists('seckill_status', $map)
+            || array_key_exists('seckill_start_time', $map)
+            || array_key_exists('seckill_end_time', $map);
+        $seckillStatus = isset($map['seckill_status'])
+            ? (int)$map['seckill_status']
+            : (int)($commodity?->seckill_status ?? 0);
+        if ($touchesSeckill && $seckillStatus === 1) {
+            $seckillStart = (string)($map['seckill_start_time'] ?? $commodity?->seckill_start_time ?? '');
+            $seckillEnd = (string)($map['seckill_end_time'] ?? $commodity?->seckill_end_time ?? '');
+            if ($seckillStart === '' || $seckillEnd === '') {
                 throw new JSONException("您开启了秒杀功能，所以请指定秒杀的开始时间和结束时间哦(｡￫‿￩｡)");
             }
-            if (strtotime($map['seckill_end_time']) < strtotime($map['seckill_start_time'])) {
+            if (strtotime($seckillEnd) < strtotime($seckillStart)) {
                 throw new JSONException("秒杀结束时间不能低于秒杀开始时间哦，请认真指定秒杀结束时间(｡￫‿￩｡)");
             }
         }
 
-        if (isset($map['draft_status']) && $map['draft_status'] == 1) {
-            if ($map['draft_premium'] === "") {
+        $touchesDraft = array_key_exists('draft_status', $map) || array_key_exists('draft_premium', $map);
+        $draftStatus = isset($map['draft_status'])
+            ? (int)$map['draft_status']
+            : (int)($commodity?->draft_status ?? 0);
+        if ($touchesDraft && $draftStatus === 1) {
+            $draftPremium = $map['draft_premium'] ?? $commodity?->draft_premium ?? '';
+            if ($draftPremium === '') {
                 throw new JSONException("您开启了预选卡密功能，请填写预选时的溢价(｡￫‿￩｡)");
             }
         }
@@ -138,17 +159,47 @@ class Commodity extends User
         }
 
         //解析配置文件
-        if ($map['config']) {
-            Ini::toArray($map['config']);
+        if (array_key_exists('config', $map) && $map['config'] !== '') {
+            Ini::toArray((string)$map['config']);
         }
 
         $save = new Save(\App\Model\Commodity::class);
         $save->setMap($map);
         $save->addForceMap("owner", $user->id);
-        $save->addForceMap("config", $map['config'] ?? "");
+        // 表格中的上下架开关只提交 id/status。只有请求明确携带 config 时才覆盖，
+        // 避免一次快捷操作把商品 SKU 等高级配置清空。
+        if (array_key_exists('config', $map)) {
+            $save->addForceMap("config", (string)$map['config']);
+        }
         $save->enableCreateTime();
-        $save = $this->query->save($save);
-        if (!$save) {
+        $saved = DB::transaction(function () use ($save, $map, $id, $user) {
+            // Keep the lock order identical to category deletion: target
+            // Category first, then the existing Commodity row when editing.
+            if (array_key_exists('category_id', $map)) {
+                $category = \App\Model\Category::query()
+                    ->where('owner', (int)$user->id)
+                    ->where('id', (int)$map['category_id'])
+                    ->lockForUpdate()
+                    ->first();
+                if (!$category) {
+                    throw new JSONException('分类不存在');
+                }
+            }
+
+            if ($id > 0) {
+                $lockedCommodity = \App\Model\Commodity::query()
+                    ->where('owner', (int)$user->id)
+                    ->where('id', $id)
+                    ->lockForUpdate()
+                    ->first();
+                if (!$lockedCommodity) {
+                    throw new JSONException('该商品不存在');
+                }
+            }
+
+            return $this->query->save($save);
+        });
+        if (!$saved) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
         return $this->json(200, '（＾∀＾）保存成功');

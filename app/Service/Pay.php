@@ -34,4 +34,14 @@ interface Pay
      * @return bool
      */
     public function ClearPluginLog(string $handle): bool;
+
+    /**
+     * Persist only configuration fields declared by the selected payment
+     * plugin (plus the explicit admin-only `top` flag).
+     *
+     * @param string $name
+     * @param array $config
+     * @return void
+     */
+    public function savePluginConfig(string $name, array $config): void;
 }

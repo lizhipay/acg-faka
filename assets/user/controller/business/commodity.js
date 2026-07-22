@@ -1,5 +1,31 @@
 !function () {
     let table, _createForms = [];
+    const isSeattleCommodity = Boolean(document.querySelector('[data-st-page="commodity"]'));
+    const escapeHtml = value => String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    const safeInlineHtml = value => window.SeattleTheme && typeof window.SeattleTheme.safeInlineHtml === 'function'
+        ? window.SeattleTheme.safeInlineHtml(value)
+        : escapeHtml(value);
+    const pairedMetric = (firstLabel, firstValue, secondLabel, secondValue) => {
+        const value = item => escapeHtml(item == null || item === '' ? '—' : item);
+        return `<span class="st-commodity-pair"><span><small>${escapeHtml(firstLabel)}</small><strong>${value(firstValue)}</strong></span><span><small>${escapeHtml(secondLabel)}</small><strong>${value(secondValue)}</strong></span></span>`;
+    };
+    const safeItem = item => {
+        if (!item) return '-';
+        if (!isSeattleCommodity) {
+            const image = item.cover ? `<img src="${escapeHtml(item.cover)}" class="table-item-icon" alt="">` : '';
+            return `<span class="table-item">${image}<span class="table-item-name">${safeInlineHtml(item.name || '未命名商品')}</span></span>`;
+        }
+        const image = item.cover
+            ? `<span class="st-commodity-product-cell__media"><img src="${escapeHtml(item.cover)}" alt=""></span>`
+            : '<span class="st-commodity-product-cell__media"><span class="material-icons-outlined" aria-hidden="true">inventory_2</span></span>';
+        const category = item.category && item.category.name ? item.category.name : '未分类';
+        return `<span class="st-commodity-product-cell">${image}<span class="st-commodity-product-cell__copy"><strong>${safeInlineHtml(item.name || '未命名商品')}</strong><small>${safeInlineHtml(category)}</small></span></span>`;
+    };
     const modal = (title, assign = {}) => {
         component.popup({
             submit: '/user/api/commodity/save',
@@ -178,7 +204,7 @@
                             default: 0,
                             placeholder: "单次最大购买数量"
                         },
-                        {title: "优惠卷", name: "coupon", type: "switch"},
+                        {title: "优惠券", name: "coupon", type: "switch"},
                         {
                             title: "限时秒杀",
                             name: "seckill_status",
@@ -273,7 +299,7 @@
                         {title: false, name: "config", type: "textarea", placeholder: "配置参数", height: 480},
                         {
                             title: false, name: "config_tips", type: "custom", complete: (_, __) => {
-                                __.html(`<b style='color: red;'>配置参数里面包括了商品种类，多SKU等高阶功能，详细使用方法请查看文档：<a href='https://faka.wiki/#/zh-cn/goods-config' target='_blank'>https://faka.wiki/#/zh-cn/goods-config</a></b>`);
+                                __.html(`<div class="uc-cardtip"><div class="uc-cardtip__warn"><span class="material-icons-outlined">info</span><span>配置参数包含商品种类、多 SKU 等高级功能。修改前请先阅读<a href="https://faka.wiki/#/zh-cn/goods-config" target="_blank" rel="noopener noreferrer">配置文档</a>。</span></div></div>`);
                             }
                         },
                     ]
@@ -317,8 +343,9 @@
                                 _.clearComponent("race");
                                 _.hide("race_get_mode");
                                 _createForms.forEach(k => _.removeForm(k));
+                                _createForms = [];
 
-                                util.get(`/admin/api/card/sku?commodityId=${commodityId}`, data => {
+                                util.get(`/user/api/card/sku?commodityId=${commodityId}`, data => {
                                     if (!util.isEmptyOrNotJson(data?.category)) {
                                         let i = 0;
                                         for (const cKey in data.category) {
@@ -459,31 +486,50 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
     }
 
     table = new Table("/user/api/commodity/data", "#commodity-table");
-    table.setUpdate("/admin/api/commodity/save");
+    table.setUpdate("/user/api/commodity/save");
     table.setColumns([
         {
-            field: 'category.name', title: '分类'
+            field: 'category.name', title: '分类', class: 'nowrap', width: 120,
+            visible: !isSeattleCommodity,
+            formatter: value => safeInlineHtml(value || '—')
         }
         , {
-            field: 'name', title: '商品名称', formatter: (_, __) => format.item(__)
+            field: 'name', title: isSeattleCommodity ? '商品' : '商品名称', class: 'nowrap',
+            width: isSeattleCommodity ? 220 : 180,
+            formatter: (_, __) => safeItem(__)
         }
         , {
-            field: 'card_count', title: '库存', formatter: function (val, item) {
+            field: 'card_count', title: '库存', class: 'nowrap', width: isSeattleCommodity ? 104 : 120, formatter: function (val, item) {
                 if (item.delivery_way == 0) {
-                    return item.card_count + ` <a class='add-card' data-id='${item.id}' style='color: green;' href='javascript:void(0);'>加卡</a>`;
+                    return `${item.card_count} <button type="button" class="add-card a-badge-glass nowrap" data-id="${item.id}" title="上传卡密" aria-label="为此商品上传卡密">上传卡密</button>`;
                 }
                 return item.stock;
             }
         }
-        , {field: 'price', title: '零售价'}
-        , {field: 'user_price', title: '会员价'}
-        , {field: 'order_today_amount', title: '今日'}
-        , {field: 'order_yesterday_amount', title: '昨日'}
-        , {field: 'order_week_amount', title: '本周'}
-        , {field: 'order_all_amount', title: '全部'}
-        , {field: 'sort', title: '排序'}
+        , ...(isSeattleCommodity ? [
+            {
+                field: 'st_price_pair', title: '售价', class: 'nowrap st-commodity-pair-column', width: 100,
+                formatter: (_, item) => pairedMetric('零售', item.price, '会员', item.user_price)
+            },
+            {
+                field: 'st_recent_pair', title: '近两日', class: 'nowrap st-commodity-pair-column', width: 100,
+                formatter: (_, item) => pairedMetric('今日', item.order_today_amount, '昨日', item.order_yesterday_amount)
+            },
+            {
+                field: 'st_total_pair', title: '销量', class: 'nowrap st-commodity-pair-column', width: 100,
+                formatter: (_, item) => pairedMetric('本周', item.order_week_amount, '全部', item.order_all_amount)
+            }
+        ] : [
+            {field: 'price', title: '零售价', class: 'nowrap', width: 90},
+            {field: 'user_price', title: '会员价', class: 'nowrap', width: 90},
+            {field: 'order_today_amount', title: '今日', class: 'nowrap', width: 80},
+            {field: 'order_yesterday_amount', title: '昨日', class: 'nowrap', width: 80},
+            {field: 'order_week_amount', title: '本周', class: 'nowrap', width: 80},
+            {field: 'order_all_amount', title: '全部', class: 'nowrap', width: 80}
+        ])
+        , {field: 'sort', title: '排序', class: 'nowrap', width: 80}
         , {
-            field: 'share_url', title: '推广链接', type: "button", buttons: [
+            field: 'share_url', title: '推广链接', type: "button", class: 'nowrap', width: 100, buttons: [
                 {
                     icon: 'fa-duotone fa-regular fa-copy',
                     class: "text-primary",
@@ -497,13 +543,14 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
             ]
         }
         , {
-            field: 'status', title: '状态', type: "switch", text: "上架|下架", reload: true, class: "nowrap"
+            field: 'status', title: '状态', type: "switch", text: "上架|下架", reload: true, class: "nowrap", width: 96
         },
         {
-            field: 'operation', title: '操作', type: 'button', buttons: [
+            field: 'operation', title: '操作', type: 'button', class: 'nowrap', width: 210, buttons: [
                 {
                     icon: 'fa-duotone fa-regular fa-pen-to-square',
                     class: "text-primary",
+                    title: "编辑",
                     click: (event, value, row, index) => {
                         modal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + "修改商品", row);
                     }
@@ -511,6 +558,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
                 {
                     icon: 'fa-duotone fa-regular fa-copy',
                     class: "text-warning",
+                    title: "克隆",
                     click: (event, value, row, index) => {
                         const clone = {...row};
                         delete clone.id;
@@ -520,6 +568,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
                 {
                     icon: 'fa-duotone fa-regular fa-trash-can',
                     class: "text-danger",
+                    title: "删除",
                     click: (event, value, row, index) => {
                         message.ask("是否删除此商品？", () => {
                             util.post('/user/api/commodity/del', {id: row.id}, res => {
@@ -556,7 +605,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
             field: 'password_status', title: '订单密码', dict: "_commodity_api_status"
         },
         {
-            field: 'coupon', title: '优惠卷', dict: "_commodity_api_status"
+            field: 'coupon', title: '优惠券', dict: "_commodity_api_status"
         },
         {
             field: 'seckill_status', title: '商品秒杀', dict: "_commodity_api_status"

@@ -619,6 +619,15 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
   border-radius: 2px 2px 0 0;
 }
 
+/* --- Responsive stat-card grids: react to the CONTENT width, not just the viewport breakpoint. --- */
+:root[data-theme] .md-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+:root[data-theme] .md-stat-grid__item { min-width: 0; }
+
 /* --- Stat cards (.md-stat) : label+value LEFT, SOFT-TINT accent tile TOP-RIGHT (方案C 淡彩素雅) --- */
 :root[data-theme] .md-stat {
   display: flex;
@@ -648,13 +657,16 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 :root[data-theme] .md-stat__value {
-  font-size: 25px;
+  font-size: clamp(21px, 1.35vw, 25px);
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: -.3px;
   color: var(--md-on-surface);
   font-variant-numeric: tabular-nums;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
 }
 /* soft-tint tile: accent @14% fill + a delicate accent inner ring + accent-coloured glyph. The accent
    glyph reads on BOTH themes (dark = light accent on dark tint; light = dark accent on light tint),
@@ -681,6 +693,17 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
 :root[data-theme] .md-stat--warning   { --stat: var(--md-warning);   --stat-rgb: var(--md-warning-rgb); }
 :root[data-theme] .md-stat--info      { --stat: var(--md-info);      --stat-rgb: var(--md-info-rgb); }
 :root[data-theme] .md-stat--secondary { --stat: var(--md-secondary); --stat-rgb: var(--md-secondary-rgb); }
+
+@media (max-width: 575px) {
+  :root[data-theme] .md-stat-grid { gap: 12px; margin-bottom: 20px; }
+  :root[data-theme] .md-stat { min-height: 88px; padding: 16px 18px; }
+  :root[data-theme] .md-stat__label { margin-bottom: 7px; }
+  :root[data-theme] .md-stat__value { font-size: 22px; }
+  :root[data-theme] .md-stat__icon { width: 42px; height: 42px; border-radius: 12px; }
+  :root[data-theme] .md-stat__icon > i,
+  :root[data-theme] .md-stat__icon > .material-icons,
+  :root[data-theme] .md-stat__icon > .material-icons-outlined { font-size: 24px; }
+}
 
 /* --- Global card-header typography + rhythm --- */
 :root[data-theme] .card .card-header .card-title,
@@ -939,6 +962,28 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
   font-size: 12px; color: var(--md-on-surface-med);
 }
 :root[data-theme] .md-ad-item__time i { font-size: 12px; }
+:root[data-theme] .dashboard-data-feedback:not([hidden]),
+:root[data-theme] .dashboard-chart-feedback:not([hidden]) { display: block; margin-bottom: 12px; }
+:root[data-theme] .dashboard-request-state {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 10px 12px;
+  border: 1px solid rgba(var(--md-error-rgb), .22);
+  border-radius: var(--md-radius);
+  background: rgba(var(--md-error-rgb), .07);
+  color: var(--md-on-surface);
+}
+:root[data-theme] .dashboard-request-state > .material-icons-outlined { color: var(--md-error); font-size: 22px; }
+:root[data-theme] .dashboard-request-state__message { min-width: 0; line-height: 1.5; overflow-wrap: anywhere; }
+:root[data-theme] .dashboard-request-state__retry { min-width: 96px; min-height: 44px; }
+:root[data-theme] .ad-html .dashboard-request-state { width: 100%; }
+@media (max-width: 479.98px) {
+  :root[data-theme] .dashboard-request-state { grid-template-columns: auto minmax(0, 1fr); }
+  :root[data-theme] .dashboard-request-state__retry { grid-column: 1 / -1; width: 100%; }
+}
 
 /* --- Form pages (Config/*, Manage/Set): typography + rhythm --- */
 :root[data-theme] .col-form-label,
@@ -1087,7 +1132,7 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
 }
 /* unify config buttons: icon + label, MUI alignment */
 :root[data-theme] .md-settings .card-footer .btn { display: inline-flex; align-items: center; }
-:root[data-theme] .md-settings > .card { margin-bottom: 0 !important; }
+:root[data-theme] .md-settings > .card:last-child { margin-bottom: 0 !important; }
 :root[data-theme] .md-settings .card > .card-header { display: none !important; }
 
 /* ---- card-body → responsive 2-col grid ---- */
@@ -1228,7 +1273,8 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
 :root[data-theme] .md-settings .card-body > .row.mb-6:has(.form-switch) > label.col-form-label,
 :root[data-theme] .md-settings .card-body > .row.mb-6:has(.image-input) > label.col-form-label,
 :root[data-theme] .md-settings .card-body > .row.mb-6:has(.notice-editor) > label.col-form-label,
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(table) > label.col-form-label {
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(table) > label.col-form-label,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(#g2fa-status) > label.col-form-label {
   position: static !important;
   transform: none !important;
   max-width: 100% !important;
@@ -1905,6 +1951,51 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
   :root[data-theme] .md-ticket-messages { scroll-behavior: auto; }
 }
 
+/* Administrator device sessions */
+:root[data-theme] .md-settings .md-device-sessions > .card-header { display: flex !important; }
+:root[data-theme] .md-settings .md-device-sessions > .card-body { display: block; }
+:root[data-theme] .md-device-sessions .card-header { gap: 16px; }
+:root[data-theme] .md-device-sessions .card-toolbar .btn,
+:root[data-theme] .md-device-session__revoke,
+:root[data-theme] .md-session-retry { min-width: 44px; min-height: 44px; }
+:root[data-theme] .md-session-retry { align-items: center; justify-content: center; }
+:root[data-theme] .md-device-session-list { display: grid; gap: 10px; }
+:root[data-theme] .md-device-session {
+  display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 14px;
+  padding: 15px; border: 1px solid var(--md-divider); border-radius: 14px; background: var(--md-surface-2);
+}
+:root[data-theme] .md-device-session.is-current {
+  border-color: rgba(var(--md-success-rgb), .28); background: rgba(var(--md-success-rgb), .055);
+}
+:root[data-theme] .md-device-session__icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px; border-radius: 14px; color: var(--md-primary); background: rgba(var(--md-primary-rgb), .1);
+  font-size: 20px;
+}
+:root[data-theme] .md-device-session.is-current .md-device-session__icon {
+  color: var(--md-success); background: rgba(var(--md-success-rgb), .12);
+}
+:root[data-theme] .md-device-session__content { min-width: 0; }
+:root[data-theme] .md-device-session__heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+:root[data-theme] .md-device-session__heading strong {
+  overflow: hidden; color: var(--md-on-surface); font-size: 14px; font-weight: 680; text-overflow: ellipsis; white-space: nowrap;
+}
+:root[data-theme] .md-device-session__meta { display: flex; flex-wrap: wrap; gap: 5px 16px; margin-top: 6px; }
+:root[data-theme] .md-device-session__meta-item { color: var(--md-on-surface-med); font-size: 11px; line-height: 1.5; }
+:root[data-theme] .md-device-session__meta-item b { color: var(--md-on-surface-dis); font-weight: 600; }
+:root[data-theme] .md-device-session__network .md-device-session__meta-item { overflow-wrap: anywhere; }
+
+@media (max-width: 767px) {
+  :root[data-theme] .md-device-sessions .card-header { align-items: stretch; flex-direction: column; padding: 18px 16px 10px !important; }
+  :root[data-theme] .md-device-sessions .card-toolbar { display: grid !important; grid-template-columns: 1fr 1fr; width: 100%; }
+  :root[data-theme] .md-device-sessions .card-toolbar .btn { margin: 0; padding: 8px 10px; }
+  :root[data-theme] .md-device-sessions .card-body { padding: 10px 12px 16px !important; }
+  :root[data-theme] .md-device-session { grid-template-columns: 44px minmax(0, 1fr); gap: 11px; padding: 13px 12px; }
+  :root[data-theme] .md-device-session__icon { width: 44px; height: 44px; border-radius: 13px; }
+  :root[data-theme] .md-device-session__revoke { grid-column: 1 / -1; width: 100%; }
+  :root[data-theme] .md-device-session__revoke span { display: inline; }
+}
+
 /* ========================================================================== *
  * Messages / 消息管理
  * ========================================================================== */
@@ -1991,19 +2082,6 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
 :root[data-theme] .md-message-compose-layer .block-audience_preview,
 :root[data-theme] .md-message-compose-layer .block-compose_tip { margin-top: -3px; }
 :root[data-theme] .md-message-compose-layer .component-content { min-width: 0; }
-:root[data-theme] .md-message-compose-layer .component-audience-user-picker xm-select,
-:root[data-theme] .md-message-compose-layer .component-audience_user_picker xm-select {
-  min-height: 42px; border-color: var(--md-divider); border-radius: 10px;
-  background: var(--md-surface); color: var(--md-on-surface);
-}
-:root[data-theme] .md-message-compose-layer .component-audience-user-picker xm-select:hover,
-:root[data-theme] .md-message-compose-layer .component-audience_user_picker xm-select:hover { border-color: var(--md-primary); }
-:root[data-theme] .md-message-compose-layer xm-select .xm-label-block { border-radius: 7px; }
-:root[data-theme] .md-message-compose-layer xm-select .xm-body {
-  border-color: var(--md-divider); border-radius: 10px; background: var(--md-surface-2); box-shadow: var(--md-e8);
-}
-:root[data-theme] .md-message-compose-layer xm-select .xm-option { color: var(--md-on-surface); }
-:root[data-theme] .md-message-compose-layer xm-select .xm-option:hover { background: var(--md-hover-overlay); }
 :root[data-theme] .md-message-picker-error { padding: 11px 13px; border-radius: 10px; background: rgba(var(--md-error-rgb), .1); color: var(--md-error); }
 
 :root[data-theme] .md-message-audience-summary,

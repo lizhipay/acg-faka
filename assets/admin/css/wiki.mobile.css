@@ -1,0 +1,549 @@
+.admin-wiki-page .admin-wiki-menu-source {
+    display: none !important;
+}
+
+.admin-wiki-page > main {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+}
+
+.admin-wiki-menu-error {
+    display: grid;
+    justify-items: center;
+    gap: 7px;
+    padding: 26px 12px 12px;
+    color: var(--admin-mobile-text);
+    text-align: center;
+}
+
+.admin-wiki-menu-error > .material-icons-outlined {
+    display: grid;
+    width: 54px;
+    height: 54px;
+    margin-bottom: 7px;
+    place-items: center;
+    border-radius: 18px;
+    background: var(--admin-mobile-surface-2);
+    color: var(--admin-mobile-muted);
+    font-size: 27px;
+}
+
+.admin-wiki-menu-error strong {
+    font-size: 17px;
+}
+
+.admin-wiki-menu-error small {
+    color: var(--admin-mobile-muted);
+}
+
+.admin-wiki-menu-error a {
+    display: inline-flex;
+    min-height: 46px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 16px;
+    border-radius: 15px;
+    padding: 0 22px;
+    background: var(--admin-mobile-primary);
+    color: var(--admin-mobile-on-primary);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+@media (max-width: 991.98px) {
+    html[data-admin-layout="mobile"][data-admin-mobile-recipe="admin-wiki"] {
+        --admin-mobile-tabs-height: 0px;
+    }
+
+    html[data-admin-layout="mobile"][data-admin-mobile-recipe="admin-wiki"] .admin-mobile-context-tabs {
+        display: none !important;
+    }
+
+    html[data-admin-layout="mobile"] body.admin-wiki-page {
+        --theme-color: var(--admin-mobile-primary);
+        background: var(--admin-mobile-bg) !important;
+        color: var(--admin-mobile-text);
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", sans-serif;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page:not(.ready) {
+        overflow: hidden;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page div#app {
+        margin: 31vh auto 0;
+        color: var(--admin-mobile-muted);
+        font-size: 0;
+        font-weight: 600;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page div#app:empty::before {
+        content: "正在加载文档";
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        border-radius: 99px;
+        padding: 0 18px;
+        background: var(--admin-mobile-surface);
+        box-shadow: 0 8px 24px rgba(18, 35, 29, .06);
+        font-size: 14px;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page > main {
+        width: 100%;
+        min-height: calc(var(--admin-mobile-vh) - var(--admin-mobile-appbar-height) - var(--admin-mobile-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        height: auto;
+        overflow: visible;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page main > .sidebar,
+    html[data-admin-layout="mobile"] .admin-wiki-page .sidebar-toggle,
+    html[data-admin-layout="mobile"] .admin-wiki-page .app-nav,
+    html[data-admin-layout="mobile"] .admin-wiki-page .github-corner {
+        display: none !important;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .content,
+    html[data-admin-layout="mobile"] .admin-wiki-page.close .content {
+        position: static;
+        inset: auto;
+        max-width: none;
+        padding: 12px 12px 30px !important;
+        transform: none;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section {
+        box-sizing: border-box;
+        width: auto;
+        max-width: 760px;
+        min-height: 45vh;
+        margin: 0 auto;
+        border: 1px solid var(--admin-mobile-line);
+        border-radius: 24px;
+        padding: 24px 19px 34px;
+        background: var(--admin-mobile-surface);
+        box-shadow: 0 8px 28px rgba(18, 35, 29, .045);
+        color: var(--admin-mobile-text);
+        font-size: 15px;
+        line-height: 1.75;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section h1,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section h2,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section h3,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section h4,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section h5,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section strong,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section .anchor span {
+        color: var(--admin-mobile-text);
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section h1 {
+        margin: 0 0 21px;
+        font-size: clamp(25px, 7vw, 30px);
+        line-height: 1.25;
+        letter-spacing: -.025em;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section h2 {
+        margin: 38px 0 13px;
+        font-size: 21px;
+        line-height: 1.35;
+        letter-spacing: -.015em;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section h3 {
+        margin: 30px 0 10px;
+        font-size: 18px;
+        line-height: 1.4;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section h4 {
+        margin-top: 25px;
+        font-size: 16px;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section h5,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section h6,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section em {
+        color: var(--admin-mobile-muted);
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section p,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section ol,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section ul {
+        line-height: 1.75;
+        word-spacing: 0;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section a {
+        color: var(--admin-mobile-primary-ink);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section hr,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section iframe,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section kbd {
+        border-color: var(--admin-mobile-line);
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section kbd {
+        background: var(--admin-mobile-surface-2);
+        color: var(--admin-mobile-text);
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section blockquote {
+        margin: 23px 0;
+        border: 0;
+        border-radius: 16px;
+        padding: 14px 16px;
+        background: color-mix(in srgb, var(--admin-mobile-primary) 9%, var(--admin-mobile-surface));
+        color: var(--admin-mobile-muted);
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section blockquote p {
+        margin: 0;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section p.tip,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section p.warn {
+        color: var(--admin-mobile-text);
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section p.tip {
+        background: color-mix(in srgb, var(--admin-mobile-danger) 8%, var(--admin-mobile-surface));
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section p.tip em {
+        color: var(--admin-mobile-text);
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section p.tip code {
+        background: var(--admin-mobile-surface-2);
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section p.warn {
+        background: color-mix(in srgb, var(--admin-mobile-primary) 9%, var(--admin-mobile-surface));
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section pre,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section output {
+        max-width: 100%;
+        border: 1px solid var(--admin-mobile-line);
+        border-radius: 17px;
+        background: var(--admin-mobile-surface-2);
+        overflow: auto;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section pre > code {
+        min-width: max-content;
+        padding: 2.2em 4px 1.45em;
+        background: transparent;
+        color: var(--admin-mobile-text);
+        font-size: 12px;
+        line-height: 1.65;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section :not(pre) > code {
+        border-radius: 7px;
+        background: var(--admin-mobile-surface-2);
+        color: var(--admin-mobile-warning-ink);
+        overflow-wrap: anywhere;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section table {
+        max-width: 100%;
+        border-radius: 14px;
+        font-size: 13px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section th,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section td {
+        border-color: var(--admin-mobile-line);
+        padding: 9px 11px;
+        white-space: nowrap;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section tr,
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section tr:nth-child(2n) {
+        border-color: var(--admin-mobile-line);
+        background: transparent;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section img {
+        border-radius: 14px;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .progress {
+        top: calc(var(--admin-mobile-appbar-height) + env(safe-area-inset-top));
+        height: 3px;
+        background: var(--admin-mobile-primary);
+    }
+
+    .admin-wiki-docs-sheet .admin-mobile-overlay__body {
+        padding: 10px max(14px, env(safe-area-inset-right)) max(18px, calc(10px + env(safe-area-inset-bottom))) max(14px, env(safe-area-inset-left));
+        background: var(--admin-mobile-bg);
+    }
+
+    .admin-wiki-docs-sheet .sidebar {
+        position: static !important;
+        inset: auto !important;
+        display: block !important;
+        visibility: visible !important;
+        width: 100%;
+        height: auto;
+        min-height: 100%;
+        border: 0;
+        border-radius: 23px;
+        padding: 0 0 18px;
+        background: var(--admin-mobile-surface);
+        color: var(--admin-mobile-text);
+        overflow: visible;
+        transform: none !important;
+    }
+
+    .admin-wiki-docs-sheet .sidebar > h1 {
+        margin: 0;
+        padding: 17px 18px 4px;
+        text-align: left;
+    }
+
+    .admin-wiki-docs-sheet .app-name .app-name-link {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        color: var(--admin-mobile-text);
+        cursor: pointer !important;
+        font-size: 16px;
+        font-weight: 700;
+        pointer-events: auto !important;
+    }
+
+    .admin-wiki-docs-sheet .app-name .app-name-link img {
+        width: 44px;
+        height: 44px !important;
+        object-fit: cover;
+        border-radius: 13px !important;
+    }
+
+    .admin-wiki-docs-sheet .search {
+        position: sticky;
+        z-index: 2;
+        top: -10px;
+        margin: 0;
+        border: 0;
+        padding: 14px 14px 9px;
+        background: color-mix(in srgb, var(--admin-mobile-surface) 94%, transparent);
+        backdrop-filter: blur(18px) saturate(1.25);
+    }
+
+    .admin-wiki-docs-sheet .search .input-wrap {
+        min-height: 50px;
+        border: 1px solid var(--admin-mobile-line);
+        border-radius: 17px;
+        padding: 0 4px 0 7px;
+        background: var(--admin-mobile-surface-2);
+    }
+
+    .admin-wiki-docs-sheet .search .input-wrap::before {
+        content: "search";
+        width: 34px;
+        flex: 0 0 34px;
+        color: var(--admin-mobile-muted);
+        font-family: "Material Icons Outlined";
+        font-size: 22px;
+        line-height: 1;
+        text-align: center;
+    }
+
+    .admin-wiki-docs-sheet .search input,
+    .admin-wiki-docs-sheet .search input:focus {
+        min-width: 0;
+        border: 0;
+        padding: 0 6px;
+        background: transparent;
+        box-shadow: none;
+        color: var(--admin-mobile-text);
+        font-family: inherit;
+        font-size: 15px;
+    }
+
+    .admin-wiki-docs-sheet .search input::placeholder {
+        color: var(--admin-mobile-muted);
+        opacity: .85;
+    }
+
+    .admin-wiki-docs-sheet .search .clear-button {
+        width: 44px;
+        min-width: 44px;
+        min-height: 44px;
+        padding-right: 6px;
+    }
+
+    .admin-wiki-docs-sheet .search .clear-button.show {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .admin-wiki-docs-sheet .search .results-panel {
+        margin-top: 11px;
+        border: 1px solid var(--admin-mobile-line);
+        border-radius: 17px;
+        padding: 4px 14px;
+        background: var(--admin-mobile-surface);
+    }
+
+    .admin-wiki-docs-sheet .search .matching-post {
+        border-color: var(--admin-mobile-line);
+        padding: 5px 0;
+    }
+
+    .admin-wiki-docs-sheet .search h2 {
+        color: var(--admin-mobile-text);
+        font-size: 15px;
+    }
+
+    .admin-wiki-docs-sheet .search .search-keyword,
+    .admin-wiki-docs-sheet .search a:hover {
+        color: var(--admin-mobile-primary-ink);
+    }
+
+    .admin-wiki-docs-sheet .search p {
+        color: var(--admin-mobile-muted);
+        line-height: 1.55;
+    }
+
+    .admin-wiki-docs-sheet .sidebar-nav {
+        padding: 6px 14px 28px;
+        line-height: 1.45;
+    }
+
+    .admin-wiki-docs-sheet .sidebar ul {
+        margin: 0;
+    }
+
+    .admin-wiki-docs-sheet .sidebar ul li {
+        margin: 3px 0;
+    }
+
+    .admin-wiki-docs-sheet .sidebar ul li a {
+        display: flex;
+        min-height: 45px;
+        align-items: center;
+        border: 0;
+        border-radius: 14px;
+        padding: 9px 13px;
+        color: var(--admin-mobile-text);
+        font-size: 14px;
+        font-weight: 550;
+        white-space: normal;
+    }
+
+    .admin-wiki-docs-sheet .sidebar ul li a:active {
+        background: var(--admin-mobile-surface-2);
+    }
+
+    .admin-wiki-docs-sheet .sidebar ul li.active > a {
+        border: 0;
+        background: color-mix(in srgb, var(--admin-mobile-primary) 11%, var(--admin-mobile-surface));
+        color: var(--admin-mobile-primary-ink);
+        font-weight: 700;
+    }
+
+    .admin-wiki-docs-sheet .sidebar ul li ul {
+        padding-left: 13px;
+    }
+
+    .admin-wiki-docs-sheet .app-sub-sidebar li::before {
+        display: none;
+    }
+
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.comment,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.prolog,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.doctype,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.cdata {
+        color: #9298aa;
+    }
+
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.punctuation,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.operator {
+        color: #c9d1d9;
+    }
+
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.property,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.tag,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.constant,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.symbol,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.deleted {
+        color: #ff7b72;
+    }
+
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.boolean,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.number {
+        color: #79c0ff;
+    }
+
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.selector,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.attr-name,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.string,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.char,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.builtin,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.inserted {
+        color: #7ee787;
+    }
+
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.atrule,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.attr-value,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.keyword {
+        color: #ffa657;
+    }
+
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.function,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.class-name {
+        color: #d2a8ff;
+    }
+
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.regex,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.important,
+    html[data-theme="dark"][data-admin-layout="mobile"] .admin-wiki-page .markdown-section .token.variable {
+        color: #a5d6ff;
+    }
+}
+
+@media (max-width: 359px) {
+    html[data-admin-layout="mobile"] .admin-wiki-page .content {
+        padding-inline: 8px !important;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section {
+        border-radius: 20px;
+        padding-inline: 15px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+    html[data-admin-layout="mobile"] .admin-wiki-page .content {
+        padding: 20px max(24px, env(safe-area-inset-right)) 38px max(24px, env(safe-area-inset-left)) !important;
+    }
+
+    html[data-admin-layout="mobile"] .admin-wiki-page .markdown-section {
+        padding: 34px 40px 48px;
+    }
+
+    .admin-wiki-docs-sheet .admin-mobile-overlay__body {
+        padding-right: max(24px, env(safe-area-inset-right), calc((100vw - 720px) / 2));
+        padding-left: max(24px, env(safe-area-inset-left), calc((100vw - 720px) / 2));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-wiki-page *,
+    .admin-wiki-page *::before,
+    .admin-wiki-page *::after {
+        scroll-behavior: auto !important;
+    }
+}

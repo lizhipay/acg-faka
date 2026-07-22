@@ -1,5 +1,36 @@
 #{include file="../Header.html"}
 
+<style>
+    @media (max-width: 991.98px) {
+        html[data-admin-layout="mobile"] .md-order-secret-layer .md-secret {
+            gap: 18px;
+            padding: 2px 0 0;
+        }
+
+        html[data-admin-layout="mobile"] .md-order-secret-layer .md-secret__code {
+            max-height: min(46dvh, 380px);
+            border: 0;
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        html[data-admin-layout="mobile"] .md-order-secret-layer .md-secret__bar {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr;
+        }
+
+        html[data-admin-layout="mobile"] .md-order-secret-layer .md-secret__btn {
+            min-height: 50px;
+            justify-content: center;
+            padding-inline: 10px;
+        }
+
+        html[data-admin-layout="mobile"] .md-order-widget-detail .md-detail__row {
+            grid-template-columns: minmax(82px, 32%) minmax(0, 1fr);
+        }
+    }
+</style>
+
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     <!--begin::Toolbar-->
@@ -10,14 +41,16 @@
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
             <!--begin::Row-->
-            <div class="row g-4">
-                #{include file="../Component/StatCard.html" col="col-12 col-md-4" accent="primary" icon="fa-receipt" label="订单数量" vclass="order_count" value="—"}
-                #{include file="../Component/StatCard.html" col="col-12 col-md-4" accent="success" icon="fa-circle-dollar" label="订单金额" vclass="order_amount" value="—"}
-                #{include file="../Component/StatCard.html" col="col-12 col-md-4" accent="danger" icon="fa-filter-circle-dollar" label="手续费" vclass="order_cost" value="—"}
+            <h2 class="admin-mobile-only-section">订单概览</h2>
+            <div class="md-stat-grid" data-admin-mobile-stats="mini" role="region" aria-label="订单数据概览">
+                #{include file="../Component/StatCard.html" accent="primary" icon="fa-receipt" label="订单数量" vclass="order_count" value="—"}
+                #{include file="../Component/StatCard.html" accent="success" icon="fa-circle-dollar" label="订单金额" vclass="order_amount" value="—"}
+                #{include file="../Component/StatCard.html" accent="danger" icon="fa-filter-circle-dollar" label="手续费" vclass="order_cost" value="—"}
             </div>
             <!--end::Row-->
 
             <!--begin::Tables Widget 9-->
+            <h2 class="admin-mobile-only-section">订单列表</h2>
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->
                 <div class="card-header border-0">

@@ -75,9 +75,15 @@ class Config extends Manage
             }
         }
 
+        $themesJson = json_encode(
+            $themes,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
+        );
+
         return $this->render("网站设置", "Config/Setting.html", [
             "toolbar" => $this->TOOLBAR,
             "themes" => $themes,
+            "themes_json" => is_string($themesJson) ? $themesJson : '[]',
             "user_center_mobile_theme" => \App\Model\Config::get("user_center_mobile_theme") ?: "0",
             "ip_get_mode" => $modes,
             "ip_mode" => Client::getClientMode()
@@ -92,6 +98,10 @@ class Config extends Manage
     public function sms(): string
     {
         $smsConfig = json_decode(\App\Model\Config::get("sms_config"), true);
+        $smsConfig = is_array($smsConfig) ? $smsConfig : [];
+        foreach (['accessKeyId', 'accessKeySecret', 'tencentSecretId', 'tencentSecretKey', 'dxbao_password'] as $key) {
+            unset($smsConfig[$key]);
+        }
         return $this->render("短信设置", "Config/Sms.html", ["toolbar" => $this->TOOLBAR, "sms" => $smsConfig]);
     }
 
@@ -103,6 +113,8 @@ class Config extends Manage
     public function email(): string
     {
         $emailConfig = json_decode(\App\Model\Config::get("email_config"), true);
+        $emailConfig = is_array($emailConfig) ? $emailConfig : [];
+        unset($emailConfig['password']);
         return $this->render("邮箱设置", "Config/Email.html", ["toolbar" => $this->TOOLBAR, "email" => $emailConfig]);
     }
 

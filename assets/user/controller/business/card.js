@@ -1,5 +1,19 @@
 !function () {
     let table, _createForms = [], _createSearchs = [];
+    const escapeHtml = value => String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    const safeInlineHtml = value => window.SeattleTheme && typeof window.SeattleTheme.safeInlineHtml === 'function'
+        ? window.SeattleTheme.safeInlineHtml(value)
+        : escapeHtml(value);
+    const safeItem = item => {
+        if (!item) return '-';
+        const image = item.cover ? `<img src="${escapeHtml(item.cover)}" class="table-item-icon" alt="">` : '';
+        return `<span class="table-item">${image}<span class="table-item-name">${safeInlineHtml(item.name || '未命名商品')}</span></span>`;
+    };
     const uploadCard = () => {
         component.popup({
             submit: '/user/api/card/save',
@@ -23,6 +37,7 @@
                                 _.clearComponent("race");
                                 _.hide("race_get_mode");
                                 _createForms.forEach(k => _.removeForm(k));
+                                _createForms = [];
                                 if (__ > 0) {
                                     util.get(`/user/api/card/sku?commodityId=${__}`, data => {
                                         if (!util.isEmptyOrNotJson(data?.category)) {
@@ -214,67 +229,68 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
     table.setColumns([
         {checkbox: true},
         {
-            field: 'secret', title: '卡密信息'
+            field: 'secret', title: '卡密信息', width: 220, formatter: value => escapeHtml(value || '-')
         },
         {
-            field: 'draft', title: '预选相关', formatter: (_, __) => {
+            field: 'draft', title: '预选相关', width: 200, formatter: (_, __) => {
                 const draft = (__.draft && __.draft !== '-') ? __.draft : '';
                 const premium = parseFloat(__.draft_premium) || 0;
                 if (!draft && premium <= 0) return '-';
-                let rows = `<div class="md-pair__row"><span class="md-pair__k">预告</span><span class="md-pair__v${draft ? '' : ' md-pair__v--muted'}">${draft || '无'}</span></div>`;
+                let rows = `<div class="md-pair__row"><span class="md-pair__k">预告</span><span class="md-pair__v${draft ? '' : ' md-pair__v--muted'}">${escapeHtml(draft || '无')}</span></div>`;
                 rows += `<div class="md-pair__row"><span class="md-pair__k">加价</span>${premium > 0
-                    ? `<span class="md-pair__v" style="color:var(--md-success);font-weight:600">¥${format.amountRemoveTrailingZeros(premium)}</span>`
+                    ? `<span class="md-pair__v text-success fw-semibold">¥${format.amountRemoveTrailingZeros(premium)}</span>`
                     : `<span class="md-pair__v md-pair__v--muted">¥0</span>`}</div>`;
                 return `<div class="md-pair">${rows}</div>`;
             }
         }
         , {
-            field: 'commodity', title: '商品', formatter: format.item
+            field: 'commodity', title: '商品', class: 'nowrap', width: 180, formatter: safeItem
         }
         , {
-            field: 'race', title: '类别/SKU', formatter: (_, __) => {
+            field: 'race', title: '类别/SKU', width: 210, formatter: (_, __) => {
                 const race = (__.race && __.race !== '-') ? __.race : '';
                 const hasSku = !util.isEmptyOrNotJson(__.sku);
                 if (!race && !hasSku) return '-';
-                let rows = `<div class="md-pair__row"><span class="md-pair__k">类别</span><span class="md-pair__v">${race || '-'}</span></div>`;
+                let rows = `<div class="md-pair__row"><span class="md-pair__k">类别</span><span class="md-pair__v">${escapeHtml(race || '-')}</span></div>`;
                 if (hasSku) {
                     let badges = '';
-                    for (const x in __.sku) badges += format.badge(`${x}: ${__.sku[x]}`, "a-badge-info");
+                    for (const x in __.sku) badges += format.badge(`${escapeHtml(x)}: ${escapeHtml(__.sku[x])}`, "a-badge-info");
                     rows += `<div class="md-pair__row"><span class="md-pair__k">SKU</span><span class="md-pair__v">${format.badgeGroup(badges)}</span></div>`;
                 }
                 return `<div class="md-pair">${rows}</div>`;
             }
         }
         , {
-            field: 'create_time', title: '创建/出售时间', formatter: (_, __) => {
+            field: 'create_time', title: '创建/出售时间', class: 'nowrap', width: 190, formatter: (_, __) => {
                 const sold = __.purchase_time
-                    ? `<span class="md-pair__v">${__.purchase_time}</span>`
+                    ? `<span class="md-pair__v">${escapeHtml(__.purchase_time)}</span>`
                     : `<span class="md-pair__v md-pair__v--muted">未出售</span>`;
-                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">创建</span><span class="md-pair__v">${__.create_time || '-'}</span></div><div class="md-pair__row"><span class="md-pair__k">出售</span>${sold}</div></div>`;
+                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">创建</span><span class="md-pair__v">${escapeHtml(__.create_time || '-')}</span></div><div class="md-pair__row"><span class="md-pair__k">出售</span>${sold}</div></div>`;
             }
         }
         , {
-            field: 'status', title: '状态', dict: "_card_status"
+            field: 'status', title: '状态', dict: "_card_status", class: 'nowrap', width: 90
         }
         , {
-            field: 'order.trade_no', title: '订单号/备注', formatter: (_, __) => {
+            field: 'order.trade_no', title: '订单号/备注', width: 220, formatter: (_, __) => {
                 const tradeNo = __.order?.trade_no || '';
                 const note = (__.note && __.note !== '-') ? __.note : '';
                 if (!tradeNo && !note) return '-';
                 let rows = `<div class="md-pair__row"><span class="md-pair__k">订单</span>${tradeNo
-                    ? `<span class="md-pair__v">${tradeNo}</span>`
+                    ? `<span class="md-pair__v">${escapeHtml(tradeNo)}</span>`
                     : `<span class="md-pair__v md-pair__v--muted">未出售</span>`}</div>`;
                 rows += `<div class="md-pair__row"><span class="md-pair__k">备注</span>${note
-                    ? `<span class="md-pair__v">${note}</span>`
+                    ? `<span class="md-pair__v">${escapeHtml(note)}</span>`
                     : `<span class="md-pair__v md-pair__v--muted">无</span>`}</div>`;
                 return `<div class="md-pair">${rows}</div>`;
             }
         },
         {
-            field: 'operation', title: '操作', type: 'button', buttons: [
+            field: 'operation', title: '操作', type: 'button', class: 'nowrap', width: 280, buttons: [
                 {
                     icon: 'fa-duotone fa-regular fa-pen-to-square',
                     class: "text-success",
+                    title: "编辑",
                     click: (event, value, row, index) => {
                         modal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + "修改卡密", row);
                     }
@@ -282,20 +298,22 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
                 {
                     icon: 'fa-duotone fa-regular fa-lock-keyhole',
                     class: "text-primary",
+                    title: "锁定",
                     show: _ => _.status == 0,
                     click: (event, value, row, index) => {
                         util.post('/user/api/card/edit', {id: row.id, status: 2}, res => {
-                            message.success(`【${row.secret}】已锁定`);
+                            message.success('卡密已锁定');
                             table.refresh();
                         });
                     }
                 }, {
                     icon: 'fa-duotone fa-regular fa-lock-keyhole-open',
                     class: "text-success",
+                    title: "解锁",
                     show: _ => _.status == 2,
                     click: (event, value, row, index) => {
                         util.post('/user/api/card/edit', {id: row.id, status: 0}, res => {
-                            message.success(`【${row.secret}】已解锁`);
+                            message.success('卡密已解锁');
                             table.refresh();
                         });
                     }
@@ -303,6 +321,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
                 {
                     icon: 'fa-duotone fa-regular fa-trash-can',
                     class: "text-danger",
+                    title: "删除",
                     click: (event, value, row, index) => {
                         message.ask("您正在进行删除卡密操作，此操作无法撤销！", () => {
                             util.post('/user/api/card/del', {list: [row.id]}, res => {
@@ -330,6 +349,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
                 _.hide("equal-race");
                 _.selectClearOption("equal-race");
                 _createSearchs.forEach(k => _.removeSearch(k));
+                _createSearchs = [];
                 if (__ > 0) {
                     util.get(`/user/api/card/sku?commodityId=${__}`, data => {
                         if (!util.isEmptyOrNotJson(data?.category)) {
@@ -407,7 +427,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
             layer.msg("请至少勾选1个卡密进行操作！");
             return;
         }
-        message.ask("您确定要锁定选中的卡密吗？", () => {
+        message.ask("您确定要解锁选中的卡密吗？", () => {
             util.post("/user/api/card/unlock", {list: data}, res => {
                 message.success("全部解锁成功")
                 table.refresh();
@@ -441,7 +461,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
                             name: "custom",
                             type: "custom",
                             complete: (obj, dom) => {
-                                dom.html('<div style="margin-bottom: 25px;color: #27bd27;font-weight: bolder;">导出程序将根据您通过查询功能筛选出的卡密进行导出。如果您填写了导出数量，将导出指定数量的卡密；如果您未填写数量，则将导出您筛选的全部卡密。</div>');
+                                dom.html('<div class="uc-cardtip"><div class="uc-cardtip__warn"><span class="material-icons-outlined">info</span><span>导出程序将根据当前筛选条件处理卡密。填写数量时导出指定数量；留空或填写 0 时导出全部筛选结果。</span></div></div>');
                             }
                         },
                         {

@@ -15,6 +15,7 @@ use App\Interceptor\Waf;
 use App\Service\Query;
 use App\Util\Date;
 use App\Util\Str;
+use Illuminate\Database\Capsule\Manager as DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
@@ -43,6 +44,9 @@ class Coupon extends User
                 },
                 'commodity' => function (Relation $relation) {
                     $relation->select(["id", "name"]);
+                },
+                'category' => function (Relation $relation) {
+                    $relation->select(["id", "name"]);
                 }
             ]);
         });
@@ -57,77 +61,124 @@ class Coupon extends User
      */
     public function save(): array
     {
-        $prefix = $_POST['prefix']; //卡密前缀
-        $note = $_POST['note']; //备注信息
-        $commodityId = (int)$_POST['commodity_id']; //商品ID
-        $expireTime = (string)$_POST['expire_time'];//到期时间
-        $money = (float)$_POST['money']; //金额
-        $num = (int)$_POST['num']; //生成数量
-        $life = (int)$_POST['life']; //可用次数
-        $mode = (int)$_POST['mode']; //抵扣模式
-        $categoryId = (int)$_POST['category_id']; //分类ID
+        $prefix = (string)($_POST['prefix'] ?? ''); //代券前缀
+        $note = (string)($_POST['note'] ?? ''); //备注信息
+        $commodityId = (int)($_POST['commodity_id'] ?? 0); //商品ID
+        $expireTime = (string)($_POST['expire_time'] ?? '');//到期时间
+        $money = (float)($_POST['money'] ?? 0); //金额
+        $num = (int)($_POST['num'] ?? 0); //生成数量
+        $life = (int)($_POST['life'] ?? 0); //可用次数
+        $mode = (int)($_POST['mode'] ?? 0); //抵扣模式
+        $categoryId = (int)($_POST['category_id'] ?? 0); //分类ID
 
-        $raceGetMode = (int)$_POST['race_get_mode'];
-        $race = $raceGetMode == 0 ? $_POST['race'] : $_POST['race_input'];
-        $sku = $_POST['sku'] ?: [];
+        $raceGetMode = (int)($_POST['race_get_mode'] ?? 0);
+        $race = (string)($raceGetMode === 0 ? ($_POST['race'] ?? '') : ($_POST['race_input'] ?? ''));
+        $sku = (array)($_POST['sku'] ?? []);
 
         $userId = $this->getUser()->id;
 
         if ($money <= 0) {
-            throw new JSONException("ಠ_ಠ请输入优惠券价格");
+            throw new JSONException("请输入有效的代券面值");
+        }
+
+        if ($mode === 1 && $money > 1) {
+            throw new JSONException("百分比抵扣请填写 0 到 1 之间的小数");
         }
 
         if ($expireTime != '' && strtotime($expireTime) < time()) {
-            throw new JSONException("ಠ_ಠ优惠券的过期时间不能是回忆");
+            throw new JSONException("代券的过期时间不能早于当前时间");
         }
 
-        if ($num <= 0) {
-            throw new JSONException("ಠ_ಠ最少也要生成1张优惠券");
+        if ($num < 1 || $num > 1000) {
+            throw new JSONException("每次只能生成 1 到 1000 张代券");
+        }
+
+        if ($life <= 0) {
+            throw new JSONException("代券可用次数至少为 1 次");
         }
 
 
-        if ($commodityId > 0 && !\App\Model\Commodity::query()->where("owner", $userId)->where("id", $commodityId)->exists()) {
-            throw new JSONException("商品不存在");
-        }
-
-        if ($categoryId > 0 && !\App\Model\Category::query()->where("owner", $userId)->where("id", $categoryId)->exists()) {
-            throw new JSONException("分类不存在");
+        // 指定商品时以商品为唯一抵扣范围，避免同时保存分类导致前端含义不明确。
+        if ($commodityId > 0) {
+            $categoryId = 0;
         }
 
         $date = Date::current();
-        $success = 0;
-        $error = 0;
-        $codes = "";
+        $result = DB::transaction(function () use (
+            $categoryId,
+            $commodityId,
+            $userId,
+            $num,
+            $prefix,
+            $date,
+            $expireTime,
+            $money,
+            $note,
+            $life,
+            $mode,
+            $sku,
+            $race
+        ): array {
+            if ($categoryId > 0) {
+                $category = \App\Model\Category::query()
+                    ->where('owner', (int)$userId)
+                    ->where('id', $categoryId)
+                    ->lockForUpdate()
+                    ->first();
+                if (!$category) {
+                    throw new JSONException('分类不存在');
+                }
+            }
+            if ($commodityId > 0) {
+                $commodity = \App\Model\Commodity::query()
+                    ->where('owner', (int)$userId)
+                    ->where('id', $commodityId)
+                    ->lockForUpdate()
+                    ->first();
+                if (!$commodity) {
+                    throw new JSONException('商品不存在');
+                }
+            }
 
-        for ($i = 0; $i < $num; $i++) {
-            $voucher = new \App\Model\Coupon();
-            $voucher->code = $prefix . strtoupper(Str::generateRandStr(16));
-            $voucher->commodity_id = $commodityId;
-            $voucher->category_id = $categoryId;
-            $voucher->owner = $userId;
-            $voucher->create_time = $date;
-            if ($expireTime != '') {
-                $voucher->expire_time = $expireTime;
+            $success = 0;
+            $error = 0;
+            $codes = '';
+            for ($i = 0; $i < $num; $i++) {
+                $voucher = new \App\Model\Coupon();
+                $voucher->code = $prefix . strtoupper(Str::generateRandStr(16));
+                $voucher->commodity_id = $commodityId;
+                $voucher->category_id = $categoryId;
+                $voucher->owner = $userId;
+                $voucher->create_time = $date;
+                if ($expireTime !== '') {
+                    $voucher->expire_time = $expireTime;
+                }
+                $voucher->money = $money;
+                $voucher->status = 0;
+                $voucher->note = $note;
+                $voucher->life = $life;
+                $voucher->mode = $mode;
+                $voucher->sku = $sku;
+                if ($race !== '') {
+                    $voucher->race = $race;
+                }
+                try {
+                    $voucher->save();
+                    $success++;
+                    $codes .= $voucher->code . PHP_EOL;
+                } catch (\Exception) {
+                    $error++;
+                }
             }
-            $voucher->money = $money;
-            $voucher->status = 0;
-            $voucher->note = $note;
-            $voucher->life = $life;
-            $voucher->mode = $mode;
-            $voucher->sku = $sku;
-            if ($race) {
-                $voucher->race = $race;
-            }
-            try {
-                $voucher->save();
-                $success++;
-                $codes .= $voucher->code . PHP_EOL;
-            } catch (\Exception $e) {
-                $error++;
-            }
-        }
 
-        return $this->json(200, "生成完毕，成功:{$success}张，失败：{$error}张", ["code" => $codes, "success" => $success, "error" => $error]);
+            return ['success' => $success, 'error' => $error, 'code' => $codes];
+        });
+
+        return $this->json(
+            200,
+            "生成完毕，成功:{$result['success']}张，失败：{$result['error']}张",
+            $result
+        );
     }
 
     /**
@@ -145,7 +196,7 @@ class Coupon extends User
         }
 
         if (!\App\Model\Coupon::query()->where("owner", $this->getUser()->id)->where("id", $id)->exists()) {
-            throw new JSONException("优惠券不存在");
+            throw new JSONException("代券不存在");
         }
 
         $save = new Save(\App\Model\Coupon::class);
@@ -209,7 +260,7 @@ class Coupon extends User
         }
         header('Content-Type:application/octet-stream');
         header('Content-Transfer-Encoding:binary');
-        header('Content-Disposition:attachment; filename=优惠券导出(' . count($data['list']) . ')-' . Date::current() . '.txt');
+        header('Content-Disposition:attachment; filename=代券导出(' . count($data['list']) . ')-' . Date::current() . '.txt');
         return $card;
     }
 }

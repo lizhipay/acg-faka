@@ -1,7 +1,5 @@
 #{include file="../Header.html"}
-#{set_script_var([
-"_substation_display_list" => $config.substation_display_list
-])}
+<textarea id="md-config-substation-source" hidden aria-hidden="true">#{$config.substation_display_list|escape:'html'}</textarea>
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     <!--begin::Toolbar-->
@@ -25,10 +23,19 @@
                 <!--begin::Content-->
                 <div id="kt_account_profile_details" class="collapse show">
                     <!--begin::Form-->
-                    <form id="data-form" class="form">
+                    <form id="data-form" class="form" data-admin-mobile-settings-page="other">
+                        <nav class="admin-mobile-settings-nav" aria-label="其他设置分区">
+                            <a href="#mobile-other-domain">域名与主站</a>
+                            <a href="#mobile-other-recharge">充值</a>
+                            <a href="#mobile-other-support">客服</a>
+                            <a href="#mobile-other-cash">提现</a>
+                            <a href="#mobile-other-home">首页展示</a>
+                        </nav>
                         <!--begin::Card body-->
                         <div class="card-body p-9">
 
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-other-domain"
+                                data-admin-mobile-description="设置支付回调、主站域名、DNS 解析和主站商家展示。">域名与主站</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -38,8 +45,9 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="callback_domain"
+                                           inputmode="url"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="自定义支付回调域名，需要带http://" value="#{$config.callback_domain}"/>
+                                           placeholder="自定义支付回调域名，需要带http://" value="#{$config.callback_domain|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -53,8 +61,9 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <textarea name="domain"
+                                              inputmode="url"
                                               class="form-control form-control-lg form-control-solid"
-                                              placeholder="多个域名使用逗号分割">#{$config.domain}</textarea>
+                                              placeholder="多个域名使用逗号分割">#{$config.domain|escape:'html'}</textarea>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -68,8 +77,9 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="cname"
+                                           inputmode="url"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="CNAME域名" value="#{$config.cname}"/>
+                                           placeholder="CNAME域名" value="#{$config.cname|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -108,6 +118,8 @@
                             <!--end::Input group-->
 
 
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-other-recharge"
+                                data-admin-mobile-description="设置单次充值金额范围和充值赠送规则。">充值</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -116,8 +128,10 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="recharge_min"
+                                           inputmode="decimal"
+                                           pattern="(?:0|[1-9][0-9]{0,8})(?:\.[0-9]{1,2})?"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="单次最低充值金额，0代表不限制，默认10元" value="#{$config.recharge_min}"/>
+                                           placeholder="单次最低充值金额，0代表不限制，默认10元" value="#{$config.recharge_min|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -131,8 +145,10 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="recharge_max"
+                                           inputmode="decimal"
+                                           pattern="(?:0|[1-9][0-9]{0,8})(?:\.[0-9]{1,2})?"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="单次最高充值金额，0代表不限制" value="#{$config.recharge_max}"/>
+                                           placeholder="单次最高充值金额，0代表不限制" value="#{$config.recharge_max|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -167,12 +183,14 @@
                                               class="form-control form-control-lg form-control-solid"
                                               placeholder="配置规则：假如充值100元赠送5元的情况下：
 100-5
-一行一个规则。">#{$config.recharge_welfare_config}</textarea>
+一行一个规则。">#{$config.recharge_welfare_config|escape:'html'}</textarea>
                                 </div>
                                 <!--end::Col-->
                             </div>
                             <!--end::Input group-->
 
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-other-support"
+                                data-admin-mobile-description="设置主站客服 QQ 和网页客服地址。">客服</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -181,8 +199,9 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="service_qq"
+                                           inputmode="numeric"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="客服QQ" value="#{$config.service_qq}"/>
+                                           placeholder="客服QQ" value="#{$config.service_qq|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -195,13 +214,16 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="service_url"
+                                           inputmode="url"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="网页客服地址" value="#{$config.service_url}"/>
+                                           placeholder="网页客服地址" value="#{$config.service_url|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
                             <!--end::Input group-->
 
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-other-cash"
+                                data-admin-mobile-description="设置可用提现方式、单笔手续费和最低提现金额。">提现</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -254,8 +276,10 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="cash_cost"
+                                           inputmode="decimal"
+                                           pattern="(?:0|[1-9][0-9]{0,8})(?:\.[0-9]{1,2})?"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="提现手续费" value="#{$config.cash_cost}"/>
+                                           placeholder="提现手续费" value="#{$config.cash_cost|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -268,13 +292,17 @@
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="cash_min"
+                                           inputmode="decimal"
+                                           pattern="(?:0|[1-9][0-9]{0,8})(?:\.[0-9]{1,2})?"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="最低提现金额" value="#{$config.cash_min}"/>
+                                           placeholder="最低提现金额" value="#{$config.cash_min|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
                             <!--end::Input group-->
 
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-other-home"
+                                data-admin-mobile-description="设置默认展开分类、首页商品推荐和推荐分类名称。">首页展示</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -290,7 +318,7 @@
                                         <option value="recommend" #{if $config.default_category == "recommend"} selected #{/if}>推荐
                                         </option>
                                         #{foreach $category as $cate}
-                                            <option value="#{$cate.id}" #{if $config.default_category == $cate.id} selected #{/if}>#{$cate.name}</option>
+                                            <option value="#{$cate.id|escape:'html'}" #{if $config.default_category == $cate.id} selected #{/if}>#{$cate.name|escape:'html'}</option>
                                         #{/foreach}
                                     </select>
                                     <!--end::Input-->
@@ -324,7 +352,7 @@
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
-                                    <textarea class="form-control form-control-lg form-control-solid"   name="commodity_name" placeholder="首页推荐分类名称"   rows="1">#{$config.commodity_name}</textarea>
+                                    <textarea class="form-control form-control-lg form-control-solid"   name="commodity_name" placeholder="首页推荐分类名称"   rows="1">#{$config.commodity_name|escape:'html'}</textarea>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -334,7 +362,7 @@
                         <!--end::Card body-->
                         <!--begin::Actions-->
                         <div class="card-footer d-flex justify-content-center py-6 px-9">
-                            <button type="button" class="btn btn-primary save-data"><i class="fa-duotone fa-regular fa-floppy-disk me-2"></i>保存设置 (Save Config)</button>
+                            <button type="button" class="btn btn-primary save-data"><i class="fa-duotone fa-regular fa-floppy-disk me-2"></i>保存设置</button>
                         </div>
                         <!--end::Actions-->
                     </form>

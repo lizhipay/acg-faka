@@ -5,12 +5,10 @@ namespace App\Interceptor;
 
 
 use App\Consts\Manage as ManageConst;
-use App\Model\Manage;
+use App\Service\ManageSessionManager;
 use App\Util\Client;
 use App\Util\Context;
 use App\Util\Date;
-use App\Util\JWT;
-use Firebase\JWT\Key;
 use JetBrains\PhpStorm\NoReturn;
 use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\InterceptorInterface;
@@ -44,40 +42,13 @@ class ManageSession implements InterceptorInterface
         }
 
 
-        $manageToken = base64_decode((string)$_COOKIE[ManageConst::SESSION]);
-
-
-        if (empty($manageToken)) {
+        $resolved = ManageSessionManager::authenticate((string)$_COOKIE[ManageConst::SESSION]);
+        if (!$resolved) {
             $this->kick($type);
         }
 
-        $head = JWT::getHead($manageToken);
-
-
-        if (!isset($head['mid'])) {
-            $this->kick($type);
-        }
-
-        $manage = Manage::query()->find($head['mid']);
-
-        if (!$manage) {
-            $this->kick($type);
-        }
-
-        try {
-            $jwt = \Firebase\JWT\JWT::decode($manageToken, new Key($manage->password, 'HS256'));
-        } catch (\Exception $e) {
-            $this->kick($type);
-        }
-
-        if (
-            $jwt->expire <= time() ||
-            $manage->login_time != $jwt->loginTime ||
-            $manage->login_ip != Client::getAddress() ||
-            $manage->status != 1
-        ) {
-            $this->kick($type);
-        }
+        $manage = $resolved['manage'];
+        $session = $resolved['session'];
 
         if (!file_exists(BASE_PATH . "/config/terms")) {
             if (\Kernel\Util\Context::get(Base::ROUTE) == "/admin/dashboard/index" && $_GET['agree'] == 1) {
@@ -90,18 +61,13 @@ class ManageSession implements InterceptorInterface
 
         //保存会话
         Context::set(ManageConst::SESSION, $manage);
+        Context::set(ManageConst::SESSION_RECORD, $session);
     }
 
 
     #[NoReturn] private function kick(int $type): void
     {
-        setcookie(ManageConst::SESSION, "", [
-            'expires' => time() - 3600,
-            'path' => '/',
-            'httponly' => true,
-            'samesite' => 'Lax',
-            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
-        ]);
+        ManageSessionManager::clearCookie();
         if ($type == Interceptor::TYPE_VIEW) {
             Client::redirect("/admin/authentication/login?goto=" . urlencode($_SERVER['REQUEST_URI']), "登录会话过期，请重新登录..");
         } else {

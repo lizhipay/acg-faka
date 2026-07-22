@@ -3861,8 +3861,10 @@ layui.define(['form', 'jquery'], function (exports) {
         // 是否开启搜索
         search = options.search === undefined ? false : options.search,
         // 唯一id
-        tmp = new Date().getTime(),
+        tmp = new Date().getTime() + '-' + Math.random().toString(36).slice(2, 8),
         DATA = {},
+        destroyed = false,
+        EVENT_NAMESPACE = '.treeSelect-' + tmp,
         selected = 'layui-form-selected',
         TREE_OBJ = undefined,
         TREE_INPUT_ID = 'treeSelect-input-' + tmp,
@@ -3879,6 +3881,9 @@ layui.define(['form', 'jquery'], function (exports) {
     var a = {
       init: function () {
         _Dict.advanced(data, d => {
+          if (destroyed) {
+            return;
+          }
           DATA = d;
           a.hideElem().input().toggleSelect().loadCss().preventEvent();
           $.fn.zTree.init($('#' + TREE_SELECT_BODY_ID), a.setting(), d);
@@ -3976,7 +3981,7 @@ layui.define(['form', 'jquery'], function (exports) {
           }
           e.stopPropagation();
         });
-        $(document).click(function () {
+        $(document).off('click' + EVENT_NAMESPACE).on('click' + EVENT_NAMESPACE, function () {
           var $select = $('#' + TREE_SELECT_ID);
           if ($select.hasClass(selected)) {
             $select.removeClass(selected);
@@ -4048,11 +4053,31 @@ layui.define(['form', 'jquery'], function (exports) {
         return a;
       },
       event: function (evt, el, fn) {
-        $('body').on(evt, el, fn);
+        var namespaced = String(evt).split(/\s+/).filter(Boolean).map(function (name) {
+          return name + EVENT_NAMESPACE;
+        }).join(' ');
+        $('body').on(namespaced, el, fn);
+      },
+      destroy: function () {
+        if (destroyed) {
+          return;
+        }
+        destroyed = true;
+        $('body').off(EVENT_NAMESPACE);
+        $(document).off(EVENT_NAMESPACE);
+        if ($.fn.zTree && typeof $.fn.zTree.destroy === 'function') {
+          try {
+            $.fn.zTree.destroy(TREE_SELECT_BODY_ID);
+          } catch (error) {}
+        }
+        $('#' + TREE_SELECT_ID).remove();
+        $(elem).show();
       }
     };
     a.init();
-    return new TreeSelect();
+    var instance = new TreeSelect();
+    instance.destroy = a.destroy;
+    return instance;
   };
 
   /**

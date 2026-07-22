@@ -1,4 +1,45 @@
 #{include file="../Header.html"}
+<style>
+    @media (max-width: 991.98px) {
+        html[data-admin-layout="mobile"] .md-store-sync-log-layer .log-textarea {
+            box-sizing: border-box;
+            min-height: 100%;
+            border-radius: 16px;
+            padding: 14px !important;
+            background: var(--admin-mobile-surface-2);
+            color: var(--admin-mobile-text) !important;
+            font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            resize: none;
+        }
+
+        html[data-admin-layout="mobile"] .layui-layer.md-store-sync-log-layer .layui-layer-btn {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        html[data-admin-layout="mobile"] .layui-layer.md-store-sync-log-layer .layui-layer-btn .layui-layer-btn0 {
+            grid-column: 1 / -1;
+            grid-row: 1;
+        }
+
+        html[data-admin-layout="mobile"] .layui-layer.md-store-sync-log-layer .layui-layer-btn .layui-layer-btn1 {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        html[data-admin-layout="mobile"] .layui-layer.md-store-sync-log-layer .layui-layer-btn .layui-layer-btn2 {
+            display: grid;
+            height: 52px;
+            grid-column: 2;
+            grid-row: 2;
+            place-items: center;
+            border: 0;
+            border-radius: 16px;
+            background: var(--admin-mobile-surface-2);
+            color: var(--admin-mobile-text);
+            font-weight: 750;
+        }
+    }
+</style>
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     <!--begin::Toolbar-->
@@ -13,7 +54,7 @@
                 <!--begin::Header-->
                 <div class="card-header border-0">
                     <div class="card-toolbar">
-                        <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i class="fa-duotone fa-regular fa-circle-plus"></i>新增店铺</button>
+                        <button type="button" class="btn btn-sm btn-light-primary btn-app-create me-3"><i class="fa-duotone fa-regular fa-circle-plus"></i>新增店铺</button>
                     </div>
                 </div>
                 <!--end::Header-->

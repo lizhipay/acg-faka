@@ -1,5 +1,63 @@
 !function () {
     const table = new Table("/user/api/commodityOrder/data", "#order-table");
+    const escapeHtml = value => String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    const safeInlineHtml = value => window.SeattleTheme && typeof window.SeattleTheme.safeInlineHtml === 'function'
+        ? window.SeattleTheme.safeInlineHtml(value)
+        : escapeHtml(value);
+    const parseWidget = value => {
+        try {
+            const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+            return parsed && typeof parsed === 'object' ? parsed : null;
+        } catch (error) {
+            return null;
+        }
+    };
+    const hasPermission = (row, permission) => row?.merchant_permissions?.[permission] === true;
+    const deviceLabel = (value, row) => {
+        if (!hasPermission(row, 'view_purchase_info')) return '受保护';
+        return ({
+            0: `${util.icon('fa-duotone fa-regular fa-window')} PC`,
+            1: `${util.icon('fa-duotone fa-regular fa-robot')} 安卓`,
+            2: `${util.icon('fa-duotone fa-regular fa-apple-whole')} IOS`,
+            3: `${util.icon('fa-duotone fa-regular fa-tablet')} iPad`
+        })[Number(value)] || '未知设备';
+    };
+    const safeItem = item => {
+        if (!item) return '-';
+        const image = item.cover ? `<img src="${escapeHtml(item.cover)}" class="table-item-icon" alt="">` : '';
+        return `<span class="table-item">${image}<span class="table-item-name">${safeInlineHtml(item.name || '未命名商品')}</span></span>`;
+    };
+    const safeUser = item => {
+        if (!item) return '<span class="text-gray">访客</span>';
+        const image = item.avatar ? `<img src="${escapeHtml(item.avatar)}" class="table-item-icon" alt="">` : '';
+        return `<span class="table-item table-item-user">${image}<span class="table-item-name">${escapeHtml(item.username || '会员')}</span></span>`;
+    };
+    const safePay = item => {
+        if (!item) return '-';
+        const image = item.icon ? `<img src="${escapeHtml(item.icon)}" class="item-icon" alt="">` : '';
+        return `<span class="pay-item">${image}<span class="item-name">${escapeHtml(item.name || '未知方式')}</span></span>`;
+    };
+    const openSecret = map => {
+        const secret = String(map && map.secret || '');
+        const tradeNo = String(map && map.trade_no || '');
+        layer.open({
+            type: 1,
+            title: `${util.icon("fa-duotone fa-regular fa-eye")} 查看交付内容`,
+            area: util.isPc() ? '520px' : ["100%", "100%"],
+            shadeClose: true,
+            content: `<div class="md-secret"><div class="md-secret__meta"><span class="a-badge a-badge-info">订单 ${escapeHtml(tradeNo || '—')}</span><span class="a-badge a-badge-success">只读内容</span></div><pre class="md-secret__code">${escapeHtml(secret || '暂无交付内容')}</pre><div class="md-secret__bar"><button type="button" class="md-secret__btn md-secret__btn--primary" data-order-secret-copy>${util.icon("fa-duotone fa-regular fa-copy")} 复制交付内容</button></div></div>`,
+            success: layerObject => {
+                $(layerObject).find('[data-order-secret-copy]').on('click', () => {
+                    util.copyTextToClipboard(secret, () => message.success('交付内容已复制'), () => message.error('复制失败，请手动选择内容'));
+                });
+            }
+        });
+    };
 
     const modal = (title, assign = {}) => {
         component.popup({
@@ -29,27 +87,26 @@
     }
 
     table.setColumns([
-        {checkbox: true}
-        , {
-            field: 'trade_no', title: '订单号'
+        {
+            field: 'trade_no', title: '订单号', class: 'nowrap', width: 190
         }
         , {
-            field: 'owner', title: '会员', formatter: format.user
+            field: 'owner', title: '会员', class: 'nowrap', width: 130, formatter: safeUser
         }
         , {
-            field: 'commodity', title: '商品', formatter: format.item
+            field: 'commodity', title: '商品', class: 'nowrap', width: 180, formatter: safeItem
         }
         , {
-            field: 'sku', title: 'SKU', formatter: (_, __) => {
+            field: 'sku', title: 'SKU', class: 'nowrap', width: 180, formatter: (_, __) => {
                 let d = ``;
 
                 if (__.race) {
-                    d += format.badge(`分类:${__.race}`, "a-badge-info");
+                    d += format.badge(`分类:${escapeHtml(__.race)}`, "a-badge-info");
                 }
 
                 if (!util.isEmptyOrNotJson(__.sku)) {
                     for (const skuKey in __.sku) {
-                        d += format.badge(`${skuKey}:${__.sku[skuKey]}`, "a-badge-info");
+                        d += format.badge(`${escapeHtml(skuKey)}:${escapeHtml(__.sku[skuKey])}`, "a-badge-info");
                     }
                 }
 
@@ -57,44 +114,39 @@
             }
         }
         , {
-            field: 'card_num', title: '数量'
+            field: 'card_num', title: '数量', class: 'nowrap', width: 70
         }
         , {
-            field: 'amount', title: '金额', formatter: _ => format.money(_, "green")
+            field: 'amount', title: '金额', class: 'nowrap', width: 90, formatter: _ => format.money(_, "green")
         }
         , {
-            field: 'commodity.delivery_way', title: '发货方式', dict: "_order_delivery_way"
+            field: 'commodity.delivery_way', title: '发货方式', dict: "_order_delivery_way", class: 'nowrap', width: 100
         }
         , {
-            field: 'pay', title: '支付方式', formatter: format.pay
+            field: 'pay', title: '支付方式', class: 'nowrap', width: 130, formatter: safePay
         }
         , {
-            field: 'status', title: '支付状态', dict: "_order_status"
+            field: 'status', title: '支付状态', dict: "_order_status", class: 'nowrap', width: 100
         }
         , {
-            field: 'delivery_status', title: '发货状态', dict: "_order_delivery_status"
+            field: 'delivery_status', title: '发货状态', dict: "_order_delivery_status", class: 'nowrap', width: 100
         }
         , {
-            field: 'secret', title: '卡密信息', type: "button", buttons: [
+            field: 'secret', title: '交付内容', type: "button", class: 'nowrap', width: 190, buttons: [
                 {
                     icon: `fa-duotone fa-regular fa-eye`,
                     class: "text-primary",
                     title: "查看",
-                    show: _ => _?.commodity?.delivery_way === 0 && _.delivery_status == 1,
+                    show: _ => hasPermission(_, 'view_secret') && Number(_?.commodity?.delivery_way) === 0 && Number(_.delivery_status) === 1,
                     click: (event, value, map, index) => {
-                        layer.open({
-                            type: 1,
-                            title: `${util.icon("fa-duotone fa-regular fa-eye")} 查看卡密`,
-                            area: util.isPc() ? ['420px', '420px'] : ["100%", "100%"],
-                            content: '<textarea class="layui-input" style="padding: 15px;height: 100%;">' + map.secret + '</textarea>'
-                        });
+                        openSecret(map);
                     }
                 },
                 {
                     icon: `fa-duotone fa-regular fa-truck-ramp-box`,
                     class: "text-success",
                     title: "手动发货",
-                    show: _ => _?.commodity?.delivery_way === 1,
+                    show: _ => hasPermission(_, 'delivery') && Number(_.status) === 1 && Number(_?.commodity?.delivery_way) === 1,
                     click: (event, value, map, index) => {
                         modal(`${util.icon("fa-duotone fa-regular fa-truck-ramp-box")} 发货内容`, map);
                     }
@@ -103,40 +155,33 @@
             ]
         }
         , {
-            field: 'widget', title: '控件', type: "button", buttons: [
+            field: 'widget', title: '购买信息', type: "button", class: 'nowrap', width: 100, buttons: [
                 {
                     icon: `fa-duotone fa-regular fa-eye`,
                     class: "text-primary",
                     title: "查看",
                     show: _ => {
-                        let parse = JSON.parse(_.widget);
-                        if (!parse || parse.length == 0) {
-                            return false;
-                        }
-                        return true;
+                        if (!hasPermission(_, 'view_purchase_info')) return false;
+                        const parsed = parseWidget(_.widget);
+                        return !!(parsed && Object.keys(parsed).length);
                     },
                     click: (event, value, map, index) => {
-                        let html = '<div style="padding: 10px;" class="more-table">\n' +
-                            '        <table class="layui-table">\n' +
-                            '            <tbody class="widget-container">\n' +
-                            '            </tbody>\n' +
-                            '        </table>\n' +
-                            '    </div>';
-                        let parse = JSON.parse(map.widget);
-                        if (!parse) {
+                        const parsed = parseWidget(map.widget);
+                        if (!parsed || !Object.keys(parsed).length) {
+                            message.error('该订单没有可展示的购买信息');
                             return;
                         }
+                        const rows = Object.values(parsed).map(item => {
+                            const label = item && typeof item === 'object' ? item.cn : '';
+                            const content = item && typeof item === 'object' ? item.value : item;
+                            return `<tr><th>${escapeHtml(label || '字段')}</th><td>${escapeHtml(content == null ? '—' : content)}</td></tr>`;
+                        }).join('');
                         layer.open({
                             type: 1,
                             shadeClose: true,
-                            title: '<i class="fa-duotone fa-regular fa-diamonds-4"></i> <span style="color: gray;">Widget</span>',
-                            content: html,
-                            area: util.isPc() ? "420px" : ["100%", "100%"],
-                            success: () => {
-                                for (const parseKey in parse) {
-                                    $('.widget-container').append('<tr><td>' + parse[parseKey].cn + '</td><td>' + parse[parseKey].value + '</td></tr>');
-                                }
-                            }
+                            title: `${util.icon('fa-duotone fa-regular fa-rectangle-list')} 购买信息`,
+                            content: `<div class="more-table"><table class="layui-table"><tbody>${rows}</tbody></table></div>`,
+                            area: util.isPc() ? "480px" : ["100%", "100%"]
                         });
                     }
                 }
@@ -161,7 +206,7 @@
             field: 'create_ip', title: '客户IP'
         }
         , {
-            field: 'create_device', title: '设备', dict: "_common_device"
+            field: 'create_device', title: '设备', formatter: deviceLabel
         }
         , {
             field: 'card.secret', title: '预选卡密'

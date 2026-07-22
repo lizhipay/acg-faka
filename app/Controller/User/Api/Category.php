@@ -55,9 +55,42 @@ class Category extends User
     {
         $map = $request->post(flags: Filter::NORMAL);
         $userId = $this->getUser()->id;
+        $id = isset($map['id']) ? (int)$map['id'] : 0;
 
-        if (!empty($map['id']) && !\App\Model\Category::query()->where("owner", $userId)->where("id", $map['id'])->exists()) {
+        if ($id > 0 && !\App\Model\Category::query()->where("owner", $userId)->where("id", $id)->exists()) {
             throw new JSONException("分类不存在");
+        }
+
+        if (($id === 0 && !isset($map['name'])) || (isset($map['name']) && trim((string)$map['name']) === '')) {
+            throw new JSONException("分类名称不能为空");
+        }
+
+        if (isset($map['pid']) && (int)$map['pid'] > 0) {
+            $parentId = (int)$map['pid'];
+            $parent = \App\Model\Category::query()
+                ->where("owner", $userId)
+                ->find($parentId);
+            if (!$parent) {
+                throw new JSONException("父级分类不存在");
+            }
+            if ($id > 0 && $parentId === $id) {
+                throw new JSONException("分类不能设为自己的子分类");
+            }
+
+            // 沿父级链向上检查，阻止把分类移动到自己的后代节点下形成循环。
+            $visited = [];
+            while ($parent && (int)$parent->pid > 0) {
+                if (isset($visited[$parent->id])) {
+                    throw new JSONException("分类层级存在循环，请重新选择父级分类");
+                }
+                $visited[$parent->id] = true;
+                if ($id > 0 && (int)$parent->pid === $id) {
+                    throw new JSONException("不能选择当前分类的子分类作为父级");
+                }
+                $parent = \App\Model\Category::query()
+                    ->where("owner", $userId)
+                    ->find((int)$parent->pid);
+            }
         }
 
         if (isset($map['sort'])) {

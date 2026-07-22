@@ -1,27 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Wiki - #{$pluginName}</title>
+    <title>#{$pluginName} - 使用帮助</title>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
-    <meta name="description" content="Description">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="description" content="#{$pluginName} 使用帮助">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
+    <script>(function(){var e=document.documentElement;try{var p=localStorage.getItem('admin-theme')||'auto';var d=p==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p;e.setAttribute('data-theme',d);e.setAttribute('data-theme-pref',p);var m=localStorage.getItem('admin-layout-mode')==='desktop'?'desktop':((window.innerWidth||screen.width)<992?'mobile':'desktop');e.setAttribute('data-admin-layout',m);}catch(_){e.setAttribute('data-theme','light');e.setAttribute('data-admin-layout',(window.innerWidth||screen.width)<992?'mobile':'desktop');}})();</script>
+    <link rel="shortcut icon" href="/favicon.ico"/>
     <link href="/assets/common/js/docsify/lib/themes/vue.css" rel="stylesheet">
 
+    #{css(
+    [
+    "/assets/common/fonts/material-icons.css",
+    "/assets/admin/css/_mobile.css",
+    "/assets/admin/css/wiki.mobile.css"
+    ],
+    [
+    "/assets/common/fonts/material-icons.css",
+    "/assets/admin/css/mobile.css",
+    "/assets/admin/css/wiki.mobile.css"
+    ])}
+
     <style>
-        .app-name .app-name-link img {
+        .admin-wiki-page .app-name .app-name-link img {
             height: 50px;
             border-radius: 10px;
         }
 
-        .app-name .app-name-link {
+        .admin-wiki-page .app-name .app-name-link {
             pointer-events: none;
             cursor: default;
         }
     </style>
 </head>
-<body>
+<body class="admin-wiki-page">
 <div id="app"></div>
+#{include file="../Mobile/Shell.html"}
 <script>
     // docsify 默认以“静态文件”方式拉 /app/Plugin/X/Wiki/*.md,而宝塔等 nginx 安全规则会把
     // README.md / CHANGELOG.md 等文件名 `return 404`,导致文档整体加载失败(部分用户 404 的根因)。
@@ -29,40 +44,63 @@
     // 结尾、不被安全规则命中,任意服务器均可加载。docsify 的 basePath / 相对链接解析保持不变,只改变
     // 实际网络请求的目标 URL。
     (function () {
+        var previous = window.AdminWikiResourceRewrite;
+        if (previous && typeof previous.destroy === 'function') previous.destroy();
         var RE = /\/app\/Plugin\/([A-Za-z0-9_]+)\/Wiki\/([^?#]+)/;
+        var originalFetch = window.fetch;
+        var originalOpen = XMLHttpRequest.prototype.open;
+        var patchedFetch = null;
+        var destroyed = false;
+
         function rewrite(url) {
             var m = String(url).match(RE);
             return m ? ('/admin/plugin/wikiRes?plugin=' + encodeURIComponent(m[1]) + '&file=' + encodeURIComponent(m[2])) : url;
         }
-        if (window.fetch) {
-            var _fetch = window.fetch;
-            window.fetch = function (input, init) {
+
+        function destroy() {
+            if (destroyed) return;
+            destroyed = true;
+            if (patchedFetch && window.fetch === patchedFetch) window.fetch = originalFetch;
+            if (XMLHttpRequest.prototype.open === patchedOpen) XMLHttpRequest.prototype.open = originalOpen;
+            window.removeEventListener('pagehide', destroy);
+            if (window.AdminWikiResourceRewrite === controller) window.AdminWikiResourceRewrite = null;
+        }
+
+        if (originalFetch) {
+            patchedFetch = function (input, init) {
                 if (typeof input === 'string') { input = rewrite(input); }
                 else if (input && input.url) { input = new Request(rewrite(input.url), input); }
-                return _fetch.call(this, input, init);
+                return originalFetch.call(this, input, init);
             };
+            window.fetch = patchedFetch;
         }
-        var _open = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function (method, url) {
+
+        function patchedOpen(method, url) {
             if (arguments.length > 1) { arguments[1] = rewrite(url); }
-            return _open.apply(this, arguments);
-        };
+            return originalOpen.apply(this, arguments);
+        }
+
+        var controller = {destroy: destroy};
+        XMLHttpRequest.prototype.open = patchedOpen;
+        window.AdminWikiResourceRewrite = controller;
+        window.addEventListener('pagehide', destroy, {once: true});
     })();
     window.$docsify = {
-        basePath: "#{$basePath}",
-        name: 'WIKI - #{$pluginName}',
+        basePath: #{$basePathJson},
+        name: 'WIKI - ' + #{$pluginNameHtmlJson},
         repo: '',
-        homepage: '#{$homepage}',
+        homepage: #{$homepageJson},
         loadSidebar: true,
         loadNavbar: false,
         fallbackLanguages: ['zh-cn'],
         mergeNavbar: true,
-        themeColor: '#3F51B5',
-        logo: '#{$icon}',
+        themeColor: '#00d982',
+        logo: #{$iconJson},
         auto2top: true,
         subMaxLevel: 4,
         topMargin: 20,
         search: {
+            namespace: 'admin-wiki-' + #{$pluginKeyJson},
             depth: 6,
             noData: {
                 '/': '没有找到结果!',
@@ -73,11 +111,27 @@
             }
         },
         alias: {
-            '/_sidebar.md': '#{$sidebar}'
+            '/_sidebar.md': #{$sidebarJson}
         }
     }
 </script>
 <script src="/assets/common/js/docsify/lib/docsify.min.js"></script>
 <script src="/assets/common/js/docsify/lib/plugins/search.min.js"></script>
+#{js(
+[
+"/assets/admin/js/_mobile.js",
+"/assets/admin/controller/config/wiki.mobile.js"
+],
+[
+"/assets/admin/js/mobile/viewport.js",
+"/assets/admin/js/mobile/lifecycle.js",
+"/assets/admin/js/mobile/shell.js",
+"/assets/admin/js/mobile/navigation.js",
+"/assets/admin/js/mobile/overlay.js",
+"/assets/admin/js/mobile/fallback.js",
+"/assets/admin/js/mobile/recipes.js",
+"/assets/admin/js/mobile/workflows.js",
+"/assets/admin/controller/config/wiki.mobile.js"
+])}
 </body>
 </html>

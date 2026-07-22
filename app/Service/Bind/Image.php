@@ -154,7 +154,11 @@ class Image implements \App\Service\Image
      */
     public function isRealImageFromURL($url): bool
     {
-        $response = Http::make()->head($url);
+        $response = Http::make()->head($url, [
+            'allow_redirects' => false,
+            'connect_timeout' => 5,
+            'timeout' => 10,
+        ]);
         $mimeType = $response->getHeaderLine('Content-Type');
         $validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/x-icon'];
         if (in_array($mimeType, $validImageTypes)) {
@@ -190,9 +194,27 @@ class Image implements \App\Service\Image
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
-        Http::make()->get($url, [
-            "sink" => BASE_PATH . $unique
-        ]);
+        try {
+            Http::make()->get($url, [
+                "sink" => BASE_PATH . $unique,
+                'allow_redirects' => false,
+                'connect_timeout' => 5,
+                'timeout' => 20,
+                'progress' => static function (int $downloadTotal, int $downloadedBytes): void {
+                    if ($downloadTotal > 10485760 || $downloadedBytes > 10485760) {
+                        throw new JSONException('远端图片超过 10MB，已停止下载');
+                    }
+                },
+            ]);
+        } catch (\Throwable $throwable) {
+            if (is_file(BASE_PATH . $unique)) {
+                File::remove(BASE_PATH . $unique);
+            }
+            if ($throwable instanceof JSONException) {
+                throw $throwable;
+            }
+            throw new JSONException('远端图片下载失败');
+        }
         if (!is_file(BASE_PATH . $unique)) {
             throw new JSONException("图片下载失败：$url");
         }

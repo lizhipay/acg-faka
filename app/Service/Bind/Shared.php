@@ -38,7 +38,11 @@ class Shared implements \App\Service\Shared
                     "Api-Signature" => Str::generateSignature($data, $appKey)
                 ],
                 "form_params" => $data,
-                "timeout" => 30
+                "timeout" => 30,
+                // A redirect to another host must never receive the signed
+                // request headers. The configured endpoint has to answer
+                // directly; operators can update the saved base URL instead.
+                'allow_redirects' => false,
             ]);
 
             $contents = json_decode($response->getBody()->getContents() ?: "", true) ?: [];
@@ -74,7 +78,11 @@ class Shared implements \App\Service\Shared
         try {
             $response = Http::make()->post($url, [
                 'form_params' => $data,
-                'timeout' => 30
+                'timeout' => 30,
+                // app_key is part of this legacy request body. Disabling all
+                // redirects prevents a 307/308 response from forwarding that
+                // body to a different origin.
+                'allow_redirects' => false,
             ]);
         } catch (\Exception $e) {
             throw new JSONException("连接失败, 疑似被对方防火墙拦截");
