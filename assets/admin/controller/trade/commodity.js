@@ -4,6 +4,41 @@
     let controllerActive = true;
     const mobileAdminEnabled = () => Boolean(window.AdminMobile && window.AdminMobile.isEnabled && window.AdminMobile.isEnabled());
     const escapeHtml = value => $('<div>').text(String(value ?? '')).html();
+    const commodityDeleteNames = (values, fallback) => Array.isArray(values) && values.length
+        ? values.map(escapeHtml).join('、')
+        : escapeHtml(fallback || '所选商品');
+    const commodityDeleteDetail = impact => {
+        const groupNames = Array.isArray(impact.commodity_group_names) && impact.commodity_group_names.length
+            ? `（${impact.commodity_group_names.map(escapeHtml).join('、')}）`
+            : '';
+        return `卡密 ${Number(impact.card_count || 0)} 张、订单 ${Number(impact.order_count || 0)} 笔、优惠券 ${Number(impact.coupon_count || 0)} 张、商户映射 ${Number(impact.merchant_mapping_count || 0)} 条、工单 ${Number(impact.ticket_count || 0)} 条、商品分组 ${Number(impact.commodity_group_count || 0)} 个${groupNames}`;
+    };
+    const commodityDeleteSkipReason = impact => {
+        const reasons = [];
+        const blockedCount = Number(impact.blocked_count || 0);
+        const missingCount = Number(impact.missing_count || 0);
+        if (blockedCount > 0) {
+            const names = commodityDeleteNames(impact.blocked_names, '有关联业务的商品');
+            reasons.push(`有关联业务 ${blockedCount} 个（${names}；${commodityDeleteDetail(impact)}）`);
+        }
+        if (missingCount > 0) {
+            reasons.push(`已不存在 ${missingCount} 个`);
+        }
+        return reasons.join('；') || '没有可删除的商品';
+    };
+    const showCommodityBatchDeleteResult = response => {
+        const result = response?.data || {};
+        const deletedCount = Number(result.deleted_count ?? result.count ?? 0);
+        const skippedCount = Number(result.skipped_count || 0);
+        if (skippedCount > 0) {
+            message.alert(
+                `批量删除完成：成功删除 <b>${deletedCount} 个</b>，自动跳过 <b>${skippedCount} 个</b>。<br><br>跳过原因：${commodityDeleteSkipReason(result)}`,
+                'warning'
+            );
+            return;
+        }
+        message.success(`已删除 ${deletedCount} 个商品`);
+    };
     const batchSettingDefinitions = [
         {name: 'api_status', title: 'API 对接'},
         {name: 'password_status', title: '下单密码'},
@@ -41,15 +76,36 @@
             done: res => {
                 if (!controllerActive) return;
                 const impact = res.data || {};
-                const names = Array.isArray(impact.names) && impact.names.length
-                    ? impact.names.map(escapeHtml).join('、')
-                    : escapeHtml(fallbackName || '所选商品');
-                const groupNames = Array.isArray(impact.commodity_group_names) && impact.commodity_group_names.length
-                    ? `（${impact.commodity_group_names.map(escapeHtml).join('、')}）`
-                    : '';
-                const detail = `卡密 ${Number(impact.card_count || 0)} 张、订单 ${Number(impact.order_count || 0)} 笔、优惠券 ${Number(impact.coupon_count || 0)} 张、商户映射 ${Number(impact.merchant_mapping_count || 0)} 条、工单 ${Number(impact.ticket_count || 0)} 条、商品分组 ${Number(impact.commodity_group_count || 0)} 个${groupNames}`;
-                if (impact.can_delete !== true) {
+                const names = commodityDeleteNames(impact.names, fallbackName || '所选商品');
+                const detail = commodityDeleteDetail(impact);
+                const requestedCount = Number(impact.requested_count || list.length);
+                const deletableCount = Number(impact.deletable_count || 0);
+                const blockedCount = Number(impact.blocked_count || 0);
+                const missingCount = Number(impact.missing_count || 0);
+                const skippedCount = Number(impact.skipped_count || 0);
+                if (list.length === 1 && blockedCount > 0) {
                     message.alert(`“${names}”已有业务数据（${detail}），系统已阻止物理删除。请先解除关联，或改为下架/隐藏商品。`, 'warning');
+                    return;
+                }
+                if (list.length === 1 && missingCount > 0) {
+                    message.alert('该商品已不存在，请刷新列表后重试。', 'warning');
+                    return;
+                }
+                if (deletableCount < 1) {
+                    message.alert(
+                        `所选 ${requestedCount} 个商品均无法物理删除，已全部自动跳过。<br><br>跳过原因：${commodityDeleteSkipReason(impact)}`,
+                        'warning'
+                    );
+                    return;
+                }
+                if (skippedCount > 0) {
+                    const deletableNames = commodityDeleteNames(impact.deletable_names, '可删除商品');
+                    message.ask(
+                        `选中 <b>${requestedCount} 个商品</b>，将永久删除其中 <b>${deletableCount} 个</b>：${deletableNames}<br><br>另外 <b>${skippedCount} 个无法删除的商品会自动跳过</b>。<br>跳过原因：${commodityDeleteSkipReason(impact)}<br><br>删除后无法恢复。`,
+                        done,
+                        '确认删除可删除商品',
+                        '开始删除'
+                    );
                     return;
                 }
                 message.ask(
@@ -763,6 +819,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
                             name: "secret",
                             type: "textarea",
                             placeholder: "卡密信息，一行一个",
+                            preserveLiteral: true,
                             height: 200,
                             required: true
                         },
@@ -1063,9 +1120,9 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
             return;
         }
         confirmCommodityDelete(data, `${data.length} 个商品`, () => {
-            util.post("/admin/api/commodity/del", {list: data}, () => {
+            util.post("/admin/api/commodity/del", {list: data}, res => {
                 if (!controllerActive || !table) return;
-                message.success("全部删除成功");
+                showCommodityBatchDeleteResult(res);
                 table.refresh();
             });
         });

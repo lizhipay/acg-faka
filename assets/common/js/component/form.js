@@ -848,7 +848,13 @@ class Form {
         let obj = {};
         let _this = this;
         this.opt.tab.forEach((item, index) => {
-            let serializeArray = util.arrayToObject($('.' + _this.unique + index).serializeArray());
+            const literalFields = (Array.isArray(item.form) ? item.form : [])
+                .filter(field => field?.preserveLiteral === true && typeof field.name === 'string')
+                .map(field => field.name);
+            let serializeArray = util.arrayToObject(
+                $('.' + _this.unique + index).serializeArray(),
+                literalFields
+            );
             obj = Object.assign(obj, serializeArray);
         });
 

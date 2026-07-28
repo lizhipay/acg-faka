@@ -200,7 +200,7 @@ CREATE TABLE `__PREFIX__config`  (
                                      `value` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '配置内容',
                                      PRIMARY KEY (`id`) USING BTREE,
                                      UNIQUE INDEX `key`(`key`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 45 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = MyISAM AUTO_INCREMENT = 52 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
 
 INSERT INTO `__PREFIX__config` VALUES (1, 'shop_name', '异次元店铺');
@@ -251,6 +251,8 @@ INSERT INTO `__PREFIX__config` VALUES (46, 'session_expire', '0');
 INSERT INTO `__PREFIX__config` VALUES (47, 'cash_type_usdt', '1');
 INSERT INTO `__PREFIX__config` VALUES (48, 'user_center_theme', 'MountFuji');
 INSERT INTO `__PREFIX__config` VALUES (49, 'user_center_mobile_theme', '0');
+INSERT INTO `__PREFIX__config` VALUES (50, 'callback_ip_whitelist', '0');
+INSERT INTO `__PREFIX__config` VALUES (51, 'callback_ip_whitelist_rules', '');
 
 
 DROP TABLE IF EXISTS `__PREFIX__coupon`;

@@ -548,6 +548,34 @@ class Order implements \App\Service\Order
     }
 
     /**
+     * Revalidate and lock a local preselected card inside the order transaction.
+     * This prevents an administrator deletion from racing a new unpaid order
+     * into retaining a card ID which no longer exists.
+     *
+     * @throws JSONException
+     */
+    private function lockLocalDraftCardForOrder(Commodity $commodity, int $cardId): void
+    {
+        if ($cardId <= 0 || (int)$commodity->draft_status !== 1 || (int)$commodity->shared_id > 0) {
+            return;
+        }
+
+        $card = Card::query()
+            ->whereKey($cardId)
+            ->lockForUpdate()
+            ->first(['id', 'commodity_id', 'status']);
+        if (!$card) {
+            throw new JSONException('预选的宝贝不存在');
+        }
+        if ((int)$card->commodity_id !== (int)$commodity->id) {
+            throw new JSONException('此预选卡密不属于当前商品');
+        }
+        if ((int)$card->status !== 0) {
+            throw new JSONException('此宝贝已被他人抢走');
+        }
+    }
+
+    /**
      * @param User|null $user
      * @param UserGroup|null $userGroup
      * @param array $map
@@ -775,6 +803,7 @@ class Order implements \App\Service\Order
                 throw new JSONException('当前商品已停售');
             }
             $this->assertTradeCommoditySnapshot($commodity, $lockedCommodity);
+            $this->lockLocalDraftCardForOrder($lockedCommodity, $cardId);
 
             if (((int)$lockedCommodity->only_user === 1 || (int)$lockedCommodity->purchase_count > 0) && $owner === 0) {
                 throw new JSONException('请先登录后再购买哦');
@@ -1461,6 +1490,7 @@ class Order implements \App\Service\Order
             // Preserve gift-order semantics (including intentional gifts for a
             // stopped item), but serialize creation against physical deletion.
             $lockedCommodity = $this->lockCommodityForOrder($commodity);
+            $this->lockLocalDraftCardForOrder($lockedCommodity, (int)$cardId);
 
             //创建订单
             $date = Date::current();

@@ -9,6 +9,7 @@ use App\Interceptor\UserVisitor;
 use App\Interceptor\Waf;
 use App\Model\Config;
 use App\Model\UserRecharge;
+use App\Util\CallbackIpWhitelist;
 use App\Util\Captcha;
 use App\Util\Client;
 use App\Util\Str;
@@ -59,6 +60,7 @@ class Order extends User
      */
     public function callback(Request $request): string
     {
+        CallbackIpWhitelist::enforce();
         $handle = $_GET['_PARAMETER'][0];
         foreach (['unsafePost', 'unsafeJson', 'unsafeGet'] as $method) {
             $data = $request->$method();

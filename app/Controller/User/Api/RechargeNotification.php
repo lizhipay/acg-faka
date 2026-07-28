@@ -6,6 +6,7 @@ namespace App\Controller\User\Api;
 
 use App\Controller\Base\API\User;
 use App\Interceptor\Waf;
+use App\Util\CallbackIpWhitelist;
 use App\Util\Str;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
@@ -26,6 +27,7 @@ class RechargeNotification extends User
      */
     public function callback(Request $request): string
     {
+        CallbackIpWhitelist::enforce();
         $handle = $_GET['_PARAMETER'][0];
         foreach (['unsafePost', 'unsafeJson', 'unsafeGet'] as $method) {
             $data = $request->$method();

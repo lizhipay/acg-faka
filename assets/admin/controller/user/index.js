@@ -346,7 +346,39 @@
     table.setColumns([
         {checkbox: true},
         {field: 'id', title: 'ID', width: 80, visible: false}
-        , {field: 'avatar', title: '用户名', formatter: (_, __) => mdUserCell(__)}
+        , {
+            field: 'avatar',
+            title: '用户名',
+            formatter: (_, row) => {
+                const username = String(row?.username ?? '');
+                if (!username) return mdUserCell(row);
+                const userId = String(row?.id ?? '');
+                const avatar = row?.avatar
+                    ? `<img src="${escapeHtml(row.avatar)}" class="md-user-cell__avatar" alt="">`
+                    : `<span class="md-user-cell__avatar md-user-cell__avatar--ph">${escapeHtml((username.charAt(0) || '?').toUpperCase())}</span>`;
+                return `<div class="md-user-cell md-user-cell--copyable">${avatar}<div class="md-user-cell__text"><span class="md-user-cell__name-row"><span class="md-user-cell__name">${escapeHtml(username)}</span><button type="button" class="md-copyable-cell__copy" aria-label="复制用户名" title="复制用户名">${util.icon("fa-duotone fa-regular fa-copy")}</button></span><span class="md-user-cell__id">${escapeHtml(userId)}</span></div></div>`;
+            },
+            events: {
+                'click .md-copyable-cell__copy': (event, _, row) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const username = String(row?.username ?? '');
+                    if (!username) {
+                        message.error('用户名为空，无法复制');
+                        return;
+                    }
+                    util.copyTextToClipboard(
+                        username,
+                        () => message.success('用户名已复制'),
+                        () => message.error('用户名复制失败')
+                    );
+                },
+                'dblclick .md-copyable-cell__copy': event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }
+        }
         , {field: 'group', title: '会员等级', formatter: _ => format.group(_)}
         , {field: 'email', title: '邮箱'}
         , {field: 'phone', title: '手机号'}

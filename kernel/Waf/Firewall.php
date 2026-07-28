@@ -204,8 +204,9 @@ class Firewall
      * Filter a value that PHP has already decoded from the request body.
      *
      * Some payloads, such as card secrets, legitimately contain percent escape
-     * text (for example "%0A"). Passing those values through getCache() would
-     * decode them a second time and silently change the stored data.
+     * text (for example "%0A") and ampersands. Passing those values through
+     * getCache() would decode them a second time, while passing a bare
+     * ampersand directly to HTMLPurifier would store it as "&amp;".
      *
      * @param mixed $input
      * @return mixed
@@ -226,7 +227,12 @@ class Firewall
         }
 
         $this->HTMLPurifierInit();
-        return $this->HTMLPurifier->purify($input);
+        // Shield one ampersand layer while HTMLPurifier removes unsafe markup,
+        // then restore exactly that layer. Existing literal entities such as
+        // "&amp;" remain literal text instead of being decoded.
+        $escapedAmpersands = str_replace('&', '&amp;', $input);
+        $cleaned = $this->HTMLPurifier->purify($escapedAmpersands);
+        return str_replace('&amp;', '&', $cleaned);
     }
 
     /**

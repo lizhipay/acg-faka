@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use App\Util\AdminEntrance;
 use Illuminate\Database\Capsule\Manager;
 use Kernel\Annotation\Collector;
 use Kernel\Consts\Base;
@@ -100,13 +101,9 @@ try {
     //插件库
     if (Context::get(Base::STORE_STATUS) && Context::get(Base::IS_INSTALL)) {
         require("Plugin.php");
-        //插件初始化
         Hook::inst()->load();
-        //插件初始化
         hook(\App\Consts\Hook::KERNEL_INIT);
-
-        //后台安全入口（由 Entrance 插件下沉到核心，配置见 网站设置-基本设置；未配置则不启用）
-        \App\Util\AdminEntrance::guard();
+        AdminEntrance::guard();
     }
 
 
@@ -162,7 +159,16 @@ try {
         header('content-type:application/json;charset=utf-8');
         echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     } else {
-        header("Content-type: text/html; charset=utf-8");
+        $hasContentType = false;
+        foreach (headers_list() as $responseHeader) {
+            if (str_starts_with(strtolower($responseHeader), 'content-type:')) {
+                $hasContentType = true;
+                break;
+            }
+        }
+        if (!$hasContentType) {
+            header("Content-type: text/html; charset=utf-8");
+        }
         echo $result;
     }
 } catch (Throwable $e) {

@@ -30,48 +30,87 @@ class ManageSSO implements \App\Service\ManageSSO
      */
     public function login(string $username, string $password, bool $remember = false, string $code = ''): array
     {
-        $login = DB::transaction(function () use ($username, $password, $remember, $code): array {
-            // Lock the account through verification and session creation. A
-            // concurrent password/status/2FA reset can no longer issue a
-            // session from stale security settings after global revocation.
-            $manage = Manage::query()->where('email', $username)->lockForUpdate()->first();
-            if (!$manage) {
-                throw new JSONException("该邮箱不存在");
-            }
-            if (!hash_equals((string)$manage->password, Str::generatePassword($password, $manage->salt))) {
-                ManageLog::log($manage, "登录失败：密码错误");
-                throw new JSONException("密码错误");
-            }
+        $failedAudit = null;
+        try {
+            $login = DB::transaction(function () use (
+                $username,
+                $password,
+                $remember,
+                $code,
+                &$failedAudit
+            ): array {
+                // Lock the account through verification and session creation. A
+                // concurrent password/status/2FA reset can no longer issue a
+                // session from stale security settings after global revocation.
+                $manage = Manage::query()->where('email', $username)->lockForUpdate()->first();
+                if (!$manage) {
+                    throw new JSONException("该邮箱不存在");
+                }
+                if (!hash_equals((string)$manage->password, Str::generatePassword($password, $manage->salt))) {
+                    $failedAudit = [$manage, "登录失败：密码错误"];
+                    throw new JSONException("密码错误");
+                }
 
-            //谷歌验证器：已绑定则必须校验动态码（密码通过后才校验，避免暴露 2FA 是否开启）
-            if (!empty($manage->google_secret) && !\App\Util\Totp::verify((string)$manage->google_secret, $code)) {
-                ManageLog::log($manage, "登录失败：谷歌验证码错误");
-                throw new JSONException("谷歌验证码错误");
-            }
+                //谷歌验证器：已绑定则必须校验动态码（密码通过后才校验，避免暴露 2FA 是否开启）
+                if (!empty($manage->google_secret) && !\App\Util\Totp::verify((string)$manage->google_secret, $code)) {
+                    $failedAudit = [$manage, "登录失败：谷歌验证码错误"];
+                    throw new JSONException("谷歌验证码错误");
+                }
 
-            if ($manage->status != 1) {
-                throw new JSONException("账号已被暂停使用");
-            }
-            if ($manage->type == 2 && Date::isNight()) {
-                throw new JSONException("您是白班哦，请注意休息。");
-            }
-            if ($manage->type == 3 && !Date::isNight()) {
-                throw new JSONException("您是夜班哦，请注意休息。");
-            }
+                if ($manage->status != 1) {
+                    throw new JSONException("账号已被暂停使用");
+                }
+                if ($manage->type == 2 && Date::isNight()) {
+                    throw new JSONException("您是白班哦，请注意休息。");
+                }
+                if ($manage->type == 3 && !Date::isNight()) {
+                    throw new JSONException("您是夜班哦，请注意休息。");
+                }
 
-            $manage->last_login_time = $manage->login_time;
-            $manage->last_login_ip = $manage->login_ip;
-            $manage->login_time = Date::current();
-            $manage->login_ip = Client::getAddress();
-            $manage->saveOrFail();
+                $manage->last_login_time = $manage->login_time;
+                $manage->last_login_ip = $manage->login_ip;
+                $manage->login_time = Date::current();
+                $manage->login_ip = Client::getAddress();
+                $manage->saveOrFail();
 
-            $expire = $remember ? 86400 * 365 : 86400;
-            $expiresAt = time() + $expire;
-            $issued = ManageSessionManager::issue($manage, $expiresAt);
-            ManageLog::log($manage, "登录了后台");
+                $expire = $remember ? 86400 * 365 : 86400;
+                $expiresAt = time() + $expire;
+                $issued = ManageSessionManager::issue($manage, $expiresAt);
 
-            return ['manage' => $manage, 'expires_at' => $expiresAt, 'cookie' => $issued['cookie']];
-        });
+                return [
+                    'manage' => $manage,
+                    'expires_at' => $expiresAt,
+                    'cookie' => $issued['cookie'],
+                    'session_id' => (int)$issued['session']->id,
+                ];
+            });
+        } catch (JSONException $e) {
+            if (is_array($failedAudit)) {
+                self::writeFailureAuditLog($failedAudit[0], $failedAudit[1]);
+            }
+            throw $e;
+        }
+
+        // manage_log is MyISAM on existing installations. Writing it inside
+        // the InnoDB login transaction violates MySQL GTID consistency after
+        // the account/session rows have changed, so audit only after commit.
+        try {
+            ManageLog::log($login['manage'], "登录了后台");
+        } catch (\Throwable) {
+            // The cookie has not been sent yet. Revoke the committed session
+            // so an audit failure cannot leave a valid, unreachable login.
+            try {
+                ManageSessionManager::revokeSession(
+                    (int)$login['manage']->id,
+                    (int)$login['session_id'],
+                    false
+                );
+            } catch (\Throwable) {
+                @error_log('后台登录会话补偿撤销失败，管理员ID：' . (int)$login['manage']->id);
+            }
+            @error_log('后台登录审计日志写入失败，管理员ID：' . (int)$login['manage']->id);
+            throw new JSONException('登录日志写入失败，请联系管理员');
+        }
 
         setcookie(ManageConst::SESSION, $login['cookie'], [
             'expires' => $login['expires_at'],
@@ -82,5 +121,16 @@ class ManageSSO implements \App\Service\ManageSSO
         ]);
 
         return ["username" => $login['manage']->email, "avatar" => $login['manage']->avatar];
+    }
+
+    private static function writeFailureAuditLog(Manage $manage, string $content): void
+    {
+        try {
+            ManageLog::log($manage, $content);
+        } catch (\Throwable) {
+            // Preserve the intended password/2FA error and retain a server-side
+            // diagnostic if the separate failure audit cannot be recorded.
+            @error_log('后台登录审计日志写入失败，管理员ID：' . (int)$manage->id);
+        }
     }
 }

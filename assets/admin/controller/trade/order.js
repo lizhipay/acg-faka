@@ -163,7 +163,28 @@
     table.setColumns([
         {checkbox: true}
         , {
-            field: 'trade_no', title: '订单号'
+            field: 'trade_no',
+            title: '订单号',
+            formatter: value => {
+                const tradeNo = String(value ?? '').trim();
+                if (!tradeNo) return '-';
+                return `<span class="md-order-trade-no"><span class="md-order-trade-no__value">${escapeHtml(tradeNo)}</span><button type="button" class="md-order-trade-no__copy" aria-label="复制订单号" title="复制订单号">${util.icon("fa-duotone fa-regular fa-copy")}</button></span>`;
+            },
+            events: {
+                'click .md-order-trade-no__copy': (event, value) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    util.copyTextToClipboard(
+                        String(value ?? '').trim(),
+                        () => message.success('订单号已复制'),
+                        () => message.error('订单号复制失败')
+                    );
+                },
+                'dblclick .md-order-trade-no__copy': event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }
         }
         , {
             field: 'owner', title: '客户', formatter: (_, __) => mdUserCell(_)

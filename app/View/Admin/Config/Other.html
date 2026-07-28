@@ -56,6 +56,63 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6" for="callback-ip-whitelist">
+                                    支付回调白名单 IP
+                                </label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8">
+                                    <div class="form-check form-check-solid form-switch fv-row">
+                                        <input class="form-check-input w-45px h-30px"
+                                               type="checkbox"
+                                               id="callback-ip-whitelist"
+                                               name="callback_ip_whitelist"
+                                               value="1"
+                                               aria-controls="callback-ip-whitelist-rules-row"
+                                               aria-expanded="#{if $config.callback_ip_whitelist == 1}true#{else}false#{/if}"
+                                               #{if $config.callback_ip_whitelist == 1} checked #{/if}/>
+                                        <label class="form-check-label" for="callback-ip-whitelist"></label>
+                                    </div>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6"
+                                 id="callback-ip-whitelist-rules-row"
+                                 data-callback-ip-rules
+                                 #{if $config.callback_ip_whitelist != 1} hidden #{/if}>
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6 required"
+                                       for="callback-ip-whitelist-rules">
+                                    回调白名单 IP 规则
+                                </label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <textarea name="callback_ip_whitelist_rules"
+                                              id="callback-ip-whitelist-rules"
+                                              rows="6"
+                                              inputmode="text"
+                                              spellcheck="false"
+                                              autocapitalize="off"
+                                              autocomplete="off"
+                                              class="form-control form-control-lg form-control-solid"
+                                              aria-describedby="callback-ip-whitelist-rules-help"
+                                              placeholder="每行一条，例如：&#10;203.0.113.10&#10;203.0.113.0/24&#10;203.0.113.*&#10;2001:db8::/32">#{$config.callback_ip_whitelist_rules|escape:'html'}</textarea>
+                                    <div class="form-text" id="callback-ip-whitelist-rules-help">
+                                        每行一条，支持精确 IPv4/IPv6、CIDR 和末尾 IPv4 通配规则。使用 CDN
+                                        或反向代理时，以“受信代理 IP”设置解析后的来源 IP 为准。
+                                    </div>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
                                 <label class="col-lg-4 col-form-label  fw-bold fs-6 required">主站域名配置(支持多域名,使用逗号分割)</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->

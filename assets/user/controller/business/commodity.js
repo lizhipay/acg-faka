@@ -465,6 +465,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
                             name: "secret",
                             type: "textarea",
                             placeholder: "卡密信息，一行一个",
+                            preserveLiteral: true,
                             height: 200
                         },
                         {

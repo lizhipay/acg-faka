@@ -445,7 +445,33 @@
     table.setColumns([
         {checkbox: true},
         {
-            field: 'code', title: '券码', formatter: value => escapeHtml(value)
+            field: 'code',
+            title: '券码',
+            formatter: value => {
+                const code = String(value ?? '');
+                if (!code) return '-';
+                return `<span class="md-copyable-cell"><span class="md-copyable-cell__value">${escapeHtml(code)}</span><button type="button" class="md-copyable-cell__copy" aria-label="复制券码" title="复制券码">${util.icon("fa-duotone fa-regular fa-copy")}</button></span>`;
+            },
+            events: {
+                'click .md-copyable-cell__copy': (event, value) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const code = String(value ?? '');
+                    if (!code) {
+                        message.error('券码为空，无法复制');
+                        return;
+                    }
+                    util.copyTextToClipboard(
+                        code,
+                        () => message.success('券码已复制'),
+                        () => message.error('券码复制失败')
+                    );
+                },
+                'dblclick .md-copyable-cell__copy': event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }
         }
         , {
             field: 'mode', title: '抵扣模式', dict: "_coupon_mode"

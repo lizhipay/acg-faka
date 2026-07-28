@@ -171,11 +171,9 @@ class App implements \App\Service\App
             throw new JSONException("该插件已被安装，请勿重复安装");
         }
 
-        $storeDownload = $this->storeDownload("/store/install", [
-            "plugin_id" => $pluginId
-        ]);
+        $storeDownload = \_plugin_download($pluginId);
         if (!$storeDownload) {
-            throw new JSONException("安装失败，请联系技术人员");
+            throw new JSONException("安装失败，请确认已授权且客户端为最新版本");
         }
         //下载完成，开始安装
         $src = BASE_PATH . "/kernel/Install/OS/{$storeDownload}";
@@ -219,11 +217,10 @@ class App implements \App\Service\App
         if (!is_dir($pluginPath)) {
             throw new JSONException("该插件还未安装，请先安装插件后再进行更新");
         }
-        $storeDownload = $this->storeDownload("/store/update", [
-            "plugin_id" => $pluginId
-        ]);
+        // 更新流程走加密的 kernel/Plugin.php（server 类，需授权才能跑）：/v2/store/update + 版本闸
+        $storeDownload = \_plugin_download($pluginId, "update");
         if (!$storeDownload) {
-            throw new JSONException("更新失败，请联系技术人员");
+            throw new JSONException("更新失败，请确认已授权且客户端为最新版本");
         }
         //下载完成，开始安装
         $src = BASE_PATH . "/kernel/Install/OS/{$storeDownload}";

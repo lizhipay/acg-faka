@@ -299,6 +299,23 @@
 
                             <!--begin::Input group-->
                             <div class="row mb-6">
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">受信代理 IP</label>
+                                <div class="col-lg-6 fv-row">
+                                    <textarea name="trusted_proxy_ips"
+                                              class="form-control form-control-lg form-control-solid"
+                                              rows="4"
+                                              maxlength="8192"
+                                              autocapitalize="none" spellcheck="false"
+                                              placeholder="每行一个代理 IP 或 CIDR，例如：10.0.0.0/8">#{$trusted_proxy_ips|escape:'html'}</textarea>
+                                    <div class="form-text text-danger fw-bold">
+                                        只有直连来源 REMOTE_ADDR 命中此清单时，系统才会读取上方选择的 CDN 请求头；留空时一律使用 REMOTE_ADDR。请勿填写客户端网段或 0.0.0.0/0。
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
                                 <!--begin::Label-->
                                 <label class="col-lg-4 col-form-label required fw-bold fs-6">
                                     <span class="admin-mobile-setting-label-mobile">PC背景图片</span>
@@ -559,6 +576,7 @@
                                 <div class="col-lg-8 fv-row">
                                     <input type="number" name="username_len"
                                            inputmode="numeric"
+                                           min="1" max="32" step="1"
                                            class="form-control form-control-lg form-control-solid"
                                            placeholder="请输入限制注册用户名长度" value="#{$config.username_len|escape:'html'}"/>
                                 </div>
@@ -577,6 +595,7 @@
                                 <div class="col-lg-8 fv-row">
                                     <input type="number" name="session_expire"
                                            inputmode="numeric"
+                                           min="0" max="31536000" step="1"
                                            class="form-control form-control-lg form-control-solid"
                                            placeholder="请输入会话保持时间，单位/秒" value="#{$config.session_expire|escape:'html'}"/>
                                 </div>

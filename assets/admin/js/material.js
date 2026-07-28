@@ -266,14 +266,11 @@
       '</span><span class="md-user-cell__id">' + id + '</span></div></div>';
   };
 
-  /* owner 变体：无所属者（owner=0）时渲染「主站/系统」单元格，否则复用 mdUserCell。
-   * 供 商家/所属者/创建者 等列使用（对应 format.owner 的系统态 → 店铺图标）。 */
+  /* owner 变体：无所属者（owner=0）时只显示绿色「主站」，否则复用 mdUserCell。
+   * 供 商家/所属者/创建者 等列使用。 */
   window.mdOwnerCell = function (item) {
     if (!item) {
-      return '<div class="md-user-cell"><span class="md-user-cell__avatar md-user-cell__avatar--ph">' +
-        '<i class="fa-duotone fa-regular fa-shop"></i></span>' +
-        '<div class="md-user-cell__text"><span class="md-user-cell__name">主站</span>' +
-        '<span class="md-user-cell__id">系统</span></div></div>';
+      return '<span class="text-success fw-bold">主站</span>';
     }
     return mdUserCell(item);
   };

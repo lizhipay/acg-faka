@@ -353,8 +353,11 @@ const util = new class Util {
      * @param serializeArray
      * @returns {{}}
      */
-    arrayToObject(serializeArray) {
+    arrayToObject(serializeArray, literalFields = []) {
         let paramsToJSONObject = {};
+        const literalFieldSet = literalFields instanceof Set
+            ? literalFields
+            : new Set(Array.isArray(literalFields) ? literalFields : []);
         serializeArray.forEach(item => {
             if (item.name.match(RegExp(/\[\]/))) {
                 let name = item.name.replace("[]", "");
@@ -363,7 +366,10 @@ const util = new class Util {
                 }
                 paramsToJSONObject[name].push(item.value);
             } else {
-                paramsToJSONObject[item.name] = item.value.replace(/\+/g, "%2B").replace(/\&/g, "%26");
+                const value = String(item.value ?? '');
+                paramsToJSONObject[item.name] = literalFieldSet.has(item.name)
+                    ? value
+                    : value.replace(/\+/g, "%2B").replace(/\&/g, "%26");
             }
         });
         return paramsToJSONObject;

@@ -25,6 +25,10 @@ use Kernel\Waf\Filter;
 class Store extends Manage
 {
 
+    private const REMOTE_ITEM_TREE_LIMIT = 10000;
+    private const CATEGORY_MODE_LOCAL = 0;
+    private const CATEGORY_MODE_REMOTE = 1;
+
     private ?\HTMLPurifier $remoteContentPurifier = null;
 
     #[Inject]
@@ -242,12 +246,13 @@ class Store extends Manage
      *
      * @throws JSONException
      */
-    private function remoteItemTree(mixed $groups): array
+    private function remoteItemTree(mixed $groups, int &$skippedItems): array
     {
         if (!is_array($groups) || count($groups) > 200) {
             throw new JSONException('远端商品分类数据格式不正确或数量过多');
         }
 
+        $skippedItems = 0;
         $result = [];
         $total = 0;
         $seenIds = [];
@@ -263,25 +268,31 @@ class Store extends Manage
 
             $children = [];
             foreach ($group['children'] as $item) {
-                if (!is_array($item)) {
-                    throw new JSONException('远端商品记录格式不正确');
+                try {
+                    if (!is_array($item)) {
+                        throw new JSONException('远端商品记录格式不正确');
+                    }
+                    $id = $this->positiveRemoteItemId($item['id'] ?? null);
+                    $code = $this->remoteItemCode($item['code'] ?? $item['id'] ?? null);
+                    $itemName = is_scalar($item['name'] ?? null) ? trim(strip_tags((string)$item['name'])) : '';
+                    if ($itemName === '' || mb_strlen($itemName, 'UTF-8') > 255 || preg_match('/[\x00-\x1F\x7F]/u', $itemName)) {
+                        throw new JSONException('远端商品名称不正确');
+                    }
+                    if (isset($seenIds[$id]) || isset($seenCodes[$code])) {
+                        throw new JSONException('远端商品 ID 或编号重复');
+                    }
+                } catch (JSONException) {
+                    $skippedItems++;
+                    continue;
                 }
-                $id = $this->positiveRemoteItemId($item['id'] ?? null);
-                $code = $this->remoteItemCode($item['code'] ?? $item['id'] ?? null);
-                if (isset($seenIds[$id]) || isset($seenCodes[$code])) {
-                    throw new JSONException('远端商品 ID 或编号重复，已阻止接入');
+
+                if ($total >= self::REMOTE_ITEM_TREE_LIMIT) {
+                    throw new JSONException('远端商品数量超过单次可展示上限 ' . self::REMOTE_ITEM_TREE_LIMIT);
                 }
                 $seenIds[$id] = true;
                 $seenCodes[$code] = true;
-                $itemName = is_scalar($item['name'] ?? null) ? trim(strip_tags((string)$item['name'])) : '';
-                if ($itemName === '' || mb_strlen($itemName, 'UTF-8') > 255 || preg_match('/[\x00-\x1F\x7F]/u', $itemName)) {
-                    throw new JSONException('远端商品名称不正确');
-                }
                 $children[] = ['id' => $id, 'name' => $itemName, 'code' => $code];
                 $total++;
-                if ($total > 2000) {
-                    throw new JSONException('远端商品数量超过单次可展示上限 2000');
-                }
             }
             $result[] = ['id' => 0, 'name' => $name, 'children' => $children];
         }
@@ -324,6 +335,97 @@ class Store extends Manage
             throw new JSONException("{$label}参数不正确");
         }
         return (int)$value;
+    }
+
+    /** @throws JSONException */
+    private function remoteCategoryName(mixed $value): string
+    {
+        if (!is_scalar($value)) {
+            throw new JSONException('远端商品分类名称格式不正确');
+        }
+        $name = trim((string)$value);
+        if (
+            $name === ''
+            || !mb_check_encoding($name, 'UTF-8')
+            || mb_strlen($name, 'UTF-8') > 128
+            || preg_match('/[\x00-\x1F\x7F]/u', $name)
+            || strip_tags($name) !== $name
+        ) {
+            throw new JSONException('远端商品分类名称不正确');
+        }
+        return $name;
+    }
+
+    /**
+     * Resolve the destination category while the caller's transaction is
+     * active. New remote categories are serialized through the first shared
+     * store row, then checked again so concurrent imports cannot create the
+     * same system category twice.
+     *
+     * @throws JSONException
+     */
+    private function importCategory(
+        int $categoryMode,
+        int $categoryId,
+        ?string $remoteCategoryName,
+        string $date,
+        bool &$created
+    ): \App\Model\Category
+    {
+        $created = false;
+        if ($categoryMode === self::CATEGORY_MODE_LOCAL) {
+            $category = \App\Model\Category::query()
+                ->where('owner', 0)
+                ->where('id', $categoryId)
+                ->lockForUpdate()
+                ->first();
+            if (!$category) {
+                throw new JSONException('商品分类不存在或不属于系统');
+            }
+            return $category;
+        }
+
+        $existing = \App\Model\Category::query()
+            ->where('owner', 0)
+            ->where('name', $remoteCategoryName)
+            ->orderBy('id')
+            ->first(['id']);
+        if ($existing) {
+            $category = \App\Model\Category::query()
+                ->where('owner', 0)
+                ->where('name', $remoteCategoryName)
+                ->whereKey((int)$existing->id)
+                ->lockForUpdate()
+                ->first();
+            if ($category) {
+                return $category;
+            }
+        }
+
+        Shared::query()->orderBy('id')->lockForUpdate()->first(['id']);
+        $category = \App\Model\Category::query()
+            ->where('owner', 0)
+            ->where('name', $remoteCategoryName)
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->first();
+        if ($category) {
+            return $category;
+        }
+
+        $category = new \App\Model\Category();
+        $category->name = $remoteCategoryName;
+        $category->sort = 0;
+        $category->create_time = $date;
+        $category->owner = 0;
+        $category->status = 1;
+        $category->hide = 0;
+        $category->pid = null;
+        if (!$category->save()) {
+            throw new JSONException('远端商品分类创建失败');
+        }
+        $created = true;
+        return $category;
     }
 
     /** @throws JSONException */
@@ -818,14 +920,53 @@ class Store extends Manage
         if (!$shared) {
             throw new JSONException("未找到该店铺");
         }
+        $skippedItems = 0;
         try {
-            $items = $this->remoteItemTree($this->shared->items($shared));
+            $items = $this->remoteItemTree($this->shared->items($shared), $skippedItems);
         } catch (JSONException $exception) {
             throw $exception;
         } catch (\Throwable) {
             throw new JSONException('远端商品列表读取失败');
         }
-        return $this->json(200, 'success', $items);
+        $message = $skippedItems > 0
+            ? "商品列表读取成功，已跳过 {$skippedItems} 条异常商品"
+            : 'success';
+        return $this->json(200, $message, $items);
+    }
+
+    private function remoteItemImportFailure(\Throwable $exception): string
+    {
+        if (!$exception instanceof JSONException) {
+            return match (true) {
+                $exception instanceof \TypeError,
+                $exception instanceof \ValueError => '远端商品数据格式不兼容',
+                $exception instanceof \GuzzleHttp\Exception\GuzzleException => '远端商品或图片读取失败，请检查货源连接后重试',
+                $exception instanceof \Illuminate\Database\QueryException,
+                $exception instanceof \PDOException => '商品保存失败，请检查数据库连接后重试',
+                $exception instanceof \DOMException => '远端商品说明处理失败',
+                default => '系统处理失败，请稍后重试'
+            };
+        }
+
+        $message = trim((string)preg_replace(
+            '/[\x00-\x1F\x7F]+/u',
+            ' ',
+            strip_tags($exception->getMessage())
+        ));
+        $message = (string)preg_replace([
+            '/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/u',
+            '/\b(Bearer|Basic)\s+[A-Za-z0-9._~+\/=-]{8,}/iu',
+            '/\b(authorization|proxy-authorization|cookie|set-cookie)\b\s*[:=：]\s*[^,;，；\r\n]+/iu',
+            '/(["\'])(app[-_ ]?key|api[-_ ]?key|password|passwd|secret|token|session[-_ ]?id)\1\s*:\s*(["\'])[^"\']*\3/iu',
+            '/\b(app[-_ ]?key|api[-_ ]?key|password|passwd|secret|token|session[-_ ]?id)\b\s*[:=：]\s*[^\s,;，；&]+/iu'
+        ], [
+            '[JWT已隐藏]',
+            '$1 [已隐藏]',
+            '$1=[已隐藏]',
+            '$1$2$1:"[已隐藏]"',
+            '$1=[已隐藏]'
+        ], $message);
+        return $message === '' ? '入库失败，未返回具体原因' : mb_substr($message, 0, 200, 'UTF-8');
     }
 
     /**
@@ -835,9 +976,18 @@ class Store extends Manage
     {
         $map = $request->post(flags: Filter::NORMAL);
 
-        $categoryId = $this->sharedId($map['category_id'] ?? null);
+        $categoryMode = $this->binaryFlag($map['category_mode'] ?? self::CATEGORY_MODE_LOCAL, '分类导入模式');
+        $categoryId = self::CATEGORY_MODE_LOCAL === $categoryMode
+            ? $this->sharedId($map['category_id'] ?? null)
+            : 0;
+        $remoteCategoryName = self::CATEGORY_MODE_REMOTE === $categoryMode
+            ? $this->remoteCategoryName($map['remote_category_name'] ?? null)
+            : null;
         $storeId = $this->sharedId($_GET['storeId'] ?? null);
-        if ($categoryId < 1 || $storeId < 1) {
+        if (
+            $storeId < 1
+            || (self::CATEGORY_MODE_LOCAL === $categoryMode && $categoryId < 1)
+        ) {
             throw new JSONException('商品分类或共享店铺 ID 不正确');
         }
         $rawCodes = $map['item_codes'] ?? null;
@@ -867,6 +1017,7 @@ class Store extends Manage
         $sharedSync = $this->binaryFlag($map['shared_sync'] ?? 0, '远端信息同步');
         $sharedAmountSync = $this->binaryFlag($map['shared_amount_sync'] ?? 0, '远端价格同步');
         $sharedConfigSync = $this->binaryFlag($map['shared_config_sync'] ?? 0, '远端配置同步');
+        $resumeImport = $this->binaryFlag($map['resume_import'] ?? 0, '断点续传') === 1;
 
         $shared = Shared::query()->find($storeId);
 
@@ -878,16 +1029,25 @@ class Store extends Manage
         $count = count($itemCodes);
         $success = 0;
         $error = 0;
+        $results = [];
 
         foreach ($itemCodes as $itemCode) {
             try {
+                if ($resumeImport && \App\Model\Commodity::query()
+                    ->where('shared_id', $storeId)
+                    ->where('shared_code', $itemCode)
+                    ->exists()) {
+                    $success++;
+                    $results[] = ['success' => true, 'message' => '商品此前已完成入库'];
+                    continue;
+                }
+
                 $remote = $this->shared->item($shared, $itemCode);
                 if (!is_array($remote)) {
                     throw new JSONException('远端商品详情格式不正确');
                 }
                 $item = $this->remoteItem($shared, $remote, $itemCode, $imageDownload);
                 $commodity = new \App\Model\Commodity();
-                $commodity->category_id = $categoryId;
                 $commodity->name = $item['name'];
                 $commodity->description = $item['description'];
                 $commodity->cover = $item['cover'];
@@ -931,7 +1091,13 @@ class Store extends Manage
                 $commodity->stock = $item['stock'];
 
                 //自动加价
-                $config = $this->shared->AdjustmentPrice((string)$item['config'], $item['price'], $item['user_price'], $premiumType, $premium);
+                $config = $this->shared->AdjustmentPrice(
+                    (string)$item['config'],
+                    (string)$item['price'],
+                    (string)$item['user_price'],
+                    $premiumType,
+                    $premium
+                );
 
                 $_config = Ini::toArray((string)$item['config']);
 
@@ -948,32 +1114,72 @@ class Store extends Manage
                 $commodity->factory_price = 0;
                 $commodity->user_price = $config['user_price'];
 
-                DB::transaction(function () use ($categoryId, $commodity): void {
-                    $category = \App\Model\Category::query()
-                        ->where('owner', 0)
-                        ->where('id', $categoryId)
+                $alreadyImported = false;
+                $categoryCreated = false;
+                DB::transaction(function () use (
+                    $categoryMode,
+                    $categoryId,
+                    $remoteCategoryName,
+                    $date,
+                    $commodity,
+                    $resumeImport,
+                    &$alreadyImported,
+                    &$categoryCreated
+                ): void {
+                    $source = Shared::query()
+                        ->whereKey($commodity->shared_id)
                         ->lockForUpdate()
-                        ->first();
-                    if (!$category) {
-                        throw new JSONException('商品分类不存在或不属于系统');
+                        ->first(['id']);
+                    if (!$source) {
+                        throw new JSONException('共享店铺已失效');
                     }
                     if (\App\Model\Commodity::query()
                         ->where('shared_id', $commodity->shared_id)
                         ->where('shared_code', $commodity->shared_code)
                         ->lockForUpdate()
                         ->exists()) {
+                        if ($resumeImport) {
+                            $alreadyImported = true;
+                            return;
+                        }
                         throw new JSONException('该远端商品已经接入');
                     }
-                    $commodity->save();
+                    $category = $this->importCategory(
+                        $categoryMode,
+                        $categoryId,
+                        $remoteCategoryName,
+                        $date,
+                        $categoryCreated
+                    );
+                    $commodity->category_id = (int)$category->id;
+                    if (!$commodity->save()) {
+                        throw new JSONException('商品保存失败');
+                    }
                 });
                 $success++;
-            } catch (\Throwable) {
+                $results[] = [
+                    'success' => true,
+                    'message' => match (true) {
+                        $alreadyImported => '商品此前已完成入库',
+                        $categoryCreated => "入库成功（已创建分类：{$remoteCategoryName}）",
+                        default => '入库成功'
+                    }
+                ];
+            } catch (\Throwable $exception) {
                 $error++;
+                $results[] = [
+                    'success' => false,
+                    'message' => $this->remoteItemImportFailure($exception)
+                ];
             }
         }
 
         ManageLog::log($this->getManage(), "[店铺共享]进行了克隆商品({$shared->name})，总数量：{$count}，成功：{$success}，失败：{$error}");
-        return $this->json(200, "拉取结束，总数量：{$count}，成功：{$success}，失败：{$error}");
+        return $this->json(
+            200,
+            "拉取结束，总数量：{$count}，成功：{$success}，失败：{$error}",
+            ['success' => $success, 'error' => $error, 'results' => $results]
+        );
     }
 
 

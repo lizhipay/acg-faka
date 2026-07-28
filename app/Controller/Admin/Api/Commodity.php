@@ -77,13 +77,77 @@ class Commodity extends Manage
     }
 
     /**
+     * @param Builder $query
+     * @return array<int, int>
+     */
+    private function groupedCommodityReferenceCounts(Builder $query): array
+    {
+        $rows = $query
+            ->select(['commodity_id'])
+            ->selectRaw('COUNT(*) AS reference_count')
+            ->groupBy('commodity_id')
+            ->get();
+        $counts = [];
+        foreach ($rows as $row) {
+            $commodityId = (int)$row->commodity_id;
+            if ($commodityId > 0) {
+                $counts[$commodityId] = (int)$row->reference_count;
+            }
+        }
+        return $counts;
+    }
+
+    /**
+     * @param int[] $commodityIds
+     * @param array<int, string> $namesById
+     * @param array<string, array<int, int>> $referenceCounts
+     * @return array{deletable_ids:int[], deletable_names:string[], blocked_count:int, blocked_names:string[]}
+     */
+    private function commodityDeletionPlan(array $commodityIds, array $namesById, array $referenceCounts): array
+    {
+        $deletableIds = [];
+        $deletableNames = [];
+        $blockedNames = [];
+        $blockedCount = 0;
+
+        foreach ($commodityIds as $commodityId) {
+            $blocked = false;
+            foreach ($referenceCounts as $counts) {
+                if ((int)($counts[$commodityId] ?? 0) > 0) {
+                    $blocked = true;
+                    break;
+                }
+            }
+            $name = (string)($namesById[$commodityId] ?? "商品 #{$commodityId}");
+            if ($blocked) {
+                $blockedCount++;
+                if (count($blockedNames) < 3) {
+                    $blockedNames[] = $name;
+                }
+                continue;
+            }
+            $deletableIds[] = $commodityId;
+            if (count($deletableNames) < 3) {
+                $deletableNames[] = $name;
+            }
+        }
+
+        return [
+            'deletable_ids' => $deletableIds,
+            'deletable_names' => $deletableNames,
+            'blocked_count' => $blockedCount,
+            'blocked_names' => $blockedNames,
+        ];
+    }
+
+    /**
      * Resolve every relationship which would be changed or orphaned by a
      * physical commodity deletion. Historical records are deliberately treated
      * as blockers; administrators should delist or hide used commodities.
      *
      * @param int[] $requestedIds
      * @param bool $lock
-     * @return array{commodity_ids:int[], names:array, commodity_count:int, card_count:int, sold_card_count:int, order_count:int, coupon_count:int, merchant_mapping_count:int, ticket_count:int, commodity_group_count:int, commodity_group_names:array, can_delete:bool}
+     * @return array
      * @throws JSONException
      */
     private function commodityDeleteImpact(array $requestedIds, bool $lock = false): array
@@ -100,71 +164,121 @@ class Commodity extends Manage
             $query->lockForUpdate();
         }
         $commodities = $query->get();
-        if ($commodities->count() !== count($requestedIds)) {
-            throw new JSONException('部分商品不存在，请刷新后重试');
-        }
         $commodityIds = $commodities->pluck('id')->map(static fn($id): int => (int)$id)->all();
-        if ($commodityIds === []) {
-            throw new JSONException('所选商品不存在');
+        $missingIds = array_values(array_diff($requestedIds, $commodityIds));
+        $namesById = [];
+        foreach ($commodities as $commodity) {
+            $namesById[(int)$commodity->id] = (string)$commodity->name;
         }
 
-        $cardQuery = \App\Model\Card::query()->whereIn('commodity_id', $commodityIds);
-        $cardCount = (int)(clone $cardQuery)->count();
-        $soldCardCount = (int)(clone $cardQuery)->where(function (Builder $builder) {
-            $builder->where('status', 1)->orWhereNotNull('order_id');
-        })->count();
-        $orderCount = (int)\App\Model\Order::query()->whereIn('commodity_id', $commodityIds)->count();
-        $couponCount = (int)\App\Model\Coupon::query()->whereIn('commodity_id', $commodityIds)->count();
-        $merchantMappingCount = (int)\App\Model\UserCommodity::query()->whereIn('commodity_id', $commodityIds)->count();
-        $ticketCount = (int)\App\Model\Ticket::query()->whereIn('commodity_id', $commodityIds)->count();
+        $cardCounts = [];
+        $soldCardCounts = [];
+        $orderCounts = [];
+        $couponCounts = [];
+        $merchantMappingCounts = [];
+        $ticketCounts = [];
+        $commodityGroupCounts = [];
+        $commodityGroupCount = 0;
+        $commodityGroupNames = [];
 
-        // CommodityGroup stores references in JSON and therefore has no
-        // database foreign key. The final delete path locks the complete,
-        // ordered group scan after locking commodities. CommodityGroup::save()
-        // uses the same Commodity -> CommodityGroup order, so a concurrent edit
-        // cannot create an orphan between this scan and the physical deletion.
-        $commodityGroupQuery = \App\Model\CommodityGroup::query()
-            ->orderBy('id')
-            ->select(['id', 'name', 'commodity_list']);
-        if ($lock) {
-            $commodityGroupQuery->lockForUpdate();
-        }
-        $commodityIdLookup = array_fill_keys($commodityIds, true);
-        $referencingCommodityGroups = $commodityGroupQuery->get()->filter(static function ($commodityGroup) use ($commodityIdLookup): bool {
-            $references = $commodityGroup->commodity_list;
-            if (!is_array($references)) {
-                $references = [$references];
+        if ($commodityIds !== []) {
+            $cardQuery = \App\Model\Card::query()->whereIn('commodity_id', $commodityIds);
+            $cardCounts = $this->groupedCommodityReferenceCounts(clone $cardQuery);
+            $soldCardCounts = $this->groupedCommodityReferenceCounts(
+                (clone $cardQuery)->where(function (Builder $builder) {
+                    $builder->where('status', 1)->orWhereNotNull('order_id');
+                })
+            );
+            $orderCounts = $this->groupedCommodityReferenceCounts(
+                \App\Model\Order::query()->whereIn('commodity_id', $commodityIds)
+            );
+            $couponCounts = $this->groupedCommodityReferenceCounts(
+                \App\Model\Coupon::query()->whereIn('commodity_id', $commodityIds)
+            );
+            $merchantMappingCounts = $this->groupedCommodityReferenceCounts(
+                \App\Model\UserCommodity::query()->whereIn('commodity_id', $commodityIds)
+            );
+            $ticketCounts = $this->groupedCommodityReferenceCounts(
+                \App\Model\Ticket::query()->whereIn('commodity_id', $commodityIds)
+            );
+
+            // CommodityGroup stores references in JSON and therefore has no
+            // database foreign key. The final delete path locks the complete,
+            // ordered group scan after locking commodities. CommodityGroup::save()
+            // uses the same Commodity -> CommodityGroup order, so a concurrent edit
+            // cannot create an orphan between this scan and the physical deletion.
+            $commodityGroupQuery = \App\Model\CommodityGroup::query()
+                ->orderBy('id')
+                ->select(['id', 'name', 'commodity_list']);
+            if ($lock) {
+                $commodityGroupQuery->lockForUpdate();
             }
-            foreach ($references as $reference) {
-                if (is_int($reference)) {
-                    $referenceId = $reference;
-                } elseif (is_string($reference) && ctype_digit(trim($reference))) {
-                    $referenceId = (int)trim($reference);
-                } else {
+            $commodityIdLookup = array_fill_keys($commodityIds, true);
+            foreach ($commodityGroupQuery->get() as $commodityGroup) {
+                $references = $commodityGroup->commodity_list;
+                if (!is_array($references)) {
+                    $references = [$references];
+                }
+                $matchedIds = [];
+                foreach ($references as $reference) {
+                    if (is_int($reference)) {
+                        $referenceId = $reference;
+                    } elseif (is_string($reference) && ctype_digit(trim($reference))) {
+                        $referenceId = (int)trim($reference);
+                    } else {
+                        continue;
+                    }
+                    if ($referenceId > 0 && isset($commodityIdLookup[$referenceId])) {
+                        $matchedIds[$referenceId] = true;
+                    }
+                }
+                if ($matchedIds === []) {
                     continue;
                 }
-                if ($referenceId > 0 && isset($commodityIdLookup[$referenceId])) {
-                    return true;
+                $commodityGroupCount++;
+                if (count($commodityGroupNames) < 3) {
+                    $commodityGroupNames[] = (string)$commodityGroup->name;
+                }
+                foreach (array_keys($matchedIds) as $matchedId) {
+                    $commodityGroupCounts[$matchedId] = (int)($commodityGroupCounts[$matchedId] ?? 0) + 1;
                 }
             }
-            return false;
-        })->values();
-        $commodityGroupCount = $referencingCommodityGroups->count();
-        $canDelete = ($cardCount + $orderCount + $couponCount + $merchantMappingCount + $ticketCount + $commodityGroupCount) === 0;
+        }
+
+        $plan = $this->commodityDeletionPlan($commodityIds, $namesById, [
+            'cards' => $cardCounts,
+            'orders' => $orderCounts,
+            'coupons' => $couponCounts,
+            'merchant_mappings' => $merchantMappingCounts,
+            'tickets' => $ticketCounts,
+            'commodity_groups' => $commodityGroupCounts,
+        ]);
+        $missingCount = count($missingIds);
+        $deletableCount = count($plan['deletable_ids']);
+        $skippedCount = $plan['blocked_count'] + $missingCount;
 
         return [
             'commodity_ids' => $commodityIds,
+            'deletable_ids' => $plan['deletable_ids'],
+            'missing_ids' => $missingIds,
             'names' => $commodities->pluck('name')->take(3)->values()->all(),
+            'deletable_names' => $plan['deletable_names'],
+            'blocked_names' => $plan['blocked_names'],
+            'requested_count' => count($requestedIds),
             'commodity_count' => count($commodityIds),
-            'card_count' => $cardCount,
-            'sold_card_count' => $soldCardCount,
-            'order_count' => $orderCount,
-            'coupon_count' => $couponCount,
-            'merchant_mapping_count' => $merchantMappingCount,
-            'ticket_count' => $ticketCount,
+            'deletable_count' => $deletableCount,
+            'blocked_count' => $plan['blocked_count'],
+            'missing_count' => $missingCount,
+            'skipped_count' => $skippedCount,
+            'card_count' => array_sum($cardCounts),
+            'sold_card_count' => array_sum($soldCardCounts),
+            'order_count' => array_sum($orderCounts),
+            'coupon_count' => array_sum($couponCounts),
+            'merchant_mapping_count' => array_sum($merchantMappingCounts),
+            'ticket_count' => array_sum($ticketCounts),
             'commodity_group_count' => $commodityGroupCount,
-            'commodity_group_names' => $referencingCommodityGroups->pluck('name')->take(3)->values()->all(),
-            'can_delete' => $canDelete,
+            'commodity_group_names' => $commodityGroupNames,
+            'can_delete' => $skippedCount === 0,
         ];
     }
 
@@ -394,22 +508,49 @@ class Commodity extends Manage
         $requestedIds = $this->commodityIds($_POST['list'] ?? []);
         $impact = DB::transaction(function () use ($requestedIds): array {
             $impact = $this->commodityDeleteImpact($requestedIds, true);
-            if (!$impact['can_delete']) {
+            if (count($requestedIds) === 1 && $impact['missing_count'] > 0) {
+                throw new JSONException('商品不存在，请刷新后重试');
+            }
+            if (count($requestedIds) === 1 && $impact['blocked_count'] > 0) {
                 throw new JSONException(
                     "所选商品已有业务数据，禁止物理删除。关联卡密 {$impact['card_count']} 张、订单 {$impact['order_count']} 笔、优惠券 {$impact['coupon_count']} 张、商户映射 {$impact['merchant_mapping_count']} 条、工单 {$impact['ticket_count']} 条、商品分组 {$impact['commodity_group_count']} 个；请先解除关联，或改为下架/隐藏商品。"
                 );
             }
 
-            $expectedDeleteCount = count($impact['commodity_ids']);
-            $deleted = \App\Model\Commodity::query()->whereIn('id', $impact['commodity_ids'])->delete();
+            $expectedDeleteCount = $impact['deletable_count'];
+            $deleted = $expectedDeleteCount > 0
+                ? \App\Model\Commodity::query()->whereIn('id', $impact['deletable_ids'])->delete()
+                : 0;
             if ($deleted !== $expectedDeleteCount) {
                 throw new JSONException('商品删除数量异常，操作已回滚，请刷新后重试');
             }
             return $impact;
         });
 
-        ManageLog::log($this->getManage(), "[删除]未使用商品，共计：{$impact['commodity_count']}");
-        return $this->json(200, '（＾∀＾）移除成功', ['count' => $impact['commodity_count']]);
+        $deletedCount = $impact['deletable_count'];
+        $skippedCount = $impact['skipped_count'];
+        $operation = count($requestedIds) > 1 ? '批量删除' : '删除';
+        ManageLog::log(
+            $this->getManage(),
+            "[{$operation}]商品，成功：{$deletedCount}，跳过：{$skippedCount}"
+        );
+        $message = $skippedCount > 0
+            ? "批量删除完成：成功 {$deletedCount} 个，跳过 {$skippedCount} 个"
+            : '（＾∀＾）移除成功';
+        return $this->json(200, $message, [
+            'count' => $deletedCount,
+            'deleted_count' => $deletedCount,
+            'skipped_count' => $skippedCount,
+            'blocked_count' => $impact['blocked_count'],
+            'missing_count' => $impact['missing_count'],
+            'blocked_names' => $impact['blocked_names'],
+            'card_count' => $impact['card_count'],
+            'order_count' => $impact['order_count'],
+            'coupon_count' => $impact['coupon_count'],
+            'merchant_mapping_count' => $impact['merchant_mapping_count'],
+            'ticket_count' => $impact['ticket_count'],
+            'commodity_group_count' => $impact['commodity_group_count'],
+        ]);
     }
 
     /**
@@ -420,7 +561,7 @@ class Commodity extends Manage
     public function deleteImpact(): array
     {
         $impact = $this->commodityDeleteImpact($this->commodityIds($_POST['list'] ?? []));
-        unset($impact['commodity_ids']);
+        unset($impact['commodity_ids'], $impact['deletable_ids'], $impact['missing_ids']);
         return $this->json(data: $impact);
     }
 

@@ -87,7 +87,35 @@
 
     table.setColumns([
         {checkbox: true},
-        {field: 'trade_no', title: '订单号'},
+        {
+            field: 'trade_no',
+            title: '订单号',
+            formatter: value => {
+                const tradeNo = String(value ?? '');
+                if (!tradeNo) return '-';
+                return `<span class="md-copyable-cell"><span class="md-copyable-cell__value">${escapeHtml(tradeNo)}</span><button type="button" class="md-copyable-cell__copy" aria-label="复制订单号" title="复制订单号">${util.icon("fa-duotone fa-regular fa-copy")}</button></span>`;
+            },
+            events: {
+                'click .md-copyable-cell__copy': (event, value) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const tradeNo = String(value ?? '');
+                    if (!tradeNo) {
+                        message.error('订单号为空，无法复制');
+                        return;
+                    }
+                    util.copyTextToClipboard(
+                        tradeNo,
+                        () => message.success('订单号已复制'),
+                        () => message.error('订单号复制失败')
+                    );
+                },
+                'dblclick .md-copyable-cell__copy': event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }
+        },
         {field: 'user', title: '会员', formatter: value => mdUserCell(value)},
         {field: 'amount', title: '充值金额', formatter: value => format.money(value, 'green')},
         {field: 'pay', title: '支付方式', formatter: format.pay},

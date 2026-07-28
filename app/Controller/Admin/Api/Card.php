@@ -67,7 +67,7 @@ class Card extends Manage
     /**
      * @param int[] $requestedIds
      * @param bool $lock
-     * @return array{card_ids:int[], card_count:int, sold_count:int, locked_count:int, linked_count:int, order_reference_count:int, can_delete:bool}
+     * @return array
      * @throws JSONException
      */
     private function cardDeleteImpact(array $requestedIds, bool $lock = false): array
@@ -77,6 +77,7 @@ class Card extends Manage
         }
         $query = \App\Model\Card::query()
             ->whereIn('id', $requestedIds)
+            ->orderBy('id')
             ->select(['id', 'status', 'order_id']);
         if ($lock) {
             $query->lockForUpdate();
@@ -92,19 +93,44 @@ class Card extends Manage
         $soldCount = $cards->filter(static fn($card): bool => (int)$card->status === 1)->count();
         $lockedCount = $cards->filter(static fn($card): bool => (int)$card->status === 2)->count();
         $linkedCount = $cards->filter(static fn($card): bool => (int)$card->order_id > 0)->count();
-        $orderReferenceCount = (int)\App\Model\Order::query()->whereIn('card_id', $ids)->count();
+        $orderReferenceQuery = \App\Model\Order::query()
+            ->whereIn('card_id', $ids)
+            ->orderBy('id');
+        if ($lock) {
+            $orderReferenceQuery->lockForUpdate();
+        }
+        $orderReferences = $orderReferenceQuery->get(['id', 'card_id', 'status']);
+        $activeReferences = $orderReferences->filter(
+            static fn($order): bool => (int)$order->status !== 1
+        );
+        $paidReferences = $orderReferences->filter(
+            static fn($order): bool => (int)$order->status === 1
+        );
+        $reservedCardIds = $activeReferences
+            ->pluck('card_id')
+            ->map(static fn($id): int => (int)$id)
+            ->unique()
+            ->values()
+            ->all();
+        $reservedLookup = array_fill_keys($reservedCardIds, true);
+        $deletableIds = array_values(array_filter(
+            $ids,
+            static fn(int $id): bool => !isset($reservedLookup[$id])
+        ));
 
         return [
             'card_ids' => $ids,
+            'deletable_ids' => $deletableIds,
             'card_count' => count($ids),
+            'deletable_count' => count($deletableIds),
+            'blocked_count' => count($reservedCardIds),
             'sold_count' => $soldCount,
             'locked_count' => $lockedCount,
             'linked_count' => $linkedCount,
-            'order_reference_count' => $orderReferenceCount,
-            'can_delete' => $soldCount === 0
-                && $lockedCount === 0
-                && $linkedCount === 0
-                && $orderReferenceCount === 0,
+            'order_reference_count' => $orderReferences->count(),
+            'active_order_reference_count' => $activeReferences->count(),
+            'paid_order_reference_count' => $paidReferences->count(),
+            'can_delete' => $reservedCardIds === [],
         ];
     }
 
@@ -483,21 +509,48 @@ class Card extends Manage
         $requestedIds = $this->cardIds($_POST['list'] ?? []);
         $impact = DB::transaction(function () use ($requestedIds): array {
             $impact = $this->cardDeleteImpact($requestedIds, true);
-            if (!$impact['can_delete']) {
+            if (count($requestedIds) === 1 && $impact['blocked_count'] > 0) {
                 throw new JSONException(
-                    "所选卡密中包含 {$impact['sold_count']} 张已售卡密、{$impact['locked_count']} 张锁定卡密、" .
-                    "{$impact['linked_count']} 张已关联订单卡密，另有 {$impact['order_reference_count']} 笔订单引用；为保护占用状态和历史记录，已阻止删除。"
+                    '该卡密仍被未支付订单预选占用，暂不能删除；请先处理对应订单。'
                 );
             }
-            $deleted = \App\Model\Card::query()->whereIn('id', $impact['card_ids'])->delete();
-            if ($deleted === 0) {
-                throw new JSONException('没有移除任何数据');
+
+            $deletableIds = $impact['deletable_ids'];
+            $detachedOrderReferences = 0;
+            $deleted = 0;
+            if ($deletableIds !== []) {
+                // 已支付订单已经把发货内容保存到 order.secret；这里只解除
+                // 预选卡密引用，避免删除卡密后留下悬空编号。
+                $detachedOrderReferences = \App\Model\Order::query()
+                    ->whereIn('card_id', $deletableIds)
+                    ->where('status', 1)
+                    ->update(['card_id' => null]);
+                $deleted = \App\Model\Card::query()->whereIn('id', $deletableIds)->delete();
+                if ($deleted !== count($deletableIds)) {
+                    throw new JSONException('卡密删除数量异常，操作已回滚，请刷新后重试');
+                }
             }
+            $impact['deleted_count'] = $deleted;
+            $impact['detached_order_reference_count'] = $detachedOrderReferences;
             return $impact;
         });
 
-        ManageLog::log($this->getManage(), "[批量删除]删除未使用卡密，共计：{$impact['card_count']}");
-        return $this->json(200, '（＾∀＾）移除成功', ['count' => $impact['card_count']]);
+        $deletedCount = $impact['deleted_count'];
+        $skippedCount = $impact['blocked_count'];
+        $operation = count($requestedIds) > 1 ? '批量删除' : '删除';
+        ManageLog::log(
+            $this->getManage(),
+            "[{$operation}]卡密，成功：{$deletedCount}，跳过未支付订单占用：{$skippedCount}，解除已支付订单引用：{$impact['detached_order_reference_count']}"
+        );
+        $message = $skippedCount > 0
+            ? "删除完成：成功 {$deletedCount} 张，跳过 {$skippedCount} 张未支付订单占用卡密"
+            : '卡密删除成功';
+        return $this->json(200, $message, [
+            'count' => $deletedCount,
+            'deleted_count' => $deletedCount,
+            'skipped_count' => $skippedCount,
+            'detached_order_reference_count' => $impact['detached_order_reference_count'],
+        ]);
     }
 
     /**
@@ -508,7 +561,7 @@ class Card extends Manage
     public function deleteImpact(): array
     {
         $impact = $this->cardDeleteImpact($this->cardIds($_POST['list'] ?? []));
-        unset($impact['card_ids']);
+        unset($impact['card_ids'], $impact['deletable_ids']);
         return $this->json(data: $impact);
     }
 

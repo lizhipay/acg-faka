@@ -1359,6 +1359,13 @@
 /* ---- misc: loading spinner colour ---- */
 :root[data-theme] .layui-layer-loading .layui-layer-content { filter: none; }
 
+/* A request still needs visible progress when the OS reduces decorative motion. */
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme] .chahuo-ring { animation: chahuo-ring-spin 1.8s infinite linear; }
+  :root[data-theme] .chahuo-ring::before { animation: chahuo-ring-spin 2.4s infinite linear; }
+  :root[data-theme] .chahuo-ring::after { animation: chahuo-ring-spin 3s infinite linear; }
+}
+
 /* search toolbar carries a faint green→blue gradient in _admin.css → flatten */
 :root[data-theme] .table-search { background: transparent !important; background-image: none !important; }
 /* query/search button: keep it primary-outlined (beats the generic .layui-btn-primary tie) */
@@ -1404,6 +1411,49 @@
 :root[data-theme] .md-pair__k { flex: 0 0 auto; min-width: 30px; font-size: 11px; font-weight: 500; letter-spacing: .2px; color: var(--md-on-surface-dis); }
 :root[data-theme] .md-pair__v { font-size: 13px; color: var(--md-on-surface); white-space: nowrap; }
 :root[data-theme] .md-pair__v--muted { color: var(--md-on-surface-med); }
+
+/* 商品订单号：保留双击详情，并提供独立的复制入口。 */
+:root[data-theme] .md-order-trade-no {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+:root[data-theme] .md-order-trade-no__copy {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  background: transparent;
+  color: var(--md-on-surface-med);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+:root[data-theme] .md-order-trade-no__copy i {
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+}
+:root[data-theme] .md-order-trade-no__copy:is(:hover, :active) {
+  background: var(--md-hover-overlay);
+  color: var(--md-primary);
+}
+:root[data-theme] .md-order-trade-no__copy:focus-visible {
+  outline: 2px solid var(--md-primary);
+  outline-offset: 1px;
+}
+@media (max-width: 991.98px) {
+  :root[data-theme] .md-order-trade-no__copy {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+}
 
 /* 支付方式 pay 芯片 — 覆盖 component.css 的重阴影 + 粉色 text-shadow(很丑),改成干净 MUI outlined 芯片 */
 :root[data-theme] .pay-item {
@@ -1521,8 +1571,8 @@
 /* ===== 列详情弹窗 (.md-detail) — table.js setColumnDetail 的 MUI label→value 展示 =====
    渲染在 component.popup 内（.component-popup 外壳已 MUI 化）；token 驱动，light/dark 自适应。
    随 table.js 打进 _.js → 生产需重建 _.js；material.css 直接加载无需重建。 */
-/* 双击触发列：禁止双击时的文字选中（否则会闪选一个词） */
-:root[data-theme] .md-detail-trigger { user-select: none; -webkit-user-select: none; }
+/* 双击触发列仍允许拖选和复制文字；详情行为由 dblclick 事件独立处理。 */
+:root[data-theme] .md-detail-trigger { user-select: text; -webkit-user-select: text; }
 :root[data-theme] .md-detail { display: flex; flex-direction: column; padding: 4px 4px 2px; color: var(--md-on-surface); }
 :root[data-theme] .md-detail__header { padding: 6px 8px 14px; margin-bottom: 6px; border-bottom: 1px solid var(--md-divider); }
 :root[data-theme] .md-detail__header .md-user-cell { gap: 14px; }
@@ -1536,7 +1586,7 @@
 :root[data-theme] .md-detail__value { font-size: 14px; color: var(--md-on-surface); min-width: 0; word-break: break-word; overflow-wrap: anywhere; line-height: 1.5; }
 :root[data-theme] .md-detail__value a { color: var(--md-primary); }
 :root[data-theme] .md-detail__value .icon-spin { color: var(--md-on-surface-med); }
-:root[data-theme] .md-detail-trigger { display: block; cursor: pointer; }
+:root[data-theme] .md-detail-trigger { display: block; cursor: text; }
 
 /* ---- search toolbar (.table-search) → MUI floating labels (shared search.js; prod needs _.js rebuild) ---- */
 :root[data-theme] .table-search .mui-sf { position: relative; }

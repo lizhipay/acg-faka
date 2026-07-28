@@ -21,9 +21,14 @@ class Hook
 
     /**
      * @return void
+     * @throws \SmartyException
      */
     public function load(): void
     {
+        if (!defined('_APP_STORE_LOAD_STATE') || \_APP_STORE_LOAD_STATE !== true) {
+            return;
+        }
+
         $path = BASE_PATH . "/runtime/plugin/";
         if (!is_dir($path)) {
             mkdir($path, 0777, true);

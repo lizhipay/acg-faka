@@ -12,20 +12,35 @@
         util.post('/admin/api/card/deleteImpact', {list: list}, res => {
             if (!controllerActive) return;
             const impact = res.data || {};
-            if (impact.can_delete !== true) {
+            const cardCount = Number(impact.card_count || list.length);
+            const deletableCount = Number(impact.deletable_count ?? cardCount);
+            const blockedCount = Number(impact.blocked_count || 0);
+            if (deletableCount < 1) {
                 message.alert(
-                    `所选 ${Number(impact.card_count || list.length)} 张卡密中，包含 ${Number(impact.sold_count || 0)} 张已售卡密、${Number(impact.locked_count || 0)} 张锁定卡密、${Number(impact.linked_count || 0)} 张已关联订单卡密，另有 ${Number(impact.order_reference_count || 0)} 笔订单引用。系统已阻止删除，以保护占用状态和历史记录。`,
+                    `所选 ${cardCount} 张卡密仍被未支付订单预选占用，暂不能删除；请先处理对应订单。`,
                     'warning'
                 );
                 return;
             }
+            const skipped = blockedCount > 0
+                ? `<br><br>另有 <b>${blockedCount} 张</b>仍被未支付订单预选占用，本次会自动跳过。`
+                : '';
             message.ask(
-                `将永久删除 <b>${Number(impact.card_count || list.length)} 张未使用且未锁定的卡密</b>。<br><br>删除后无法恢复，确认继续吗？`,
+                `将永久删除 <b>${deletableCount} 张卡密</b>，其中包含 ${Number(impact.sold_count || 0)} 张已售卡密、${Number(impact.locked_count || 0)} 张锁定卡密、${Number(impact.linked_count || 0)} 张已关联订单卡密。<br><br>已售卡密的发货内容仍保留在订单中；卡密记录删除后无法恢复。${skipped}`,
                 () => controllerActive && done(),
                 '确认永久删除卡密',
                 '确认删除'
             );
         });
+    };
+    const showCardDeleteResult = res => {
+        const deletedCount = Number(res.data?.deleted_count ?? res.data?.count ?? 0);
+        const skippedCount = Number(res.data?.skipped_count || 0);
+        message.success(
+            skippedCount > 0
+                ? `删除完成：成功 ${deletedCount} 张，跳过 ${skippedCount} 张未支付订单占用卡密`
+                : `已删除 ${deletedCount} 张卡密`
+        );
     };
     const formBody = payload => {
         const body = new URLSearchParams();
@@ -236,6 +251,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
                             name: "secret",
                             type: "textarea",
                             placeholder: "卡密信息，一行一个",
+                            preserveLiteral: true,
                             required: true,
                             height: 200
                         },
@@ -314,7 +330,33 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
     table.setColumns([
         {checkbox: true},
         {
-            field: 'secret', title: '卡密信息'
+            field: 'secret',
+            title: '卡密信息',
+            formatter: value => {
+                const secret = String(value ?? '');
+                if (!secret) return '-';
+                return `<span class="md-copyable-cell"><span class="md-copyable-cell__value">${escapeHtml(secret)}</span><button type="button" class="md-copyable-cell__copy" aria-label="复制卡密" title="复制卡密">${util.icon("fa-duotone fa-regular fa-copy")}</button></span>`;
+            },
+            events: {
+                'click .md-copyable-cell__copy': (event, value) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const secret = String(value ?? '');
+                    if (!secret) {
+                        message.error('卡密为空，无法复制');
+                        return;
+                    }
+                    util.copyTextToClipboard(
+                        secret,
+                        () => message.success('卡密已复制'),
+                        () => message.error('卡密复制失败')
+                    );
+                },
+                'dblclick .md-copyable-cell__copy': event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }
         },
         {
             field: 'draft', title: '预告内容'
@@ -406,7 +448,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
                         confirmCardDelete([row.id], () => {
                             util.post('/admin/api/card/del', {list: [row.id]}, res => {
                                 if (!controllerActive || !table) return;
-                                message.success("删除成功");
+                                showCardDeleteResult(res);
                                 table.refresh();
                             });
                         });
@@ -484,7 +526,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
         confirmCardDelete(data, () => {
             util.post("/admin/api/card/del", {list: data}, res => {
                 if (!controllerActive || !table) return;
-                message.success(`已删除 ${Number(res.data?.count || data.length)} 张卡密`)
+                showCardDeleteResult(res);
                 table.refresh();
             });
         });

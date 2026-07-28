@@ -38,6 +38,18 @@
         }
     }
 
+    function syncCallbackIpRules() {
+        const toggle = document.getElementById('callback-ip-whitelist');
+        const row = document.getElementById('callback-ip-whitelist-rules-row');
+        const rules = document.getElementById('callback-ip-whitelist-rules');
+        if (!toggle || !row || !rules) return;
+        const enabled = toggle.checked;
+        row.hidden = !enabled;
+        row.setAttribute('aria-hidden', enabled ? 'false' : 'true');
+        toggle.setAttribute('aria-expanded', enabled ? 'true' : 'false');
+        rules.required = enabled;
+    }
+
     function updateSubstationVisibility(row, type) {
         const id = row?.user?.id;
         const key = String(id ?? '');
@@ -118,9 +130,13 @@
 
     table.render();
 
-    $('#data-form').off(namespace).on('input' + namespace + ' change' + namespace, 'input, textarea, select', function () {
-        emitFormState('admin:mobile:form-dirty');
-    });
+    $('#data-form')
+        .off(namespace)
+        .on('input' + namespace + ' change' + namespace, 'input, textarea, select', function () {
+            emitFormState('admin:mobile:form-dirty');
+        })
+        .on('change' + namespace, 'input[name="callback_ip_whitelist"]', syncCallbackIpRules);
+    syncCallbackIpRules();
 
     $('.save-data').off(namespace).on('click' + namespace, function () {
         if (!controllerActive || saveInFlight) return;

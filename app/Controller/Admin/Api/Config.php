@@ -14,6 +14,7 @@ use App\Model\ManageLog;
 use App\Service\Email;
 use App\Service\Query;
 use App\Service\Sms;
+use App\Util\CallbackIpWhitelist;
 use App\Util\Client;
 use App\Util\Date;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,6 +34,7 @@ class Config extends Manage
     private const SETTING_REQUEST_FIELDS = [
         'logo',
         'ip_get_mode',
+        'trusted_proxy_ips',
         'closed_message',
         'background_mobile_url',
         'closed',
@@ -100,6 +102,8 @@ class Config extends Manage
 
     private const OTHER_REQUEST_FIELDS = [
         'callback_domain',
+        'callback_ip_whitelist',
+        'callback_ip_whitelist_rules',
         'domain',
         'cname',
         'substation_display',
@@ -121,6 +125,7 @@ class Config extends Manage
     ];
 
     private const OTHER_BOOLEAN_FIELDS = [
+        'callback_ip_whitelist',
         'substation_display',
         'recharge_welfare',
         'cash_type_alipay',
@@ -165,14 +170,38 @@ class Config extends Manage
     /**
      * @throws JSONException
      */
-    private function settingInteger(array $post, string $key, int $min, int $max): int
+    private function settingInteger(
+        array $post,
+        string $key,
+        int $min,
+        int $max,
+        string $label,
+        ?int $blankDefault = null
+    ): int
     {
         if (!array_key_exists($key, $post) || (!is_scalar($post[$key]) && $post[$key] !== null)) {
-            throw new JSONException('网站设置参数不完整，请刷新页面后重试');
+            throw new JSONException($label . '参数不完整，请刷新页面后重试');
         }
-        $value = filter_var($post[$key], FILTER_VALIDATE_INT);
+
+        $raw = trim((string)($post[$key] ?? ''));
+        if ($raw === '' && $blankDefault !== null) {
+            return $blankDefault;
+        }
+        if (!preg_match('/^[+-]?\d+$/D', $raw)) {
+            throw new JSONException("{$label}必须是 {$min} 到 {$max} 之间的整数");
+        }
+
+        // FILTER_VALIDATE_INT rejects otherwise valid legacy values such as
+        // "06". Canonicalize decimal integers first, while still rejecting
+        // fractions, scientific notation and values outside the safe range.
+        $negative = str_starts_with($raw, '-');
+        $digits = ltrim(ltrim($raw, '+-'), '0');
+        $normalized = $digits === '' ? '0' : ($negative ? '-' : '') . $digits;
+        $value = filter_var($normalized, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => $min, 'max_range' => $max],
+        ]);
         if ($value === false || $value < $min || $value > $max) {
-            throw new JSONException('网站设置数值超出允许范围');
+            throw new JSONException("{$label}必须是 {$min} 到 {$max} 之间的整数");
         }
         return (int)$value;
     }
@@ -454,6 +483,31 @@ class Config extends Manage
     /**
      * @throws JSONException
      */
+    private function configCallbackIpRules(array $post, bool $enabled): string
+    {
+        $rules = $this->configString(
+            $post,
+            CallbackIpWhitelist::RULES_CONFIG,
+            8192,
+            '回调白名单 IP 规则'
+        );
+        try {
+            $rules = CallbackIpWhitelist::normalizeRules($rules);
+        } catch (\InvalidArgumentException $e) {
+            if (!$enabled) {
+                return '';
+            }
+            throw new JSONException($e->getMessage());
+        }
+        if ($enabled && $rules === '') {
+            throw new JSONException('开启回调白名单 IP 后，至少需要填写一条 IP 规则');
+        }
+        return $rules;
+    }
+
+    /**
+     * @throws JSONException
+     */
     private function configWelfareRules(array $post): string
     {
         $value = trim(str_replace(["\r\n", "\r"], "\n", $this->configString(
@@ -643,11 +697,20 @@ class Config extends Manage
         }
 
         $logo = trim($this->settingString($post, 'logo', 255, true));
-        $ipGetMode = $this->settingInteger($post, 'ip_get_mode', 0, 8);
-        $registeredType = $this->settingInteger($post, 'registered_type', 0, 2);
-        $forgetType = $this->settingInteger($post, 'forget_type', 0, 1);
-        $usernameLength = $this->settingInteger($post, 'username_len', 1, 64);
-        $sessionExpire = $this->settingInteger($post, 'session_expire', 0, 31536000);
+        $ipGetMode = $this->settingInteger($post, 'ip_get_mode', 0, 8, 'CDN 获取 IP 方式');
+        try {
+            $trustedProxyConfig = Client::normalizeTrustedProxyConfig(
+                array_key_exists('trusted_proxy_ips', $post)
+                    ? $this->settingString($post, 'trusted_proxy_ips', 8192)
+                    : Client::getTrustedProxyConfig()
+            );
+        } catch (\InvalidArgumentException $e) {
+            throw new JSONException($e->getMessage());
+        }
+        $registeredType = $this->settingInteger($post, 'registered_type', 0, 2, '注册方式');
+        $forgetType = $this->settingInteger($post, 'forget_type', 0, 1, '找回密码方式');
+        $usernameLength = $this->settingInteger($post, 'username_len', 1, 32, '注册用户名长度', 6);
+        $sessionExpire = $this->settingInteger($post, 'session_expire', 0, 31536000, '会话保持时间', 0);
         if ($sessionExpire > 0 && $sessionExpire < 120) {
             throw new JSONException('会话保持时间必须为 0，或至少 120 秒');
         }
@@ -697,12 +760,13 @@ class Config extends Manage
         }
 
         // Validate every value before the first filesystem or database write.
-        // Favicon and client-IP mode are filesystem state and cannot join the
+        // Favicon and client-IP configuration are filesystem state and cannot join the
         // database transaction. Run the failure-prone file work first; if the
         // later database commit fails these idempotent side effects may already
         // be visible and a retry is required, while all config rows stay atomic.
         $this->installFavicon($logo);
         try {
+            Client::setTrustedProxyConfig($trustedProxyConfig);
             Client::setClientMode($ipGetMode);
             clearstatcache(true, BASE_PATH . '/runtime/mode');
             $savedClientMode = @file_get_contents(BASE_PATH . '/runtime/mode');
@@ -729,6 +793,15 @@ class Config extends Manage
     public function other(): array
     {
         $map = $this->configPost(self::OTHER_REQUEST_FIELDS, '其他设置');
+        $callbackIpWhitelist = $this->configBoolean(
+            $map,
+            CallbackIpWhitelist::ENABLED_CONFIG,
+            '回调白名单 IP 开关'
+        );
+        $callbackIpWhitelistRules = $this->configCallbackIpRules(
+            $map,
+            $callbackIpWhitelist === 1
+        );
         $rechargeMin = $this->configMoney($map, 'recharge_min', '单次最低充值金额');
         $rechargeMax = $this->configMoney($map, 'recharge_max', '单次最高充值金额');
         if ((float)$rechargeMin > 0 && (float)$rechargeMax > 0 && (float)$rechargeMin > (float)$rechargeMax) {
@@ -737,6 +810,7 @@ class Config extends Manage
 
         $settings = [
             'callback_domain' => $this->configHttpUrl($map, 'callback_domain', '自定义支付回调域名', false, true),
+            CallbackIpWhitelist::RULES_CONFIG => $callbackIpWhitelistRules,
             'domain' => $this->configDomainList($map, 'domain', '主站域名', true),
             'cname' => $this->configDomainList($map, 'cname', 'DNS-CNAME', false),
             'recharge_min' => $rechargeMin,
@@ -750,7 +824,9 @@ class Config extends Manage
             'commodity_name' => $this->configString($map, 'commodity_name', 128, '推荐分类名称'),
         ];
         foreach (self::OTHER_BOOLEAN_FIELDS as $key) {
-            $settings[$key] = $this->configBoolean($map, $key, '其他设置开关');
+            $settings[$key] = $key === CallbackIpWhitelist::ENABLED_CONFIG
+                ? $callbackIpWhitelist
+                : $this->configBoolean($map, $key, '其他设置开关');
         }
 
         // Serialize validation with category deletion. Config acquires the file

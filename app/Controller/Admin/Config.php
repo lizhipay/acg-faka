@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 
 use App\Controller\Base\View\Manage;
 use App\Interceptor\ManageSession;
+use App\Util\CallbackIpWhitelist;
 use App\Util\Client;
 use App\Util\Theme;
 use Kernel\Annotation\Interceptor;
@@ -86,7 +87,8 @@ class Config extends Manage
             "themes_json" => is_string($themesJson) ? $themesJson : '[]',
             "user_center_mobile_theme" => \App\Model\Config::get("user_center_mobile_theme") ?: "0",
             "ip_get_mode" => $modes,
-            "ip_mode" => Client::getClientMode()
+            "ip_mode" => Client::getClientMode(),
+            "trusted_proxy_ips" => Client::getTrustedProxyConfig()
         ]);
     }
 
@@ -125,6 +127,13 @@ class Config extends Manage
     public function other(): string
     {
         $category = \App\Model\Category::query()->where("status", 1)->where("owner", 0)->get();
-        return $this->render("其他设置", "Config/Other.html", ["toolbar" => $this->TOOLBAR, "category" => $category->toArray()]);
+        return $this->render("其他设置", "Config/Other.html", [
+            "toolbar" => $this->TOOLBAR,
+            "category" => $category->toArray(),
+            "config" => [
+                CallbackIpWhitelist::ENABLED_CONFIG => \App\Model\Config::get(CallbackIpWhitelist::ENABLED_CONFIG),
+                CallbackIpWhitelist::RULES_CONFIG => \App\Model\Config::get(CallbackIpWhitelist::RULES_CONFIG),
+            ],
+        ]);
     }
 }
