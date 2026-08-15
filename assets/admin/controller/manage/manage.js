@@ -34,7 +34,7 @@
                     done: res => {
                         if (!controllerActive) return;
                         if (index !== undefined && index !== null) layer.close(index);
-                        message.success(res?.msg && res.msg !== 'success' ? res.msg : '管理员已保存');
+                        message.success(res?.msg && res.msg !== 'success' ? res.msg : i18n('管理员已保存'));
                         if (res?.data?.reauthenticate) {
                             window.setTimeout(() => { window.location.href = '/admin/authentication/login'; }, 500);
                             return;
@@ -43,7 +43,7 @@
                     },
                     error: res => {
                         submitting = false;
-                        if (controllerActive) message.error(res?.msg || '管理员保存失败，请检查填写内容。');
+                        if (controllerActive) message.error(res?.msg || i18n('管理员保存失败，请检查填写内容。'));
                     },
                     fail: () => {
                         submitting = false;
@@ -59,9 +59,9 @@
                             title: "头像", name: "avatar", type: "image", uploadUrl: '/admin/api/upload/send',
                             photoAlbumUrl: '/admin/api/upload/get', placeholder: "请选择图片", width: 100
                         },
-                        {title: "Email", name: "email", type: "input", placeholder: "请输入邮箱", required: true, regex: {value: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$', message: '请输入正确的邮箱地址'}},
+                        {title: "Email", name: "email", type: "input", placeholder: "请输入邮箱", required: true, regex: {value: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$', message: i18n('请输入正确的邮箱地址')}},
                         {title: "昵称", name: "nickname", type: "input", placeholder: "请输入昵称", required: true},
-                        {title: "密码", name: "password", type: "password", placeholder: isEdit ? "不修改请留空" : "请输入至少 6 位密码", required: !isEdit, regex: {value: '^.{6,}$', message: '密码不能少于 6 位'}},
+                        {title: "密码", name: "password", type: "password", placeholder: isEdit ? i18n("不修改请留空") : i18n("请输入至少 6 位密码"), required: !isEdit, regex: {value: '^.{6,}$', message: i18n('密码不能少于 6 位')}},
                         {
                             title: "类型", name: "type", type: "radio", dict: "_manage_type", default: 1
                         },
@@ -96,7 +96,7 @@
         {
             field: 'avatar', title: '管理员', formatter: (val, item) => {
                 const avatar = escapeHtml(safeImageUrl(item.avatar));
-                const displayName = item.nickname || item.email || ('管理员 #' + (item.id || '-'));
+                const displayName = item.nickname || item.email || (i18n('管理员 #') + (item.id || '-'));
                 return `<div class="md-user-cell"><img src="${avatar}" class="md-user-cell__avatar" alt="">` +
                     `<div class="md-user-cell__text"><span class="md-user-cell__name">${escapeHtml(displayName)}</span>` +
                     `<span class="md-user-cell__sub">${escapeHtml(item.email)}</span></div></div>`;
@@ -105,9 +105,9 @@
         , {
             field: 'status', title: '状态', formatter: function (val, item) {
                 if (item.status == 1) {
-                    return format.badge("正常", "a-badge-success");
+                    return format.badge(i18n("正常"), "a-badge-success");
                 }
-                return format.badge("禁用", "a-badge-danger");
+                return format.badge(i18n("禁用"), "a-badge-danger");
             }
         }
         , {
@@ -127,20 +127,20 @@
                     class: "text-primary",
                     show: item => Number(item.type) !== 0,
                     click: (event, value, row, index) => {
-                        modal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + " 修改管理员", row);
+                        modal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + i18n(" 修改管理员"), row);
                     }
                 },
                 {
                     icon: 'fa-duotone fa-regular fa-trash-can text-danger',
                     show: item => Number(item.type) !== 0,
                     click: (event, value, row, index) => {
-                        message.ask(`<div style="text-align:left;line-height:1.8"><div><b>管理员：</b>${escapeHtml(row.nickname || row.email || ('ID ' + row.id))}</div><div style="margin-top:8px;color:#d14343">删除后该账号将无法登录，此操作不可撤销。</div></div>`, () => {
+                        message.ask(`<div style="text-align:left;line-height:1.8"><div><b>${i18n('管理员：')}</b>${escapeHtml(row.nickname || row.email || ('ID ' + row.id))}</div><div style="margin-top:8px;color:#d14343">${i18n('删除后该账号将无法登录，此操作不可撤销。')}</div></div>`, () => {
                             util.post('/admin/api/manage/del', {list: [row.id]}, res => {
                                 if (!controllerActive) return;
                                 message.success("删除成功");
                                 table.refresh();
                             });
-                        }, '确认删除管理员？', '确认删除');
+                        }, i18n('确认删除管理员？'), i18n('确认删除'));
                     }
                 }
             ]
@@ -159,7 +159,7 @@
     table.render();
 
     $('.btn-app-create').off(namespace).on('click' + namespace, function () {
-        modal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> 创建管理员`);
+        modal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> ${i18n('创建管理员')}`);
     });
 
     function destroy() {

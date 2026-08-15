@@ -186,7 +186,7 @@ const component = new class Component {
             + `<header class="md-message-preview__header">`
             + `<span class="md-message-preview__icon" aria-hidden="true"><span class="material-icons-outlined">notifications</span></span>`
             + `<div class="md-message-preview__heading"><span>MESSAGE</span><h2>${title}</h2>${createTime ? `<time>${createTime}</time>` : ''}</div>`
-            + `<button type="button" class="md-message-preview__close" aria-label="关闭消息"><span class="material-icons-outlined">close</span></button>`
+            + `<button type="button" class="md-message-preview__close" aria-label="${i18n('关闭消息')}"><span class="material-icons-outlined">close</span></button>`
             + `</header><div class="md-message-preview__content markdown-body">${content}</div></article>`;
 
         return layer.open({
@@ -202,7 +202,7 @@ const component = new class Component {
             area: mobile ? ['100%', '100%'] : '600px',
             skin: 'md-message-layer',
             content: contentHtml,
-            btn: jumpUrl ? [`${util.icon('fa-duotone fa-regular fa-arrow-up-right-from-square')} 前往地址`] : false,
+            btn: jumpUrl ? [`${util.icon('fa-duotone fa-regular fa-arrow-up-right-from-square')} ${i18n('前往地址')}`] : false,
             yes: index => {
                 const parsed = new URL(jumpUrl, window.location.origin);
                 layer.close(index);
@@ -286,7 +286,7 @@ const component = new class Component {
             area: isMobile ? ['100vw', '100dvh'] : 'auto',
             skin: isMobile ? 'md-image-preview-layer' : '',
             shadeClose: true,
-            content: `<div class="md-image-preview"><img src="${safeUrl}" alt="图片预览"></div>`,
+            content: `<div class="md-image-preview"><img src="${safeUrl}" alt="${i18n('图片预览')}"></div>`,
             success: ($layer) => {
                 if (!isMobile) return;
                 $layer.attr({role: 'dialog', 'aria-modal': 'true', 'aria-label': '图片预览'});

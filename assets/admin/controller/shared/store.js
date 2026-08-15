@@ -194,11 +194,11 @@
         return (template.content.textContent || '').trim();
     };
     const redactImportSecrets = value => String(value ?? '')
-        .replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g, '[JWT已隐藏]')
-        .replace(/\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{8,}/gi, '$1 [已隐藏]')
-        .replace(/\b(authorization|proxy-authorization|cookie|set-cookie)\b\s*[:=：]\s*[^,;，；\r\n]+/giu, '$1=[已隐藏]')
-        .replace(/(["'])(app[-_ ]?key|api[-_ ]?key|password|passwd|secret|token|session[-_ ]?id)\1\s*:\s*(["'])[^"']*\3/giu, '$1$2$1:"[已隐藏]"')
-        .replace(/\b(app[-_ ]?key|api[-_ ]?key|password|passwd|secret|token|session[-_ ]?id)\b(\s*[:=：]\s*)[^\s,;，；&]+/giu, '$1$2[已隐藏]');
+        .replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g, i18n('[JWT已隐藏]'))
+        .replace(/\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{8,}/gi, i18n('$1 [已隐藏]'))
+        .replace(/\b(authorization|proxy-authorization|cookie|set-cookie)\b\s*[:=：]\s*[^,;，；\r\n]+/giu, i18n('$1=[已隐藏]'))
+        .replace(/(["'])(app[-_ ]?key|api[-_ ]?key|password|passwd|secret|token|session[-_ ]?id)\1\s*:\s*(["'])[^"']*\3/giu, '$1$2$1:"[' + i18n('已隐藏') + ']"')
+        .replace(/\b(app[-_ ]?key|api[-_ ]?key|password|passwd|secret|token|session[-_ ]?id)\b(\s*[:=：]\s*)[^\s,;，；&]+/giu, i18n('$1$2[已隐藏]'));
     const compactLogText = (value, maxLength = 240) => redactImportSecrets(plainMessage(value))
         .replace(/[\u0000-\u001F\u007F]+/g, ' ')
         .replace(/\s+/g, ' ')
@@ -216,13 +216,26 @@
         }
         automatic ? form.hide("category_id") : form.show("category_id");
     };
+    //加价模式：0=固定金额 1=百分比 2=套用加价模板
+    const PREMIUM_TYPE_TEMPLATE = '2';
+    const applyImportPremiumMode = (form, value) => {
+        const useTemplate = String(value) === PREMIUM_TYPE_TEMPLATE;
+        if (form.form?.premium_template) {
+            form.form.premium_template.required = useTemplate;
+        }
+        useTemplate ? form.hide("premium") : form.show("premium");
+        useTemplate ? form.show("premium_template") : form.hide("premium_template");
+    };
     const normalizeBinaryValue = value => value === true || String(value) === '1' ? '1' : '0';
     const normalizeImportRequest = value => {
         const categoryMode = String(value?.category_mode ?? '0');
         const categoryId = Number(value?.category_id);
-        const premiumText = String(value?.premium ?? '').trim();
+        //加价留空视为不加价(#776)
+        const premiumText = String(value?.premium ?? '').trim() || '0';
         const premium = Number(premiumText);
         const premiumType = String(value?.premium_type ?? '');
+        const useTemplate = premiumType === PREMIUM_TYPE_TEMPLATE;
+        const templateId = Number(value?.premium_template);
         if (
             !['0', '1'].includes(categoryMode)
             || (
@@ -233,12 +246,19 @@
                     || categoryId > 4294967295
                 )
             )
-            || premiumText === ''
             || premiumText.length > 32
             || !Number.isFinite(premium)
             || premium < 0
             || premium > 99999999.99
-            || !['0', '1'].includes(premiumType)
+            || !['0', '1', PREMIUM_TYPE_TEMPLATE].includes(premiumType)
+            || (
+                useTemplate
+                && (
+                    !Number.isSafeInteger(templateId)
+                    || templateId < 1
+                    || templateId > 4294967295
+                )
+            )
         ) {
             return null;
         }
@@ -251,7 +271,9 @@
             shared_amount_sync: normalizeBinaryValue(value?.shared_amount_sync),
             shared_config_sync: normalizeBinaryValue(value?.shared_config_sync),
             premium_type: premiumType,
-            premium: premiumText,
+            //模板模式下加价规则整套来自模板，加价数额留 0 免得被误读
+            premium: useTemplate ? '0' : premiumText,
+            premium_template: useTemplate ? String(templateId) : '0',
             resume_import: '1'
         };
     };
@@ -325,17 +347,17 @@
         const headingIcon = createElement('span', 'md-remote-product-picker__heading-icon');
         headingIcon.appendChild(createIcon('inventory_2'));
         const headingText = createElement('div', 'md-remote-product-picker__heading-text');
-        const title = createElement('h3', '', '远程商品');
+        const title = createElement('h3', '', i18n('远程商品'));
         title.id = `${pickerId}-title`;
         headingText.append(
             title,
-            createElement('p', '', '选择需要接入并入库的商品')
+            createElement('p', '', i18n('选择需要接入并入库的商品'))
         );
         heading.append(headingIcon, headingText);
 
         const counters = createElement('div', 'md-remote-product-picker__counters');
-        const totalCounter = createElement('span', 'md-remote-product-picker__counter', `共 ${total} 件`);
-        const selectedCounter = createElement('span', 'md-remote-product-picker__counter md-remote-product-picker__counter--selected', '已选 0 件');
+        const totalCounter = createElement('span', 'md-remote-product-picker__counter', `${i18n('共')} ${total} ${i18n('件')}`);
+        const selectedCounter = createElement('span', 'md-remote-product-picker__counter md-remote-product-picker__counter--selected', i18n('已选 0 件'));
         selectedCounter.setAttribute('aria-live', 'polite');
         counters.append(totalCounter, selectedCounter);
         header.append(heading, counters);
@@ -345,14 +367,14 @@
         search.appendChild(createIcon('search'));
         const searchInput = createElement('input', 'md-remote-product-picker__search-input');
         searchInput.type = 'search';
-        searchInput.placeholder = '搜索分类或商品名称';
+        searchInput.placeholder = i18n('搜索分类或商品名称');
         searchInput.autocomplete = 'off';
         searchInput.spellcheck = false;
-        searchInput.setAttribute('aria-label', '搜索远程商品');
+        searchInput.setAttribute('aria-label', i18n('搜索远程商品'));
         const clearSearch = createElement('button', 'md-remote-product-picker__clear-search');
         clearSearch.type = 'button';
         clearSearch.dataset.action = 'clear-search';
-        clearSearch.setAttribute('aria-label', '清空搜索');
+        clearSearch.setAttribute('aria-label', i18n('清空搜索'));
         clearSearch.hidden = true;
         clearSearch.appendChild(createIcon('close'));
         search.append(searchInput, clearSearch);
@@ -363,21 +385,21 @@
         selectionButton.dataset.action = 'toggle-all-selection';
         selectionButton.append(
             createIcon('select_all'),
-            createElement('span', 'md-remote-product-picker__action-text', '全选')
+            createElement('span', 'md-remote-product-picker__action-text', i18n('全选'))
         );
         const expandButton = createElement('button', 'md-remote-product-picker__action');
         expandButton.type = 'button';
         expandButton.dataset.action = 'toggle-all-groups';
         expandButton.append(
             createIcon('unfold_more'),
-            createElement('span', 'md-remote-product-picker__action-text', '展开')
+            createElement('span', 'md-remote-product-picker__action-text', i18n('展开'))
         );
         toolbarActions.append(selectionButton, expandButton);
         toolbar.append(search, toolbarActions);
 
         const list = createElement('div', 'md-remote-product-picker__list');
         list.setAttribute('role', 'group');
-        list.setAttribute('aria-label', '远程商品分类');
+        list.setAttribute('aria-label', i18n('远程商品分类'));
         const records = [];
         const flatItems = [];
 
@@ -391,7 +413,7 @@
             toggleButton.dataset.groupIndex = String(groupIndex);
             toggleButton.setAttribute('aria-expanded', 'false');
             toggleButton.setAttribute('aria-controls', groupId);
-            toggleButton.setAttribute('aria-label', `展开分类 ${group.name}`);
+            toggleButton.setAttribute('aria-label', `${i18n('展开分类')} ${group.name}`);
             toggleButton.appendChild(createIcon('chevron_right'));
 
             const groupLabel = createElement('label', 'md-remote-product-picker__group-label');
@@ -399,20 +421,20 @@
             groupCheckbox.type = 'checkbox';
             groupCheckbox.dataset.groupIndex = String(groupIndex);
             groupCheckbox.setAttribute('lay-ignore', '');
-            groupCheckbox.setAttribute('aria-label', `选择分类 ${group.name} 的全部商品`);
+            groupCheckbox.setAttribute('aria-label', `${i18n('选择分类')} ${group.name} ${i18n('的全部商品')}`);
             groupCheckbox.disabled = group.children.length === 0;
             const groupCheckmark = createElement('span', 'md-remote-product-picker__checkmark');
             groupCheckmark.setAttribute('aria-hidden', 'true');
             const groupIcon = createIcon(group.children.length > 0 ? 'folder' : 'folder_off', 'md-remote-product-picker__item-icon');
             const groupName = createElement('span', 'md-remote-product-picker__group-name', group.name);
-            const groupCount = createElement('span', 'md-remote-product-picker__group-count', `${group.children.length} 件`);
+            const groupCount = createElement('span', 'md-remote-product-picker__group-count', `${group.children.length} ${i18n('件')}`);
             groupLabel.append(groupCheckbox, groupCheckmark, groupIcon, groupName, groupCount);
             groupHeader.append(toggleButton, groupLabel);
 
             const groupItems = createElement('div', 'md-remote-product-picker__items');
             groupItems.id = groupId;
             groupItems.setAttribute('role', 'group');
-            groupItems.setAttribute('aria-label', `${group.name} 商品`);
+            groupItems.setAttribute('aria-label', `${group.name} ${i18n('商品')}`);
             const record = {
                 node: groupNode,
                 toggle: toggleButton,
@@ -431,7 +453,7 @@
                 checkbox.value = String(item.id);
                 checkbox.dataset.groupIndex = String(groupIndex);
                 checkbox.setAttribute('lay-ignore', '');
-                checkbox.setAttribute('aria-label', `选择商品 ${item.name}`);
+                checkbox.setAttribute('aria-label', `${i18n('选择商品')} ${item.name}`);
                 const checkmark = createElement('span', 'md-remote-product-picker__checkmark');
                 checkmark.setAttribute('aria-hidden', 'true');
                 const itemIcon = createIcon('inventory_2', 'md-remote-product-picker__item-icon');
@@ -456,8 +478,8 @@
         const empty = createElement('div', 'md-remote-product-picker__empty');
         empty.append(
             createIcon('inventory_2'),
-            createElement('strong', '', '暂无可接入的远程商品'),
-            createElement('span', '', '请检查远程店铺的商品状态后重试')
+            createElement('strong', '', i18n('暂无可接入的远程商品')),
+            createElement('span', '', i18n('请检查远程店铺的商品状态后重试'))
         );
         empty.hidden = total > 0;
         list.appendChild(empty);
@@ -467,7 +489,7 @@
         const applyExpanded = (record, expanded) => {
             record.node.classList.toggle('is-expanded', expanded);
             record.toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-            record.toggle.setAttribute('aria-label', `${expanded ? '收起' : '展开'}分类 ${record.name}`);
+            record.toggle.setAttribute('aria-label', `${expanded ? i18n('收起') : i18n('展开')}${i18n('分类')} ${record.name}`);
             const icon = record.toggle.querySelector('.material-icons-outlined');
             if (icon) icon.textContent = expanded ? 'expand_more' : 'chevron_right';
         };
@@ -479,11 +501,11 @@
             const visibleGroups = records.filter(record => !record.node.hidden);
             const allExpanded = visibleGroups.length > 0 && visibleGroups.every(record => record.node.classList.contains('is-expanded'));
             expandButton.disabled = visibleGroups.length === 0;
-            expandButton.setAttribute('aria-label', allExpanded ? '收起全部分类' : '展开全部分类');
+            expandButton.setAttribute('aria-label', allExpanded ? i18n('收起全部分类') : i18n('展开全部分类'));
             const icon = expandButton.querySelector('.material-icons-outlined');
             const text = expandButton.querySelector('.md-remote-product-picker__action-text');
             if (icon) icon.textContent = allExpanded ? 'unfold_less' : 'unfold_more';
-            if (text) text.textContent = allExpanded ? '收起' : '展开';
+            if (text) text.textContent = allExpanded ? i18n('收起') : i18n('展开');
         };
         const updateGroupSelection = record => {
             const selected = record.items.reduce((count, item) => count + (item.input.checked ? 1 : 0), 0);
@@ -495,15 +517,15 @@
             changedRecords.forEach(updateGroupSelection);
             const selected = flatItems.reduce((count, item) => count + (item.input.checked ? 1 : 0), 0);
             const allSelected = total > 0 && selected === total;
-            selectedCounter.textContent = `已选 ${selected} 件`;
+            selectedCounter.textContent = `${i18n('已选')} ${selected} ${i18n('件')}`;
             selectedCounter.classList.toggle('is-active', selected > 0);
             selectionButton.disabled = total === 0;
-            selectionButton.setAttribute('aria-label', allSelected ? '清空全部已选商品' : '选择全部商品');
+            selectionButton.setAttribute('aria-label', allSelected ? i18n('清空全部已选商品') : i18n('选择全部商品'));
             selectionButton.setAttribute('aria-pressed', allSelected ? 'true' : 'false');
             const icon = selectionButton.querySelector('.material-icons-outlined');
             const text = selectionButton.querySelector('.md-remote-product-picker__action-text');
             if (icon) icon.textContent = allSelected ? 'deselect' : 'select_all';
-            if (text) text.textContent = allSelected ? '清空' : '全选';
+            if (text) text.textContent = allSelected ? i18n('清空') : i18n('全选');
         };
         const applySearch = () => {
             const query = searchInput.value.trim().toLocaleLowerCase();
@@ -527,11 +549,11 @@
             empty.hidden = hasItems;
             const emptyTitle = empty.querySelector('strong');
             const emptyDescription = empty.querySelector('span:not(.material-icons-outlined)');
-            if (emptyTitle) emptyTitle.textContent = query === '' ? '暂无可接入的远程商品' : '没有找到匹配的商品';
+            if (emptyTitle) emptyTitle.textContent = query === '' ? i18n('暂无可接入的远程商品') : i18n('没有找到匹配的商品');
             if (emptyDescription) {
                 emptyDescription.textContent = query === ''
-                    ? '请检查远程店铺的商品状态后重试'
-                    : '请尝试更换关键词';
+                    ? i18n('请检查远程店铺的商品状态后重试')
+                    : i18n('请尝试更换关键词');
             }
             updateExpandButton();
         };
@@ -620,7 +642,7 @@
     };
     const normalizeImportTaskItem = value => {
         const code = String(value?.code ?? '').trim();
-        const name = compactLogText(value?.name, 255) || '未命名商品';
+        const name = compactLogText(value?.name, 255) || i18n('未命名商品');
         const categoryName = compactLogText(value?.categoryName, 128);
         const retryCountValue = Number(value?.retryCount);
         const retryCount = Number.isSafeInteger(retryCountValue) && retryCountValue > 0 ? 1 : 0;
@@ -666,7 +688,7 @@
         return {
             id: id,
             storeId: taskStoreId,
-            storeName: compactLogText(value?.storeName, 128) || `店铺 ${taskStoreId}`,
+            storeName: compactLogText(value?.storeName, 128) || `${i18n('店铺')} ${taskStoreId}`,
             createdAt: Number.isFinite(Number(value?.createdAt)) ? Number(value.createdAt) : Date.now(),
             updatedAt: Number.isFinite(Number(value?.updatedAt)) ? Number(value.updatedAt) : Date.now(),
             status: terminal ? 'completed' : (storedStatus === 'stopped' ? 'stopped' : 'paused'),
@@ -682,7 +704,7 @@
         const $button = $('.btn-import-tasks');
         $button.prop('hidden', count === 0).toggle(count > 0);
         $button.find('.import-task-count').text(count);
-        $button.attr('title', active > 0 ? `${active} 个任务正在执行或等待续传` : `${count} 个已完成任务等待查看`);
+        $button.attr('title', active > 0 ? `${active} ${i18n('个任务正在执行或等待续传')}` : `${count} ${i18n('个已完成任务等待查看')}`);
     };
     const persistImportTasks = () => {
         if (!importTaskStorageKey) return false;
@@ -731,31 +753,31 @@
         return `${Date.now().toString(36)}-${bytes[0].toString(36)}-${bytes[1].toString(36)}`;
     };
     const importTaskLogText = task => {
-        const lines = [`准备开始接入并入库，合计${task.items.length}个商品...`];
+        const lines = [`${i18n('准备开始接入并入库，合计')}${task.items.length}${i18n('个商品')}...`];
         task.items.forEach(item => {
             if (!['running', 'success', 'failed'].includes(item.status) && item.retryCount < 1) return;
-            lines.push(`【${item.name}】开始入库..`);
+            lines.push(`【${item.name}】${i18n('开始入库')}..`);
             if (item.retryCount > 0) {
-                lines.push(`【${item.name}】首次入库失败：${item.retryReason || '未返回具体原因'}`);
-                lines.push(`【${item.name}】开始自动重试（1/1）..`);
+                lines.push(`【${item.name}】${i18n('首次入库失败：')}${item.retryReason || i18n('未返回具体原因')}`);
+                lines.push(`【${item.name}】${i18n('开始自动重试（')}1/1）..`);
             }
             if (item.status === 'success') {
-                const successLabel = item.retryCount > 0 ? '自动重试成功' : '入库成功';
+                const successLabel = item.retryCount > 0 ? i18n('自动重试成功') : i18n('入库成功');
                 lines.push(item.reason && item.reason !== '入库成功'
                     ? `【${item.name}】${successLabel}：${item.reason}`
                     : `【${item.name}】${successLabel}`);
             } else if (item.status === 'failed') {
-                const failureLabel = item.retryCount > 0 ? '自动重试失败' : '入库失败';
-                lines.push(`【${item.name}】${failureLabel}：${item.reason || '未返回具体原因'}`);
+                const failureLabel = item.retryCount > 0 ? i18n('自动重试失败') : i18n('入库失败');
+                lines.push(`【${item.name}】${failureLabel}：${item.reason || i18n('未返回具体原因')}`);
             }
         });
         const stats = importTaskStats(task);
         if (task.status === 'completed') {
-            lines.push('', `接入完成，合计${task.items.length}个商品，成功${stats.success}个，失败${stats.failed}个。`);
+            lines.push('', `${i18n('接入完成，合计')}${task.items.length}${i18n('个商品，成功')}${stats.success}${i18n('个，失败')}${stats.failed}${i18n('个。')}`);
         } else if (task.status === 'stopped') {
-            lines.push('', `任务已停止：${task.pauseReason || '提交参数或店铺状态已失效'}`);
+            lines.push('', `${i18n('任务已停止：')}${task.pauseReason || i18n('提交参数或店铺状态已失效')}`);
         } else if (task.status === 'paused' && task.pauseReason) {
-            lines.push('', `任务已暂停：${task.pauseReason}`);
+            lines.push('', `${i18n('任务已暂停：')}${task.pauseReason}`);
         }
         return lines.join('\n');
     };
@@ -793,7 +815,7 @@
             .attr('aria-hidden', canRetryFailed ? 'false' : 'true')
             .html(
                 util.icon("fa-duotone fa-regular fa-rotate-right")
-                + ` 继续导入失败商品（${stats.failed}）`
+                + ` ${i18n('继续导入失败商品（')}${stats.failed}）`
             );
         if (canRetryFailed) {
             $retryButton.removeAttr('tabindex');
@@ -802,7 +824,7 @@
         }
         view.$layer.find('.layui-layer-btn1').html(
             util.icon("fa-duotone fa-regular fa-window-minimize")
-            + (['completed', 'stopped'].includes(task.status) ? ' 关闭日志' : ' 后台运行')
+            + (['completed', 'stopped'].includes(task.status) ? i18n(' 关闭日志') : i18n(' 后台运行'))
         );
     };
     const openImportTaskLog = task => {
@@ -814,12 +836,12 @@
             type: 1,
             shade: mobile ? 0.18 : false,
             shadeClose: false,
-            title: `${util.icon("fa-duotone fa-regular fa-list-check")} 入库日志 · ${escapeHtml(task.storeName)} <span class="import-task-progress"></span>`,
+            title: `${util.icon("fa-duotone fa-regular fa-list-check")} ${i18n('入库日志')} · ${escapeHtml(task.storeName)} <span class="import-task-progress"></span>`,
             btn: [
-                util.icon("fa-duotone fa-regular fa-rotate-right") + " 继续导入失败商品",
-                util.icon("fa-duotone fa-regular fa-window-minimize") + " 后台运行"
+                util.icon("fa-duotone fa-regular fa-rotate-right") + " " + i18n("继续导入失败商品"),
+                util.icon("fa-duotone fa-regular fa-window-minimize") + " " + i18n("后台运行")
             ],
-            content: '<textarea class="log-textarea form-control" aria-label="商品入库日志" readonly style="width:100%;height:100%;resize:none;"></textarea>',
+            content: '<textarea class="log-textarea form-control" aria-label="' + i18n('商品入库日志') + '" readonly style="width:100%;height:100%;resize:none;"></textarea>',
             area: mobile ? ["100%", "100%"] : ["760px", "560px"],
             offset: mobile ? 'auto' : [`${70 + slot * 24}px`, `${90 + slot * 28}px`],
             skin: mobile
@@ -871,7 +893,7 @@
                 data: requestData
             }));
         } catch (error) {
-            resolve({pause: true, retryable: false, message: '浏览器无法创建入库请求，请刷新页面后续传'});
+            resolve({pause: true, retryable: false, message: i18n('浏览器无法创建入库请求，请刷新页面后续传')});
             return;
         }
         request.done(response => {
@@ -879,7 +901,7 @@
                 resolve({
                     pause: true,
                     retryable: false,
-                    message: compactLogText(response?.msg, 200) || '登录会话已失效，请重新登录'
+                    message: compactLogText(response?.msg, 200) || i18n('登录会话已失效，请重新登录')
                 });
                 return;
             }
@@ -887,7 +909,7 @@
                 resolve({
                     fatal: true,
                     retryable: false,
-                    message: compactLogText(response?.msg, 200) || '提交参数或店铺状态已失效'
+                    message: compactLogText(response?.msg, 200) || i18n('提交参数或店铺状态已失效')
                 });
                 return;
             }
@@ -905,7 +927,7 @@
             resolve({
                 success: !failed,
                 retryable: failed,
-                message: compactLogText(response?.msg, 200) || (failed ? '入库失败' : '入库成功')
+                message: compactLogText(response?.msg, 200) || (failed ? i18n('入库失败') : i18n('入库成功'))
             });
         }).fail((xhr, status) => {
             if (status === 'abort') {
@@ -915,7 +937,7 @@
             resolve({
                 pause: true,
                 retryable: true,
-                message: compactLogText(xhr?.responseJSON?.msg, 200) || '网络异常，请检查连接后刷新页面续传'
+                message: compactLogText(xhr?.responseJSON?.msg, 200) || i18n('网络异常，请检查连接后刷新页面续传')
             });
         });
     });
@@ -924,17 +946,17 @@
         if (outcome.retryable !== true || item.retryCount >= 1) return outcome;
 
         item.retryCount = 1;
-        item.retryReason = outcome.message || '未返回具体原因';
+        item.retryReason = outcome.message || i18n('未返回具体原因');
         task.updatedAt = Date.now();
         if (!persistImportTasks()) {
             return {
                 pause: true,
                 retryable: false,
-                message: '浏览器缓存空间不足，无法安全记录重试状态'
+                message: i18n('浏览器缓存空间不足，无法安全记录重试状态')
             };
         }
-        appendImportTaskLog(task, `【${item.name}】首次入库失败：${item.retryReason}`);
-        appendImportTaskLog(task, `【${item.name}】开始自动重试（1/1）..`);
+        appendImportTaskLog(task, `【${item.name}】${i18n('首次入库失败：')}${item.retryReason}`);
+        appendImportTaskLog(task, `【${item.name}】${i18n('开始自动重试（')}1/1）..`);
         updateImportTaskLayer(task);
         if (!controllerActive) return {aborted: true};
         return importItemRequest(task, item);
@@ -965,14 +987,14 @@
                 if (!persistImportTasks()) {
                     item.status = 'pending';
                     task.status = 'paused';
-                    task.pauseReason = '浏览器缓存空间不足，请关闭已完成日志后重试';
+                    task.pauseReason = i18n('浏览器缓存空间不足，请关闭已完成日志后重试');
                     renderImportTaskLog(task);
                     break;
                 }
                 if (item.retryCount > 0) {
                     renderImportTaskLog(task);
                 } else {
-                    appendImportTaskLog(task, `【${item.name}】开始入库..`);
+                    appendImportTaskLog(task, `【${item.name}】${i18n('开始入库')}..`);
                 }
                 updateImportTaskLayer(task);
 
@@ -989,7 +1011,7 @@
                     task.pauseReason = outcome.message;
                     task.updatedAt = Date.now();
                     persistImportTasks();
-                    appendImportTaskLog(task, `任务已暂停：${outcome.message}`);
+                    appendImportTaskLog(task, `${i18n('任务已暂停：')}${outcome.message}`);
                     break;
                 }
                 if (outcome.fatal) {
@@ -999,27 +1021,27 @@
                     task.pauseReason = outcome.message;
                     task.updatedAt = Date.now();
                     persistImportTasks();
-                    appendImportTaskLog(task, `【${item.name}】入库失败：${outcome.message}`);
-                    appendImportTaskLog(task, `任务已停止：${outcome.message}`);
+                    appendImportTaskLog(task, `【${item.name}】${i18n('入库失败：')}${outcome.message}`);
+                    appendImportTaskLog(task, `${i18n('任务已停止：')}${outcome.message}`);
                     break;
                 }
 
                 item.status = outcome.success ? 'success' : 'failed';
-                item.reason = outcome.message || (outcome.success ? '入库成功' : '未返回具体原因');
+                item.reason = outcome.message || (outcome.success ? i18n('入库成功') : i18n('未返回具体原因'));
                 task.updatedAt = Date.now();
                 if (!persistImportTasks()) {
                     task.status = 'paused';
-                    task.pauseReason = '浏览器缓存空间不足，请关闭已完成日志后刷新页面续传';
+                    task.pauseReason = i18n('浏览器缓存空间不足，请关闭已完成日志后刷新页面续传');
                 }
                 const resultLabel = item.retryCount > 0
-                    ? (outcome.success ? '自动重试成功' : '自动重试失败')
-                    : (outcome.success ? '入库成功' : '入库失败');
+                    ? (outcome.success ? i18n('自动重试成功') : i18n('自动重试失败'))
+                    : (outcome.success ? i18n('入库成功') : i18n('入库失败'));
                 appendImportTaskLog(task, outcome.success && item.reason === '入库成功'
                     ? `【${item.name}】${resultLabel}`
                     : `【${item.name}】${resultLabel}：${item.reason}`);
                 updateImportTaskLayer(task);
                 if (task.status === 'paused') {
-                    appendImportTaskLog(task, `任务已暂停：${task.pauseReason}`);
+                    appendImportTaskLog(task, `${i18n('任务已暂停：')}${task.pauseReason}`);
                     break;
                 }
             }
@@ -1031,17 +1053,17 @@
                 persistImportTasks();
                 const stats = importTaskStats(task);
                 appendImportTaskLog(task, '');
-                appendImportTaskLog(task, `接入完成，合计${task.items.length}个商品，成功${stats.success}个，失败${stats.failed}个。`);
+                appendImportTaskLog(task, `${i18n('接入完成，合计')}${task.items.length}${i18n('个商品，成功')}${stats.success}${i18n('个，失败')}${stats.failed}${i18n('个。')}`);
                 if (controllerActive) {
-                    message.success(`入库任务完成：成功 ${stats.success} 个，失败 ${stats.failed} 个`);
+                    message.success(`${i18n('入库任务完成：成功')} ${stats.success} ${i18n('个，失败')} ${stats.failed} ${i18n('个')}`);
                 }
             }
         })().catch(() => {
             task.status = 'paused';
-            task.pauseReason = '页面处理异常，请刷新后续传';
+            task.pauseReason = i18n('页面处理异常，请刷新后续传');
             task.updatedAt = Date.now();
             persistImportTasks();
-            appendImportTaskLog(task, `任务已暂停：${task.pauseReason}`);
+            appendImportTaskLog(task, `${i18n('任务已暂停：')}${task.pauseReason}`);
         }).finally(() => {
             importTaskRunners.delete(task.id);
             updateImportTaskLayer(task);
@@ -1102,7 +1124,7 @@
         }
 
         appendImportTaskLog(task, '');
-        appendImportTaskLog(task, `继续导入失败商品，合计${failedItems.length}个...`);
+        appendImportTaskLog(task, `${i18n('继续导入失败商品，合计')}${failedItems.length}${i18n('个')}...`);
         updateImportTaskLayer(task);
         runImportTask(task);
         return true;
@@ -1199,12 +1221,12 @@
                     done: res => {
                         if (!controllerActive) return;
                         if (index !== undefined && index !== null) layer.close(index);
-                        message.success(res?.msg && res.msg !== 'success' ? (plainMessage(res.msg) || '店铺已保存') : '店铺已保存');
+                        message.success(res?.msg && res.msg !== 'success' ? (plainMessage(res.msg) || i18n('店铺已保存')) : i18n('店铺已保存'));
                         if (table && !table.isDestroyed) table.refresh();
                     },
                     error: res => {
                         submitting = false;
-                        if (controllerActive) message.error(plainMessage(res?.msg) || '店铺保存失败，请检查地址和凭据。');
+                        if (controllerActive) message.error(plainMessage(res?.msg) || i18n('店铺保存失败，请检查地址和凭据。'));
                     },
                     fail: () => {
                         submitting = false;
@@ -1237,18 +1259,18 @@
                             required: true,
                             regex: {
                                 value: '^[A-Za-z0-9._:@-]{1,32}$',
-                                message: '商户ID必须是 1–32 位字母、数字或 . _ : @ -'
+                                message: i18n('商户ID必须是 1–32 位字母、数字或 . _ : @ -')
                             }
                         },
                         {
                             title: "商户密钥",
                             name: "app_key",
                             type: "password",
-                            placeholder: editing ? "不修改请留空" : "请输入商户密钥",
+                            placeholder: editing ? i18n("不修改请留空") : i18n("请输入商户密钥"),
                             required: !editing,
                             regex: {
                                 value: '^[^\\s\\x00-\\x1F\\x7F]{1,64}$',
-                                message: '商户密钥必须是 1–64 位且不能包含空白字符'
+                                message: i18n('商户密钥必须是 1–64 位且不能包含空白字符')
                             }
                         },
                     ]
@@ -1305,7 +1327,7 @@
                         item.__mobileConnectStatus.success ? "a-badge-success" : "a-badge-danger"
                     );
                 }
-                return '<span class="connect-' + item.id + '"><span class="badge badge-light-primary">连接中..</span></span>'
+                return '<span class="connect-' + item.id + '"><span class="badge badge-light-primary">' + i18n('连接中..') + '</span></span>'
             }
         }, {
             field: 'type', title: '协议', dict: "_shared_type"
@@ -1327,7 +1349,7 @@
                         trackRequest($.get(`/admin/api/store/getSyncRemoteLog?id=${id}`)).done(response => {
                             if (!controllerActive) return;
                             if (response?.code !== 200) {
-                                message.error(plainMessage(response?.msg) || '同步日志读取失败');
+                                message.error(plainMessage(response?.msg) || i18n('同步日志读取失败'));
                                 return;
                             }
                             const data = response?.data || {};
@@ -1338,8 +1360,8 @@
                                 type: 1,
                                 shade: 0.4,
                                 shadeClose: true,
-                                title: '<i class="fa-duotone fa-regular fa-ban-bug"></i> 同步日志',
-                                btn: [util.icon("fa-duotone fa-regular fa-arrows-rotate") + "<span class='sync-item-btn'>开始同步</span>", util.icon(`fa-duotone fa-regular fa-broom-wide`) + "清空日志", util.icon("fa-duotone fa-regular fa-xmark") + "关闭"],
+                                title: '<i class="fa-duotone fa-regular fa-ban-bug"></i> ' + i18n('同步日志'),
+                                btn: [util.icon("fa-duotone fa-regular fa-arrows-rotate") + "<span class='sync-item-btn'>" + i18n("开始同步") + "</span>", util.icon(`fa-duotone fa-regular fa-broom-wide`) + i18n("清空日志"), util.icon("fa-duotone fa-regular fa-xmark") + i18n("关闭")],
                                 content: '<textarea class="log-textarea form-control" style="width:100%;height:100%;resize:none;"></textarea>',
                                 area: mobile ? ["100%", "100%"] : ["860px", "660px"],
                                 skin: mobile ? 'admin-mobile-layer-popup admin-mobile-layer-popup--task admin-mobile-layer-popup--danger-action md-store-sync-log-layer' : 'md-store-sync-log-layer',
@@ -1348,21 +1370,21 @@
                                 move: !mobile,
                                 btn1: (index, layero) => {
                                     if (syncing) {
-                                        layer.msg("同步任务正在进行，请勿重复提交");
+                                        layer.msg(i18n("同步任务正在进行，请勿重复提交"));
                                         return false;
                                     }
                                     const startSync = () => {
                                         if (!controllerActive || _LogPid !== logPid || syncing) return;
                                         syncing = true;
-                                        layer.msg("开始同步，请观察日志..");
-                                        layero.find('.sync-item-btn').html("正在同步..");
+                                        layer.msg(i18n("开始同步，请观察日志.."));
+                                        layero.find('.sync-item-btn').html(i18n("正在同步.."));
                                         trackRequest($.post(`/admin/api/store/syncRemote?id=${id}`))
                                             .done(res => {
                                                 if (!controllerActive || _LogPid !== logPid) return;
                                                 if (res?.code === 200) {
-                                                    layer.msg(escapeHtml(plainMessage(res?.msg) || "同步任务已结束"));
+                                                    layer.msg(escapeHtml(plainMessage(res?.msg) || i18n("同步任务已结束")));
                                                 } else {
-                                                    message.error(plainMessage(res?.msg) || "同步任务执行失败，请检查同步日志");
+                                                    message.error(plainMessage(res?.msg) || i18n("同步任务执行失败，请检查同步日志"));
                                                 }
                                             })
                                             .fail((xhr, status) => {
@@ -1372,11 +1394,11 @@
                                             .always(() => {
                                                 syncing = false;
                                                 if (!controllerActive || _LogPid !== logPid) return;
-                                                layero.find('.sync-item-btn').html("开始同步");
+                                                layero.find('.sync-item-btn').html(i18n("开始同步"));
                                             });
                                     };
                                     if (mobileAdminEnabled()) {
-                                        message.ask('同步会批量更新该远端店铺关联的本地商品数据。确认现在开始吗？', startSync, '确认同步商品？', '开始同步');
+                                        message.ask('同步会批量更新该远端店铺关联的本地商品数据。确认现在开始吗？', startSync, i18n('确认同步商品？'), i18n('开始同步'));
                                     } else {
                                         startSync();
                                     }
@@ -1389,17 +1411,17 @@
                                             .done(res => {
                                                 if (!controllerActive || _LogPid !== logPid) return;
                                                 if (res?.code !== 200) {
-                                                    message.error(plainMessage(res?.msg) || '同步日志清空失败');
+                                                    message.error(plainMessage(res?.msg) || i18n('同步日志清空失败'));
                                                     return;
                                                 }
-                                                layer.msg("日志已清空");
+                                                layer.msg(i18n("日志已清空"));
                                                 if ($logText) $logText.val("");
                                             })
                                             .fail((xhr, status) => {
                                                 if (!controllerActive || _LogPid !== logPid || status === 'abort') return;
                                                 message.error('网络异常，同步日志未清空');
                                             });
-                                    }, '确认清空同步日志？', '确认清空');
+                                    }, i18n('确认清空同步日志？'), i18n('确认清空'));
                                     return false;
                                 },
                                 success: (layero, index) => {
@@ -1505,12 +1527,12 @@
                                 submit: (result, index) => {
                                     if (!controllerActive) return;
                                     if (creatingImportTask) {
-                                        layer.msg("正在创建入库任务，请勿重复点击");
+                                        layer.msg(i18n("正在创建入库任务，请勿重复点击"));
                                         return;
                                     }
                                     const selectedItems = Array.isArray(result.auth) ? result.auth : [];
                                     if (selectedItems.length === 0) {
-                                        layer.msg("至少选择一个远端店铺的商品");
+                                        layer.msg(i18n("至少选择一个远端店铺的商品"));
                                         return;
                                     }
 
@@ -1524,20 +1546,20 @@
                                         seenCodes.add(code);
                                         queue.push({
                                             code: code,
-                                            name: compactLogText(item?.name, 255) || '未命名商品',
+                                            name: compactLogText(item?.name, 255) || i18n('未命名商品'),
                                             categoryName: compactLogText(item?.categoryName, 128)
                                         });
                                     });
 
                                     if (queue.length === 0) {
-                                        layer.msg("所选远端商品已失效，请刷新后重新选择");
+                                        layer.msg(i18n("所选远端商品已失效，请刷新后重新选择"));
                                         return;
                                     }
                                     if (!normalizeImportRequest(result)) {
                                         layer.msg(
                                             String(result?.category_mode ?? '0') === '1'
-                                                ? "请检查分类导入模式、加价模式和加价数额"
-                                                : "请选择有效本地分类，并检查加价模式和加价数额"
+                                                ? i18n("请检查分类导入模式、加价模式和加价数额")
+                                                : i18n("请选择有效本地分类，并检查加价模式和加价数额")
                                         );
                                         return;
                                     }
@@ -1545,7 +1567,7 @@
                                     creatingImportTask = true;
                                     const task = createImportTask(
                                         id,
-                                        compactLogText(row?.name, 128) || `店铺 ${id}`,
+                                        compactLogText(row?.name, 128) || `${i18n('店铺')} ${id}`,
                                         result,
                                         queue
                                     );
@@ -1558,11 +1580,11 @@
                                         creatingImportTask = false;
                                     }, 800);
                                     bindLayerFocus($(`#layui-layer${index}`), true);
-                                    layer.msg(`已创建入库任务，共 ${queue.length} 个商品`);
+                                    layer.msg(`${i18n('已创建入库任务，共')} ${queue.length} ${i18n('个商品')}`);
                                 },
                                 tab: [
                                     {
-                                        name: util.icon("fa-duotone fa-regular fa-link") + " 接入货源",
+                                        name: util.icon("fa-duotone fa-regular fa-link") + i18n(" 接入货源"),
                                         form: [
                                             {
                                                 title: "分类导入模式",
@@ -1621,17 +1643,26 @@
                                                 type: "radio",
                                                 dict: [
                                                     {id: 0, name: "普通金额加价"},
-                                                    {id: 1, name: "百分比加价(99%的人选择)"}
+                                                    {id: 1, name: "百分比加价(99%的人选择)"},
+                                                    {id: 2, name: "套用加价模板"}
                                                 ],
                                                 default: 1,
-                                                required: true
+                                                required: true,
+                                                change: applyImportPremiumMode
                                             },
                                             {
                                                 title: "加价数额",
                                                 name: "premium",
                                                 type: "input",
-                                                placeholder: "加价金额/百分比(小数代替)",
-                                                required: true
+                                                placeholder: "加价金额/百分比(小数代替)，留空为不加价"
+                                            },
+                                            {
+                                                title: "加价模板",
+                                                name: "premium_template",
+                                                type: "select",
+                                                dict: "price_template,id,name",
+                                                placeholder: "请选择加价模板",
+                                                tips: "在【店铺共享 - 加价模板】里维护。模板可以一次配好游客价、会员价、每个会员等级的价格，还能对价格取整。这里一律以远端价为基准加价（远端报的价就是你的进货成本），模板里的「加价基准」不参与。后续远端价变动时也会按同一个模板重算"
                                             },
                                             {
                                                 title: false,
@@ -1643,7 +1674,7 @@
                                     }
                                 ],
                                 assign: {},
-                                confirmText: `${importStartIcon} 开始入库`,
+                                confirmText: `${importStartIcon} ${i18n('开始入库')}`,
                                 autoPosition: false,
                                 width: "780px",
                                 renderComplete: (unique, index) => {
@@ -1652,6 +1683,8 @@
                                         inputmode: 'decimal',
                                         autocomplete: 'off'
                                     });
+                                    //默认是百分比加价，模板下拉先收起来（change 钩子只在用户切换时才触发）
+                                    $form.find('.block-premium_template').hide();
                                     const $layer = $(`#layui-layer${index}`);
                                     $layer.addClass('md-shared-store-import-popup');
                                     bindLayerFocus($layer, true);
@@ -1680,7 +1713,7 @@
                     icon: 'fa-duotone fa-regular fa-pen-to-square',
                     class: "text-primary",
                     click: (event, value, row, index) => {
-                        modal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + " 修改远端店铺", row);
+                        modal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + i18n(" 修改远端店铺"), row);
                     }
                 },
                 {
@@ -1729,11 +1762,11 @@
                 if (!controllerActive || generation !== connectGeneration) return;
                 let ins = $(".connect-" + id);
                 if (run.code == 200) {
-                    item.__mobileConnectStatus = {success: true, message: "正常"};
-                    ins.html(format.badge("正常", "a-badge-success"));
+                    item.__mobileConnectStatus = {success: true, message: i18n("正常")};
+                    ins.html(format.badge(i18n("正常"), "a-badge-success"));
                     $(".items-" + id).show();
                 } else {
-                    const failure = plainMessage(run?.msg) || "连接失败";
+                    const failure = plainMessage(run?.msg) || i18n("连接失败");
                     item.__mobileConnectStatus = {success: false, message: failure};
                     ins.html(format.badge(escapeHtml(failure), "a-badge-danger"));
                 }
@@ -1741,8 +1774,8 @@
                 })
                 .fail((xhr, status) => {
                     if (!controllerActive || generation !== connectGeneration || status === 'abort') return;
-                    item.__mobileConnectStatus = {success: false, message: "连接请求失败"};
-                    $(".connect-" + id).html(format.badge("连接请求失败", "a-badge-danger"));
+                    item.__mobileConnectStatus = {success: false, message: i18n("连接请求失败")};
+                    $(".connect-" + id).html(format.badge(i18n("连接请求失败"), "a-badge-danger"));
                     refreshMobile('store-connect-error');
                 });
         });
@@ -1752,7 +1785,7 @@
 
     $('.btn-import-tasks').off(namespace).on('click' + namespace, function () {
         if (importTasks.size === 0) {
-            layer.msg("暂无可恢复的入库任务");
+            layer.msg(i18n("暂无可恢复的入库任务"));
             return;
         }
         importTasks.forEach(task => {
@@ -1761,7 +1794,7 @@
         });
     });
     $('.btn-app-create').off(namespace).on('click' + namespace, function () {
-        modal(`${util.icon("fa-duotone fa-regular fa-link")} 添加远端店铺`);
+        modal(`${util.icon("fa-duotone fa-regular fa-link")} ${i18n('添加远端店铺')}`);
     });
     loadImportTasks();
     updateImportTaskButton();

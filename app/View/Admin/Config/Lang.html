@@ -1,0 +1,39 @@
+#{include file="../Header.html"}
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    #{include file="../Toolbar.html"}
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <div id="kt_content_container" class="container-fluid">
+
+            <div class="row g-5 mb-5" id="lang-stat"></div>
+
+            <div class="card mb-5 mb-xl-8">
+                <div class="card-header border-0">
+                    <div class="card-toolbar">
+                        <button class="btn btn-sm btn-light-primary btn-lang-rebuild me-3">
+                            <i class="fa-duotone fa-regular fa-rotate"></i> #{t("重建缓存")}
+                        </button>
+                        <button class="btn btn-sm btn-light-warning btn-lang-retranslate me-3">
+                            <i class="fa-duotone fa-regular fa-language"></i> #{t("标记重译选中")}
+                        </button>
+                        <button class="btn btn-sm btn-light-info btn-lang-resend me-3">
+                            <i class="fa-duotone fa-regular fa-paper-plane"></i> #{t("补投待翻条目")}
+                        </button>
+                        <button class="btn btn-sm btn-light-success btn-lang-scan me-3">
+                            <i class="fa-duotone fa-regular fa-folder-magnifying-glass"></i> #{t("扫描扩展词包")}
+                        </button>
+                        <button class="btn btn-sm btn-light-danger btn-lang-del me-3">
+                            <i class="fa-duotone fa-regular fa-trash-can"></i> #{t("删除选中")}
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body py-3">
+                    <table id="lang-table"></table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+#{ready("/assets/admin/controller/config/lang.js")}
+#{include file="../Footer.html"}

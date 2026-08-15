@@ -613,10 +613,30 @@ class Form {
             after = false;
         }
 
+        // 字段可选声明：namePlaceholder / valuePlaceholder 覆盖占位符；
+        // valueDict 把「值」换成下拉框；allowEmpty 允许把行删光
+        const cfg = (this.attributeConfig || {})[name] || {};
+        let valueField;
+        if (Array.isArray(cfg.valueDict) && cfg.valueDict.length) {
+            let options = '';
+            cfg.valueDict.forEach(opt => {
+                const id = String(opt.id);
+                options += '<option value="' + this.escapeAttribute(id) + '"'
+                    + (String(val.value) === id ? ' selected' : '') + '>'
+                    + this.escapeAttribute(i18n(opt.name)) + '</option>';
+            });
+            valueField = '<select name="value-' + escapedName + '[]" lay-ignore class="layui-input widget-general widget-w500">' + options + '</select> ';
+        } else {
+            valueField = '<input value="' + this.escapeAttribute(val.value) + '" name="value-' + escapedName + '[]" type="text" placeholder="' + this.escapeAttribute(i18n(cfg.valuePlaceholder || "属性内容")) + '" class="layui-input widget-general widget-w500"> ';
+        }
+        const handle = cfg.sortable
+            ? '<span class="widget-attr-handle" title="' + this.escapeAttribute(i18n('拖动排序')) + '">⠿</span>'
+            : '';
         let html = '' +
             '<div class="widget-block widget-block-' + unique + '">' +
-            '<input value="' + this.escapeAttribute(val.name) + '" name="name-' + escapedName + '[]" type="text" placeholder="' + this.escapeAttribute(i18n("属性名称")) + '" class="layui-input widget-general widget-w220"> ' +
-            '<input value="' + this.escapeAttribute(val.value) + '" name="value-' + escapedName + '[]" type="text" placeholder="' + this.escapeAttribute(i18n("属性内容")) + '" class="layui-input widget-general widget-w500"> ' +
+            handle +
+            '<input value="' + this.escapeAttribute(val.name) + '" name="name-' + escapedName + '[]" type="text" placeholder="' + this.escapeAttribute(i18n(cfg.namePlaceholder || "属性名称")) + '" class="layui-input widget-general widget-w220"> ' +
+            valueField +
             '<div style="display: inline-block;margin-left: 2px;"><i class="layui-icon widget-add-' + unique + '" style="color: #23a148;cursor: pointer;font-size: 16px;font-weight: bold;">&#xe61f;</i> <i class="layui-icon widget-del-' + unique + '" style="color: #eb8181;cursor: pointer;font-size: 16px;font-weight: bold;">&#x1006;</i></div>' +
             '</div>';
 
@@ -627,7 +647,8 @@ class Form {
         });
 
         $('.widget-del-' + unique).click(function () {
-            if (_this.attribute.num <= 1) {
+            // 声明了 allowEmpty 的字段可以一行不留（比如商品标签本来就可以不设）
+            if (!cfg.allowEmpty && _this.attribute.num <= 1) {
                 layer.msg("(⁎˃ᆺ˂)" + i18n("饶命，请留下最后一只独苗"));
                 return;
             }
@@ -635,12 +656,121 @@ class Form {
             dom.fadeOut('fast', function () {
                 dom.remove();
                 _this.attribute.num--;
+                cfg.allowEmpty && _this.syncAttributeEmptyState(name);
             });
         });
 
         $('.widget-block-' + unique).show(150);
+        cfg.sortable && this.bindAttributeDrag($('.widget-block-' + unique), name);
 
         layui.form.render();
+    }
+
+    /**
+     * 属性行的拖动排序。
+     *
+     * 用 Pointer Events 而不是 HTML5 的 dragstart/drop —— 后台有移动端布局，
+     * 而 HTML5 拖放在触屏上根本不触发。指针事件鼠标和触摸一套代码通吃。
+     *
+     * 顺序不额外存：序列化是按 DOM 顺序读 name-x[]/value-x[] 的，
+     * 所以把节点挪到位就等于排好序了。
+     *
+     * 动画用 FLIP（First-Last-Invert-Play）：换完位置先用 transform 把兄弟行
+     * "拉回"原处，再下一帧过渡到 0，于是看起来是滑过去的而不是瞬移。
+     */
+    bindAttributeDrag($row, name) {
+        const container = $('.' + this.unique + ' .component-' + name);
+        const handle = $row.find('.widget-attr-handle');
+        if (!handle.length) {
+            return;
+        }
+
+        const siblings = () => Array.prototype.slice.call(container[0].querySelectorAll('.widget-block'));
+
+        handle.on('pointerdown', function (e) {
+            e.preventDefault();
+            const row = $row[0];
+            const startY = e.originalEvent.clientY;
+            let dy = 0;       // 指针位移
+            let shift = 0;    // DOM 换位后的视觉补偿，保证行始终跟着手指
+
+            row.classList.add('is-dragging');
+            container[0].classList.add('is-sorting');
+
+            const paint = () => {
+                row.style.transform = 'translateY(' + (dy + shift) + 'px)';
+            };
+
+            const move = (ev) => {
+                dy = ev.clientY - startY;
+                paint();
+
+                const y = ev.clientY;
+                siblings().forEach((other) => {
+                    if (other === row) {
+                        return;
+                    }
+                    const box = other.getBoundingClientRect();
+                    const middle = box.top + box.height / 2;
+                    const rowAfter = other.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING;
+                    const rowBefore = other.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_PRECEDING;
+                    if (!((y < middle && rowAfter) || (y > middle && rowBefore))) {
+                        return;
+                    }
+
+                    // FLIP 第一步：记下换位前所有兄弟行的位置
+                    const before = new Map();
+                    siblings().forEach(n => before.set(n, n.getBoundingClientRect().top));
+                    const rowTopBefore = row.getBoundingClientRect().top;
+
+                    y < middle
+                        ? other.parentNode.insertBefore(row, other)
+                        : other.parentNode.insertBefore(row, other.nextSibling);
+
+                    // 被拖的行：换位后重算补偿，视觉上不能跳
+                    row.style.transform = '';
+                    shift = rowTopBefore - row.getBoundingClientRect().top - dy;
+                    paint();
+
+                    // 其余行：先拉回原位，再下一帧滑到新位
+                    siblings().forEach((n) => {
+                        if (n === row || !before.has(n)) {
+                            return;
+                        }
+                        const delta = before.get(n) - n.getBoundingClientRect().top;
+                        if (!delta) {
+                            return;
+                        }
+                        n.style.transition = 'none';
+                        n.style.transform = 'translateY(' + delta + 'px)';
+                        requestAnimationFrame(() => {
+                            n.style.transition = 'transform .18s cubic-bezier(.2,0,0,1)';
+                            n.style.transform = '';
+                        });
+                    });
+                });
+            };
+
+            const up = () => {
+                document.removeEventListener('pointermove', move);
+                document.removeEventListener('pointerup', up);
+                document.removeEventListener('pointercancel', up);
+
+                // 松手后滑回自己的槽位，而不是啪一下归零
+                row.style.transition = 'transform .18s cubic-bezier(.2,0,0,1)';
+                row.style.transform = '';
+                container[0].classList.remove('is-sorting');
+                setTimeout(() => {
+                    row.classList.remove('is-dragging');
+                    row.style.transition = '';
+                    siblings().forEach(n => { n.style.transition = ''; n.style.transform = ''; });
+                }, 190);
+            };
+
+            document.addEventListener('pointermove', move);
+            document.addEventListener('pointerup', up);
+            document.addEventListener('pointercancel', up);
+        });
     }
 
     setSwitch(name, checked) {
@@ -866,6 +996,10 @@ class Form {
                         !obj.hasOwnProperty(form.name) && (obj[form.name] = []);
                         break;
                     case 'treeSelect':
+                        //clearToZero: 未选择时显式提交0，让"清空父级分类"这类操作能真正入库(#779)
+                        if (form.clearToZero === true && !obj.hasOwnProperty(form.name)) {
+                            obj[form.name] = 0;
+                        }
                         (this.opt.hasOwnProperty("assign") && this.opt.assign.id == obj[form.name]) && (delete obj[form.name]);
                         break;
                     case 'switch':
@@ -912,11 +1046,14 @@ class Form {
                         break;
                     case 'attribute':
                         let attributes = [];
-                        obj["name-" + form.name].forEach((name, index) => {
+                        //行可以被删光（allowEmpty），删光之后这两个键根本不存在
+                        const attrNames = [].concat(obj["name-" + form.name] || []);
+                        const attrValues = [].concat(obj["value-" + form.name] || []);
+                        attrNames.forEach((name, index) => {
                             if (name != "") {
                                 attributes.push({
-                                    name: obj["name-" + form.name][index],
-                                    value: obj["value-" + form.name][index]
+                                    name: attrNames[index],
+                                    value: attrValues[index]
                                 });
                             }
                         });
@@ -1234,7 +1371,7 @@ class Form {
                 insertImgFn(result.data.url);
             },
             error: function (xhr, editor, resData) {
-                layer.msg("图片上传失败，文件可能过大");
+                layer.msg(i18n("图片上传失败，文件可能过大"));
             },
         }
         editor.config.uploadVideoServer = form.uploadUrl + "?mime=video";
@@ -1248,7 +1385,7 @@ class Form {
                 insertVideoFn(result.data.url);
             },
             error: function (xhr, editor, resData) {
-                layer.msg("视频上传失败，文件可能过大");
+                layer.msg(i18n("视频上传失败，文件可能过大"));
             },
         }
 
@@ -1415,7 +1552,7 @@ class Form {
             component.popup({
                 submit: (data, index) => {
                     if (!data.url) {
-                        layer.msg("外链不能为空");
+                        layer.msg(i18n("外链不能为空"));
                         return;
                     }
                     _this.setImage(form.name, data.url);
@@ -1574,6 +1711,24 @@ class Form {
     }
 
     treeSelectRegister(form) {
+        //clearToZero: 树顶注入"设为顶级"节点(id=0)供点击清空——treeSelect的隐藏input
+        //始终携带旧值随表单提交，没有该节点用户无法真正移出父级(#779)
+        if (form.clearToZero === true && !Array.isArray(form.dict)) {
+            let _self = this;
+            _Dict.advanced(form.dict, res => {
+                if (_self.isDestroyed) {
+                    return;
+                }
+                form.dict = [{
+                    id: 0,
+                    name: i18n("不设置父级，作为顶级分类"),
+                    fontCss: {color: "var(--md-primary)", "font-weight": "600"}
+                }].concat(Array.isArray(res) ? res : []);
+                _self.treeSelectRegister(form);
+            });
+            return;
+        }
+
         let _this = this;
         const treeSelect = layui.treeSelect.render({
             // 选择器
@@ -1643,16 +1798,82 @@ class Form {
     }
 
     attributeRegister(form) {
-        let preset = form.default ? JSON.parse(form.default) : [];
+        const name = util.replaceDotWithHyphen(form.name);
+        this.attributeConfig = this.attributeConfig || {};
+        this.attributeConfig[name] = {
+            namePlaceholder: form.namePlaceholder,
+            valuePlaceholder: form.valuePlaceholder,
+            valueDict: form.valueDict,
+            allowEmpty: form.allowEmpty === true,
+            sortable: form.sortable === true
+        };
+
+        let preset = [];
+        try {
+            preset = form.default ? JSON.parse(form.default) : [];
+        } catch (e) {
+            preset = [];
+        }
+        if (!Array.isArray(preset)) {
+            preset = [];
+        }
+
         if (preset.length <= 0) {
-            this.addAttribute(form.name);
+            // allowEmpty 的字段：一条都没有时就真的一行不放，只留「添加」入口
+            !this.attributeConfig[name].allowEmpty && this.addAttribute(form.name);
         } else {
             preset.forEach(widget => {
                 this.addAttribute(form.name, null, widget);
             });
         }
+
+        this.attributeConfig[name].allowEmpty && this.mountAttributeAdder(form.name);
+
         form.complete && form.complete(this, form.default);
         layui.form.render();
+    }
+
+    /**
+     * allowEmpty 字段的常驻「添加」按钮。
+     * 行可以被删光，删光之后必须还有地方能加回来，所以这个按钮独立于行存在。
+     */
+    mountAttributeAdder(rawName) {
+        const name = util.replaceDotWithHyphen(rawName);
+        const _this = this;
+        const container = $('.' + this.unique + ' .component-' + name);
+        if (container.find('.widget-attr-adder').length) {
+            return;
+        }
+        container.append('<a href="javascript:void(0);" class="widget-attr-adder">'
+            + '<i class="layui-icon">&#xe61f;</i> ' + i18n('添加') + '</a>');
+        container.find('.widget-attr-adder').click(function () {
+            const last = container.find('.widget-block').last();
+            last.length ? _this.addAttribute(rawName, last, {}) : _this.addAttribute(rawName);
+            _this.syncAttributeEmptyState(name);
+        });
+        this.syncAttributeEmptyState(name);
+    }
+
+    /**
+     * 一行都没有时给个说明文案，别让人对着空白发愣。
+     *
+     * 顺带给外层打个 is-attr-empty 标记：后台的 .mui-float 是「轮廓式浮动标签」，
+     * 标签当图例压在上边框上，而那套样式只有在框里确实有 .layui-input 时才生效。
+     * 行被删光之后框没了，标签就掉回左上角跟这里的内容叠在一起。
+     * 所以空态要显式换成普通的「标签在上、内容在下」布局。
+     */
+    syncAttributeEmptyState(name) {
+        const container = $('.' + this.unique + ' .component-' + util.replaceDotWithHyphen(name));
+        const adder = container.find('.widget-attr-adder');
+        adder.appendTo(container);   // 保证「添加」永远在最后
+        const empty = container.find('.widget-block').length === 0;
+        let tip = container.find('.widget-attr-empty');
+        if (empty && !tip.length) {
+            adder.before('<span class="widget-attr-empty">' + i18n('未设置') + '</span>');
+        } else if (!empty) {
+            tip.remove();
+        }
+        container.closest('.layui-form-item').toggleClass('is-attr-empty', empty);
     }
 
     customRegister(form) {

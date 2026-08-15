@@ -1,5 +1,92 @@
 !function () {
     let pluginUnbindTable, proUnbindTable, _GroupPrice;
+
+    // 液态玻璃安装/更新进度卡片，替代 layui 的丑转圈。假进度：下载在后端、前端拿不到真实
+    // 百分比，用指数逼近 95% 营造"进行中"，成功后冲 100% 变绿对勾再淡出；失败直接淡出。
+    // 自包含：首次调用注入一次 <style>（scoped .tk-inst-*），不依赖 _material.css，改源即生效。
+    const tkProgress = (() => {
+        let styled = false;
+        const ensureStyle = () => {
+            if (styled) return;
+            styled = true;
+            const s = document.createElement('style');
+            s.textContent =
+                '.tk-inst{position:fixed;inset:0;z-index:99990;display:flex;align-items:center;justify-content:center;background:rgba(18,20,28,.30);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);opacity:0;transition:opacity .3s cubic-bezier(.32,.72,0,1)}' +
+                '.tk-inst.is-in{opacity:1}' +
+                '.tk-inst-card{width:min(360px,86vw);padding:28px 26px 22px;border-radius:22px;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 2px rgba(16,20,35,.05),0 32px 70px -22px rgba(16,20,35,.45);transform:scale(.92) translateY(10px);opacity:0;transition:transform .36s cubic-bezier(.32,.72,0,1),opacity .36s cubic-bezier(.32,.72,0,1)}' +
+                '.tk-inst.is-in .tk-inst-card{transform:none;opacity:1}' +
+                '.tk-inst-ico{width:54px;height:54px;margin:0 auto 16px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;background:linear-gradient(135deg,#0a84ff,#5ac8fa);box-shadow:0 10px 22px -8px rgba(10,132,255,.7);animation:tk-bob 1.6s ease-in-out infinite}' +
+                '@keyframes tk-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}' +
+                '.tk-inst-title{margin:0 0 16px;text-align:center;font-size:15px;font-weight:650;line-height:1.55;color:#1c1d21}' +
+                '.tk-inst-track{height:8px;border-radius:99px;background:rgba(16,20,35,.09);overflow:hidden}' +
+                '.tk-inst-fill{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#0a84ff,#5ac8fa);box-shadow:0 0 12px rgba(10,132,255,.55);position:relative;overflow:hidden;transition:width .3s cubic-bezier(.32,.72,0,1)}' +
+                '.tk-inst-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transform:translateX(-100%);animation:tk-sh 1.1s linear infinite}' +
+                '@keyframes tk-sh{to{transform:translateX(100%)}}' +
+                '.tk-inst-pct{margin-top:11px;text-align:right;font-size:13px;font-weight:700;color:#0a84ff;font-variant-numeric:tabular-nums;letter-spacing:.02em}' +
+                '.tk-inst.is-done .tk-inst-ico{background:linear-gradient(135deg,#30c48d,#5be3b0);box-shadow:0 10px 22px -8px rgba(48,196,141,.7);animation:none}' +
+                '.tk-inst.is-done .tk-inst-fill{background:linear-gradient(90deg,#30c48d,#5be3b0);box-shadow:0 0 14px rgba(48,196,141,.6)}' +
+                '.tk-inst.is-done .tk-inst-fill::after{display:none}' +
+                '.tk-inst.is-done .tk-inst-pct{color:#30c48d}' +
+                '@media (prefers-color-scheme:dark){.tk-inst-card{background:rgba(30,32,40,.9);border-color:rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 32px 70px -22px rgba(0,0,0,.7)}.tk-inst-title{color:#f2f3f5}.tk-inst-track{background:rgba(255,255,255,.13)}}' +
+                ':root[data-theme="dark"] .tk-inst-card{background:rgba(30,32,40,.9);border-color:rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 32px 70px -22px rgba(0,0,0,.7)}' +
+                ':root[data-theme="dark"] .tk-inst-title{color:#f2f3f5}' +
+                ':root[data-theme="dark"] .tk-inst-track{background:rgba(255,255,255,.13)}' +
+                '@media (prefers-reduced-motion:reduce){.tk-inst-ico,.tk-inst-fill::after{animation:none}}';
+            document.head.appendChild(s);
+        };
+        return {
+            start(title, icon) {
+                ensureStyle();
+                const wrap = document.createElement('div');
+                wrap.className = 'tk-inst';
+                wrap.innerHTML =
+                    '<div class="tk-inst-card" role="alert" aria-live="polite">' +
+                    '<div class="tk-inst-ico"><i class="fa-duotone fa-regular ' + (icon || 'fa-cloud-arrow-down') + '"></i></div>' +
+                    '<p class="tk-inst-title">' + title + '</p>' +
+                    '<div class="tk-inst-track"><span class="tk-inst-fill"></span></div>' +
+                    '<div class="tk-inst-pct">0%</div></div>';
+                document.body.appendChild(wrap);
+                const fill = wrap.querySelector('.tk-inst-fill');
+                const pct = wrap.querySelector('.tk-inst-pct');
+                requestAnimationFrame(() => wrap.classList.add('is-in'));
+                let p = 0, raf = 0, stopped = false;
+                const loop = () => {
+                    if (stopped) return;
+                    p += (95 - p) * 0.012;            // 指数逼近 95%：越接近越慢，永不自达 100
+                    fill.style.width = p.toFixed(1) + '%';
+                    pct.textContent = Math.round(p) + '%';
+                    raf = requestAnimationFrame(loop);
+                };
+                raf = requestAnimationFrame(loop);
+                const remove = () => {
+                    wrap.classList.remove('is-in');
+                    setTimeout(() => wrap.remove(), 320);
+                };
+                return {
+                    succeed(doneText) {
+                        stopped = true;
+                        cancelAnimationFrame(raf);
+                        wrap.classList.add('is-done');
+                        fill.style.width = '100%';
+                        pct.textContent = '100%';
+                        // 完成态：图标换对勾、文案换"已完成"，别再停在"正在下载…"
+                        const ic = wrap.querySelector('.tk-inst-ico');
+                        if (ic) ic.innerHTML = '<i class="fa-duotone fa-regular fa-circle-check"></i>';
+                        if (doneText) {
+                            const t = wrap.querySelector('.tk-inst-title');
+                            if (t) t.textContent = doneText;
+                        }
+                        setTimeout(remove, 720);
+                    },
+                    fail() {
+                        stopped = true;
+                        cancelAnimationFrame(raf);
+                        remove();
+                    }
+                };
+            }
+        };
+    })();
     const namespace = '.mdStoreHomeController';
     let controllerActive = true;
     let authPopupOpen = false;
@@ -120,10 +207,10 @@
         Swal.fire({
             title: '确认创建支付订单',
             html: `<div style="text-align:left;line-height:1.8;">
-                <div><b>购买项目：</b>${productName}</div>
-                <div><b>商品价格：</b>¥${price}</div>
-                <div><b>支付方式：</b>${payName}</div>
-                <div class="mt-2 text-danger">确认后将创建支付订单并跳转至外部收银台；付款完成后会生成对应授权，不能通过返回本页撤销。</div>
+                <div><b>${i18n('购买项目：')}</b>${productName}</div>
+                <div><b>${i18n('商品价格：')}</b>¥${price}</div>
+                <div><b>${i18n('支付方式：')}</b>${payName}</div>
+                <div class="mt-2 text-danger">${i18n('确认后将创建支付订单并跳转至外部收银台；付款完成后会生成对应授权，不能通过返回本页撤销。')}</div>
             </div>`,
             icon: 'warning',
             showCancelButton: true,
@@ -208,7 +295,7 @@
             ? '<span class="admin-mobile-load-spinner" aria-hidden="true"></span>'
             : '<span class="material-icons-outlined" aria-hidden="true">cloud_off</span>';
         const button = typeof retry === 'function'
-            ? '<button type="button" class="btn btn-light-primary admin-store-service-retry">重新加载</button>'
+            ? '<button type="button" class="btn btn-light-primary admin-store-service-retry">' + i18n('重新加载') + '</button>'
             : '';
         const liveRole = loading ? 'status' : 'alert';
         let $state = $container.children('.admin-store-service-state').first();
@@ -249,11 +336,11 @@
             $gate = $(`<section class="card mb-5 admin-store-auth-gate" aria-labelledby="admin-store-auth-title">
                 <div class="card-body admin-mobile-empty d-flex align-items-center justify-content-center flex-column text-center py-10 px-6">
                     <span class="material-icons-outlined text-primary mb-2" aria-hidden="true">storefront</span>
-                    <strong id="admin-store-auth-title" class="fs-2">登录应用商店</strong>
-                    <p class="text-muted mb-3">登录后可查看已购买资源、授权和应用商店内容。</p>
+                    <strong id="admin-store-auth-title" class="fs-2">${i18n('登录应用商店')}</strong>
+                    <p class="text-muted mb-3">${i18n('登录后可查看已购买资源、授权和应用商店内容。')}</p>
                     <button type="button" class="btn btn-primary admin-store-auth-open">
                         <i class="fa-duotone fa-regular fa-right-to-bracket" aria-hidden="true"></i>
-                        登录或注册
+                        ${i18n('登录或注册')}
                     </button>
                 </div>
             </section>`).prependTo($container);
@@ -589,7 +676,7 @@
         if (!util.isEmptyOrNotJson(plugin)) {
             const pluginPrice = normalizePurchasePrice(plugin.price);
             const pluginPriceText = pluginPrice === null ? '价格加载中' : `¥${escapeHtml(pluginPrice)}`;
-            const pluginOriginalPrice = pluginPrice === null ? '请稍后重试' : `原价:${escapeHtml(pluginPrice * 2)}`;
+            const pluginOriginalPrice = pluginPrice === null ? '请稍后重试' : `${i18n('原价')}:${escapeHtml(pluginPrice * 2)}`;
             const pluginDisabled = pluginPrice === null ? ' aria-disabled="true"' : '';
             const pluginId = Number(plugin.id) || 0;
             tabs.push({
@@ -604,7 +691,7 @@
                             dom.html(`<div>     
 <div class="alert alert-success" role="alert">
                     <p class="mb-0">
-                      您所购买的插件，将统一归属于您的应用商店账户名下。无论您更换服务器或重新安装程序，只需登录购买时所使用的应用商店账户，即可迅速将产品绑定至新的网站上。
+                      ${i18n('您所购买的插件，将统一归属于您的应用商店账户名下。无论您更换服务器或重新安装程序，只需登录购买时所使用的应用商店账户，即可迅速将产品绑定至新的网站上。')}
                     </p>
                   </div>          
             
@@ -614,18 +701,18 @@
                     
                     <div class="subscription-container">
                         <div class="layout-box">
-                                <div class="title"><i class="fa-duotone fa-regular fa-clock"></i> 订阅类型</div>
-                                <div class="subscription-list online-pay"><div class="subscription-item" data-amount="${pluginPrice === null ? '' : escapeHtml(pluginPrice)}"${pluginDisabled}><span class="text-warning fs-3 fw-bold">${pluginPriceText}</span><span class="text-muted" style="font-size:13px;text-decoration:line-through;">${pluginOriginalPrice}</span><span class="text-warning" style="font-size:12px;">终身可用</span></div></div>
+                                <div class="title"><i class="fa-duotone fa-regular fa-clock"></i> ${i18n('订阅类型')}</div>
+                                <div class="subscription-list online-pay"><div class="subscription-item" data-amount="${pluginPrice === null ? '' : escapeHtml(pluginPrice)}"${pluginDisabled}><span class="text-warning fs-3 fw-bold">${pluginPriceText}</span><span class="text-muted" style="font-size:13px;text-decoration:line-through;">${pluginOriginalPrice}</span><span class="text-warning" style="font-size:12px;">${i18n('终身可用')}</span></div></div>
                         </div>
                         
                     
                      
                         
                         <div class="layout-box">
-                                        <div class="title"><i class="fa-duotone fa-regular fa-star-shooting"></i> 付款购买 ${plugin.group > 0 ? `<span class="text-success"> 此插件企业版免费用，开通企业版更省钱更超值！<a href="javascript:void(0);" class="text-primary open-group-enterprise-click">点我开企业版</a></span>` : ""}</div>
+                                        <div class="title"><i class="fa-duotone fa-regular fa-star-shooting"></i> ${i18n('付款购买')} ${plugin.group > 0 ? `<span class="text-success"> ${i18n('此插件企业版免费用，开通企业版更省钱更超值！')}<a href="javascript:void(0);" class="text-primary open-group-enterprise-click">${i18n('点我开企业版')}</a></span>` : ""}</div>
                                             <div class="pay-list online-pay">
-                                                <div data-id="${pluginId}" data-type="0" data-pay="0" class="pay-item online-pay-click"${pluginDisabled}><img class="item-icon" src="/assets/common/images/alipay.png"><span>支付宝</span></div>
-                                                <div data-id="${pluginId}" data-type="0" data-pay="1" class="pay-item online-pay-click"${pluginDisabled}><img class="item-icon" src="/assets/common/images/wx.png"><span>微信支付</span></div>
+                                                <div data-id="${pluginId}" data-type="0" data-pay="0" class="pay-item online-pay-click"${pluginDisabled}><img class="item-icon" src="/assets/common/images/alipay.png"><span>${i18n('支付宝')}</span></div>
+                                                <div data-id="${pluginId}" data-type="0" data-pay="1" class="pay-item online-pay-click"${pluginDisabled}><img class="item-icon" src="/assets/common/images/wx.png"><span>${i18n('微信支付')}</span></div>
                                                 <div data-id="${pluginId}" data-type="0" data-pay="2" class="pay-item online-pay-click"${pluginDisabled}><img class="item-icon" src="/assets/common/images/usdt.png"><span>USDT(TRC20)</span></div>
                                             </div>
    
@@ -675,7 +762,7 @@
         if (util.isEmptyOrNotJson(plugin) || plugin.group > 0) {
             enterpriseTabIndex = tabs.length;
             tabs.push({
-                name: `<div class="common-item open-group-enterprise"><i class="fa-duotone fa-regular fa-user me-1"></i> <div class="item-name" style="font-size: 1rem;">开通企业版(推荐)</div></div>`,
+                name: `<div class="common-item open-group-enterprise"><i class="fa-duotone fa-regular fa-user me-1"></i> <div class="item-name" style="font-size: 1rem;">${i18n('开通企业版')}(${i18n('推荐')})</div></div>`,
                 form: [
                     {
                         title: false,
@@ -685,33 +772,33 @@
                             let payList = '', selectedSubscription, selectAmount;
                             const enterprisePrice = normalizePurchasePrice(_GroupPrice);
                             const enterprisePriceText = enterprisePrice === null ? '价格加载中' : `¥${escapeHtml(enterprisePrice)}`;
-                            const enterpriseOriginalPrice = enterprisePrice === null ? '请稍后重试' : `原价:${escapeHtml(enterprisePrice * 2)}`;
+                            const enterpriseOriginalPrice = enterprisePrice === null ? '请稍后重试' : `${i18n('原价')}:${escapeHtml(enterprisePrice * 2)}`;
                             const enterpriseDisabled = enterprisePrice === null ? ' aria-disabled="true"' : '';
                             dom.html(`<div>     
 <div class="alert alert-success" role="alert">
                     <p class="mb-0">
-                      您所购买的企业版，将统一归属于您的应用商店账户名下。无论您更换服务器或重新安装程序，只需登录购买时所使用的应用商店账户，即可迅速将产品绑定至新的网站上。
+                      ${i18n('您所购买的企业版，将统一归属于您的应用商店账户名下。无论您更换服务器或重新安装程序，只需登录购买时所使用的应用商店账户，即可迅速将产品绑定至新的网站上。')}
                     </p>
                   </div>          
             
                     <div class="mb-3 store-introduce text-success">
-                     <p class="text-danger">1.全部官方插件/主题免费使用，包括后期会继续上架数百上千种插件/主题</p>
-                     <p>2.技术支持</p>
-                     <p>3.企业版专属售后通道</p>
-                     <p>4.内侧版、预览版抢先体验</p>
-                     <p>5.企业版专用功能建议通道，可有效提交新功能需求</p>
+                     <p class="text-danger">1.${i18n('全部官方插件')}/${i18n('主题免费使用，包括后期会继续上架数百上千种插件')}/${i18n('主题')}</p>
+                     <p>2.${i18n('技术支持')}</p>
+                     <p>3.${i18n('企业版专属售后通道')}</p>
+                     <p>4.${i18n('内侧版、预览版抢先体验')}</p>
+                     <p>5.${i18n('企业版专用功能建议通道，可有效提交新功能需求')}</p>
                     </div>
                     
                     <div class="subscription-container">
                         <div class="layout-box">
-                                <div class="title">订阅类型</div>
-                                <div class="subscription-list online-pay"><div class="subscription-item"${enterpriseDisabled}><span class="text-warning fs-3 fw-bold">${enterprisePriceText}</span><span class="text-muted" style="font-size:13px;text-decoration:line-through;">${enterpriseOriginalPrice}</span><span class="text-warning" style="font-size:12px;">终身可用</span></div></div>
+                                <div class="title">${i18n('订阅类型')}</div>
+                                <div class="subscription-list online-pay"><div class="subscription-item"${enterpriseDisabled}><span class="text-warning fs-3 fw-bold">${enterprisePriceText}</span><span class="text-muted" style="font-size:13px;text-decoration:line-through;">${enterpriseOriginalPrice}</span><span class="text-warning" style="font-size:12px;">${i18n('终身可用')}</span></div></div>
                         </div>
                         <div class="layout-box">
-                                        <div class="title">付款购买</div>
+                                        <div class="title">${i18n('付款购买')}</div>
                                             <div class="pay-list online-pay">
-                                                <div data-id="0" data-type="2" data-pay="0" class="pay-item online-pay-click"${enterpriseDisabled}><img class="item-icon" src="/assets/common/images/alipay.png"><span>支付宝</span></div>
-                                                <div data-id="0" data-type="2" data-pay="1" class="pay-item online-pay-click"${enterpriseDisabled}><img class="item-icon" src="/assets/common/images/wx.png"><span>微信支付</span></div>
+                                                <div data-id="0" data-type="2" data-pay="0" class="pay-item online-pay-click"${enterpriseDisabled}><img class="item-icon" src="/assets/common/images/alipay.png"><span>${i18n('支付宝')}</span></div>
+                                                <div data-id="0" data-type="2" data-pay="1" class="pay-item online-pay-click"${enterpriseDisabled}><img class="item-icon" src="/assets/common/images/wx.png"><span>${i18n('微信支付')}</span></div>
                                                 <div data-id="0" data-type="2" data-pay="2" class="pay-item online-pay-click"${enterpriseDisabled}><img class="item-icon" src="/assets/common/images/usdt.png"><span>USDT(TRC20)</span></div>
                                             </div>
    
@@ -760,10 +847,10 @@
             submit: (data, _index) => {
                 const ids = proUnbindTable.getSelectionIds();
                 if (ids.length == 0) {
-                    layer.msg("请选择要解绑的授权");
+                    layer.msg(i18n("请选择要解绑的授权"));
                     return;
                 }
-                message.ask(`您正在将授权转移至当前机器，转移后，原机器的授权将失效！`, () => {
+                message.ask(`${i18n('您正在将授权转移至当前机器，转移后，原机器的授权将失效！')}`, () => {
                     if (!controllerActive) return;
                     util.post('/admin/api/app/bindLevel', {
                         auth_id: ids[0]
@@ -796,9 +883,9 @@
                                         field: 'level', title: '产品名称',
                                         formatter: function (val, item) {
                                             if (item.level == 0) {
-                                                return '<span class="a-badge a-badge-primary">专业版</span>';
+                                                return '<span class="a-badge a-badge-primary">' + i18n('专业版') + '</span>';
                                             }
-                                            return '<span class="a-badge a-badge-success">企业版</span>';
+                                            return '<span class="a-badge a-badge-success">' + i18n('企业版') + '</span>';
                                         }
                                     },
                                     {
@@ -826,7 +913,7 @@
             width: "820px",
             maxmin: false,
             shadeClose: true,
-            confirmText: `<i class="fa-duotone fa-regular fa-lock-hashtag"></i> 解绑授权至本机器`,
+            confirmText: `<i class="fa-duotone fa-regular fa-lock-hashtag"></i> ${i18n('解绑授权至本机器')}`,
             done: () => {
                 table.refresh();
             },
@@ -880,7 +967,7 @@
                 {
                     field: 'user', title: '开发商', formatter: function (val, item) {
                         if (item?.user?.official == 1) {
-                            return '<span class="a-badge a-badge-success">官方</span>';
+                            return '<span class="a-badge a-badge-success">' + i18n('官方') + '</span>';
                         }
                         return '<span class="a-badge a-badge-light">' + escapeHtml(item?.user?.username || '-') + '</span>';
                     }
@@ -904,17 +991,17 @@
                 {
                     field: 'price', title: '价格', formatter: function (val, item) {
                         if (item.price == 0) {
-                            return format.badge(`免费`, "a-badge-success");
+                            return format.badge(`${i18n('免费')}`, "a-badge-success");
                         }
 
                         let html = " <span class='a-badge a-badge-danger'>￥" + escapeHtml(item.price) + "</span> ";
                         if (item.group == 1) {
-                            html += format.badge(`专业版免费`, "a-badge-primary");
-                            html += format.badge(`企业版免费`, "a-badge-success");
+                            html += format.badge(`${i18n('专业版免费')}`, "a-badge-primary");
+                            html += format.badge(`${i18n('企业版免费')}`, "a-badge-success");
                         }
 
                         if (item.group == 2) {
-                            html += format.badge(`企业版免费`, "a-badge-success");
+                            html += format.badge(`${i18n('企业版免费')}`, "a-badge-success");
                         }
                         return `<span class="a-badge-group nowrap">${html}</span>`;
                     }
@@ -927,7 +1014,7 @@
                         if (item?.has?.has == true) {
                             return "<span class='a-badge a-badge-success'>" + escapeHtml(item?.has?.expire || '-') + "</span>";
                         }
-                        return "<span class='a-badge a-badge-light'>未开通</span>";
+                        return "<span class='a-badge a-badge-light'>" + i18n('未开通') + "</span>";
                     }
                 },
                 {
@@ -938,36 +1025,45 @@
                             show: item => (item?.has?.has == true && item.install == 0) || (item.price == 0 && item.install == 0),
                             class: "text-primary",
                             click: (event, value, row, index) => {
-                                message.ask(`您正在安装插件 <b class="text-primary">${escapeHtml(storePlainText(row.plugin_name))}</b>，是否继续`, () => {
+                                message.ask(`${i18n('您正在安装插件')} <b class="text-primary">${escapeHtml(storePlainText(row.plugin_name))}</b>，${i18n('是否继续')}`, () => {
                                     if (!controllerActive) return;
-                                    util.post('/admin/api/app/install', {
-                                        plugin_key: row.plugin_key,
-                                        type: row.type,
-                                        plugin_id: row.id
-                                    }, res => {
+                                    // 液态玻璃进度卡片替代 layui 转圈。loader:false 关掉默认无文案遮罩。
+                                    const _installing = tkProgress.start(i18n('正在下载并安装，安装包较大时可能需要稍候…'), 'fa-cloud-arrow-down');
+                                    util.post({
+                                        url: '/admin/api/app/install',
+                                        data: {
+                                            plugin_key: row.plugin_key,
+                                            type: row.type,
+                                            plugin_id: row.id
+                                        },
+                                        loader: false,
+                                        error: res => { _installing.fail(); message.error(res.msg); },
+                                        fail: () => { _installing.fail(); },
+                                        done: res => {
+                                        _installing.succeed(i18n('安装完成'));
                                         if (!controllerActive) return;
+                                        scheduleControllerTask(() => { table.refresh(); }, 500);
+                                        // 等进度卡片走完 100% 并淡出，再弹"前往…"询问，避免盖住完成态
                                         scheduleControllerTask(() => {
-                                            table.refresh();
-                                        }, 500);
-
-                                        if (row.type == 1) {
-                                            message.ask("支付插件安装成功，是否立即前往配置？", () => {
-                                                if (!controllerActive) return;
-                                                window.location.href = "/admin/pay/plugin";
-                                            }, `安装成功`, "前往支付扩展");
-
-                                        } else if (row.type == 2) {
-                                            message.ask("网站模版安装成功，是否前往网站设置？", () => {
-                                                if (!controllerActive) return;
-                                                window.location.href = "/admin/config/index";
-                                            }, `安装成功`, "前往网站设置");
-                                        } else {
-                                            message.ask("插件安装成功，是否前往插件管理？", () => {
-                                                if (!controllerActive) return;
-                                                window.location.href = "/admin/plugin/index";
-                                            }, `安装成功`, "前往插件管理");
-                                        }
-                                    });
+                                            if (!controllerActive) return;
+                                            if (row.type == 1) {
+                                                message.ask("支付插件安装成功，是否立即前往配置？", () => {
+                                                    if (!controllerActive) return;
+                                                    window.location.href = "/admin/pay/plugin";
+                                                }, `${i18n('安装成功')}`, "前往支付扩展");
+                                            } else if (row.type == 2) {
+                                                message.ask("网站模版安装成功，是否前往网站设置？", () => {
+                                                    if (!controllerActive) return;
+                                                    window.location.href = "/admin/config/index";
+                                                }, `${i18n('安装成功')}`, "前往网站设置");
+                                            } else {
+                                                message.ask("插件安装成功，是否前往插件管理？", () => {
+                                                    if (!controllerActive) return;
+                                                    window.location.href = "/admin/plugin/index";
+                                                }, `${i18n('安装成功')}`, "前往插件管理");
+                                            }
+                                        }, 780);
+                                    }});
                                 }, "安装插件", "确认安装");
                             }
                         },
@@ -977,22 +1073,35 @@
                             class: "text-primary",
                             formatter: (item) => {
                                 if (item.version != item.local_version) {
-                                    return `<a type="button" class="a-badge-glass text-primary me-1 mb-1"><i class="fa-duotone fa-regular fa-arrows-rotate-reverse"></i> <span class="btn-title">更新( <span class="text-danger">${escapeHtml(item.local_version || '-')}</span> ➩ <b class="text-success">${escapeHtml(item.version || '-')}</b>)</span></a>`;
+                                    return `<a type="button" class="a-badge-glass text-primary me-1 mb-1"><i class="fa-duotone fa-regular fa-arrows-rotate-reverse"></i> <span class="btn-title">${i18n('更新')}( <span class="text-danger">${escapeHtml(item.local_version || '-')}</span> ➩ <b class="text-success">${escapeHtml(item.version || '-')}</b>)</span></a>`;
                                 }
                             },
                             click: (event, value, row, index) => {
                                 const updateContent = escapeHtml(row?.update_content || '该更新没有提供说明').replace(/\n/g, '<br>');
                                 message.ask(updateContent, () => {
                                     if (!controllerActive) return;
-                                    util.post('/admin/api/app/upgrade', {
-                                        plugin_key: row.plugin_key,
-                                        type: row.type,
-                                        plugin_id: row.id
-                                    }, res => {
+                                    // 同装插件：液态玻璃进度卡片（更新图标），关掉默认无文案转圈
+                                    const _upgrading = tkProgress.start(i18n('正在下载并更新，安装包较大时可能需要稍候…'), 'fa-arrows-rotate');
+                                    util.post({
+                                        url: '/admin/api/app/upgrade',
+                                        data: {
+                                            plugin_key: row.plugin_key,
+                                            type: row.type,
+                                            plugin_id: row.id
+                                        },
+                                        loader: false,
+                                        error: res => { _upgrading.fail(); message.error(res.msg); },
+                                        fail: () => { _upgrading.fail(); },
+                                        done: res => {
+                                        _upgrading.succeed(i18n('更新完成'));
                                         if (!controllerActive) return;
-                                        message.info(storePlainText(res?.msg) || '应用更新完成');
                                         table.refresh();
-                                    });
+                                        // 等完成态展示完再弹提示
+                                        scheduleControllerTask(() => {
+                                            if (!controllerActive) return;
+                                            message.info(storePlainText(res?.msg) || '应用更新完成');
+                                        }, 780);
+                                    }});
                                 }, `<b class="text-primary"><i class="fa-duotone fa-regular fa-sparkles"></i> ${escapeHtml(storePlainText(row.plugin_name))}</b> <span class="text-primary" style="font-size:14px;">${escapeHtml(row.local_version || '-')}</span> <i class="fa-duotone fa-regular fa-right-long text-danger"></i> <span class="text-success" style="font-size:14px;">${escapeHtml(row.version || '-')}</span>`, "立即更新")
 
                             }
@@ -1007,11 +1116,11 @@
                                     submit: (data, _index) => {
                                         const ids = pluginUnbindTable.getSelectionIds();
                                         if (ids.length == 0) {
-                                            layer.msg("请选择要解绑的授权");
+                                            layer.msg(i18n("请选择要解绑的授权"));
                                             return;
                                         }
 
-                                        message.ask(`您正在将授权转移至当前机器，转移后，原机器的授权将失效！`, () => {
+                                        message.ask(`${i18n('您正在将授权转移至当前机器，转移后，原机器的授权将失效！')}`, () => {
                                             if (!controllerActive) return;
                                             util.post('/admin/api/app/unbind', {
                                                 auth_id: ids[0]
@@ -1035,7 +1144,7 @@
                                                         destroyNestedTable(pluginUnbindTable);
                                                         const pluginId = Number(row?.id);
                                                         if (!Number.isSafeInteger(pluginId) || pluginId <= 0) {
-                                                            dom.html('<div class="alert alert-danger mb-0">应用编号无效，请刷新页面后重试。</div>');
+                                                            dom.html('<div class="alert alert-danger mb-0">' + i18n('应用编号无效，请刷新页面后重试。') + '</div>');
                                                             return;
                                                         }
                                                         pluginUnbindTable = new Table(`/admin/api/app/purchaseRecords?plugin_id=${pluginId}`, "#plugin-unbind-table");
@@ -1070,7 +1179,7 @@
                                     width: "720px",
                                     maxmin: false,
                                     shadeClose: true,
-                                    confirmText: `<i class="fa-duotone fa-regular fa-lock-hashtag"></i> 解绑授权至本机器`,
+                                    confirmText: `<i class="fa-duotone fa-regular fa-lock-hashtag"></i> ${i18n('解绑授权至本机器')}`,
                                     done: () => {
                                         table.refresh();
                                     },
@@ -1087,7 +1196,7 @@
                             show: item => item?.has?.has == true && item.install == 1 || (item.price == 0 && item.install == 1),
                             class: "text-danger",
                             click: (event, value, row, index) => {
-                                message.ask(`<div style="text-align:left;line-height:1.8"><div>您正在卸载插件 <b class="text-danger">${escapeHtml(storePlainText(row.plugin_name))}</b>。</div><div style="margin-top:8px;color:#d14343">卸载会物理删除插件目录及其文件，无法恢复；请确认已完成必要备份。</div></div>`, () => {
+                                message.ask(`<div style="text-align:left;line-height:1.8"><div>${i18n('您正在卸载插件')} <b class="text-danger">${escapeHtml(storePlainText(row.plugin_name))}</b>。</div><div style="margin-top:8px;color:#d14343">${i18n('卸载会物理删除插件目录及其文件，无法恢复；请确认已完成必要备份。')}</div></div>`, () => {
                                     if (!controllerActive) return;
                                     util.post('/admin/api/app/uninstall', {
                                         plugin_key: row.plugin_key,
@@ -1103,7 +1212,7 @@
                             title: "购买",
                             show: item => item.price > 0 && item?.has?.has == false,
                             formatter: (item) => {
-                                return `<a type="button" class="a-badge-glass text-primary me-1 mb-1"><i class="fa-duotone fa-regular fa-cart-shopping"></i> <span class="btn-title">${item.owned == true ? "重新购买" : "立即购买"}</a>`;
+                                return `<a type="button" class="a-badge-glass text-primary me-1 mb-1"><i class="fa-duotone fa-regular fa-cart-shopping"></i> <span class="btn-title">${item.owned == true ? i18n("重新购买") : i18n("立即购买")}</a>`;
                             },
                             class: "text-success",
                             click: (event, value, row, index) => {

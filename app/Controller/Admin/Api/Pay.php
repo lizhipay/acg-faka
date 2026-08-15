@@ -235,6 +235,11 @@ class Pay extends Manage
         if ($effectiveCostType === 1 && $effectiveCost > 1) {
             throw new JSONException('百分比手续费请使用 0–1 之间的小数');
         }
+
+        //归档接口不允许重新启用（避免出现"前台可用但列表看不见"的悬空状态），先恢复再启用
+        if ($existing && (int)$existing->archived === 1 && ((int)($map['commodity'] ?? 0) === 1 || (int)($map['recharge'] ?? 0) === 1)) {
+            throw new JSONException('该接口已归档，请先在「已归档」列表中恢复后再启用');
+        }
         if ($map === []) {
             throw new JSONException('没有可保存的支付接口字段');
         }
@@ -242,6 +247,8 @@ class Pay extends Manage
     }
 
     /**
+     * 删除影响分析：按"有无历史引用"把所选接口分成两组——无引用的物理删除、
+     * 有引用的转为归档（issue #789：历史引用只应保住订单展示，不应把弃用接口永远钉在列表里）。
      * @param int[] $requestedIds
      * @param bool $lock
      * @return array
@@ -256,7 +263,7 @@ class Pay extends Manage
         $paymentQuery = PayModel::query()
             ->whereIn('id', $requestedIds)
             ->orderBy('id')
-            ->select(['id', 'name', 'commodity', 'recharge']);
+            ->select(['id', 'name', 'commodity', 'recharge', 'archived']);
         if ($lock) {
             $paymentQuery->lockForUpdate();
         }
@@ -272,19 +279,61 @@ class Pay extends Manage
             }
         }
 
-        $orderQuery = Order::query()->whereIn('pay_id', $paymentIds);
-        $rechargeQuery = UserRecharge::query()->whereIn('pay_id', $paymentIds);
-        $orderCount = $paymentIds === [] ? 0 : (int)(clone $orderQuery)->count();
-        $paidOrderCount = $paymentIds === [] ? 0 : (int)(clone $orderQuery)->where('status', 1)->count();
-        $rechargeCount = $paymentIds === [] ? 0 : (int)(clone $rechargeQuery)->count();
-        $paidRechargeCount = $paymentIds === [] ? 0 : (int)(clone $rechargeQuery)->where('status', 1)->count();
+        //按接口统计引用（每表一条 GROUP BY，SUM(status=1) 顺带拿已支付数）
+        $orderStats = $paymentIds === [] ? collect() : Order::query()
+            ->whereIn('pay_id', $paymentIds)
+            ->selectRaw('pay_id, COUNT(*) as total, SUM(status = 1) as paid')
+            ->groupBy('pay_id')
+            ->get()
+            ->keyBy('pay_id');
+        $rechargeStats = $paymentIds === [] ? collect() : UserRecharge::query()
+            ->whereIn('pay_id', $paymentIds)
+            ->selectRaw('pay_id, COUNT(*) as total, SUM(status = 1) as paid')
+            ->groupBy('pay_id')
+            ->get()
+            ->keyBy('pay_id');
+
+        $orderCount = 0;
+        $paidOrderCount = 0;
+        $rechargeCount = 0;
+        $paidRechargeCount = 0;
+        $deleteIds = [];
+        $deleteNames = [];
+        $archiveIds = [];
+        $archiveNames = [];
+        $alreadyArchivedCount = 0;
+
+        foreach ($payments as $payment) {
+            $paymentId = (int)$payment->id;
+            $orders = (int)($orderStats->get($paymentId)?->total ?? 0);
+            $recharges = (int)($rechargeStats->get($paymentId)?->total ?? 0);
+            $orderCount += $orders;
+            $paidOrderCount += (int)($orderStats->get($paymentId)?->paid ?? 0);
+            $rechargeCount += $recharges;
+            $paidRechargeCount += (int)($rechargeStats->get($paymentId)?->paid ?? 0);
+
+            if ($paymentId === 1 || (int)$payment->commodity === 1 || (int)$payment->recharge === 1) {
+                continue; //内置/仍启用的接口整体阻断，不参与分组
+            }
+            if ($orders === 0 && $recharges === 0) {
+                $deleteIds[] = $paymentId;
+                $deleteNames[] = (string)$payment->name;
+            } elseif ((int)$payment->archived === 1) {
+                $alreadyArchivedCount++;
+            } else {
+                $archiveIds[] = $paymentId;
+                $archiveNames[] = (string)$payment->name;
+            }
+        }
+
         $builtInCount = $payments->filter(static fn($payment): bool => (int)$payment->id === 1)->count();
         $commodityEnabledCount = $payments->filter(static fn($payment): bool => (int)$payment->commodity === 1)->count();
         $rechargeEnabledCount = $payments->filter(static fn($payment): bool => (int)$payment->recharge === 1)->count();
         $missingCount = count($requestedIds) - count($paymentIds);
 
         return [
-            'payment_ids' => $paymentIds,
+            'delete_ids' => $deleteIds,
+            'archive_ids' => $archiveIds,
             'requested_count' => count($requestedIds),
             'payment_count' => count($paymentIds),
             'missing_count' => $missingCount,
@@ -298,12 +347,16 @@ class Pay extends Manage
             'pending_recharge_count' => $rechargeCount - $paidRechargeCount,
             'commodity_enabled_count' => $commodityEnabledCount,
             'recharge_enabled_count' => $rechargeEnabledCount,
-            'can_delete' => $missingCount === 0
+            'delete_count' => count($deleteIds),
+            'delete_names' => array_slice($deleteNames, 0, 5),
+            'archive_count' => count($archiveIds),
+            'archive_names' => array_slice($archiveNames, 0, 5),
+            'already_archived_count' => $alreadyArchivedCount,
+            'can_proceed' => $missingCount === 0
                 && $builtInCount === 0
-                && $orderCount === 0
-                && $rechargeCount === 0
                 && $commodityEnabledCount === 0
-                && $rechargeEnabledCount === 0,
+                && $rechargeEnabledCount === 0
+                && (count($deleteIds) + count($archiveIds)) > 0,
         ];
     }
 
@@ -313,11 +366,21 @@ class Pay extends Manage
     public function data(): array
     {
         $map = $_POST;
+        //归档接口默认不出现在列表；「已归档」筛选显式传 equal-archived=1 时才展示
+        if (($map['equal-archived'] ?? '') === '') {
+            $map['equal-archived'] = 0;
+        }
         $get = new Get(\App\Model\Pay::class);
         $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
         $get->setWhere($map);
         $get->setOrderBy(...$this->query->getOrderBy($map, "sort", "asc"));
         $data = $this->query->get($get);
+
+        //支付接口名是站长自己填的，前台结账页已走 i18n，这里一并翻译保持两端一致
+        if (isset($data['list']) && is_array($data['list'])) {
+            $data['list'] = \Kernel\Util\Lang::transList($data['list'], ['name']);
+        }
+
         return $this->json(data: $data);
     }
 
@@ -361,6 +424,7 @@ class Pay extends Manage
 
 
     /**
+     * 移除支付接口：无历史引用的物理删除，有历史引用的转为归档（保住历史订单的支付方式展示）。
      * @return array
      * @throws JSONException
      */
@@ -369,29 +433,74 @@ class Pay extends Manage
         $requestedIds = $this->paymentIds($_POST['list'] ?? []);
         $impact = DB::transaction(function () use ($requestedIds): array {
             $impact = $this->paymentDeleteImpact($requestedIds, true);
-            if (!$impact['can_delete']) {
+            if (!$impact['can_proceed']) {
+                if ($impact['already_archived_count'] > 0 && $impact['missing_count'] === 0 && $impact['built_in_count'] === 0
+                    && $impact['commodity_enabled_count'] === 0 && $impact['recharge_enabled_count'] === 0) {
+                    throw new JSONException('所选接口均已归档，无需重复操作');
+                }
                 throw new JSONException(
-                    "已阻止删除：内置接口 {$impact['built_in_count']} 个、不存在 {$impact['missing_count']} 个、" .
-                    "商品订单 {$impact['order_count']} 笔、充值订单 {$impact['recharge_count']} 笔、" .
+                    "已阻止操作：内置接口 {$impact['built_in_count']} 个、不存在 {$impact['missing_count']} 个、" .
                     "仍启用商品下单 {$impact['commodity_enabled_count']} 个、仍启用余额充值 {$impact['recharge_enabled_count']} 个。" .
-                    '请先停用接口；已有历史引用的接口不能物理删除。'
+                    '请先停用接口再移除。'
                 );
             }
 
-            $deleted = PayModel::query()
-                ->whereIn('id', $impact['payment_ids'])
-                ->where('id', '!=', 1)
-                ->where('commodity', 0)
-                ->where('recharge', 0)
-                ->delete();
-            if ($deleted !== $impact['payment_count']) {
-                throw new JSONException('支付接口状态或历史引用已变化，未执行删除，请重新预览');
+            $deleted = 0;
+            $archived = 0;
+            if ($impact['delete_ids'] !== []) {
+                $deleted = PayModel::query()
+                    ->whereIn('id', $impact['delete_ids'])
+                    ->where('id', '!=', 1)
+                    ->where('commodity', 0)
+                    ->where('recharge', 0)
+                    ->delete();
+                if ($deleted !== count($impact['delete_ids'])) {
+                    throw new JSONException('支付接口状态或历史引用已变化，未执行操作，请重新预览');
+                }
             }
-            return $impact;
+            if ($impact['archive_ids'] !== []) {
+                $archived = PayModel::query()
+                    ->whereIn('id', $impact['archive_ids'])
+                    ->where('id', '!=', 1)
+                    ->where('commodity', 0)
+                    ->where('recharge', 0)
+                    ->where('archived', 0)
+                    ->update(['archived' => 1]);
+                if ($archived !== count($impact['archive_ids'])) {
+                    throw new JSONException('支付接口状态或历史引用已变化，未执行操作，请重新预览');
+                }
+            }
+            return $impact + ['deleted' => $deleted, 'archived' => $archived];
         });
 
-        ManageLog::log($this->getManage(), "[删除]未使用支付接口，共计：{$impact['payment_count']}");
-        return $this->json(200, '（＾∀＾）移除成功', ['count' => $impact['payment_count']]);
+        ManageLog::log($this->getManage(), "[移除]支付接口：物理删除 {$impact['deleted']} 个、归档 {$impact['archived']} 个");
+        $parts = [];
+        if ($impact['deleted'] > 0) {
+            $parts[] = "删除 {$impact['deleted']} 个";
+        }
+        if ($impact['archived'] > 0) {
+            $parts[] = "归档 {$impact['archived']} 个";
+        }
+        return $this->json(200, '（＾∀＾）已' . implode('、', $parts), [
+            'deleted' => $impact['deleted'],
+            'archived' => $impact['archived'],
+        ]);
+    }
+
+    /**
+     * 恢复归档的支付接口（恢复后仍处于停用状态，需手动启用）。
+     * @return array
+     * @throws JSONException
+     */
+    public function restore(): array
+    {
+        $ids = $this->paymentIds($_POST['list'] ?? []);
+        if ($ids === []) {
+            throw new JSONException('你还没有选择支付接口');
+        }
+        $count = PayModel::query()->whereIn('id', $ids)->where('archived', 1)->update(['archived' => 0]);
+        ManageLog::log($this->getManage(), "[恢复]归档支付接口，共计：{$count}");
+        return $this->json(200, '（＾∀＾）已恢复，接口目前处于停用状态，可重新启用', ['count' => $count]);
     }
 
     /**
@@ -402,7 +511,7 @@ class Pay extends Manage
     public function deleteImpact(): array
     {
         $impact = $this->paymentDeleteImpact($this->paymentIds($_POST['list'] ?? []));
-        unset($impact['payment_ids']);
+        unset($impact['delete_ids'], $impact['archive_ids']);
         return $this->json(data: $impact);
     }
 
@@ -436,6 +545,11 @@ class Pay extends Manage
         usort($plugins, function ($a, $b) {
             return ($b['have_update'] ?? false) <=> ($a['have_update'] ?? false);
         });
+
+        //支付插件的名称/简介/功能项来自各插件 Config/Info.php，属动态文案
+        $plugins = \Kernel\Util\Lang::transList($plugins, [
+            'info.name', 'info.description', 'info.options',
+        ]);
 
         return $this->json(data: ["list" => $plugins]);
     }

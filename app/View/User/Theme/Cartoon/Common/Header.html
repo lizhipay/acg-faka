@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-theme="light">
+<html lang="#{lang_code()}" data-theme="light">
 <head>
     <meta charset="utf-8">
     <title>#{$title} - #{$config.title}</title>
@@ -33,6 +33,7 @@
     ])}
 
     #{js("/assets/common/js/ready.js")}
+    #{index_var()}
     <script>(function(){try{var t=localStorage.getItem('uc-theme')||'auto';var d=t==='dark'||(t==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
 
     <!--start::HOOK-->
@@ -58,35 +59,35 @@
             <ul class="uc-nav__list">
                 <li>
                     <a class="uc-nav__item" href="/user/dashboard/index" data-match="/user/dashboard/index">
-                        <span class="material-icons-outlined">space_dashboard</span>我的主页
+                        <span class="material-icons-outlined">space_dashboard</span>#{t("我的主页")}
                     </a>
                 </li>
 
                 <li class="uc-has-sub">
                     <a class="uc-nav__item" href="javascript:;">
-                        <span class="material-icons-outlined">storefront</span>店铺
+                        <span class="material-icons-outlined">storefront</span>#{t("店铺")}
                         <span class="material-icons-outlined uc-caret">expand_more</span>
                     </a>
                     <div class="uc-submenu">
                         <a class="uc-subitem" href="/user/business/index" data-match="/user/business/index">
-                            <span class="material-icons-outlined">store</span>我的店铺
-                            #{if $user.businessLevel}<span class="uc-subitem__badge">#{$user.businessLevel.name}</span>#{/if}
+                            <span class="material-icons-outlined">store</span>#{t("我的店铺")}
+                            #{if $user.businessLevel}<span class="uc-subitem__badge">#{lang($user.businessLevel.name)}</span>#{/if}
                         </a>
                         #{if $user.businessLevel and $user.businessLevel.supplier == 1}
                         <a class="uc-subitem" href="/user/category/index" data-match="/user/category/index">
-                            <span class="material-icons-outlined">category</span>商品分类
+                            <span class="material-icons-outlined">category</span>#{t("商品分类")}
                         </a>
                         <a class="uc-subitem" href="/user/commodity/index" data-match="/user/commodity/index">
-                            <span class="material-icons-outlined">inventory_2</span>我的商品
+                            <span class="material-icons-outlined">inventory_2</span>#{t("我的商品")}
                         </a>
                         <a class="uc-subitem" href="/user/card/index" data-match="/user/card/index">
-                            <span class="material-icons-outlined">vpn_key</span>卡密管理
+                            <span class="material-icons-outlined">vpn_key</span>#{t("卡密管理")}
                         </a>
                         <a class="uc-subitem" href="/user/coupon/index" data-match="/user/coupon/index">
-                            <span class="material-icons-outlined">local_offer</span>代卷管理
+                            <span class="material-icons-outlined">local_offer</span>#{t("代卷管理")}
                         </a>
                         <a class="uc-subitem" href="/user/order/index" data-match="/user/order/index">
-                            <span class="material-icons-outlined">receipt_long</span>商品订单
+                            <span class="material-icons-outlined">receipt_long</span>#{t("商品订单")}
                         </a>
                         #{/if}
                     </div>
@@ -94,36 +95,36 @@
 
                 <li class="uc-has-sub">
                     <a class="uc-nav__item" href="javascript:;">
-                        <span class="material-icons-outlined">account_balance_wallet</span>财务
+                        <span class="material-icons-outlined">account_balance_wallet</span>#{t("财务")}
                         <span class="material-icons-outlined uc-caret">expand_more</span>
                     </a>
                     <div class="uc-submenu">
                         <a class="uc-subitem" href="/user/recharge/index" data-match="/user/recharge/index">
-                            <span class="material-icons-outlined">add_card</span>充值中心
+                            <span class="material-icons-outlined">add_card</span>#{t("充值中心")}
                         </a>
                         <a class="uc-subitem" href="/user/cash/index" data-match="/user/cash/index">
-                            <span class="material-icons-outlined">paid</span>硬币兑现
+                            <span class="material-icons-outlined">paid</span>#{t("硬币兑现")}
                         </a>
                         <a class="uc-subitem" href="/user/personal/purchaseRecord" data-match="/user/personal/purchaseRecord">
-                            <span class="material-icons-outlined">shopping_bag</span>购买记录
+                            <span class="material-icons-outlined">shopping_bag</span>#{t("购买记录")}
                         </a>
                         <a class="uc-subitem" href="/user/bill/index" data-match="/user/bill/index">
-                            <span class="material-icons-outlined">description</span>我的账单
+                            <span class="material-icons-outlined">description</span>#{t("我的账单")}
                         </a>
                     </div>
                 </li>
 
                 <li class="uc-has-sub">
                     <a class="uc-nav__item" href="javascript:;">
-                        <span class="material-icons-outlined">campaign</span>推广
+                        <span class="material-icons-outlined">campaign</span>#{t("推广")}
                         <span class="material-icons-outlined uc-caret">expand_more</span>
                     </a>
                     <div class="uc-submenu">
                         <a class="uc-subitem" href="/user/agent/promote" data-match="/user/agent/promote">
-                            <span class="material-icons-outlined">share</span>推广中心
+                            <span class="material-icons-outlined">share</span>#{t("推广中心")}
                         </a>
                         <a class="uc-subitem" href="/user/agent/member" data-match="/user/agent/member">
-                            <span class="material-icons-outlined">groups</span>我的下级
+                            <span class="material-icons-outlined">groups</span>#{t("我的下级")}
                         </a>
                     </div>
                 </li>
@@ -135,31 +136,31 @@
 
             <div class="uc-nav__right">
                 <a class="uc-nav__link" href="/" target="_blank">
-                    <span class="material-icons-outlined">shopping_cart</span>购买商品
+                    <span class="material-icons-outlined">shopping_cart</span>#{t("购买商品")}
                 </a>
                 <a class="uc-nav__link uc-ticket-nav-link" href="/user/ticket/index" data-match="/user/ticket">
-                    <span class="material-icons-outlined">support_agent</span>我的工单
-                    <span class="uc-ticket-nav-badge is-empty" aria-label="未读工单消息">0</span>
+                    <span class="material-icons-outlined">support_agent</span>#{t("我的工单")}
+                    <span class="uc-ticket-nav-badge is-empty" aria-label="#{t('未读工单消息')}">0</span>
                 </a>
                 <div class="uc-message-center">
-                    <button class="uc-message-btn" type="button" title="消息通知" aria-label="没有未读消息" aria-expanded="false" aria-controls="uc-message-dropdown">
+                    <button class="uc-message-btn" type="button" title="#{t('消息通知')}" aria-label="#{t('没有未读消息')}" aria-expanded="false" aria-controls="uc-message-dropdown">
                         <span class="material-icons-outlined uc-message-btn__icon">notifications_none</span>
                         <span class="uc-message-badge is-empty" aria-hidden="true">0</span>
                     </button>
-                    <div class="uc-message-dropdown" id="uc-message-dropdown" role="dialog" aria-label="最近消息">
+                    <div class="uc-message-dropdown" id="uc-message-dropdown" role="dialog" aria-label="#{t('最近消息')}">
                         <div class="uc-message-dropdown__head">
-                            <span><span class="material-icons-outlined">notifications_active</span>消息通知</span>
-                            <em class="uc-message-dropdown__count">暂无未读</em>
+                            <span><span class="material-icons-outlined">notifications_active</span>#{t("消息通知")}</span>
+                            <em class="uc-message-dropdown__count">#{t("暂无未读")}</em>
                         </div>
                         <div class="uc-message-recent" aria-live="polite">
                             <div class="uc-message-recent__loading"><i></i><i></i><i></i></div>
                         </div>
                         <a class="uc-message-dropdown__all" href="/user/message/index" data-match="/user/message">
-                            <span>查看全部消息</span><span class="material-icons-outlined">arrow_forward</span>
+                            <span>#{t("查看全部消息")}</span><span class="material-icons-outlined">arrow_forward</span>
                         </a>
                     </div>
                 </div>
-                <button class="uc-theme-btn" type="button" title="主题模式"><span class="material-icons-outlined uc-theme-ico">brightness_auto</span></button>
+                <button class="uc-theme-btn" type="button" title="#{t('主题模式')}"><span class="material-icons-outlined uc-theme-ico">brightness_auto</span></button>
                 <div class="uc-user">
                     <button class="uc-user__btn" type="button">
                         <span class="uc-user__lv"><img src="#{$user.group.icon}">#{$user.username}</span>
@@ -167,14 +168,25 @@
                     </button>
                     <div class="uc-submenu">
                         <a class="uc-subitem" href="/user/security/personal">
-                            <span class="material-icons-outlined">badge</span>个人资料
+                            <span class="material-icons-outlined">badge</span>#{t("个人资料")}
                         </a>
                         <a class="uc-subitem" href="/user/security/password">
-                            <span class="material-icons-outlined">password</span>修改密码
+                            <span class="material-icons-outlined">password</span>#{t("修改密码")}
                         </a>
                         <div class="uc-submenu__sep"></div>
+                        <div class="uc-subitem uc-lang-parent" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
+                            <span class="material-icons-outlined">translate</span>#{t("语言")}
+                            <span class="material-icons-outlined uc-lang-caret">chevron_right</span>
+                            <div class="uc-submenu uc-lang-child">
+                                <a class="uc-subitem" href="javascript:;" data-lang-value="zh-cn">简体中文</a>
+                                <a class="uc-subitem" href="javascript:;" data-lang-value="zh-tw">繁體中文</a>
+                                <a class="uc-subitem" href="javascript:;" data-lang-value="en">English</a>
+                                <a class="uc-subitem" href="javascript:;" data-lang-value="ja">日本語</a>
+                            </div>
+                        </div>
+                        <div class="uc-submenu__sep"></div>
                         <a class="uc-subitem logout" href="javascript:void(0);">
-                            <span class="material-icons-outlined">logout</span>安全注销
+                            <span class="material-icons-outlined">logout</span>#{t("安全注销")}
                         </a>
                     </div>
                 </div>
@@ -193,38 +205,38 @@
             <span class="uc-brand__name" style="display:inline">#{$config.shop_name}</span>
         </a>
         <div class="uc-drawer__group">
-            <a class="uc-drawer__link" href="/user/dashboard/index" data-match="/user/dashboard/index"><span class="material-icons-outlined">space_dashboard</span>我的主页</a>
+            <a class="uc-drawer__link" href="/user/dashboard/index" data-match="/user/dashboard/index"><span class="material-icons-outlined">space_dashboard</span>#{t("我的主页")}</a>
         </div>
         <div class="uc-drawer__group">
-            <div class="uc-drawer__gtitle">店铺</div>
-            <a class="uc-drawer__link" href="/user/business/index" data-match="/user/business/index"><span class="material-icons-outlined">store</span>我的店铺</a>
+            <div class="uc-drawer__gtitle">#{t("店铺")}</div>
+            <a class="uc-drawer__link" href="/user/business/index" data-match="/user/business/index"><span class="material-icons-outlined">store</span>#{t("我的店铺")}</a>
             #{if $user.businessLevel and $user.businessLevel.supplier == 1}
-            <a class="uc-drawer__link" href="/user/category/index" data-match="/user/category/index"><span class="material-icons-outlined">category</span>商品分类</a>
-            <a class="uc-drawer__link" href="/user/commodity/index" data-match="/user/commodity/index"><span class="material-icons-outlined">inventory_2</span>我的商品</a>
-            <a class="uc-drawer__link" href="/user/card/index" data-match="/user/card/index"><span class="material-icons-outlined">vpn_key</span>卡密管理</a>
-            <a class="uc-drawer__link" href="/user/coupon/index" data-match="/user/coupon/index"><span class="material-icons-outlined">local_offer</span>代卷管理</a>
-            <a class="uc-drawer__link" href="/user/order/index" data-match="/user/order/index"><span class="material-icons-outlined">receipt_long</span>商品订单</a>
+            <a class="uc-drawer__link" href="/user/category/index" data-match="/user/category/index"><span class="material-icons-outlined">category</span>#{t("商品分类")}</a>
+            <a class="uc-drawer__link" href="/user/commodity/index" data-match="/user/commodity/index"><span class="material-icons-outlined">inventory_2</span>#{t("我的商品")}</a>
+            <a class="uc-drawer__link" href="/user/card/index" data-match="/user/card/index"><span class="material-icons-outlined">vpn_key</span>#{t("卡密管理")}</a>
+            <a class="uc-drawer__link" href="/user/coupon/index" data-match="/user/coupon/index"><span class="material-icons-outlined">local_offer</span>#{t("代卷管理")}</a>
+            <a class="uc-drawer__link" href="/user/order/index" data-match="/user/order/index"><span class="material-icons-outlined">receipt_long</span>#{t("商品订单")}</a>
             #{/if}
         </div>
         <div class="uc-drawer__group">
-            <div class="uc-drawer__gtitle">财务</div>
-            <a class="uc-drawer__link" href="/user/recharge/index" data-match="/user/recharge/index"><span class="material-icons-outlined">add_card</span>充值中心</a>
-            <a class="uc-drawer__link" href="/user/cash/index" data-match="/user/cash/index"><span class="material-icons-outlined">paid</span>硬币兑现</a>
-            <a class="uc-drawer__link" href="/user/personal/purchaseRecord" data-match="/user/personal/purchaseRecord"><span class="material-icons-outlined">shopping_bag</span>购买记录</a>
-            <a class="uc-drawer__link" href="/user/bill/index" data-match="/user/bill/index"><span class="material-icons-outlined">description</span>我的账单</a>
+            <div class="uc-drawer__gtitle">#{t("财务")}</div>
+            <a class="uc-drawer__link" href="/user/recharge/index" data-match="/user/recharge/index"><span class="material-icons-outlined">add_card</span>#{t("充值中心")}</a>
+            <a class="uc-drawer__link" href="/user/cash/index" data-match="/user/cash/index"><span class="material-icons-outlined">paid</span>#{t("硬币兑现")}</a>
+            <a class="uc-drawer__link" href="/user/personal/purchaseRecord" data-match="/user/personal/purchaseRecord"><span class="material-icons-outlined">shopping_bag</span>#{t("购买记录")}</a>
+            <a class="uc-drawer__link" href="/user/bill/index" data-match="/user/bill/index"><span class="material-icons-outlined">description</span>#{t("我的账单")}</a>
         </div>
         <div class="uc-drawer__group">
-            <div class="uc-drawer__gtitle">推广</div>
-            <a class="uc-drawer__link" href="/user/agent/promote" data-match="/user/agent/promote"><span class="material-icons-outlined">share</span>推广中心</a>
-            <a class="uc-drawer__link" href="/user/agent/member" data-match="/user/agent/member"><span class="material-icons-outlined">groups</span>我的下级</a>
+            <div class="uc-drawer__gtitle">#{t("推广")}</div>
+            <a class="uc-drawer__link" href="/user/agent/promote" data-match="/user/agent/promote"><span class="material-icons-outlined">share</span>#{t("推广中心")}</a>
+            <a class="uc-drawer__link" href="/user/agent/member" data-match="/user/agent/member"><span class="material-icons-outlined">groups</span>#{t("我的下级")}</a>
         </div>
         <div class="uc-drawer__group">
-            <a class="uc-drawer__link" href="/user/security/personal" data-match="/user/security/personal"><span class="material-icons-outlined">badge</span>个人资料</a>
-            <a class="uc-drawer__link" href="/user/security/password" data-match="/user/security/password"><span class="material-icons-outlined">password</span>修改密码</a>
-            <a class="uc-drawer__link" href="/" target="_blank"><span class="material-icons-outlined">shopping_cart</span>购买商品</a>
-            <a class="uc-drawer__link uc-ticket-nav-link" href="/user/ticket/index" data-match="/user/ticket"><span class="material-icons-outlined">support_agent</span>我的工单<span class="uc-ticket-nav-badge is-empty" aria-label="未读工单消息">0</span></a>
-            <a class="uc-drawer__link" href="/user/message/index" data-match="/user/message"><span class="material-icons-outlined">notifications</span>消息中心<span class="uc-message-drawer-badge is-empty" aria-label="未读消息">0</span></a>
-            <a class="uc-drawer__link logout" href="javascript:void(0);"><span class="material-icons-outlined">logout</span>安全注销</a>
+            <a class="uc-drawer__link" href="/user/security/personal" data-match="/user/security/personal"><span class="material-icons-outlined">badge</span>#{t("个人资料")}</a>
+            <a class="uc-drawer__link" href="/user/security/password" data-match="/user/security/password"><span class="material-icons-outlined">password</span>#{t("修改密码")}</a>
+            <a class="uc-drawer__link" href="/" target="_blank"><span class="material-icons-outlined">shopping_cart</span>#{t("购买商品")}</a>
+            <a class="uc-drawer__link uc-ticket-nav-link" href="/user/ticket/index" data-match="/user/ticket"><span class="material-icons-outlined">support_agent</span>#{t("我的工单")}<span class="uc-ticket-nav-badge is-empty" aria-label="#{t('未读工单消息')}">0</span></a>
+            <a class="uc-drawer__link" href="/user/message/index" data-match="/user/message"><span class="material-icons-outlined">notifications</span>#{t("消息中心")}<span class="uc-message-drawer-badge is-empty" aria-label="#{t('未读消息')}">0</span></a>
+            <a class="uc-drawer__link logout" href="javascript:void(0);"><span class="material-icons-outlined">logout</span>#{t("安全注销")}</a>
         </div>
     </div>
     <div class="uc-drawer__shade"></div>

@@ -9,11 +9,12 @@ if (!function_exists("admin_var")) {
     {
         return set_script_var([
             "DEBUG" => DEBUG,
+            "LANG" => \Kernel\Util\Lang::get(),
             "HACK_ROUTE_TABLE_COLUMNS" => hook(Hook::HACK_ROUTE_TABLE_COLUMNS),
             "HACK_SUBMIT_FORM" => hook(Hook::HACK_SUBMIT_FORM),
             "HACK_SUBMIT_TAB" => hook(Hook::HACK_SUBMIT_TAB),
             "HACK_ROUTE_TABLE_SEARCH" => hook(Hook::HACK_ROUTE_TABLE_SEARCH)
-        ]);
+        ]) . lang_dict_script();
     }
 }
 

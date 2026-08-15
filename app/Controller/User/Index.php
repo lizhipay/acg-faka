@@ -64,13 +64,14 @@ class Index extends User
 
         $item['is_stock'] = $item['stock'] > 0;
         if ($item['inventory_hidden'] == 1) {
-            $item['stock'] = match (true) {
+            //模糊库存文案直接渲染进模板，就地翻译
+            $item['stock'] = lang(match (true) {
                 $item['stock'] <= 0 => "已售罄",
                 $item['stock'] <= 5 => "所剩无几",
                 $item['stock'] <= 20 => "数量有限",
                 $item['stock'] <= 100 => "现货充足",
                 default => "库存爆棚"
-            };
+            }, "tpl");
         }
 
         return $this->theme(strip_tags($item['name']), "ITEM", "Index/Item.html", [

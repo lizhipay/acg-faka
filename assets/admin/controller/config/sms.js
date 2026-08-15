@@ -76,7 +76,7 @@
     $('.save-data').off(namespace).on('click' + namespace, function () {
         if (!controllerActive || saveInFlight) return;
         if (testSending) {
-            layer.msg('测试短信正在发送，请稍候再保存');
+            layer.msg(i18n('测试短信正在发送，请稍候再保存'));
             return;
         }
         const revision = formRevision();
@@ -96,7 +96,7 @@
                     if (input.isConnected && input.value === value) input.value = '';
                 });
                 if (dirtyVersion === submittedVersion) formDirty = false;
-                layer.msg(res.msg || "保存成功");
+                layer.msg(res.msg || i18n("保存成功"));
                 emitFormState('admin:mobile:form-saved', revision);
             },
             error: res => {
@@ -104,7 +104,7 @@
                 saveInFlight = false;
                 setSaveBusy(false);
                 if (mobileAdminEnabled()) window.AdminMobile?.pageWorkflows?.focusFormError?.(formElement(), res?.msg);
-                message.error(res?.msg || '短信设置保存失败');
+                message.error(res?.msg || i18n('短信设置保存失败'));
             },
             fail: () => {
                 if (!controllerActive) return;
@@ -118,11 +118,11 @@
     function sendTest(phone, index) {
         const normalized = String(phone || '').trim();
         if (!/^1[3-9]\d{9}$/.test(normalized)) {
-            layer.msg('请输入正确的国内手机号');
+            layer.msg(i18n('请输入正确的国内手机号'));
             return false;
         }
         if (testSending) {
-            layer.msg('测试短信正在发送，请稍候');
+            layer.msg(i18n('测试短信正在发送，请稍候'));
             return false;
         }
         testSending = true;
@@ -133,7 +133,7 @@
             closePrompt(index);
         }, res => {
             testSending = false;
-            if (controllerActive) message.error(res?.msg || '测试短信发送失败');
+            if (controllerActive) message.error(res?.msg || i18n('测试短信发送失败'));
         }, () => {
             testSending = false;
             if (controllerActive) message.error('网络异常，测试短信发送失败');
@@ -143,11 +143,11 @@
 
     $('.send-test-message').off(namespace).on('click' + namespace, function () {
         if (saveInFlight) {
-            layer.msg('短信设置正在保存，请稍候再测试');
+            layer.msg(i18n('短信设置正在保存，请稍候再测试'));
             return;
         }
         if (formDirty) {
-            layer.msg('请先保存当前短信设置，再发送测试短信');
+            layer.msg(i18n('请先保存当前短信设置，再发送测试短信'));
             return;
         }
         const mobile = mobileAdminEnabled();
@@ -156,7 +156,7 @@
                 width: '420px',
                 height: 'auto',
                 autoPosition: true,
-                confirmText: sendMessageIcon + '<span>发送测试短信</span>',
+                confirmText: sendMessageIcon + '<span>' + i18n('发送测试短信') + '</span>',
                 tab: [{
                     name: '发送测试短信',
                     form: [{
@@ -165,7 +165,7 @@
                         type: 'input',
                         placeholder: '请输入 11 位手机号',
                         required: true,
-                        regex: {value: '^1[3-9]\\d{9}$', message: '请输入正确的国内手机号'}
+                        regex: {value: '^1[3-9]\\d{9}$', message: i18n('请输入正确的国内手机号')}
                     }]
                 }],
                 renderComplete: prepareTestInput,

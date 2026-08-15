@@ -41,15 +41,15 @@
         let error = '';
 
         if (!Number.isFinite(amount) || amount <= 0) {
-            error = '请输入有效的充值金额';
+            error = i18n('请输入有效的充值金额');
         } else if (amount < minimum) {
-            error = `单次最低充值 ￥${formatAmount(minimum)}`;
+            error = `${i18n('单次最低充值')} ￥${formatAmount(minimum)}`;
         } else if (maximum > 0 && amount > maximum) {
-            error = `单次最高充值 ￥${formatAmount(maximum)}`;
+            error = `${i18n('单次最高充值')} ￥${formatAmount(maximum)}`;
         } else if (!paymentLoaded) {
-            error = '正在加载支付方式';
+            error = i18n('正在加载支付方式');
         } else if (_PayId === undefined) {
-            error = $('.btn-pay').length ? '请选择一种支付方式' : '暂无可用的支付方式';
+            error = $('.btn-pay').length ? i18n('请选择一种支付方式') : i18n('暂无可用的支付方式');
         }
 
         $('.uc-topup-principal').text(formatAmount(safeAmount));
@@ -61,9 +61,9 @@
         const $status = $('.uc-topup-summary__status');
         $status.toggleClass('is-waiting', !valid).toggleClass('is-ready', valid);
         $status.find('.material-icons-outlined').text(valid ? 'check_circle' : 'touch_app');
-        $('.uc-topup-status-text').text(valid ? '信息已确认，可以前往支付' : error);
+        $('.uc-topup-status-text').text(valid ? i18n('信息已确认，可以前往支付') : error);
         $('.payButton').prop('disabled', !valid).attr('aria-disabled', String(!valid));
-        $('.uc-topup-submit__label').text(valid ? '前往支付' : (paymentLoaded ? '请选择支付方式' : '正在加载支付方式'));
+        $('.uc-topup-submit__label').text(valid ? i18n('前往支付') : (paymentLoaded ? i18n('请选择支付方式') : i18n('正在加载支付方式')));
 
         return valid;
     }
@@ -75,7 +75,7 @@
             done: res => {
                 res?.data?.forEach(item => {
                     // recharge.js 同时服务 Cartoon 与 MountFuji：注入标记结构必须保持不变。
-                    $('.pay-list').append(`<a class="button-click btn-pay" data-id="${item.id}" style="line-height: 22px;color: #db66ac;"> <img src="${item.icon}" class="pay-icon"> ${item.name}</a>`);
+                    $('.pay-list').append(`<a class="button-click btn-pay" data-id="${item.id}" style="line-height: 22px;color: #db66ac;"> <img src="${item.icon}" class="pay-icon"> ${i18n(item.name)}</a>`);
                 });
 
                 $('.btn-pay').click(function () {

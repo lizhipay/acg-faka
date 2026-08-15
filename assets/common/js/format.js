@@ -142,7 +142,7 @@ const format = new class Format {
     }
 
     item(item) {
-        return `<span class="table-item"><img src="${item?.cover}" class="table-item-icon"><span class="table-item-name">${item?.name}</span></span>`;
+        return `<span class="table-item"><img src="${item?.cover}" class="table-item-icon"><span class="table-item-name">${i18n(item?.name)}</span></span>`;
     }
 
     category(item, obj = null) {
@@ -154,14 +154,14 @@ const format = new class Format {
             return "-";
         }
 
-        return `<span class="table-item table-item-cate"><img src="${item?.icon}" class="table-item-icon"><span class="table-item-name">${item?.name}</span></span>`;
+        return `<span class="table-item table-item-cate"><img src="${item?.icon}" class="table-item-icon"><span class="table-item-name">${i18n(item?.name)}</span></span>`;
     }
 
     group(group) {
         if (!group) {
             return '-';
         }
-        return `<span class="table-item table-item-cate"><img src="${group.icon}" class="table-item-icon"><span class="table-item-name">${group.name}</span></span>`;
+        return `<span class="table-item table-item-cate"><img src="${group.icon}" class="table-item-icon"><span class="table-item-name">${i18n(group.name)}</span></span>`;
     }
 
 
@@ -183,14 +183,14 @@ const format = new class Format {
         if (!item) {
             return '-';
         }
-        return `<span class="table-item table-item-user"><img src="${item.domain}/favicon.ico" class="table-item-icon"><span class="table-item-name">${item.name}</span></span>`;
+        return `<span class="table-item table-item-user"><img src="${item.domain}/favicon.ico" class="table-item-icon"><span class="table-item-name">${i18n(item.name)}</span></span>`;
     }
 
     bank(item) {
         if (!item) {
             return '-';
         }
-        return `<span class="table-item"><img src="${item.icon}" class="table-item-icon"><span class="table-item-name">${item.name}</span></span>`;
+        return `<span class="table-item"><img src="${item.icon}" class="table-item-icon"><span class="table-item-name">${i18n(item.name)}</span></span>`;
     }
 
     link(link) {
@@ -226,7 +226,7 @@ const format = new class Format {
         if (!item) {
             return '-';
         }
-        return `<span class="pay-item"><img src="${item.icon}" class="item-icon"><span class="item-name">${item.name}</span></span>`;
+        return `<span class="pay-item"><img src="${item.icon}" class="item-icon"><span class="item-name">${i18n(item.name)}</span></span>`;
     }
 
     customer(item, all) {
@@ -240,7 +240,7 @@ const format = new class Format {
         if (!item) {
             return '-';
         }
-        return `<span class="table-item"><img src="${item?.bank?.icon}" class="table-item-icon"><span class="table-item-name">${item?.bank?.name}(${item.card_no})</span></span>`;
+        return `<span class="table-item"><img src="${item?.bank?.icon}" class="table-item-icon"><span class="table-item-name">${i18n(item?.bank?.name)}(${item.card_no})</span></span>`;
     }
 
     client(item) {
@@ -263,7 +263,7 @@ const format = new class Format {
     }
 
     plugin(item) {
-        return `<span class="table-item"><img src="${item.icon}" class="table-item-icon"><span class="table-item-name">${item.name}</span></span>`;
+        return `<span class="table-item"><img src="${item.icon}" class="table-item-icon"><span class="table-item-name">${i18n(item.name)}</span></span>`;
     }
 
     pastTime(date) {
@@ -282,7 +282,7 @@ const format = new class Format {
 
         const interval = intervals.find(i => i.seconds < secondsElapsed || i.label === '秒');
         const count = Math.floor(secondsElapsed / interval.seconds);
-        return `${count < 0 ? 0 : count} ${i18n(interval.label + "前")}`;
+        return `${count < 0 ? 0 : count} ${i18n(interval.label + i18n("前"))}`;
     }
 
     expireTime(date) {

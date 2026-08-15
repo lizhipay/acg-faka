@@ -99,7 +99,7 @@
         badges.forEach(function (badge) {
           badge.textContent = count > 99 ? '99+' : String(count);
           badge.classList.toggle('is-empty', count < 1);
-          badge.setAttribute('aria-label', count > 0 ? count + ' 条未读工单消息' : '没有未读工单消息');
+          badge.setAttribute('aria-label', count > 0 ? count + i18n(' 条未读工单消息') : i18n('没有未读工单消息'));
         });
       }
     });
@@ -128,14 +128,14 @@
   }
 
   function messageTime(value) {
-    if (!value) return '刚刚';
+    if (!value) return i18n('刚刚');
     var time = new Date(String(value).replace(/-/g, '/')).getTime();
     if (!Number.isFinite(time)) return messageEscape(value);
     var seconds = Math.max(0, Math.floor((Date.now() - time) / 1000));
-    if (seconds < 60) return '刚刚';
-    if (seconds < 3600) return Math.floor(seconds / 60) + ' 分钟前';
-    if (seconds < 86400) return Math.floor(seconds / 3600) + ' 小时前';
-    if (seconds < 604800) return Math.floor(seconds / 86400) + ' 天前';
+    if (seconds < 60) return i18n('刚刚');
+    if (seconds < 3600) return Math.floor(seconds / 60) + i18n(' 分钟前');
+    if (seconds < 86400) return Math.floor(seconds / 3600) + i18n(' 小时前');
+    if (seconds < 604800) return Math.floor(seconds / 86400) + i18n(' 天前');
     return messageEscape(value);
   }
 
@@ -145,7 +145,7 @@
     return {
       id: row.id || row.user_message_id || source.user_message_id || 0,
       message_id: row.message_id || source.id || 0,
-      title: row.title || source.title || '未命名消息',
+      title: row.title || source.title || i18n('未命名消息'),
       summary: row.summary || source.summary || '',
       content: row.content || source.content || '',
       jump_url: row.jump_url || source.jump_url || row.url || source.url || row.link_url || source.link_url || '',
@@ -187,18 +187,18 @@
       badge.classList.remove('is-error');
       badge.textContent = count > 99 ? '99+' : String(count);
       badge.classList.toggle('is-empty', count < 1);
-      badge.setAttribute('aria-label', count > 0 ? count + ' 条未读消息' : '没有未读消息');
+      badge.setAttribute('aria-label', count > 0 ? count + i18n(' 条未读消息') : i18n('没有未读消息'));
     });
     var button = doc.querySelector('.uc-message-btn');
-    if (button) button.setAttribute('aria-label', count > 0 ? count + ' 条未读消息' : '没有未读消息');
+    if (button) button.setAttribute('aria-label', count > 0 ? count + i18n(' 条未读消息') : i18n('没有未读消息'));
     var label = doc.querySelector('.uc-message-dropdown__count');
-    if (label) label.textContent = count > 0 ? count + ' 条未读' : '暂无未读';
+    if (label) label.textContent = count > 0 ? count + i18n(' 条未读') : i18n('暂无未读');
   }
 
   function renderMessageLoadFailure() {
     var container = doc.querySelector('.uc-message-recent');
     if (container) {
-      container.innerHTML = '<button type="button" class="uc-message-recent__retry"><span class="material-icons-outlined" aria-hidden="true">cloud_off</span><strong>消息加载失败</strong><span>点击重新加载</span></button>';
+      container.innerHTML = '<button type="button" class="uc-message-recent__retry"><span class="material-icons-outlined" aria-hidden="true">cloud_off</span><strong>' + i18n('消息加载失败') + '</strong><span>' + i18n('点击重新加载') + '</span></button>';
     }
     window.__ucMessagePendingRecent = null;
     window.__ucMessageRecentSignature = null;
@@ -206,26 +206,26 @@
       badge.textContent = '!';
       badge.classList.remove('is-empty');
       badge.classList.add('is-error');
-      badge.setAttribute('aria-label', '消息加载失败');
+      badge.setAttribute('aria-label', i18n('消息加载失败'));
     });
     var button = doc.querySelector('.uc-message-btn');
-    if (button) button.setAttribute('aria-label', '消息加载失败，点击重试');
+    if (button) button.setAttribute('aria-label', i18n('消息加载失败，点击重试'));
     var label = doc.querySelector('.uc-message-dropdown__count');
-    if (label) label.textContent = '加载失败';
+    if (label) label.textContent = i18n('加载失败');
   }
 
   function renderRecentMessages(rows) {
     var container = doc.querySelector('.uc-message-recent');
     if (!container) return;
     if (!rows.length) {
-      container.innerHTML = '<div class="uc-message-recent__empty"><span class="material-icons-outlined" aria-hidden="true">notifications_off</span><strong>暂时没有消息</strong><small>新的通知会出现在这里</small></div>';
+      container.innerHTML = '<div class="uc-message-recent__empty"><span class="material-icons-outlined" aria-hidden="true">notifications_off</span><strong>' + i18n('暂时没有消息') + '</strong><small>' + i18n('新的通知会出现在这里') + '</small></div>';
       return;
     }
     container.innerHTML = rows.map(function (raw) {
       var item = normalizeMessage(raw);
       return '<button type="button" class="uc-message-recent__item' + (item.read_time ? '' : ' is-unread') + '" data-message-id="' + encodeURIComponent(item.id) + '">' +
         '<span class="uc-message-recent__mark"><i></i><span class="material-icons-outlined" aria-hidden="true">' + (item.read_time ? 'drafts' : 'mark_email_unread') + '</span></span>' +
-        '<span class="uc-message-recent__copy"><strong>' + messageEscape(item.title) + '</strong><small>' + messageEscape(item.summary || '点击查看消息详情') + '</small><time>' + messageTime(item.create_time) + '</time></span>' +
+        '<span class="uc-message-recent__copy"><strong>' + messageEscape(i18n(item.title)) + '</strong><small>' + messageEscape(i18n(item.summary) || i18n('点击查看消息详情')) + '</small><time>' + messageTime(item.create_time) + '</time></span>' +
         '<span class="material-icons-outlined uc-message-recent__arrow" aria-hidden="true">chevron_right</span>' +
       '</button>';
     }).join('');
@@ -306,7 +306,7 @@
       global: false,
       success: function (res) {
         if (!res || res.code !== 200) {
-          if (typeof message !== 'undefined') message.error((res && res.msg) || '消息读取失败');
+          if (typeof message !== 'undefined') message.error((res && res.msg) || i18n('消息读取失败'));
           return;
         }
         var detail = normalizeMessage(res.data && res.data.message ? res.data.message : res.data);
@@ -467,11 +467,11 @@
     $.fn.bootstrapTable.__ucCn = 1;
     $.extend($.fn.bootstrapTable.defaults, {
       formatNoMatches: function () {
-        return '<div class="uc-empty"><span class="material-icons-outlined">inbox</span><p>暂无数据</p></div>';
+        return '<div class="uc-empty"><span class="material-icons-outlined">inbox</span><p>' + i18n('暂无数据') + '</p></div>';
       },
-      formatLoadingMessage: function () { return '正在加载'; },
-      formatShowingRows: function (f, t, total) { return total > 0 ? '第 ' + f + ' - ' + t + ' 条 · 共 ' + total + ' 条' : '共 0 条'; },
-      formatRecordsPerPage: function (n) { return '每页 ' + n + ' 条'; }
+      formatLoadingMessage: function () { return i18n('正在加载'); },
+      formatShowingRows: function (f, t, total) { return total > 0 ? i18n('第 ') + f + ' - ' + t + i18n(' 条 · 共 ') + total + i18n(' 条') : i18n('共 0 条'); },
+      formatRecordsPerPage: function (n) { return i18n('每页 ') + n + i18n(' 条'); }
     });
   }
   /* 卡片内 tab 切换(店铺页 3 合 1);切到某 tab 时让里面的表格/编辑器重新测量 */
@@ -510,7 +510,7 @@
       var ico = doc.querySelector('.uc-theme-ico');
       if (ico) ico.textContent = m === 'dark' ? 'dark_mode' : (m === 'light' ? 'light_mode' : 'brightness_auto');
       var btn = doc.querySelector('.uc-theme-btn');
-      if (btn) btn.title = '主题：' + (m === 'dark' ? '暗色' : (m === 'light' ? '亮色' : '跟随系统'));
+      if (btn) btn.title = i18n('主题：') + (m === 'dark' ? i18n('暗色') : (m === 'light' ? i18n('亮色') : i18n('跟随系统')));
     }
     apply(mode());
     var btn = doc.querySelector('.uc-theme-btn');

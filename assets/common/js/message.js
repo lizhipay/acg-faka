@@ -50,7 +50,14 @@ const message = new class Message {
         this.log(text, 'info');
     }
 
-    ask(text, done = null, title = "您确定吗？", confirm = "确定") {
+    /**
+     * @param text 正文（支持 HTML）
+     * @param done 确认回调
+     * @param title 标题
+     * @param confirm 确认按钮文案
+     * @param options 透传给 Swal 的额外配置，如 {width: '760px'}：正文里带表格时默认宽度不够用
+     */
+    ask(text, done = null, title = "您确定吗？", confirm = "确定", options = {}) {
         Swal.fire({
             title: i18n(title),
             html: i18n(text),
@@ -58,6 +65,7 @@ const message = new class Message {
             showCancelButton: true,
             cancelButtonText: i18n("取消"),
             confirmButtonText: i18n(confirm),
+            ...options
         }).then((t => {
             if (t.value) {
                 done && done();

@@ -151,7 +151,7 @@
                 {
                     icon: 'fa-duotone fa-regular fa-pen-to-square text-primary',
                     click: (event, value, row, index) => {
-                        modal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + "修改等级", row);
+                        modal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + i18n("修改等级"), row);
                     }
                 },
                 {
@@ -160,18 +160,18 @@
                         const mobile = mobileAdminEnabled();
                         const prompt = mobile
                             ? '<div style="text-align:left;line-height:1.8">' +
-                              '<p style="margin:0 0 8px">删除后该商户等级将永久消失，请先确认没有商户仍在使用此等级。</p>' +
-                              '<div><b>等级：</b>' + escapeHtml(row.name) + '</div>' +
-                              '<div><b>购买价格：</b>¥' + escapeHtml(row.price) + '</div>' +
-                              '<p style="margin:8px 0 0;color:#d63b3b;font-weight:700">该操作不可撤销。</p></div>'
-                            : '是否删除该等级？';
+                              '<p style="margin:0 0 8px">' + i18n('删除后该商户等级将永久消失，请先确认没有商户仍在使用此等级。') + '</p>' +
+                              '<div><b>' + i18n('等级：') + '</b>' + escapeHtml(row.name) + '</div>' +
+                              '<div><b>' + i18n('购买价格：') + '</b>¥' + escapeHtml(row.price) + '</div>' +
+                              '<p style="margin:8px 0 0;color:#d63b3b;font-weight:700">' + i18n('该操作不可撤销。') + '</p></div>'
+                            : i18n('是否删除该等级？');
                         message.ask(prompt, () => {
                             util.post("/admin/api/businessLevel/del", {list: [row.id]}, () => {
                                 if (!controllerActive) return;
                                 table.refresh();
                                 message.success("删除成功");
                             })
-                        }, mobile ? '确认删除商户等级' : '您确定吗？', mobile ? '确认删除' : '确定');
+                        }, mobile ? i18n('确认删除商户等级') : i18n('您确定吗？'), mobile ? i18n('确认删除') : i18n('确定'));
                     }
                 }
             ]
@@ -180,7 +180,7 @@
     table.render();
 
     $('.btn-app-create').off(namespace).on('click' + namespace, function () {
-        modal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> 添加等级`);
+        modal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> ${i18n('添加等级')}`);
     });
 
     function destroy() {

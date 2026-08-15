@@ -54,6 +54,7 @@ class Config extends Manage
         'registered_phone_verification',
         'registered_email_verification',
         'login_verification',
+        'admin_login_verification',
         'forget_type',
         'notice',
         'trade_verification',
@@ -72,6 +73,7 @@ class Config extends Manage
         'registered_phone_verification',
         'registered_email_verification',
         'login_verification',
+        'admin_login_verification',
         'trade_verification',
         'request_log',
     ];
@@ -107,6 +109,7 @@ class Config extends Manage
         'domain',
         'cname',
         'substation_display',
+        'force_login',
         'recharge_min',
         'recharge_max',
         'recharge_welfare',
@@ -127,6 +130,7 @@ class Config extends Manage
     private const OTHER_BOOLEAN_FIELDS = [
         'callback_ip_whitelist',
         'substation_display',
+        'force_login',
         'recharge_welfare',
         'cash_type_alipay',
         'cash_type_wechat',
@@ -606,11 +610,23 @@ class Config extends Manage
     }
 
     /**
+     * 测试发送的限流参数（按渠道区分）。
+     * 短信每条都要花钱，且后台一旦失守就会被拿去刷短信，保持严格；
+     * 邮件走站长自己的 SMTP、不花钱，而调 SMTP 配置本来就要反复试
+     * （换端口、换加密方式、换授权码），沿用短信的额度只会把站长自己卡死。
+     */
+    private const TEST_SEND_LIMITS = [
+        'email' => ['max' => 20, 'window' => 300, 'interval' => 3],
+        'sms' => ['max' => 3, 'window' => 300, 'interval' => 30],
+    ];
+
+    /**
      * Atomically limit real test sends by login session, administrator and IP.
      * @throws JSONException
      */
     private function consumeTestSendQuota(string $channel): void
     {
+        $limit = self::TEST_SEND_LIMITS[$channel] ?? self::TEST_SEND_LIMITS['sms'];
         $directory = BASE_PATH . '/runtime/config-test-throttle';
         if (!is_dir($directory) && !@mkdir($directory, 0755, true) && !is_dir($directory)) {
             throw new JSONException('无法启用测试发送保护，请检查 runtime 目录权限');
@@ -643,18 +659,20 @@ class Config extends Manage
                 rewind($handle);
                 $record = json_decode((string)stream_get_contents($handle), true);
                 $count = 0;
-                $reset = $now + 300;
+                $reset = $now + $limit['window'];
                 $last = 0;
                 if (is_array($record) && (int)($record['reset'] ?? 0) > $now) {
                     $count = max(0, (int)($record['count'] ?? 0));
                     $reset = (int)$record['reset'];
                     $last = max(0, (int)($record['last'] ?? 0));
                 }
-                if ($last > 0 && $last + 30 > $now) {
-                    throw new JSONException('测试发送过于频繁，请 30 秒后再试');
+                if ($last > 0 && $last + $limit['interval'] > $now) {
+                    $wait = $last + $limit['interval'] - $now;
+                    throw new JSONException("测试发送过于频繁，请 {$wait} 秒后再试");
                 }
-                if ($count >= 3) {
-                    throw new JSONException('测试发送次数过多，请稍后再试');
+                if ($count >= $limit['max']) {
+                    $wait = max(1, (int)ceil(($reset - $now) / 60));
+                    throw new JSONException("测试发送次数过多（{$limit['window']} 秒内最多 {$limit['max']} 次），请 {$wait} 分钟后再试");
                 }
                 $records[] = ['count' => $count + 1, 'reset' => $reset, 'last' => $now];
             }
@@ -757,6 +775,15 @@ class Config extends Manage
         ];
         foreach (self::SETTING_BOOLEAN_FIELDS as $key) {
             $settings[$key] = $this->settingBoolean($post, $key);
+        }
+
+        //公告是管理员富文本，取未过滤原文入库(#775)；空字节与长度校验和settingString保持一致
+        $rawNotice = $request->unsafePost('notice');
+        if (is_string($rawNotice) && !str_contains($rawNotice, "\0")) {
+            if (mb_strlen($rawNotice) > 60000 || strlen($rawNotice) > 60000) {
+                throw new JSONException('网站设置内容超出允许长度');
+            }
+            $settings['notice'] = $rawNotice;
         }
 
         // Validate every value before the first filesystem or database write.
@@ -1023,10 +1050,48 @@ class Config extends Manage
         $shopName = CFG::get("shop_name");
         $result = $this->email->send($address, $shopName . "-手动测试邮件", '测试邮件，发送时间：' . Date::current());
         if (!$result) {
-            throw new JSONException("发送失败");
+            //把 SMTP 的真实报错带给站长，并针对最常见的几类错误给出可执行的下一步
+            throw new JSONException($this->emailFailureMessage($this->email->getLastError()));
         }
         ManageLog::log($this->getManage(), "测试了邮件发送");
         return $this->json(200, "成功!");
+    }
+
+    /**
+     * 把 SMTP 报错整理成站长看得懂的提示。
+     * 常见坑：端口与加密方式不匹配（465=SSL / 587=TLS）、Gmail 等要求应用专用密码、
+     * 服务器出网被封（云厂商默认封 25/465）。
+     * @param string $error
+     * @return string
+     */
+    private function emailFailureMessage(string $error): string
+    {
+        $error = trim($error);
+        if ($error === '') {
+            return '发送失败：SMTP 未返回具体原因，请检查服务器是否允许对外连接邮件端口';
+        }
+
+        $config = json_decode((string)CFG::get('email_config'), true);
+        $port = is_array($config) ? (int)($config['port'] ?? 0) : 0;
+        $secure = is_array($config) ? (int)($config['secure'] ?? 0) : 0; //0=SSL 1=TLS
+        $lower = strtolower($error);
+        $hint = '';
+
+        if (str_contains($lower, 'authenticate') || str_contains($lower, 'username and password') || str_contains($lower, '535')) {
+            $hint = '账号或授权码不正确。请注意：Gmail / QQ / 163 等需要填「应用专用密码（授权码）」，不是邮箱登录密码。';
+        } elseif (str_contains($lower, 'connect') || str_contains($lower, 'timed out') || str_contains($lower, 'timeout') || str_contains($lower, 'refused')) {
+            $hint = '连不上 SMTP 服务器。请确认服务器可对外访问该端口（云厂商常默认封禁 25/465），以及服务器地址与端口填写正确。';
+        } elseif (str_contains($lower, 'ssl') || str_contains($lower, 'tls') || str_contains($lower, 'starttls') || str_contains($lower, 'handshake')) {
+            $hint = '加密方式与端口不匹配。常见对应关系：465 端口用 SSL、587 端口用 TLS。';
+        }
+
+        //端口/加密方式明显不匹配时直接点名，这是最高频的配置错误
+        if (($port === 465 && $secure === 1) || ($port === 587 && $secure === 0)) {
+            $expect = $port === 465 ? 'SSL' : 'TLS';
+            $hint = "当前是 {$port} 端口 + " . ($secure === 0 ? 'SSL' : 'TLS') . " 的组合，通常不可用，{$port} 端口请改用 {$expect}。" . $hint;
+        }
+
+        return '发送失败：' . $error . ($hint !== '' ? "（{$hint}）" : '');
     }
 
     /**

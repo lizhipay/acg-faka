@@ -247,6 +247,40 @@
 :root[data-theme] .uc-user .uc-submenu { min-width: 180px; }
 :root[data-theme] .uc-submenu__sep { height: 1px; margin: 6px 8px; background: rgba(31, 38, 60, 0.1); }
 
+/* 语言二级菜单：父项右侧飞出，避免把主菜单撑长 */
+:root[data-theme] .uc-lang-parent { position: relative; cursor: pointer; padding-right: 30px; }
+:root[data-theme] .uc-lang-parent .uc-lang-caret {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  font-size: 18px; opacity: .55; transition: transform .18s ease, opacity .18s ease;
+}
+:root[data-theme] .uc-lang-parent:hover .uc-lang-caret,
+:root[data-theme] .uc-lang-parent.is-open .uc-lang-caret { opacity: 1; }
+:root[data-theme] .uc-submenu .uc-lang-child {
+  top: -8px; left: auto; right: calc(100% + 6px);
+  min-width: 160px; transform-origin: top right;
+  transform: translateX(6px) scale(.98);
+}
+/* 悬停桥：父项与子菜单之间留出可穿越区域 */
+:root[data-theme] .uc-lang-child::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: auto; right: -8px; width: 8px; height: auto;
+}
+:root[data-theme] .uc-lang-parent:hover > .uc-lang-child,
+:root[data-theme] .uc-lang-parent:focus-within > .uc-lang-child,
+:root[data-theme] .uc-lang-parent.is-open > .uc-lang-child {
+  opacity: 1; visibility: visible; transform: translateX(0) scale(1);
+}
+/* 窄屏没有横向空间：退化为父项下方展开 */
+@media (max-width: 640px) {
+  :root[data-theme] .uc-submenu .uc-lang-child {
+    position: static; min-width: 0; padding: 4px 0 0 22px;
+    background: none; border: none; box-shadow: none; backdrop-filter: none;
+    -webkit-backdrop-filter: none; transform: none; opacity: 1; visibility: visible;
+    display: none;
+  }
+  :root[data-theme] .uc-lang-parent.is-open > .uc-lang-child { display: block; }
+  :root[data-theme] .uc-lang-parent.is-open .uc-lang-caret { transform: translateY(-50%) rotate(90deg); }
+}
+
 /* 移动端汉堡 */
 :root[data-theme] .uc-burger {
   display: none; width: 42px; height: 42px; border: none; border-radius: 12px; cursor: pointer;
@@ -1596,22 +1630,6 @@
 :root[data-theme] .uc-promo__qr canvas, :root[data-theme] .uc-promo__qr img { display: block; border-radius: 6px; }
 :root[data-theme] .uc-promo__qrhint { font-size: 11.5px; color: #58606e; }
 @media (max-width: 760px) { :root[data-theme] .uc-promo { flex-direction: column; } :root[data-theme] .uc-promo__qr { align-self: center; } }
-
-/* SKU 收益明细弹层 */
-:root[data-theme] .uc-skupop { padding: 16px 18px; }
-:root[data-theme] .uc-skupop__meta { font-size: 13px; color: var(--md-on-surface-med); margin-bottom: 12px; }
-:root[data-theme] .uc-skupop__meta b { color: var(--md-success); }
-:root[data-theme] .uc-skupop__table { width: 100%; border-collapse: collapse; font-size: 13px; }
-:root[data-theme] .uc-skupop__table thead td { font-weight: 700; color: var(--md-on-surface-med); padding: 8px 10px; border-bottom: 1px solid var(--md-divider); white-space: nowrap; }
-:root[data-theme] .uc-skupop__table tbody td { padding: 8px 10px; border-bottom: 1px solid var(--md-divider); color: var(--md-on-surface); }
-:root[data-theme] .uc-skupop__table tbody tr:last-child td { border-bottom: none; }
-:root[data-theme] .uc-skupop__delta { font-weight: 700; color: var(--md-on-surface-dis); }
-:root[data-theme] .uc-skupop__delta.up { color: var(--md-success); }
-:root[data-theme] .uc-skupop__delta.down { color: var(--md-error); }
-
-/* 推广收益表里的 SKU 链接 */
-:root[data-theme] .uc-card .bootstrap-table .sku-detail { color: var(--md-info); text-decoration: none; font-weight: 600; white-space: nowrap; }
-:root[data-theme] .uc-card .bootstrap-table .sku-detail:hover { text-decoration: underline; }
 
 /* 暗色微调 */
 :root[data-theme="dark"] .uc-list__row { border-bottom-color: rgba(255,255,255,0.07); }

@@ -132,7 +132,7 @@ class Coupon extends Manage
             }
             if (str_starts_with($key, 'equal-sku-')) {
                 $skuKey = substr($key, strlen('equal-sku-'));
-                if (preg_match('/^[A-Za-z0-9_\x{4e00}-\x{9fff}]{1,32}$/u', $skuKey)) {
+                if (\App\Util\Sku::isValidKey($skuKey)) {
                     continue;
                 }
             }
@@ -210,7 +210,7 @@ class Coupon extends Manage
             }
             $skuKey = substr($key, strlen('equal-sku-'));
             $skuValue = trim((string)$value);
-            if (!preg_match('/^[A-Za-z0-9_\x{4e00}-\x{9fff}]{1,32}$/u', $skuKey) || mb_strlen($skuValue) > 64) {
+            if (!\App\Util\Sku::isValidKey($skuKey) || mb_strlen($skuValue) > 64) {
                 throw new JSONException('SKU 筛选条件不正确');
             }
             if ($skuValue === '') {

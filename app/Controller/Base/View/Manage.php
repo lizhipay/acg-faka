@@ -31,7 +31,8 @@ abstract class Manage extends \App\Controller\Base\Manage
             //加载helper
             require(BASE_PATH . "/app/View/Admin/Helper.php");
 
-            $data['title'] = $title;
+            //页面标题统一在此翻译，各控制器仍传中文原文
+            $data['title'] = lang($title, "tpl");
             $data['app']['version'] = \config("app")['version'];
             $data['app']['server'] = (int)\config("store")['server'];
 

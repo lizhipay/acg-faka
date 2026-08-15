@@ -29,7 +29,7 @@
         const $copy = $('<span class="uc-ticket-option__copy"></span>').appendTo($row);
         $('<strong>').text(item.text || '').appendTo($copy);
         if (kind === 'commodity') {
-            $('<small>').text([item.category_name || item.category || '未分类', `商品 ID ${item.id}`].join(' · ')).appendTo($copy);
+            $('<small>').text([item.category_name || item.category || i18n('未分类'), `${i18n('商品')} ID ${item.id}`].join(' · ')).appendTo($copy);
         } else {
             const meta = [item.trade_no || '', item.amount != null ? `￥${item.amount}` : '', item.pay_time || item.create_time || ''].filter(Boolean).join(' · ');
             $('<small>').text(meta).appendTo($copy);
@@ -46,10 +46,10 @@
             allowClear: true,
             minimumInputLength: 0,
             language: {
-                inputTooShort: () => '输入关键词可以更快找到',
-                searching: () => '正在搜索…',
-                noResults: () => '没有找到匹配结果',
-                errorLoading: () => '加载失败，请稍后再试'
+                inputTooShort: () => i18n('输入关键词可以更快找到'),
+                searching: () => i18n('正在搜索…'),
+                noResults: () => i18n('没有找到匹配结果'),
+                errorLoading: () => i18n('加载失败，请稍后再试')
             },
             ajax: {
                 url: endpoint,
@@ -90,21 +90,21 @@
         }
         const cover = escapeHtml(state.order.cover || '/favicon.ico');
         const when = escapeHtml(state.order.pay_time || state.order.create_time || '');
-        $picked.html(`<img src="${cover}" alt=""><span><small>已选择订单</small><strong>${escapeHtml(state.order.commodity_name || '商品订单')}</strong><em>${escapeHtml(state.order.trade_no || '')}${state.order.amount != null ? ` · ￥${escapeHtml(state.order.amount)}` : ''}${when ? ` · ${when}` : ''}</em></span><span class="material-icons-outlined">verified</span>`).prop('hidden', false);
+        $picked.html(`<img src="${cover}" alt=""><span><small>${i18n('已选择订单')}</small><strong>${escapeHtml(state.order.commodity_name || i18n('商品订单'))}</strong><em>${escapeHtml(state.order.trade_no || '')}${state.order.amount != null ? ` · ￥${escapeHtml(state.order.amount)}` : ''}${when ? ` · ${when}` : ''}</em></span><span class="material-icons-outlined">verified</span>`).prop('hidden', false);
     }
 
     function updateSummary() {
         const isAfter = state.type === 1;
         $('.uc-ticket-summary__type .material-icons-outlined').first().text(isAfter ? 'handyman' : 'question_answer');
-        $('.uc-ticket-summary__type strong').text(isAfter ? '售后支持' : '售前咨询');
-        $('[data-summary="priority"]').text(['低', '中', '高'][state.priority] || '中');
+        $('.uc-ticket-summary__type strong').text(isAfter ? i18n('售后支持') : i18n('售前咨询'));
+        $('[data-summary="priority"]').text([i18n('低'), i18n('中'), i18n('高')][state.priority] || i18n('中'));
 
-        let relation = '尚未选择';
-        if (!isAfter && state.commodity) relation = state.commodity.text || state.commodity.name || '已选择商品';
-        if (isAfter && state.orderMode === 'account' && state.order) relation = state.order.trade_no || '已选择订单';
-        if (isAfter && state.orderMode === 'manual') relation = $('input[name="trade_no"]').val().trim() || '等待输入订单号';
+        let relation = i18n('尚未选择');
+        if (!isAfter && state.commodity) relation = state.commodity.text || state.commodity.name || i18n('已选择商品');
+        if (isAfter && state.orderMode === 'account' && state.order) relation = state.order.trade_no || i18n('已选择订单');
+        if (isAfter && state.orderMode === 'manual') relation = $('input[name="trade_no"]').val().trim() || i18n('等待输入订单号');
         $('[data-summary="relation"]').text(relation).attr('title', relation);
-        $('[data-summary="proof"]').text(isAfter ? (state.proofPath ? '已添加' : '等待上传') : '无需上传')
+        $('[data-summary="proof"]').text(isAfter ? (state.proofPath ? i18n('已添加') : i18n('等待上传')) : i18n('无需上传'))
             .toggleClass('is-ready', isAfter && !!state.proofPath);
     }
 
@@ -117,8 +117,8 @@
         const isAfter = state.type === 1;
         $('.uc-ticket-relation--commodity').prop('hidden', isAfter);
         $('.uc-ticket-relation--order').prop('hidden', !isAfter);
-        $('.uc-ticket-relation-title').text(isAfter ? '关联订单与购买凭证' : '关联商品');
-        $('.uc-ticket-relation-sub').text(isAfter ? '选择本人订单或手动填写订单号，并上传购买凭证' : '可选，关联后客服能更快理解你的问题');
+        $('.uc-ticket-relation-title').text(isAfter ? i18n('关联订单与购买凭证') : i18n('关联商品'));
+        $('.uc-ticket-relation-sub').text(isAfter ? i18n('选择本人订单或手动填写订单号，并上传购买凭证') : i18n('可选，关联后客服能更快理解你的问题'));
         updateSummary();
         setTimeout(() => {
             $('#ticket-commodity, #ticket-order').trigger('change.select2');
@@ -157,7 +157,7 @@
         $('.uc-ticket-proof__preview').prop('hidden', !hasProof);
         if (hasProof) {
             $('.uc-ticket-proof__preview img').attr('src', state.proofPath);
-            $('.uc-ticket-proof__name').text(state.proofName || '已上传的图片');
+            $('.uc-ticket-proof__name').text(state.proofName || i18n('已上传的图片'));
         } else {
             $('.uc-ticket-proof__preview img').attr('src', '');
             $('.uc-ticket-proof__name').text('');
@@ -181,20 +181,20 @@
             },
             before: () => {
                 $('.uc-ticket-proof__drop').addClass('is-uploading').prop('disabled', true)
-                    .find('.uc-ticket-proof__copy strong').text('正在上传图片…');
+                    .find('.uc-ticket-proof__copy strong').text(i18n('正在上传图片…'));
             },
             done: res => {
-                $('.uc-ticket-proof__drop .uc-ticket-proof__copy strong').text('上传购买凭证');
+                $('.uc-ticket-proof__drop .uc-ticket-proof__copy strong').text(i18n('上传购买凭证'));
                 if (!res || res.code !== 200 || !res.data || !res.data.url) {
                     $('.uc-ticket-proof__drop').removeClass('is-uploading').prop('disabled', false);
-                    message.error(res && res.msg ? res.msg : '购买凭证上传失败');
+                    message.error(res && res.msg ? res.msg : i18n('购买凭证上传失败'));
                     return;
                 }
                 setProof(res.data.url, state.proofName, res.data.upload_id);
             },
             error: () => {
                 $('.uc-ticket-proof__drop').removeClass('is-uploading').prop('disabled', false)
-                    .find('.uc-ticket-proof__copy strong').text('上传购买凭证');
+                    .find('.uc-ticket-proof__copy strong').text(i18n('上传购买凭证'));
                 message.error('上传失败，请检查网络后重试');
             }
         });
@@ -211,14 +211,14 @@
         const title = $('input[name="title"]').val().trim();
         const content = editorContent();
         if (state.type === 1) {
-            if (state.orderMode === 'account' && !state.order) return '请选择需要售后支持的订单';
-            if (state.orderMode === 'manual' && !$('input[name="trade_no"]').val().trim()) return '请输入需要售后支持的订单号';
-            if (!state.proofPath) return '请上传购买凭证';
+            if (state.orderMode === 'account' && !state.order) return i18n('请选择需要售后支持的订单');
+            if (state.orderMode === 'manual' && !$('input[name="trade_no"]').val().trim()) return i18n('请输入需要售后支持的订单号');
+            if (!state.proofPath) return i18n('请上传购买凭证');
         }
         const titleLength = Array.from(title).length;
-        if (titleLength < 4) return '工单标题至少需要 4 个字';
-        if (titleLength > 100) return '工单标题不能超过 100 个字';
-        if (!content) return '请填写问题详情';
+        if (titleLength < 4) return i18n('工单标题至少需要 4 个字');
+        if (titleLength > 100) return i18n('工单标题不能超过 100 个字');
+        if (!content) return i18n('请填写问题详情');
         return '';
     }
 
@@ -231,7 +231,7 @@
         }
         state.submitting = true;
         const $button = $('.uc-ticket-submit');
-        $button.prop('disabled', true).addClass('is-loading').find('span:last').text('正在提交…');
+        $button.prop('disabled', true).addClass('is-loading').find('span:last').text(i18n('正在提交…'));
         util.post({
             url: '/user/api/ticket/create',
             data: {
@@ -246,18 +246,18 @@
                 content: editorContent()
             },
             done: res => {
-                message.success(`工单 ${res.data && res.data.ticket_no ? res.data.ticket_no : ''} 已创建`);
+                message.success(`${i18n('工单')} ${res.data && res.data.ticket_no ? res.data.ticket_no : ''} ${i18n('已创建')}`);
                 const target = res.data && res.data.url ? res.data.url : `/user/ticket/detail?id=${encodeURIComponent(res.data.id)}`;
                 setTimeout(() => { window.location.href = target; }, 650);
             },
             error: res => {
                 state.submitting = false;
-                $button.prop('disabled', false).removeClass('is-loading').find('span:last').text('提交工单');
-                message.error(res && res.msg ? res.msg : '工单提交失败');
+                $button.prop('disabled', false).removeClass('is-loading').find('span:last').text(i18n('提交工单'));
+                message.error(res && res.msg ? res.msg : i18n('工单提交失败'));
             },
             fail: () => {
                 state.submitting = false;
-                $button.prop('disabled', false).removeClass('is-loading').find('span:last').text('提交工单');
+                $button.prop('disabled', false).removeClass('is-loading').find('span:last').text(i18n('提交工单'));
                 message.error('网络连接失败，请稍后重试');
             }
         });
@@ -271,8 +271,8 @@
     $('.uc-ticket-proof__remove').on('click', () => setProof('', ''));
     $('.uc-ticket-submit').on('click', submitTicket);
 
-    initRemoteSelect('#ticket-commodity', '/user/api/ticket/commodityOptions', 'commodity', '搜索并选择相关商品（选填）');
-    initRemoteSelect('#ticket-order', '/user/api/ticket/orderOptions', 'order', '搜索商品名称或订单号');
+    initRemoteSelect('#ticket-commodity', '/user/api/ticket/commodityOptions', 'commodity', i18n('搜索并选择相关商品（选填）'));
+    initRemoteSelect('#ticket-order', '/user/api/ticket/orderOptions', 'order', i18n('搜索商品名称或订单号'));
     initProofUpload();
 
     const $editor = $('#ticket-content-editor');
@@ -291,7 +291,7 @@
             allowRawHtml: false
         });
     } else {
-        $editor.html('<div class="uc-ticket-editor-error">编辑器加载失败，请刷新页面后再试。</div>');
+        $editor.html('<div class="uc-ticket-editor-error">' + i18n('编辑器加载失败，请刷新页面后再试。') + '</div>');
     }
 
     switchType(0);

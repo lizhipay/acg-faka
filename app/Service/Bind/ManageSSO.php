@@ -22,6 +22,12 @@ class ManageSSO implements \App\Service\ManageSSO
 {
 
     /**
+     * 账号已绑定谷歌验证器但本次未提交动态码：前端据此弹出谷歌验证码输入框。
+     * 仅在邮箱+密码验证通过后抛出，不向未授权者泄露 2FA 开启状态
+     */
+    public const CODE_NEED_TOTP = 42001;
+
+    /**
      * @param string $username
      * @param string $password
      * @param bool $remember
@@ -52,9 +58,16 @@ class ManageSSO implements \App\Service\ManageSSO
                 }
 
                 //谷歌验证器：已绑定则必须校验动态码（密码通过后才校验，避免暴露 2FA 是否开启）
-                if (!empty($manage->google_secret) && !\App\Util\Totp::verify((string)$manage->google_secret, $code)) {
-                    $failedAudit = [$manage, "登录失败：谷歌验证码错误"];
-                    throw new JSONException("谷歌验证码错误");
+                if (!empty($manage->google_secret)) {
+                    if (trim($code) === '') {
+                        //未提交动态码：用专属 code 通知前端弹出输入框（密码正确却无码也值得留痕）
+                        $failedAudit = [$manage, "登录待验证：密码正确，等待谷歌验证码"];
+                        throw new JSONException("该账号已开启两步验证，请输入谷歌验证码", self::CODE_NEED_TOTP);
+                    }
+                    if (!\App\Util\Totp::verify((string)$manage->google_secret, $code)) {
+                        $failedAudit = [$manage, "登录失败：谷歌验证码错误"];
+                        throw new JSONException("谷歌验证码错误");
+                    }
                 }
 
                 if ($manage->status != 1) {

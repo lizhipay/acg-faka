@@ -26,7 +26,7 @@
                             submit: '/user/api/agentMember/transfer',
                             tab: [
                                 {
-                                    name: "<i class='fa-duotone fa-regular fa-envelope-open-dollar'></i> 转账",
+                                    name: "<i class='fa-duotone fa-regular fa-envelope-open-dollar'></i> " + i18n('转账'),
                                     form: [
                                         {title: false, name: "amount", type: "input", placeholder: "请输入金额"}
                                     ]
@@ -40,7 +40,7 @@
                             done: () => {
                                 table.refresh();
                             },
-                            confirmText: `<i class="fa-duotone fa-regular fa-circle-check"></i>确认转账`
+                            confirmText: `<i class="fa-duotone fa-regular fa-circle-check"></i>${i18n('确认转账')}`
                         });
                     }
                 }

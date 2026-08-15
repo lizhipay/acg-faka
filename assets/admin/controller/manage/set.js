@@ -113,19 +113,19 @@
                 if (!controllerActive || generation !== uploadGeneration) return;
                 if (res.code !== 200 || !res.data || !res.data.url) {
                     restoreSavedAvatar();
-                    layer.msg(res.msg || '头像上传失败');
+                    layer.msg(res.msg || i18n('头像上传失败'));
                     return;
                 }
                 const url = String(res.data.url);
                 $('#data-form input[name="avatar"]').val(url);
                 $('.image-input-wrapper').css('background-image', avatarBackground(url));
                 markAvatarChanged();
-                layer.msg('头像上传成功，保存后生效');
+                layer.msg(i18n('头像上传成功，保存后生效'));
             },
             error: (xhr, status) => {
                 if (!controllerActive || generation !== uploadGeneration || status === 'abort') return;
                 restoreSavedAvatar();
-                layer.msg('网络异常，头像上传失败');
+                layer.msg(i18n('网络异常，头像上传失败'));
             },
             complete: () => {
                 if (generation !== uploadGeneration) return;
@@ -159,7 +159,7 @@
     function saveSettings() {
         if (!controllerActive || saveInFlight) return;
         if (uploadInFlight) {
-            layer.msg('头像正在上传，请稍候');
+            layer.msg(i18n('头像正在上传，请稍候'));
             return;
         }
         const serialized = $("#data-form").serializeArray();
@@ -170,19 +170,19 @@
             ? Object.assign({}, field, {value: normalizedSubmittedAvatar})
             : field));
         if (!String(data.nickname || '').trim()) {
-            focusField('nickname', '昵称不能为空');
+            focusField('nickname', i18n('昵称不能为空'));
             return;
         }
         if (data.password && !data.old_password) {
-            focusField('old_password', '修改密码前请输入旧密码');
+            focusField('old_password', i18n('修改密码前请输入旧密码'));
             return;
         }
         if (data.password && String(data.password).length < 6) {
-            focusField('password', '新密码不能少于 6 位');
+            focusField('password', i18n('新密码不能少于 6 位'));
             return;
         }
         if ((data.password || '') !== (data.re_password || '')) {
-            focusField('re_password', '两次输入的新密码不一致');
+            focusField('re_password', i18n('两次输入的新密码不一致'));
             return;
         }
         const revision = formRevision();
@@ -215,7 +215,7 @@
                 if (!controllerActive) return;
                 saveInFlight = false;
                 syncSaveBusy();
-                message.error(res?.msg || '个人设置保存失败');
+                message.error(res?.msg || i18n('个人设置保存失败'));
             },
             fail: () => {
                 if (!controllerActive) return;
@@ -268,7 +268,7 @@
         container.replaceChildren();
         if (!Array.isArray(list) || list.length === 0) {
             status.className = 'text-muted py-6 text-center';
-            status.textContent = '没有有效的登录设备';
+            status.textContent = i18n('没有有效的登录设备');
             status.style.display = '';
             return;
         }
@@ -290,25 +290,25 @@
             const heading = document.createElement('div');
             heading.className = 'md-device-session__heading';
             const name = document.createElement('strong');
-            name.textContent = String(session.device_name || '未知设备');
+            name.textContent = String(session.device_name || i18n('未知设备'));
             heading.appendChild(name);
             if (session.current) {
                 const badge = document.createElement('span');
                 badge.className = 'badge badge-light-success';
-                badge.textContent = '当前设备';
+                badge.textContent = i18n('当前设备');
                 heading.appendChild(badge);
             }
             const activity = document.createElement('div');
             activity.className = 'md-device-session__meta';
             activity.append(
-                sessionMeta('登录：', session.created_relative, session.created_time),
-                sessionMeta('活跃：', session.last_seen_relative, session.last_seen_time)
+                sessionMeta(i18n('登录：'), session.created_relative, session.created_time),
+                sessionMeta(i18n('活跃：'), session.last_seen_relative, session.last_seen_time)
             );
             const network = document.createElement('div');
             network.className = 'md-device-session__meta md-device-session__network';
             network.append(
-                sessionMeta('登录 IP：', session.login_ip),
-                sessionMeta('最近 IP：', session.last_ip)
+                sessionMeta(i18n('登录 IP：'), session.login_ip),
+                sessionMeta(i18n('最近 IP：'), session.last_ip)
             );
             content.append(heading, activity, network);
             row.append(icon, content);
@@ -318,8 +318,8 @@
                 revoke.type = 'button';
                 revoke.className = 'btn btn-light-danger md-device-session__revoke';
                 revoke.dataset.sessionId = String(Number(session.id));
-                revoke.setAttribute('aria-label', '退出设备 ' + String(session.device_name || '未知设备'));
-                revoke.innerHTML = '<i class="fa-duotone fa-regular fa-right-from-bracket" aria-hidden="true"></i><span>退出</span>';
+                revoke.setAttribute('aria-label', i18n('退出设备 ') + String(session.device_name || i18n('未知设备')));
+                revoke.innerHTML = '<i class="fa-duotone fa-regular fa-right-from-bracket" aria-hidden="true"></i><span>' + i18n('退出') + '</span>';
                 row.appendChild(revoke);
             }
             container.appendChild(row);
@@ -336,7 +336,7 @@
     function loadSessions() {
         if (!controllerActive || sessionsLoading) return;
         sessionsLoading = true;
-        $('#md-device-session-status').removeClass('text-danger').addClass('text-muted').text('正在读取登录设备…').show();
+        $('#md-device-session-status').removeClass('text-danger').addClass('text-muted').text(i18n('正在读取登录设备…')).show();
         $('.md-session-retry').hide();
         util.post({
             url: '/admin/api/manage/deviceSessions',
@@ -349,13 +349,13 @@
             error: res => {
                 sessionsLoading = false;
                 if (!controllerActive) return;
-                $('#md-device-session-status').removeClass('text-muted').addClass('text-danger').text(res?.msg || '登录设备读取失败').show();
+                $('#md-device-session-status').removeClass('text-muted').addClass('text-danger').text(res?.msg || i18n('登录设备读取失败')).show();
                 $('.md-session-retry').css('display', 'flex');
             },
             fail: () => {
                 sessionsLoading = false;
                 if (!controllerActive) return;
-                $('#md-device-session-status').removeClass('text-muted').addClass('text-danger').text('网络异常，登录设备读取失败').show();
+                $('#md-device-session-status').removeClass('text-muted').addClass('text-danger').text(i18n('网络异常，登录设备读取失败')).show();
                 $('.md-session-retry').css('display', 'flex');
             }
         });
@@ -370,14 +370,14 @@
             done: res => {
                 if (!controllerActive) return;
                 setSessionActionsBusy(false);
-                message.success(res?.msg || '操作成功');
+                message.success(res?.msg || i18n('操作成功'));
                 if (typeof onDone === 'function') onDone(res);
                 else loadSessions();
             },
             error: res => {
                 if (!controllerActive) return;
                 setSessionActionsBusy(false);
-                message.error(res?.msg || '设备退出失败');
+                message.error(res?.msg || i18n('设备退出失败'));
             },
             fail: () => {
                 if (!controllerActive) return;

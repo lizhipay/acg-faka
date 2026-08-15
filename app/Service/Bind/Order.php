@@ -81,10 +81,11 @@ class Order implements \App\Service\Order
      * @param UserGroup|null $group
      * @param string|null $race
      * @param bool $disableSubstation
+     * @param array|null $sku
      * @return float
      * @throws JSONException
      */
-    public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group, ?string $race = null, bool $disableSubstation = false): float
+    public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group, ?string $race = null, bool $disableSubstation = false, ?array $sku = []): float
     {
         $premium = 0;
 
@@ -96,20 +97,31 @@ class Order implements \App\Service\Order
             }
         }
 
+        //克隆后再解析：parseConfig会把config原地改成数组并清空level_price，
+        //直接改传入的模型会污染调用方，循环调用时二次解析还会抛"配置解析异常"
+        $commodity = clone $commodity;
+
+        //会员等级自定义解析必须在parseConfig之前完成，parseConfig会清空level_price
+        $userDefinedConfig = Commodity::parseGroupConfig((string)$commodity->level_price, $group);
+
         //解析配置文件
         $this->parseConfig($commodity, $group);
+        $config = (array)$commodity->config;
+
         $price = $owner == 0 ? $commodity->price : $commodity->user_price;
+
+        //种类商品：种类单价优先于商品基础单价
+        if (!empty($race) && isset($config['category'][$race])) {
+            $price = (float)$config['category'][$race];
+        }
 
         //禁用任何折扣,直接计算
         if ($commodity->level_disable == 1) {
             return (int)(string)(($num * ($price + $premium)) * 100) / 100;
         }
 
-        $userDefinedConfig = Commodity::parseGroupConfig((string)$commodity->level_price, $group);
-
-
         if ($userDefinedConfig && $userDefinedConfig['amount'] > 0) {
-            if (!$commodity->race) {
+            if (empty($config['category'])) {
                 //如果自定义价格成功，那么将覆盖其他价格
                 $price = $userDefinedConfig['amount'];
             }
@@ -119,10 +131,10 @@ class Order implements \App\Service\Order
         }
 
         //判定是race还是普通订单
-        if (is_array($commodity->race)) {
-            if (array_key_exists((string)$race, (array)$commodity->category_wholesale)) {
+        if (!empty($config['category'])) {
+            if (!empty($race) && isset($config['category_wholesale'][$race]) && is_array($config['category_wholesale'][$race])) {
                 //判定当前race是否可以折扣
-                $list = $commodity->category_wholesale[$race];
+                $list = $config['category_wholesale'][$race];
                 krsort($list);
                 foreach ($list as $k => $v) {
                     if ($num >= $k) {
@@ -133,12 +145,22 @@ class Order implements \App\Service\Order
             }
         } else {
             //普通订单，直接走批发
-            $list = (array)$commodity->wholesale;
+            $list = (array)($config['wholesale'] ?? []);
             krsort($list);
             foreach ($list as $k => $v) {
                 if ($num >= $k) {
                     $price = $v;
                     break;
+                }
+            }
+        }
+
+        //SKU加价，规则与valuation保持一致
+        if (!empty($sku) && !empty($config['sku']) && is_array($config['sku'])) {
+            foreach ($sku as $k => $v) {
+                $skuPremium = $config['sku'][$k][$v] ?? 0;
+                if (is_numeric($skuPremium) && $skuPremium > 0) {
+                    $price += $skuPremium;
                 }
             }
         }
@@ -250,7 +272,7 @@ class Order implements \App\Service\Order
 
             if ($commodity->shared) {
                 $draft = $this->shared->getDraft($commodity->shared, $commodity->shared_code, $cardId);
-                $draftPremium = $draft['draft_premium'] > 0 ? $this->shared->AdjustmentAmount($commodity->shared_premium_type, $commodity->shared_premium, $draft['draft_premium']) : 0;
+                $draftPremium = $draft['draft_premium'] > 0 ? $this->shared->AdjustmentExtra($commodity, $draft['draft_premium']) : 0;
             } else {
                 $draft = $shop->getDraft($commodity, $cardId);
                 $draftPremium = $draft['draft_premium'];
@@ -336,8 +358,8 @@ class Order implements \App\Service\Order
                 throw new JSONException("该优惠券已过期");
             }
 
-            //检测面额
-            if ($voucher->money >= $price->getAmount()) {
+            //检测面额（仅金额券；百分比券 money 是 0~1 的比例，拿它和价格比会把低价商品误判成免单）
+            if ($voucher->mode == 0 && $voucher->money >= $price->getAmount()) {
                 return "0";
             }
 
@@ -628,7 +650,8 @@ class Order implements \App\Service\Order
             throw new JSONException("当前商品已停售");
         }
 
-        if ($commodity->only_user == 1 || $commodity->purchase_count > 0) {
+        //强制登录：全站开关（issue #791）或商品级"仅限会员购买"/限购
+        if (Config::get("force_login") == 1 || $commodity->only_user == 1 || $commodity->purchase_count > 0) {
             if ($owner == 0) {
                 throw new JSONException("请先登录后再购买哦");
             }
@@ -650,6 +673,10 @@ class Order implements \App\Service\Order
         if ($commodity->widget) {
             $widgetList = (array)json_decode((string)$commodity->widget, true);
             foreach ($widgetList as $item) {
+                //custom 类型是 JS 接管的展示容器（如人机验证），不是输入项：不校验、不入订单
+                if (($item['type'] ?? '') === 'custom') {
+                    continue;
+                }
                 if ($item['regex'] != "") {
                     if (!preg_match("/{$item['regex']}/", (string)$map[$item['name']])) {
                         throw new JSONException($item['error']);
@@ -895,10 +922,16 @@ class Order implements \App\Service\Order
 
             hook(Hook::USER_API_ORDER_TRADE_PAY_BEGIN, $lockedCommodity, $order, $pay);
 
-            if ($order->amount == 0) {
-                //免费赠送
+            $url = "";
+            if ((float)$order->amount <= 0) {
+                //免费赠送(0元订单不走任何支付，也不允许负数金额流入扣款逻辑)
+                $order->amount = "0.00";
                 $order->save();//先将订单保存下来
                 $secret = $this->orderSuccess($order); //提交订单并且获取到卡密信息
+                //0元单没有支付环节，url直接指向订单结果页，避免前端拿到null后相对跳转出 /item/null
+                $url = $owner == 0
+                    ? $clientDomain . '/user/index/query?tradeNo=' . $order->trade_no
+                    : $clientDomain . '/user/personal/purchaseRecord?tradeNo=' . $order->trade_no;
             } else {
                 if ($pay->handle == "#system") {
                     //余额购买
@@ -922,6 +955,8 @@ class Order implements \App\Service\Order
                     //发卡
                     $order->save();//先将订单保存下来
                     $secret = $this->orderSuccess($order); //提交订单并且获取到卡密信息
+                    //余额支付同样没有收银环节，补上结果页url，避免API调用方拿到null
+                    $url = $clientDomain . '/user/personal/purchaseRecord?tradeNo=' . $order->trade_no;
                 } else {
                     //开始进行远程下单
                     $class = "\\App\\Pay\\{$pay->handle}\\Impl\\Pay";
@@ -1326,23 +1361,24 @@ class Order implements \App\Service\Order
         }
 
         $data = [];
-        $config = Ini::toArray($commodity->config);
+        $config = Ini::toArray((string)$commodity->config);
 
-        if (is_array($config['category']) && !in_array($race, $config['category'])) {
+        //category和sku的配置都是 键=>价格 的映射，校验必须查键名而不是价格值
+        if (!empty($config['category']) && is_array($config['category']) && !array_key_exists((string)$race, $config['category'])) {
             throw new JSONException("宝贝分类选择错误");
         }
 
-        if (is_array($config['sku'])) {
+        if (!empty($config['sku']) && is_array($config['sku'])) {
             if (empty($sku) || !is_array($sku)) {
                 throw new JSONException("请选择SKU");
             }
 
             foreach ($config['sku'] as $sk => $ks) {
-                if (!in_array($sk, $sku)) {
+                if (!array_key_exists($sk, $sku)) {
                     throw new JSONException("请选择{$sk}");
                 }
 
-                if (!in_array($sku[$sk], $ks)) {
+                if (!is_array($ks) || !array_key_exists($sku[$sk], $ks)) {
                     throw new JSONException("{$sk}中不存在{$sku[$sk]}，请选择正确的SKU");
                 }
             }
@@ -1385,7 +1421,7 @@ class Order implements \App\Service\Order
         if ($user) {
             $ow = $user->id;
         }
-        $amount = $this->calcAmount($ow, $num, $commodity, $userGroup, $race);
+        $amount = $this->calcAmount($ow, $num, $commodity, $userGroup, $race, sku: $sku);
         if ($cardId != 0 && $commodity->draft_status == 1) {
             $amount = $amount + $commodity->draft_premium;
         }
@@ -1420,12 +1456,12 @@ class Order implements \App\Service\Order
 
             //sku
             if ($voucher->sku && is_array($voucher->sku) && $voucher->commodity_id != 0) {
-                if (!is_array(empty($sku))) {
+                if (!is_array($sku)) {
                     throw new JSONException("此优惠券不适用当前商品");
                 }
 
                 foreach ($voucher->sku as $key => $sk) {
-                    if (isset($sku[$key])) {
+                    if (!isset($sku[$key])) {
                         throw new JSONException("此优惠券不适用此SKU");
                     }
 
@@ -1450,8 +1486,8 @@ class Order implements \App\Service\Order
                 throw new JSONException("该优惠券已过期");
             }
 
-            //检测面额
-            if ($voucher->money >= $amount) {
+            //检测面额（仅金额券；百分比券 money 是 0~1 的比例，低价订单会被误判"面额大于订单金额"而无法用券）
+            if ($voucher->mode == 0 && $voucher->money >= $amount) {
                 throw new JSONException("该优惠券面额大于订单金额");
             }
 

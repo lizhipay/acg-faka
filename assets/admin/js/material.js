@@ -270,7 +270,7 @@
    * 供 商家/所属者/创建者 等列使用。 */
   window.mdOwnerCell = function (item) {
     if (!item) {
-      return '<span class="text-success fw-bold">主站</span>';
+      return '<span class="text-success fw-bold">' + i18n('主站') + '</span>';
     }
     return mdUserCell(item);
   };

@@ -174,9 +174,9 @@
                 this.updateNum++;
             }
 
-            $('#updateNum').html('<b class="text-danger">[' + this.updateNum + ']个插件需要更新</b>');
+            $('#updateNum').html('<b class="text-danger">[' + this.updateNum + ']' + i18n('个插件需要更新') + '</b>');
 
-            return ' <span style="cursor: pointer;" class="badge badge-light-success updatePlugin">更新-&gt;' + escapeHtml(plugin.version) + '</span>';
+            return ' <span style="cursor: pointer;" class="badge badge-light-success updatePlugin">' + i18n('更新-&gt;') + escapeHtml(plugin.version) + '</span>';
         }
     }
 
@@ -186,7 +186,7 @@
             message.error("初始化更新失败，请刷新页面重试");
             return;
         }
-        const updateContent = escapeHtml(plugin?.update_content || '该更新没有提供说明').replace(/\n/g, '<br>');
+        const updateContent = escapeHtml(plugin?.update_content || i18n('该更新没有提供说明')).replace(/\n/g, '<br>');
         message.ask(updateContent, () => {
             if (!controllerActive) return;
             util.post('/admin/api/app/upgrade', {
@@ -198,7 +198,7 @@
                 message.info(res.msg);
                 if (res.code == 200) window.location.reload();
             });
-        }, `<b class="text-primary"><i class="fa-duotone fa-regular fa-sparkles"></i> ${escapeHtml(pluginDisplayText(row.NAME) || row.id)}</b> <span class="text-primary" style="font-size:14px;">${escapeHtml(row.VERSION)}</span> <i class="fa-duotone fa-regular fa-right-long text-danger"></i> <span class="text-success" style="font-size:14px;">${escapeHtml(plugin.version)}</span>`, "立即更新");
+        }, `<b class="text-primary"><i class="fa-duotone fa-regular fa-sparkles"></i> ${escapeHtml(pluginDisplayText(row.NAME) || row.id)}</b> <span class="text-primary" style="font-size:14px;">${escapeHtml(row.VERSION)}</span> <i class="fa-duotone fa-regular fa-right-long text-danger"></i> <span class="text-success" style="font-size:14px;">${escapeHtml(plugin.version)}</span>`, i18n("立即更新"));
     };
 
     const modal = (title, assign = {}) => {
@@ -235,16 +235,16 @@
             field: 'plugin_name', title: '插件名称', formatter: function (val, item) {
                 const icon = normalizeHttpUrl(item?.icon);
                 const iconHtml = icon ? `<img src="${escapeHtml(icon.href)}" class="md-plugin__icon" alt="">` : '<span class="md-plugin__icon material-icons-outlined" aria-hidden="true">extension</span>';
-                const name = sanitizePluginDisplayHtml(item?.NAME) || escapeHtml(item?.id || '未命名插件');
+                const name = sanitizePluginDisplayHtml(item?.NAME) || escapeHtml(item?.id || i18n('未命名插件'));
                 return `<div class="md-plugin">${iconHtml}<span class="md-plugin__name">${name}</span></div>`;
             }
         }
         , {
             field: 'status', title: '状态', formatter: function (val, item) {
                 if (item.PLUGIN_CONFIG && item.PLUGIN_CONFIG.STATUS == 1) {
-                    return '<span class="badge badge-light-success plugin-state" data-id="' + item.id + '">运行中</span>';
+                    return '<span class="badge badge-light-success plugin-state" data-id="' + item.id + '">' + i18n('运行中') + '</span>';
                 }
-                return '<span class="badge badge-light-danger plugin-state" data-id="' + item.id + '">未启用</span>';
+                return '<span class="badge badge-light-danger plugin-state" data-id="' + item.id + '">' + i18n('未启用') + '</span>';
             }
         }
         , {
@@ -260,12 +260,12 @@
                             util.post("/admin/api/plugin/setConfig", {id: row.id, STATUS: 0}, res => {
                                 if (!controllerActive) return;
                                 table.refresh();
-                                $('.plugin-state[data-id=' + row.id + ']').removeClass("badge-light-success").addClass("badge-light-danger").html("已停止");
+                                $('.plugin-state[data-id=' + row.id + ']').removeClass("badge-light-success").addClass("badge-light-danger").html(i18n("已停止"));
                                 layer.msg(res.msg);
                             });
                         };
                         if (mobileAdminEnabled()) {
-                            message.ask(`停用后，插件 <b class="text-danger">${escapeHtml(pluginDisplayText(row.NAME) || row.id)}</b> 的相关功能将立即停止。确认继续吗？`, stopPlugin, '确认停用插件？', '确认停用');
+                            message.ask(`${i18n('停用后，插件')} <b class="text-danger">${escapeHtml(pluginDisplayText(row.NAME) || row.id)}</b> ${i18n('的相关功能将立即停止。确认继续吗？')}`, stopPlugin, i18n('确认停用插件？'), i18n('确认停用'));
                         } else {
                             stopPlugin();
                         }
@@ -280,7 +280,7 @@
                         util.post("/admin/api/plugin/setConfig", {id: row.id, STATUS: 1}, res => {
                             if (!controllerActive) return;
                             table.refresh();
-                            $('.plugin-state[data-id=' + row.id + ']').removeClass("badge-light-danger").addClass("badge-light-success").html("已启动");
+                            $('.plugin-state[data-id=' + row.id + ']').removeClass("badge-light-danger").addClass("badge-light-success").html(i18n("已启动"));
                             layer.msg(res.msg);
                         });
                     }
@@ -308,8 +308,8 @@
                                 type: 1,
                                 shade: 0.4,
                                 shadeClose: true,
-                                title: '<i class="fa-duotone fa-regular fa-ban-bug"></i> 日志',
-                                btn: ["清空日志", "关闭"],
+                                title: '<i class="fa-duotone fa-regular fa-ban-bug"></i> ' + i18n('日志'),
+                                btn: [i18n("清空日志"), i18n("关闭")],
                                 content: '<textarea class="log-textarea form-control" style="width:100%;height:100%;resize:none;"></textarea>',
                                 area: mobile ? ["100%", "100%"] : ["860px", "660px"],
                                 skin: mobile ? 'admin-mobile-layer-popup admin-mobile-layer-popup--task admin-mobile-layer-popup--danger-action md-plugin-log-layer' : 'md-plugin-log-layer',
@@ -322,9 +322,9 @@
                                         util.post('/admin/api/plugin/ClearPluginLog', {handle: mapItem.id}, res => {
                                             if (!controllerActive || _LogPid !== logPid || !$logText) return;
                                             $logText.val('');
-                                            layer.msg("日志已清空");
+                                            layer.msg(i18n("日志已清空"));
                                         });
-                                    }, '确认清空日志？', '确认清空');
+                                    }, i18n('确认清空日志？'), i18n('确认清空'));
                                     return false;
                                 },
                                 success: (layero, index) => {
@@ -390,13 +390,13 @@
                     return '-';
                 }
                 const wiki = normalizeHttpUrl(item.wiki);
-                return wiki ? '<a class="badge badge-light-primary" href="' + escapeHtml(wiki.href) + '" target="_blank" rel="noopener noreferrer">文档</a>' : '-';
+                return wiki ? '<a class="badge badge-light-primary" href="' + escapeHtml(wiki.href) + '" target="_blank" rel="noopener noreferrer">' + i18n('文档') + '</a>' : '-';
             }
         }
         , {
             field: 'version',
             class: "nowrap",
-            title: '<span id="updateNum">版本号</span>',
+            title: '<span id="updateNum">' + i18n('版本号') + '</span>',
             formatter: function (val, item) {
                 return '<span class="md-version">v' + escapeHtml(item.VERSION) + '</span>' + pluginUpdate.renderButton(item.id, item.VERSION);
             }
@@ -442,7 +442,7 @@
                 {
                     icon: 'fa-duotone fa-regular fa-trash-can text-danger',
                     click: (event, value, row, index) => {
-                        message.ask(`你想要卸载 <b class="text-danger">${escapeHtml(pluginDisplayText(row.NAME) || row.id)}</b> 吗，该操作会清空插件所有数据，且无法恢复，请慎重操作！`, () => {
+                        message.ask(`${i18n('你想要卸载')} <b class="text-danger">${escapeHtml(pluginDisplayText(row.NAME) || row.id)}</b> ${i18n('吗，该操作会清空插件所有数据，且无法恢复，请慎重操作！')}`, () => {
                             if (!controllerActive) return;
                             util.post('/admin/api/app/uninstall', {
                                 plugin_key: row.id,
@@ -468,7 +468,7 @@
     table.onResponse(response => {
         pluginUpdate.updateNum = 0;
         pluginUpdate.countedKeys.clear();
-        $(`#updateNum`).html("版本号");
+        $(`#updateNum`).html(i18n("版本号"));
         (response?.data?.list ?? []).forEach(item => {
             const available = pluginUpdate.getAvailable(item.id, item.VERSION);
             item.__adminMobilePluginUpdateVersion = available?.version ?? '';
@@ -481,7 +481,7 @@
     $('.plugin-start').click(() => {
         let plugins = table.getSelections();
         if (plugins.length == 0) {
-            layer.msg("请至少勾选1个插件进行操作！");
+            layer.msg(i18n("请至少勾选1个插件进行操作！"));
             return;
         }
         const $startIns = $('.plugin-start span');
@@ -494,7 +494,7 @@
                     resolve(false);
                     return;
                 }
-                $startIns.html(`正在启动 ${index}/${plugins.length}`);
+                $startIns.html(`${i18n('正在启动')} ${index}/${plugins.length}`);
                 const plugin = plugins[index];
                 index++;
                 if (plugin && (plugin?.PLUGIN_CONFIG?.STATUS == 0 || !plugin?.PLUGIN_CONFIG?.hasOwnProperty("STATUS"))) {
@@ -502,7 +502,7 @@
                         url: "/admin/api/plugin/setConfig",
                         data: {id: plugin.id, STATUS: 1},
                         done: res => {
-                            if (controllerActive) $('.plugin-state[data-id=' + plugin.id + ']').removeClass("badge-light-danger").addClass("badge-light-success").html("已启动");
+                            if (controllerActive) $('.plugin-state[data-id=' + plugin.id + ']').removeClass("badge-light-danger").addClass("badge-light-success").html(i18n("已启动"));
                             resolve(controllerActive);
                         },
                         error: () => {
@@ -520,7 +520,7 @@
                 }
 
                 table.refresh();
-                $startIns.html(`启动插件`);
+                $startIns.html(`${i18n('启动插件')}`);
                 closeControllerLayer(startLoadIndex);
                 resolve(false);
             });
@@ -530,7 +530,7 @@
     $('.plugin-stop').click(() => {
         let plugins = table.getSelections();
         if (plugins.length == 0) {
-            layer.msg("请至少勾选1个插件进行操作！");
+            layer.msg(i18n("请至少勾选1个插件进行操作！"));
             return;
         }
         const stopPlugins = () => {
@@ -543,7 +543,7 @@
                         resolve(false);
                         return;
                     }
-                    $stopIns.html(`正在停止 ${index}/${plugins.length}`);
+                    $stopIns.html(`${i18n('正在停止')} ${index}/${plugins.length}`);
                     const plugin = plugins[index];
                     index++;
                     if (plugin && plugin?.PLUGIN_CONFIG?.STATUS == 1) {
@@ -551,7 +551,7 @@
                             url: "/admin/api/plugin/setConfig",
                             data: {id: plugin.id, STATUS: 0},
                             done: res => {
-                                if (controllerActive) $('.plugin-state[data-id=' + plugin.id + ']').removeClass("badge-light-success").addClass("badge-light-danger").html("已停止");
+                                if (controllerActive) $('.plugin-state[data-id=' + plugin.id + ']').removeClass("badge-light-success").addClass("badge-light-danger").html(i18n("已停止"));
                                 resolve(controllerActive);
                             },
                             error: () => {
@@ -569,14 +569,14 @@
                     }
 
                     table.refresh();
-                    $stopIns.html(`停止插件`);
+                    $stopIns.html(`${i18n('停止插件')}`);
                     closeControllerLayer(startLoadIndex);
                     resolve(false);
                 });
             }, 300, true);
         };
         if (mobileAdminEnabled()) {
-            message.ask(`将停止已选中的 ${plugins.length} 个插件，相关功能会立即不可用。确认继续吗？`, stopPlugins, '确认批量停用？', '确认停用');
+            message.ask(`${i18n('将停止已选中的')} ${plugins.length} ${i18n('个插件，相关功能会立即不可用。确认继续吗？')}`, stopPlugins, i18n('确认批量停用？'), i18n('确认停用'));
         } else {
             stopPlugins();
         }
@@ -601,7 +601,7 @@
                             resolve(false);
                             return;
                         }
-                        $updateIns.html(`正在检查并更新 ${index}/${res?.list?.length}`);
+                        $updateIns.html(`${i18n('正在检查并更新')} ${index}/${res?.list?.length}`);
                         const plugin = res?.list[index];
 
                         index++;
@@ -639,7 +639,7 @@
                         }
 
                         table.refresh();
-                        $updateIns.html(`一键更新全部插件`);
+                        $updateIns.html(`${i18n('一键更新全部插件')}`);
                         closeControllerLayer(startLoadIndex);
                         resolve(false);
                         if (controllerActive) window.location.reload();

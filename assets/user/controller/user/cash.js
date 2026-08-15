@@ -18,12 +18,12 @@
         }
 
         const $selected = selectedMethod();
-        const name = $selected.data('name') || $.trim($selected.text()) || '未选择';
+        const name = $selected.data('name') || $.trim($selected.text()) || i18n('未选择');
         const instant = $selected.data('speed') === 'instant';
         $('.uc-cash-method-name').text(name);
         $('.uc-cash-method-note').text(instant
-            ? '扣除手续费后即时转入站内钱包，可直接用于购买商品。'
-            : '提交申请后由管理员处理，到账时间以收款渠道为准。');
+            ? i18n('扣除手续费后即时转入站内钱包，可直接用于购买商品。')
+            : i18n('提交申请后由管理员处理，到账时间以收款渠道为准。'));
     }
 
     function selectMethod($method, notify) {
@@ -86,17 +86,17 @@
             let error = '';
 
             if (coin <= 0) {
-                error = '当前暂无可兑现硬币';
+                error = i18n('当前暂无可兑现硬币');
             } else if (!Number.isFinite(amount) || amount <= 0) {
-                error = '请输入有效的兑现数量';
+                error = i18n('请输入有效的兑现数量');
             } else if (amount < minimum) {
-                error = `最低可兑现 ${formatAmount(minimum)} 硬币`;
+                error = `${i18n('最低可兑现')} ${formatAmount(minimum)} ${i18n('硬币')}`;
             } else if (amount <= fee) {
-                error = `兑现数量需高于 ${formatAmount(fee)} 硬币手续费`;
+                error = `${i18n('兑现数量需高于')} ${formatAmount(fee)} ${i18n('硬币手续费')}`;
             } else if (amount > coin) {
-                error = `最多可兑现 ${formatAmount(coin)} 硬币`;
+                error = `${i18n('最多可兑现')} ${formatAmount(coin)} ${i18n('硬币')}`;
             } else if (cashWallet === undefined) {
-                error = '暂无可用的到账方式';
+                error = i18n('暂无可用的到账方式');
             }
 
             currentSummary = {
@@ -108,12 +108,12 @@
 
             $('.uc-cash-gross').text(formatAmount(safeAmount));
             $('.uc-cash-net').text(formatAmount(net));
-            $('.uc-cash-fee').text(`-${formatAmount(fee)} 元`);
+            $('.uc-cash-fee').text(`-${formatAmount(fee)} ${i18n('元')}`);
             $status.toggleClass('is-error', !currentSummary.valid).toggleClass('is-ok', currentSummary.valid);
             $status.find('.material-icons-outlined').text(currentSummary.valid ? 'check_circle' : 'info');
-            $('.uc-cash-status-text').text(currentSummary.valid ? '金额可用，确认后即可提交' : error);
+            $('.uc-cash-status-text').text(currentSummary.valid ? i18n('金额可用，确认后即可提交') : error);
             $submit.prop('disabled', !currentSummary.valid).attr('aria-disabled', String(!currentSummary.valid));
-            $('.uc-cash-submit__label').text(currentSummary.valid ? '确认兑现' : '暂不可兑现');
+            $('.uc-cash-submit__label').text(currentSummary.valid ? i18n('确认兑现') : i18n('暂不可兑现'));
 
             return currentSummary;
         }
@@ -147,8 +147,8 @@
         }
 
         const confirmText = hasCashPage
-            ? `确认兑现 ${currentSummary.amount} 硬币？扣除 ${currentSummary.fee} 元手续费后，预计到账 ${currentSummary.net} 元。`
-            : '确认是否兑现？';
+            ? `${i18n('确认兑现')} ${currentSummary.amount} ${i18n('硬币？扣除')} ${currentSummary.fee} ${i18n('元手续费后，预计到账')} ${currentSummary.net} ${i18n('元。')}`
+            : i18n('确认是否兑现？');
 
         message.ask(confirmText, () => {
             util.post('/user/api/cash/submit', {

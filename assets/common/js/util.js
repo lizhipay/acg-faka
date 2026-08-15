@@ -281,7 +281,7 @@ const util = new class Util {
                     if (typeof error === 'function') {
                         error(res);
                     } else if (error !== false) {
-                        util.stdout(`POST(致命异常): ${url} | 请将下面信息截图反馈给维护人员:\n`, "red", util.redactDebugValue(res, url, "response"));
+                        util.stdout(`POST(${i18n('致命异常')}): ${url} | ${i18n('请将下面信息截图反馈给维护人员')}:\n`, "red", util.redactDebugValue(res, url, "response"));
                         message.error("服务器数据返回错误，可通过F12查看浏览器错误并且反馈给维护人员");
                     }
                 }
@@ -801,7 +801,7 @@ const util = new class Util {
                 },
                 error: function (data) {
                     Loading.hide();
-                    layer.msg('网络错误');
+                    layer.msg(i18n('网络错误'));
                 }
             });
         });

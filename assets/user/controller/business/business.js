@@ -12,14 +12,14 @@
 
         $(`.payButton`).click(() => {
             if (!groupId) {
-                layer.msg("请先选择要开通的套餐");
+                layer.msg(i18n("请先选择要开通的套餐"));
                 return;
             }
 
             util.post("/user/api/business/purchase", {
                 levelId: groupId
             }, res => {
-                layer.msg("开通成功");
+                layer.msg(i18n("开通成功"));
                 window.location.href = "/user/business/index";
             });
         });
@@ -61,7 +61,7 @@
                 submit: '/user/api/master/setCommodityAllPremium',
                 tab: [
                     {
-                        name: `<i class="fa-duotone fa-regular fa-hand-holding-dollar"></i> ${globalCategoryName ? `仅分类：<span class="text-success">${globalCategoryName}</span> 下的商品生效` : "全部商品"}`,
+                        name: `<i class="fa-duotone fa-regular fa-hand-holding-dollar"></i> ${globalCategoryName ? `${i18n('仅分类：')}<span class="text-success">${globalCategoryName}</span> ${i18n('下的商品生效')}` : i18n("全部商品")}`,
                         form: [
                             {title: "cid", name: "category_id", type: "input", hide: true},
                             {
@@ -72,6 +72,18 @@
                                 tips: "比如一个商品市场价 100 元，如果你填写了 50，售价就是：\n" +
                                     "100 + (100 × 0.5) = 150 元。\n" +
                                     "如果你的进货价是 70 元，那么最终利润就是：150 - 70 = 80 元。".replace("\n", "<br>")
+                            },
+                            {
+                                title: "价格取整",
+                                name: "rounding",
+                                type: "select",
+                                dict: [
+                                    {id: 0, name: "不取整（保留小数）"},
+                                    {id: 1, name: "四舍五入到整元"},
+                                    {id: 2, name: "向上取整到整元"}
+                                ],
+                                default: 0,
+                                tips: "按百分比加价后价格出现小数时的处理方式，例如加价后 3.66 元：四舍五入 → 4 元、向上取整 → 4 元；加价后 3.20 元：四舍五入 → 3 元、向上取整 → 4 元。仅对设置了加价的商品生效。"
                             }
                         ]
                     }
@@ -220,7 +232,7 @@
                                 submit: '/user/api/master/setCategory',
                                 tab: [
                                     {
-                                        name: `${util.icon("fa-duotone fa-regular fa-gear")} ${row.name}`,
+                                        name: `${util.icon("fa-duotone fa-regular fa-gear")} ${i18n(row.name)}`,
                                         form: [
                                             {title: "cid", name: "category_id", type: "input", hide: true},
                                             {
@@ -316,7 +328,9 @@
                     if (!item.user_commodity || item.user_commodity.premium == 0) {
                         return '-';
                     }
-                    return format.badge(`${item.user_commodity.premium}%`, "a-badge-success");
+                    const rounding = Number(item.user_commodity.rounding || 0);
+                    const roundingMark = rounding === 1 ? ` · ${i18n('四舍五入')}` : (rounding === 2 ? ` · ${i18n('向上取整')}` : '');
+                    return format.badge(`${item.user_commodity.premium}%${roundingMark}`, "a-badge-success");
                 }
             },
             {
@@ -339,7 +353,7 @@
                                 submit: '/user/api/master/setCommodity',
                                 tab: [
                                     {
-                                        name: `${util.icon("fa-duotone fa-regular fa-gear")} ${row.name}`,
+                                        name: `${util.icon("fa-duotone fa-regular fa-gear")} ${i18n(row.name)}`,
                                         form: [
                                             {title: "cid", name: "commodity_id", type: "input", hide: true},
                                             {
@@ -350,6 +364,14 @@
                                                 placeholder: "自定义商品名称，不填写代表使用主站的，支持HTML美化代码"
                                             },
                                             {
+                                                title: "自定义商品介绍",
+                                                name: "description",
+                                                type: "textarea",
+                                                height: 160,
+                                                placeholder: "不填写代表使用主站的商品介绍，支持HTML",
+                                                tips: "主站的介绍里可能带有主站自己的广告或联系方式，可以在这里改成你自己的。留空则继续沿用主站介绍。"
+                                            },
+                                            {
                                                 title: "加价百分比",
                                                 name: "premium",
                                                 type: "input",
@@ -357,6 +379,18 @@
                                                 tips: "比如一个商品市场价 100 元，如果你填写了 50，售价就是：\n" +
                                                     "100 + (100 × 0.5) = 150 元。\n" +
                                                     "如果你的进货价是 70 元，那么最终利润就是：150 - 70 = 80 元。".replace("\n", "<br>")
+                                            },
+                                            {
+                                                title: "价格取整",
+                                                name: "rounding",
+                                                type: "select",
+                                                dict: [
+                                                    {id: 0, name: "不取整（保留小数）"},
+                                                    {id: 1, name: "四舍五入到整元"},
+                                                    {id: 2, name: "向上取整到整元"}
+                                                ],
+                                                default: 0,
+                                                tips: "按百分比加价后价格出现小数时的处理方式。仅对设置了加价的商品生效。"
                                             },
                                             {title: "状态", name: "status", type: "switch", text: "显示|隐藏"}
                                         ]

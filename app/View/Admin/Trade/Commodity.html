@@ -9,8 +9,8 @@
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
             <!--begin::Row-->
-            <h2 class="admin-mobile-only-section">商品概览</h2>
-            <div class="md-stat-grid" data-admin-mobile-stats="mini" role="region" aria-label="商品数据概览">
+            <h2 class="admin-mobile-only-section">#{t("商品概览")}</h2>
+            <div class="md-stat-grid" data-admin-mobile-stats="mini" role="region" aria-label="#{t('商品数据概览')}">
                 #{include file="../Component/StatCard.html" accent="primary" icon="fa-box" label="总商品" value=$all}
                 #{include file="../Component/StatCard.html" accent="success" icon="fa-boxes" label="已上架" value=$shelves}
                 #{include file="../Component/StatCard.html" accent="danger" icon="fa-box" label="未上架" value=$not}
@@ -21,24 +21,24 @@
             <!--end::Row-->
 
             <!--begin::Tables Widget 9-->
-            <h2 class="admin-mobile-only-section">商品列表</h2>
+            <h2 class="admin-mobile-only-section">#{t("商品列表")}</h2>
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->
                 <div class="card-header border-0">
                     <div class="card-toolbar">
                         <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i class="fa-duotone fa-regular fa-circle-plus"></i>
-                            添加商品
+                            #{t("添加商品")}
                         </button>
                         <button class="btn btn-sm btn-light-success listed me-3"><i class="fa-duotone fa-regular fa-up-from-bracket"></i>
-                            上架选中商品
+                            #{t("上架选中商品")}
                         </button>
                         <button class="btn btn-sm btn-light-dark delist me-3"><i class="fa-duotone fa-regular fa-down-to-bracket"></i>
-                            下架选中商品
+                            #{t("下架选中商品")}
                         </button>
                         <button class="btn btn-sm btn-light-primary handle me-3"><i class="fa-duotone fa-regular fa-rotate"></i>
-                            一键操作选中商品
+                            #{t("一键操作选中商品")}
                         </button>
-                        <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fa-duotone fa-regular fa-trash-can"></i> 移除选中商品
+                        <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fa-duotone fa-regular fa-trash-can"></i> #{t("移除选中商品")}
                         </button>
                         <!--start::HOOK-->
                         #{hook(\App\Consts\Hook::ADMIN_VIEW_COMMODITY_TOOLBAR)}

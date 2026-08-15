@@ -15,18 +15,18 @@
                     <div class="card-toolbar">
                         <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i
                                     class="fa-duotone fa-regular fa-circle-plus"></i>
-                            添加分类
+                            #{t("添加分类")}
                         </button>
                         <button class="btn btn-sm btn-light-success start me-3"><i
                                     class="fa-duotone fa-regular fa-circle-play"></i>
-                            启用选中分类
+                            #{t("启用选中分类")}
                         </button>
                         <button class="btn btn-sm btn-light-dark stop me-3"><i
                                     class="fa-duotone fa-regular fa-circle-stop"></i>
-                            停用选中分类
+                            #{t("停用选中分类")}
                         </button>
                         <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i
-                                    class="fa-duotone fa-regular fa-trash-can"></i> 移除选中分类
+                                    class="fa-duotone fa-regular fa-trash-can"></i> #{t("移除选中分类")}
                         </button>
                         <!--start::HOOK-->
                         #{hook(\App\Consts\Hook::ADMIN_VIEW_CATEGORY_TOOLBAR)}

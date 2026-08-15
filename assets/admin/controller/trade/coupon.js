@@ -15,6 +15,8 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    // money 是"抵扣比例"（计算端扣掉 price×money），折数 = 实付比例×10：0.3 → 7折、0.99 → 0.1折（issue #784）
+    const couponZhe = money => Math.round((1 - money) * 1000) / 100;
     const safeImageUrl = value => {
         const raw = String(value ?? '').trim();
         if (!raw) return '';
@@ -33,8 +35,8 @@
         if (!item) {
             return '<div class="md-user-cell"><span class="md-user-cell__avatar md-user-cell__avatar--ph">'
                 + '<i class="fa-duotone fa-regular fa-shop"></i></span>'
-                + '<div class="md-user-cell__text"><span class="md-user-cell__name">主站</span>'
-                + '<span class="md-user-cell__id">系统</span></div></div>';
+                + '<div class="md-user-cell__text"><span class="md-user-cell__name">' + i18n('主站') + '</span>'
+                + '<span class="md-user-cell__id">' + i18n('系统') + '</span></div></div>';
         }
         const name = String(item.username ?? '');
         const id = String(item.id ?? '');
@@ -90,12 +92,12 @@
             const url = URL.createObjectURL(result.blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `优惠券导出-${count}-${new Date().toISOString().slice(0, 10)}.txt`;
+            link.download = `${i18n('优惠券导出')}-${count}-${new Date().toISOString().slice(0, 10)}.txt`;
             document.body.appendChild(link);
             link.click();
             link.remove();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
-            if (controllerActive) message.success(`已安全导出 ${count} 张优惠券`);
+            if (controllerActive) message.success(`${i18n('已安全导出')} ${count} ${i18n('张优惠券')}`);
         } catch (error) {
             if (controllerActive) message.alert(error.message || '导出失败', 'error');
         } finally {
@@ -115,7 +117,7 @@
                 const couponCount = Number(impact.coupon_count || list.length);
                 if (impact.can_delete !== true) {
                     message.alert(
-                        `所选 ${couponCount} 张优惠券中，包含 ${Number(impact.used_count || 0)} 张已使用优惠券、${Number(impact.trade_no_count || 0)} 张带最后使用订单号的优惠券，另有 ${Number(impact.order_reference_count || 0)} 笔订单引用。系统已整批阻止删除，以保护历史记录。`,
+                        `${i18n('所选')} ${couponCount} ${i18n('张优惠券中，包含')} ${Number(impact.used_count || 0)} ${i18n('张已使用优惠券、')}${Number(impact.trade_no_count || 0)} ${i18n('张带最后使用订单号的优惠券，另有')} ${Number(impact.order_reference_count || 0)} ${i18n('笔订单引用。系统已整批阻止删除，以保护历史记录。')}`,
                         'warning'
                     );
                     return;
@@ -126,10 +128,10 @@
                     .slice(0, 4)
                     .map(code => escapeHtml(code));
                 const previewText = preview.length > 0
-                    ? `<br><br>券码预览：${preview.join('、')}${couponCount > preview.length ? ' 等' : ''}`
+                    ? `<br><br>${i18n('券码预览：')}${preview.join('、')}${couponCount > preview.length ? i18n(' 等') : ''}`
                     : '';
                 message.ask(
-                    `将永久删除 <b>${couponCount} 张未使用优惠券</b>（其中锁定 ${Number(impact.locked_count || 0)} 张）。${previewText}<br><br>删除后无法恢复，确认继续吗？`,
+                    `${i18n('将永久删除')} <b>${couponCount} ${i18n('张未使用优惠券')}</b>（${i18n('其中锁定')} ${Number(impact.locked_count || 0)} ${i18n('张）。')}${previewText}<br><br>${i18n('删除后无法恢复，确认继续吗？')}`,
                     done,
                     '确认永久删除优惠券',
                     '确认删除'
@@ -168,18 +170,18 @@
         const okN = Number(data.success || 0);
         const failN = Number(data.error || 0);
         const mobile = mobileAdminEnabled();
-        const meta = `<span class="a-badge a-badge-success">成功 ${okN} 张</span>`
-            + (failN > 0 ? `<span class="a-badge a-badge-danger">失败 ${failN} 张</span>` : '');
+        const meta = `<span class="a-badge a-badge-success">${i18n('成功')} ${okN} ${i18n('张')}</span>`
+            + (failN > 0 ? `<span class="a-badge a-badge-danger">${i18n('失败')} ${failN} ${i18n('张')}</span>` : '');
         openControllerLayer({
             type: 1,
-            title: `${util.icon("fa-duotone fa-regular fa-circle-check")} 优惠券生成成功`,
+            title: `${util.icon("fa-duotone fa-regular fa-circle-check")} ${i18n('优惠券生成成功')}`,
             area: mobile ? ["100%", "100%"] : '480px',
             skin: mobile ? 'admin-mobile-layer-popup admin-mobile-layer-popup--task md-coupon-result-layer' : 'md-coupon-result-layer',
             maxmin: false,
             resize: !mobile,
             move: !mobile,
             shadeClose: true,
-            content: `<div class="md-secret"><div class="md-secret__meta">${meta}</div><div class="md-secret__code">${escapeHtml(codes)}</div><div class="md-secret__bar"><button type="button" class="md-secret__btn" data-act="copy">${util.icon("fa-duotone fa-regular fa-copy")} 复制</button><button type="button" class="md-secret__btn md-secret__btn--primary" data-act="download">${util.icon("fa-duotone fa-regular fa-download")} 下载</button></div></div>`,
+            content: `<div class="md-secret"><div class="md-secret__meta">${meta}</div><div class="md-secret__code">${escapeHtml(codes)}</div><div class="md-secret__bar"><button type="button" class="md-secret__btn" data-act="copy">${util.icon("fa-duotone fa-regular fa-copy")} ${i18n('复制')}</button><button type="button" class="md-secret__btn md-secret__btn--primary" data-act="download">${util.icon("fa-duotone fa-regular fa-download")} ${i18n('下载')}</button></div></div>`,
             success: (layero) => {
                 layero.find('[data-act="copy"]').on('click', () => {
                     util.copyTextToClipboard(codes, () => message.success('优惠券已复制'));
@@ -189,7 +191,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `优惠券_${okN}张.txt`;
+                    a.download = `${i18n('优惠券')}_${okN}${i18n('张')}.txt`;
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
@@ -228,18 +230,18 @@
                 return;
             }
             const scope = Number(data.commodity_id) > 0
-                ? `指定商品 ID ${Number(data.commodity_id)}`
-                : (Number(data.category_id) > 0 ? `指定分类 ID ${Number(data.category_id)}` : '全场通用');
+                ? `${i18n('指定商品')} ID ${Number(data.commodity_id)}`
+                : (Number(data.category_id) > 0 ? `${i18n('指定分类')} ID ${Number(data.category_id)}` : '全场通用');
             createConfirmPending = true;
             Swal.fire({
-                title: `确认生成 ${num} 张优惠券`,
+                title: `${i18n('确认生成')} ${num} ${i18n('张优惠券')}`,
                 html: `<div style="text-align:left;line-height:1.8;">
-                    <div><b>抵扣范围：</b>${escapeHtml(scope)}</div>
-                    <div><b>抵扣方式：</b>${mode === 1 ? `${money * 10} 折` : `¥${money}`}</div>
-                    <div><b>每张可用：</b>${life} 次</div>
-                    <div><b>有效期：</b>${escapeHtml(data.expire_time || '永久有效')}</div>
-                    <div><b>券码前缀：</b>${escapeHtml(prefix || '无前缀')}</div>
-                    <div style="margin-top:10px;color:#9a6700;">确认后会立即创建券码；请在结果页复制或下载并妥善保管。</div>
+                    <div><b>${i18n('抵扣范围：')}</b>${escapeHtml(scope)}</div>
+                    <div><b>${i18n('抵扣方式：')}</b>${mode === 1 ? `${couponZhe(money)} ${i18n('折')}` : `¥${money}`}</div>
+                    <div><b>${i18n('每张可用：')}</b>${life} ${i18n('次')}</div>
+                    <div><b>${i18n('有效期：')}</b>${escapeHtml(data.expire_time || i18n('永久有效'))}</div>
+                    <div><b>${i18n('券码前缀：')}</b>${escapeHtml(prefix || i18n('无前缀'))}</div>
+                    <div style="margin-top:10px;color:#9a6700;">${i18n('确认后会立即创建券码；请在结果页复制或下载并妥善保管。')}</div>
                 </div>`,
                 icon: 'question',
                 showCancelButton: true,
@@ -394,7 +396,7 @@
                             title: "面值(金额/百分比)",
                             name: "money",
                             type: "number",
-                            placeholder: "金额或者百分比(小数代替范围：0~1)"
+                            placeholder: "金额，或抵扣比例(0~1)：0.3=抵扣30%(7折)、0.99=抵扣99%(0.1折)"
                         },
                         {
                             title: "过期时间",
@@ -450,7 +452,7 @@
             formatter: value => {
                 const code = String(value ?? '');
                 if (!code) return '-';
-                return `<span class="md-copyable-cell"><span class="md-copyable-cell__value">${escapeHtml(code)}</span><button type="button" class="md-copyable-cell__copy" aria-label="复制券码" title="复制券码">${util.icon("fa-duotone fa-regular fa-copy")}</button></span>`;
+                return `<span class="md-copyable-cell"><span class="md-copyable-cell__value">${escapeHtml(code)}</span><button type="button" class="md-copyable-cell__copy" aria-label="${i18n('复制券码')}" title="${i18n('复制券码')}">${util.icon("fa-duotone fa-regular fa-copy")}</button></span>`;
             },
             events: {
                 'click .md-copyable-cell__copy': (event, value) => {
@@ -480,7 +482,7 @@
             field: 'money', title: '面值', formatter: (_, __) => {
                 const money = Number(_);
                 if (__.mode == 1) {
-                    return format.badge(escapeHtml((Number.isFinite(money) ? money * 10 : 0) + "折"), "a-badge-success");
+                    return format.badge(escapeHtml((Number.isFinite(money) ? couponZhe(money) : 0) + i18n("折")), "a-badge-success");
                 }
                 return format.badge(escapeHtml(`￥${Number.isFinite(money) ? money : 0}`), "a-badge-primary");
             }
@@ -488,22 +490,22 @@
         , {
             field: 'commodity', title: '抵扣范围', formatter: function (val, item) {
                 if (!item.commodity && !item.category) {
-                    return '<span class="text-danger">全场通用</span>';
+                    return '<span class="text-danger">' + i18n('全场通用') + '</span>';
                 }
 
                 if (!item.commodity && item.category) {
-                    return '<span class="text-primary">[商品分类] -&gt; </span>' + escapeHtml(item.category.name);
+                    return '<span class="text-primary">[' + i18n('商品分类') + '] -&gt; </span>' + escapeHtml(item.category.name);
                 }
 
                 let d = format.badge(escapeHtml(item.commodity.name), "a-badge-success");
 
                 if (item.race) {
-                    d += format.badge(escapeHtml(`种类:${item.race}`), "a-badge-info");
+                    d += format.badge(escapeHtml(`${i18n('种类')}:${i18n(item.race)}`), "a-badge-info");
                 }
 
                 if (!util.isEmptyOrNotJson(item.sku)) {
                     for (const skuKey in item.sku) {
-                        d += format.badge(escapeHtml(`${skuKey}:${item.sku[skuKey]}`), "a-badge-info");
+                        d += format.badge(escapeHtml(`${i18n(skuKey)}:${i18n(item.sku[skuKey])}`), "a-badge-info");
                     }
                 }
 
@@ -536,7 +538,7 @@
                     show: _ => _.status == 0,
                     click: (event, value, row, index) => {
                         util.post('/admin/api/coupon/lock', {list: [row.id]}, res => {
-                            message.success(`【${escapeHtml(row.code)}】已锁定，本次实际锁定 ${Number(res.data?.count || 0)} 张`);
+                            message.success(`【${escapeHtml(row.code)}】${i18n('已锁定，本次实际锁定')} ${Number(res.data?.count || 0)} ${i18n('张')}`);
                             table.refresh();
                         });
                     }
@@ -546,7 +548,7 @@
                     show: _ => _.status == 2,
                     click: (event, value, row, index) => {
                         util.post('/admin/api/coupon/unlock', {list: [row.id]}, res => {
-                            message.success(`【${escapeHtml(row.code)}】已解锁，本次实际解锁 ${Number(res.data?.count || 0)} 张`);
+                            message.success(`【${escapeHtml(row.code)}】${i18n('已解锁，本次实际解锁')} ${Number(res.data?.count || 0)} ${i18n('张')}`);
                             table.refresh();
                         });
                     }
@@ -557,7 +559,7 @@
                     click: (event, value, row, index) => {
                         confirmCouponDelete([row.id], [row], () => {
                             util.post('/admin/api/coupon/del', {list: [row.id]}, res => {
-                                message.success(`已删除 ${Number(res.data?.count || 0)} 张优惠券`);
+                                message.success(`${i18n('已删除')} ${Number(res.data?.count || 0)} ${i18n('张优惠券')}`);
                                 table.refresh();
                             });
                         });
@@ -628,12 +630,12 @@
     $('.btn-app-del').off(namespace).on('click' + namespace, () => {
         let data = table.getSelectionIds();
         if (data.length == 0) {
-            layer.msg("请至少勾选1个优惠券再进行操作！");
+            layer.msg(i18n("请至少勾选1个优惠券再进行操作！"));
             return;
         }
         confirmCouponDelete(data, table.getSelections(), () => {
             util.post("/admin/api/coupon/del", {list: data}, res => {
-                message.success(`已删除 ${Number(res.data?.count || 0)} 张优惠券`)
+                message.success(`${i18n('已删除')} ${Number(res.data?.count || 0)} ${i18n('张优惠券')}`)
                 table.refresh();
             });
         });
@@ -641,13 +643,13 @@
     $('.btn-app-lock').off(namespace).on('click' + namespace, () => {
         let data = table.getSelectionIds();
         if (data.length == 0) {
-            layer.msg("请至少勾选1个优惠券进行操作！");
+            layer.msg(i18n("请至少勾选1个优惠券进行操作！"));
             return;
         }
 
-        message.ask(`确认锁定选中的 <b>${data.length} 张优惠券</b>吗？锁定后未使用优惠券将暂时不可用。`, () => {
+        message.ask(`${i18n('确认锁定选中的')} <b>${data.length} ${i18n('张优惠券')}</b>${i18n('吗？锁定后未使用优惠券将暂时不可用。')}`, () => {
             util.post("/admin/api/coupon/lock", {list: data}, res => {
-                message.success(`已锁定 ${Number(res.data?.count || 0)} 张优惠券`)
+                message.success(`${i18n('已锁定')} ${Number(res.data?.count || 0)} ${i18n('张优惠券')}`)
                 table.refresh();
             });
         }, '确认锁定优惠券', '确认锁定');
@@ -656,12 +658,12 @@
     $('.btn-app-unlock').off(namespace).on('click' + namespace, () => {
         let data = table.getSelectionIds();
         if (data.length == 0) {
-            layer.msg("请至少勾选1个优惠券进行操作！");
+            layer.msg(i18n("请至少勾选1个优惠券进行操作！"));
             return;
         }
-        message.ask(`确认解锁选中的 <b>${data.length} 张优惠券</b>吗？解锁后优惠券将恢复可用。`, () => {
+        message.ask(`${i18n('确认解锁选中的')} <b>${data.length} ${i18n('张优惠券')}</b>${i18n('吗？解锁后优惠券将恢复可用。')}`, () => {
             util.post("/admin/api/coupon/unlock", {list: data}, res => {
-                message.success(`已解锁 ${Number(res.data?.count || 0)} 张优惠券`)
+                message.success(`${i18n('已解锁')} ${Number(res.data?.count || 0)} ${i18n('张优惠券')}`)
                 table.refresh();
             });
         }, '确认解锁优惠券', '确认解锁');
@@ -691,8 +693,8 @@
             if (!Number.isInteger(count) || count < 1) throw new Error('服务器没有返回有效的导出数量');
             const scope = impact.has_filter
                 ? '当前筛选条件'
-                : '<span style="color:#d32f2f;font-weight:700">未设置筛选条件，将导出全部优惠券</span>';
-            const detail = `${scope}，精确命中 <b>${count} 张优惠券</b>。<br><br>未使用 ${Number(impact.normal_count || 0)} 张、已使用 ${Number(impact.used_count || 0)} 张、锁定 ${Number(impact.locked_count || 0)} 张。<br><br>导出文件包含敏感券码；筛选和券码均使用 POST 传输，不会写入浏览器地址或历史记录。单次最多 ${Number(impact.max_count || 5000)} 张。`;
+                : '<span style="color:#d32f2f;font-weight:700">' + i18n('未设置筛选条件，将导出全部优惠券') + '</span>';
+            const detail = `${scope}，${i18n('精确命中')} <b>${count} ${i18n('张优惠券')}</b>。<br><br>${i18n('未使用')} ${Number(impact.normal_count || 0)} ${i18n('张、已使用')} ${Number(impact.used_count || 0)} ${i18n('张、锁定')} ${Number(impact.locked_count || 0)} ${i18n('张。')}<br><br>${i18n('导出文件包含敏感券码；筛选和券码均使用')} POST ${i18n('传输，不会写入浏览器地址或历史记录。单次最多')} ${Number(impact.max_count || 5000)} ${i18n('张。')}`;
             message.ask(
                 detail,
                 () => downloadCouponExport(payload, count),

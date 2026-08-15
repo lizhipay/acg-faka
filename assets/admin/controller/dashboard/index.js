@@ -12,7 +12,8 @@
         .replace(/'/g, '&#039;');
     const safeAnnouncementUrl = value => {
         const url = String(value || '').trim();
-        if (!url) return '';
+        // '#'/纯锚点是商店 API 表示"无链接"的占位值，不能被 new URL 解析成 origin/# 而漏过
+        if (!url || url.startsWith('#')) return '';
         try {
             const parsed = new URL(url, window.location.origin);
             return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
@@ -95,23 +96,26 @@
         icon.setAttribute('aria-hidden', 'true');
         icon.textContent = 'cloud_off';
         message.className = 'dashboard-request-state__message';
-        message.textContent = String(text || '加载失败，请重试');
+        message.textContent = String(text || i18n('加载失败，请重试'));
         button.type = 'button';
         button.className = 'btn btn-sm btn-light-primary dashboard-request-state__retry';
-        button.textContent = '重新加载';
+        button.textContent = i18n('重新加载');
         button.addEventListener('click', () => {
             button.disabled = true;
             button.setAttribute('aria-busy', 'true');
-            button.textContent = '正在重试…';
+            button.textContent = i18n('正在重试…');
             retry();
         }, {once: true});
         state.append(icon, message, button);
         host.replaceChildren(state);
         host.hidden = false;
     };
-    const _AD_HTML = `<div class="md-ad-item">
-        <a href="[url]" [target] class="md-ad-item__title">[title]</a>
-        <div class="md-ad-item__time"><i class="fa-duotone fa-regular fa-clock"></i>[create_time]</div>
+    const _AD_HTML = `<div class="md-ad-item[static]">
+        <span class="md-ad-item__icon" aria-hidden="true"><i class="fa-duotone fa-regular fa-bullhorn"></i></span>
+        <span class="md-ad-item__body">
+            <a [link] class="md-ad-item__title">[title]</a>
+        </span>
+        <a [link] tabindex="-1" aria-hidden="true" class="md-ad-item__go"><i class="fa-duotone fa-regular [goicon]"></i></a>
     </div>`;
 
     function loadAd() {
@@ -120,28 +124,29 @@
         trackRequest($.get("/admin/api/app/ad", res => {
             if (!controllerActive) return;
             if (res.code != 200) {
-                renderRetryState($adHandle[0], res.msg || '公告加载失败，请重试', loadAd);
+                renderRetryState($adHandle[0], res.msg || i18n('公告加载失败，请重试'), loadAd);
                 return;
             }
 
             if (!Array.isArray(res.data) || res.data.length === 0) {
-                $adHandle.html('<div class="text-center text-muted py-4">暂无公告</div>');
+                $adHandle.html('<div class="text-center text-muted py-4">' + i18n('暂无公告') + '</div>');
                 return;
             }
 
             let html = "";
             res.data.forEach(item => {
                 const url = safeAnnouncementUrl(item.url);
-                const title = sanitizeAnnouncementHtml(item.title) || '公告';
-                html += _AD_HTML.replace("[title]", () => title)
-                    .replace("[create_time]", () => escapeHtml(item.create_date))
-                    .replace("[url]", () => escapeHtml(url || '#'))
-                    .replace("[target]", () => url ? 'target="_blank" rel="noopener noreferrer"' : 'aria-disabled="true"');
+                const title = sanitizeAnnouncementHtml(item.title) || i18n('公告');
+                // [title] 最后替换：它是外部 HTML，先替换可避免其内容碰巧含占位符时被后续 replace 误伤
+                html += _AD_HTML.replace("[static]", () => url ? '' : ' md-ad-item--static')
+                    .replace(/\[link\]/g, () => url ? 'href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer"' : '')
+                    .replace("[goicon]", () => url ? 'fa-arrow-up-right' : 'fa-circle-info')
+                    .replace("[title]", () => title);
             });
             $adHandle.html(html);
         }).fail((xhr, status) => {
             if (!controllerActive || status === 'abort') return;
-            renderRetryState($adHandle[0], '网络异常，公告加载失败', loadAd);
+            renderRetryState($adHandle[0], i18n('网络异常，公告加载失败'), loadAd);
         }));
     }
 
@@ -160,7 +165,7 @@
         const render = () => {
             card.classList.toggle('is-collapsed', collapsed);
             button.setAttribute('aria-expanded', String(!collapsed));
-            button.setAttribute('aria-label', collapsed ? '展开官方公告' : '收起官方公告');
+            button.setAttribute('aria-label', collapsed ? i18n('展开官方公告') : i18n('收起官方公告'));
             icon.textContent = collapsed ? 'expand_more' : 'expand_less';
         };
 
@@ -199,11 +204,11 @@
                 $('.online_amout').text(m(res.data.online_amout));
                 return;
             }
-            renderRetryState('.dashboard-data-feedback', res.msg || '经营数据加载失败，请重试', () => loadDashboardData(type));
+            renderRetryState('.dashboard-data-feedback', res.msg || i18n('经营数据加载失败，请重试'), () => loadDashboardData(type));
         }).fail((xhr, status) => {
             closeLoader(loaderIndex);
             if (!controllerActive || status === 'abort' || generation !== dashboardDataGeneration) return;
-            renderRetryState('.dashboard-data-feedback', '网络异常，经营数据加载失败', () => loadDashboardData(type));
+            renderRetryState('.dashboard-data-feedback', i18n('网络异常，经营数据加载失败'), () => loadDashboardData(type));
         }));
     }
 
@@ -266,7 +271,7 @@
         _chart.setOption({
             color: [c.profit, c.trade, c.cash, c.recharge],
             tooltip: {trigger: 'axis', axisPointer: {type: 'cross'}},
-            legend: {data: ['盈利', '交易金额', '提现', '充值'], icon: 'roundRect', textStyle: {color: c.text, fontSize: 12}},
+            legend: {data: [i18n('盈利'), i18n('交易金额'), i18n('提现'), i18n('充值')], icon: 'roundRect', textStyle: {color: c.text, fontSize: 12}},
             grid: {left: '2%', right: '3%', bottom: '2%', top: 48, containLabel: true},
             xAxis: [{
                 type: 'category', boundaryGap: false, data: _chartData.week,
@@ -278,10 +283,10 @@
                 splitLine: {lineStyle: {color: c.line}}, axisLine: {show: false}
             }],
             series: [
-                S('盈利', _chartData.series.profit),
-                S('交易金额', _chartData.series.trade),
-                S('提现', _chartData.series.cash),
-                S('充值', _chartData.series.recharge)
+                S(i18n('盈利'), _chartData.series.profit),
+                S(i18n('交易金额'), _chartData.series.trade),
+                S(i18n('提现'), _chartData.series.cash),
+                S(i18n('充值'), _chartData.series.recharge)
             ]
         }, true);
     }
@@ -294,7 +299,7 @@
             if (!controllerActive || generation !== weekStatisticsGeneration) return;
             if (res.code != 200) {
                 if (chartElement) chartElement.hidden = true;
-                renderRetryState('.dashboard-chart-feedback', res.msg || '趋势数据加载失败，请重试', loadWeekStatistics);
+                renderRetryState('.dashboard-chart-feedback', res.msg || i18n('趋势数据加载失败，请重试'), loadWeekStatistics);
                 return;
             }
             clearRequestState('.dashboard-chart-feedback');
@@ -311,7 +316,7 @@
         }).fail((xhr, status) => {
             if (!controllerActive || status === 'abort' || generation !== weekStatisticsGeneration) return;
             if (chartElement) chartElement.hidden = true;
-            renderRetryState('.dashboard-chart-feedback', '网络异常，趋势数据加载失败', loadWeekStatistics);
+            renderRetryState('.dashboard-chart-feedback', i18n('网络异常，趋势数据加载失败'), loadWeekStatistics);
         }));
     }
 

@@ -54,7 +54,7 @@ class Firewall
 
         // 自定义 HTML 定义
         $config->set('HTML.DefinitionID', 'firewall.html');
-        $config->set('HTML.DefinitionRev', 1);
+        $config->set('HTML.DefinitionRev', 2);
 
         $config->set('Filter.Custom', [IgnoreStyleTagFilter::make()]);
 
@@ -125,6 +125,17 @@ class Firewall
             $def->addAttribute('a', 'target', 'Text');
             $def->addAttribute('img', 'width', 'Text');
             $def->addAttribute('img', 'height', 'Text');
+
+            //富文本常用的HTML5语义标签，本身无脚本能力，纳入白名单，避免商品介绍/公告排版被拆壳(#775)
+            foreach (['section', 'article', 'aside', 'nav', 'header', 'footer', 'main', 'figure', 'figcaption'] as $html5Block) {
+                $def->addElement($html5Block, 'Block', 'Flow', 'Common');
+            }
+            $def->addElement('details', 'Block', 'Flow', 'Common', ['open' => 'Bool#open']);
+            $def->addElement('summary', 'Block', 'Inline', 'Common');
+            $def->addElement('mark', 'Inline', 'Inline', 'Common');
+            $def->addElement('time', 'Inline', 'Inline', 'Common', ['datetime' => 'Text']);
+            //仅允许纯装饰按钮，type限定button，防止嵌入页面表单被意外提交
+            $def->addElement('button', 'Inline', 'Flow', 'Common', ['type' => 'Enum#button', 'disabled' => 'Bool#disabled']);
         }
 
 

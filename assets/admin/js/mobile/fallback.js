@@ -158,29 +158,29 @@
         var difference = Date.now() - timestamp;
         var future = difference < 0;
         var seconds = Math.floor(Math.abs(difference) / 1000);
-        if (seconds < 5) return '刚刚';
+        if (seconds < 5) return i18n('刚刚');
         var value;
         var unit;
         if (seconds < 60) {
             value = seconds;
-            unit = '秒';
+            unit = i18n('秒');
         } else if (seconds < 60 * 60) {
             value = Math.floor(seconds / 60);
-            unit = '分钟';
+            unit = i18n('分钟');
         } else if (seconds < 24 * 60 * 60) {
             value = Math.floor(seconds / (60 * 60));
-            unit = '小时';
+            unit = i18n('小时');
         } else if (seconds < 30 * 24 * 60 * 60) {
             value = Math.floor(seconds / (24 * 60 * 60));
-            unit = '天';
+            unit = i18n('天');
         } else if (seconds < 365 * 24 * 60 * 60) {
             value = Math.floor(seconds / (30 * 24 * 60 * 60));
-            unit = '个月';
+            unit = i18n('个月');
         } else {
             value = Math.floor(seconds / (365 * 24 * 60 * 60));
-            unit = '年';
+            unit = i18n('年');
         }
-        return value + unit + (future ? '后' : '前');
+        return value + unit + (future ? i18n('后') : i18n('前'));
     }
 
     function formatRelativeTime(value) {
@@ -550,7 +550,7 @@
         media.classList.add('is-previewable');
         media.setAttribute('role', 'button');
         media.setAttribute('tabindex', '0');
-        media.setAttribute('aria-label', '预览' + (label || '当前记录') + '图片');
+        media.setAttribute('aria-label', i18n('预览') + (label || i18n('当前记录')) + i18n('图片'));
         media.addEventListener('click', open);
         media.addEventListener('keydown', open);
     }
@@ -595,7 +595,7 @@
             parts.push((definition.label ? text(definition.label) + labelSeparator : '') + value);
             return parts.length >= 2;
         });
-        return parts.join(' · ') || text((recipe && recipe.primary && recipe.primary.label) || '记录');
+        return parts.join(' · ') || text((recipe && recipe.primary && recipe.primary.label) || i18n('记录'));
     }
 
     function bindLiveTextControl(control, update) {
@@ -674,14 +674,14 @@
                 var copyButton = document.createElement('button');
                 copyButton.type = 'button';
                 copyButton.className = 'admin-mobile-card-subtitle-copy';
-                copyButton.setAttribute('aria-label', text(definition.copyLabel || '复制内容') + ' ' + copyValue);
+                copyButton.setAttribute('aria-label', text(definition.copyLabel || i18n('复制内容')) + ' ' + copyValue);
                 copyButton.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">content_copy</span>';
                 copyButton.addEventListener('click', function (event) {
                     event.preventDefault();
                     event.stopPropagation();
                     copyConfiguredField({
                         copyField: definition.copyField,
-                        label: definition.copyLabel || '复制内容'
+                        label: definition.copyLabel || i18n('复制内容')
                     }, row);
                 });
                 reference.appendChild(copyButton);
@@ -742,13 +742,13 @@
             var reference = document.createElement('div');
             reference.className = 'admin-mobile-ledger-reference';
             var referenceLabel = document.createElement('span');
-            referenceLabel.textContent = '订单号';
+            referenceLabel.textContent = i18n('订单号');
             var referenceValue = document.createElement('span');
             referenceValue.textContent = tradeNumber;
             var copyButton = document.createElement('button');
             copyButton.type = 'button';
             copyButton.className = 'admin-mobile-ledger-copy';
-            copyButton.setAttribute('aria-label', '复制订单号 ' + tradeNumber);
+            copyButton.setAttribute('aria-label', i18n('复制订单号 ') + tradeNumber);
             copyButton.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">content_copy</span>';
             copyButton.addEventListener('click', function (event) {
                 event.preventDefault();
@@ -798,7 +798,7 @@
         api.shell.setSearch({
             source: 'table:' + snapshot.id,
             priority: activeRecipe && recipe && activeRecipe.id === recipe.id ? 20 : 10,
-            placeholder: '搜索' + ((recipe && recipe.title) || '当前列表'),
+            placeholder: '搜索' + ((recipe && recipe.title) || i18n('当前列表')),
             count: count,
             run: function () { if (hasLocalSearch) openLocalFilter(snapshot, recipe); else openFilters(snapshot); }
         });
@@ -812,15 +812,15 @@
 
         var discovery = document.createElement('section');
         discovery.className = 'admin-mobile-store-discovery';
-        discovery.setAttribute('aria-label', '应用搜索与类型筛选');
+        discovery.setAttribute('aria-label', i18n('应用搜索与类型筛选'));
 
         var count = snapshotFilterCount(snapshot);
         var trigger = document.createElement('button');
         trigger.type = 'button';
         trigger.className = 'admin-mobile-search';
-        trigger.setAttribute('aria-label', count ? '搜索应用，已启用 ' + count + ' 个筛选条件' : '搜索应用');
+        trigger.setAttribute('aria-label', count ? i18n('搜索应用，已启用 ') + count + i18n(' 个筛选条件') : i18n('搜索应用'));
         trigger.innerHTML = '<span class="material-icons-outlined admin-mobile-search__lead" aria-hidden="true">search</span>' +
-            '<span class="admin-mobile-search__copy">搜索应用</span>' +
+            '<span class="admin-mobile-search__copy">' + i18n('搜索应用') + '</span>' +
             '<span class="admin-mobile-search__count"' + (count ? '' : ' hidden') + '>' + (count > 99 ? '99+' : count) + '</span>' +
             '<span class="material-icons-outlined admin-mobile-search__trail" aria-hidden="true">tune</span>';
         trigger.addEventListener('click', function () { openFilters(snapshot); });
@@ -905,7 +905,7 @@
     }
 
     function controlLabel(control) {
-        return text(control && (control.getAttribute('aria-label') || control.getAttribute('title') || control.textContent)) || '操作';
+        return text(control && (control.getAttribute('aria-label') || control.getAttribute('title') || control.textContent)) || i18n('操作');
     }
 
     function isBatchControl(control) {
@@ -962,8 +962,8 @@
         var actions = [];
         sortable.forEach(function (column) {
             var label = text(column.title || column.field);
-            actions.push({label: label + ' · 升序', icon: 'arrow_upward', run: function () { snapshot.__table.reload({pageNumber: 1, query: {sort_rule: 'asc', sort_field: column.field}}); }});
-            actions.push({label: label + ' · 降序', icon: 'arrow_downward', run: function () { snapshot.__table.reload({pageNumber: 1, query: {sort_rule: 'desc', sort_field: column.field}}); }});
+            actions.push({label: label + i18n(' · 升序'), icon: 'arrow_upward', run: function () { snapshot.__table.reload({pageNumber: 1, query: {sort_rule: 'asc', sort_field: column.field}}); }});
+            actions.push({label: label + i18n(' · 降序'), icon: 'arrow_downward', run: function () { snapshot.__table.reload({pageNumber: 1, query: {sort_rule: 'desc', sort_field: column.field}}); }});
         });
         actions.push({label: '恢复默认排序', icon: 'restart_alt', run: function () { snapshot.__table.reload({pageNumber: 1, query: {sort_rule: '', sort_field: ''}}); }});
         return api.openActions({id: 'sort-' + snapshot.id, title: '排序方式', actions: actions});
@@ -978,10 +978,10 @@
     function runWithConfirmation(options, run) {
         if (!options) return run();
         if (typeof options === 'string') options = {message: options};
-        var prompt = text(options.message || '确认执行此操作吗？');
+        var prompt = text(options.message || i18n('确认执行此操作吗？'));
         var messageApi = typeof message !== 'undefined' ? message : window.message;
         if (messageApi && typeof messageApi.ask === 'function') {
-            return messageApi.ask(prompt, run, text(options.title || '确认操作'), text(options.confirmText || '确认'));
+            return messageApi.ask(prompt, run, text(options.title || i18n('确认操作')), text(options.confirmText || i18n('确认')));
         }
         if (window.confirm(prompt)) return run();
         return false;
@@ -1005,9 +1005,9 @@
         value = value == null ? '' : String(value).trim();
         if (!value) return false;
         var messageApi = typeof message !== 'undefined' ? message : window.message;
-        var subject = text(configured.label || '内容').replace(/^复制/, '') || '内容';
-        var success = function () { if (messageApi && typeof messageApi.success === 'function') messageApi.success(subject + '已复制'); };
-        var failure = function () { if (messageApi && typeof messageApi.error === 'function') messageApi.error(subject + '复制失败'); };
+        var subject = text(configured.label || i18n('内容')).replace(/^复制/, '') || i18n('内容');
+        var success = function () { if (messageApi && typeof messageApi.success === 'function') messageApi.success(subject + i18n('已复制')); };
+        var failure = function () { if (messageApi && typeof messageApi.error === 'function') messageApi.error(subject + i18n('复制失败')); };
         var fallback = function () {
             var input = document.createElement('textarea');
             input.value = value;
@@ -1064,20 +1064,20 @@
         if (action.title) return text(action.title);
         var signature = [action.icon, action.class, action.field, action.definition && action.definition.tips].filter(Boolean).join(' ');
         var inferred = [
-            [/(?:trash|delete|remove)/i, '删除'],
-            [/(?:pen-to-square|edit|pencil)/i, '编辑'],
-            [/(?:gear|cog|setting)/i, '配置'],
-            [/(?:copy|clone)/i, '复制'],
-            [/(?:download|down-to-line)/i, '下载'],
-            [/(?:upload|cloud-arrow-up|up-from-bracket)/i, '上传'],
-            [/(?:unlock|lock-open)/i, '解锁'],
-            [/(?:lock|lock-keyhole)/i, '锁定'],
-            [/(?:eye|view|detail|circle-info)/i, '查看'],
-            [/(?:plus|add|circle-plus)/i, '新增'],
-            [/(?:sync|rotate|arrows)/i, '同步'],
-            [/(?:link)/i, '连接']
+            [/(?:trash|delete|remove)/i, i18n('删除')],
+            [/(?:pen-to-square|edit|pencil)/i, i18n('编辑')],
+            [/(?:gear|cog|setting)/i, i18n('配置')],
+            [/(?:copy|clone)/i, i18n('复制')],
+            [/(?:download|down-to-line)/i, i18n('下载')],
+            [/(?:upload|cloud-arrow-up|up-from-bracket)/i, i18n('上传')],
+            [/(?:unlock|lock-open)/i, i18n('解锁')],
+            [/(?:lock|lock-keyhole)/i, i18n('锁定')],
+            [/(?:eye|view|detail|circle-info)/i, i18n('查看')],
+            [/(?:plus|add|circle-plus)/i, i18n('新增')],
+            [/(?:sync|rotate|arrows)/i, i18n('同步')],
+            [/(?:link)/i, i18n('连接')]
         ].find(function (item) { return item[0].test(signature); });
-        return inferred ? inferred[1] : '操作';
+        return inferred ? inferred[1] : i18n('操作');
     }
 
     function actionDanger(recipe, action) {
@@ -1116,16 +1116,16 @@
 
     function inlineSwitchDisplayLabel(value) {
         var label = text(value);
-        if (/^ON$/i.test(label)) return '已开启';
-        if (/^OFF$/i.test(label)) return '已关闭';
+        if (/^ON$/i.test(label)) return i18n('已开启');
+        if (/^OFF$/i.test(label)) return i18n('已关闭');
         return label;
     }
 
     function inlineSwitchState(column, value) {
         var checked = inlineSwitchEnabled(value);
-        var labels = String(column.text || '开启|关闭').split('|');
-        var onLabel = inlineSwitchDisplayLabel(labels[0] || '开启');
-        var offLabel = inlineSwitchDisplayLabel(labels[1] || '关闭');
+        var labels = String(column.text || i18n('开启|关闭')).split('|');
+        var onLabel = inlineSwitchDisplayLabel(labels[0] || i18n('开启'));
+        var offLabel = inlineSwitchDisplayLabel(labels[1] || i18n('关闭'));
         return {
             checked: checked,
             currentLabel: checked ? onLabel : offLabel,
@@ -1152,7 +1152,7 @@
         var input = document.createElement('input');
         input.type = 'checkbox';
         input.setAttribute('role', 'switch');
-        input.setAttribute('aria-label', (text(definition.label || column.title || column.field) || '切换状态') + '：' + recordTitle);
+        input.setAttribute('aria-label', (text(definition.label || column.title || column.field) || i18n('切换状态')) + '：' + recordTitle);
         input.checked = inlineSwitchEnabled(rawValue(row, definition.field));
         input.setAttribute('aria-checked', input.checked ? 'true' : 'false');
         input.disabled = !snapshot.__table || typeof snapshot.__table.updateField !== 'function';
@@ -1200,12 +1200,12 @@
         input.autocomplete = 'off';
         var footer = document.createElement('div');
         footer.className = 'admin-mobile-filter-actions';
-        footer.innerHTML = '<button type="button">取消</button><button type="button">保存修改</button>';
+        footer.innerHTML = '<button type="button">' + i18n('取消') + '</button><button type="button">' + i18n('保存修改') + '</button>';
         content.append(label, input, footer);
         var sheet = api.openSheet({
             id: 'inline-' + snapshot.id + '-' + String(column.field).replace(/[^a-z0-9_-]+/gi, '-'),
             title: '修改' + text(column.title || column.field),
-            subtitle: '保存后立即同步到当前记录',
+            subtitle: i18n('保存后立即同步到当前记录'),
             content: content,
             guardUnsaved: true
         });
@@ -1256,7 +1256,7 @@
                     kind: 'switch',
                     field: String(column.field || ''),
                     title: title,
-                    label: title + ' · 设为' + switchState.nextLabel,
+                    label: title + i18n(' · 设为') + switchState.nextLabel,
                     currentLabel: switchState.currentLabel,
                     nextLabel: switchState.nextLabel,
                     checked: switchState.checked,
@@ -1429,7 +1429,7 @@
     }
 
     function openDetails(recipe, snapshot, columns, row, index, heading, headingField) {
-        var title = heading || '详细信息';
+        var title = heading || i18n('详细信息');
         var columnTitle = snapshot.detail && snapshot.detail.column && snapshot.detail.column.title;
         if (columnTitle) {
             try { title = typeof columnTitle === 'function' ? columnTitle(row) : columnTitle; } catch (error) {}
@@ -1437,7 +1437,7 @@
         var definitions = mergedDetailDefinitions(recipe, snapshot);
         // detail.open is the desktop column popup adapter. Calling it here used
         // to return true and short-circuit the complete mobile detail sheet.
-        return api.openSheet({id: 'row-detail-' + snapshot.id, title: text(title) || heading || '详细信息', subtitle: '完整记录', content: detailContent(recipe, snapshot, detailColumns(snapshot), row, index, headingField), fullScreen: definitions.length > 10});
+        return api.openSheet({id: 'row-detail-' + snapshot.id, title: text(title) || heading || i18n('详细信息'), subtitle: i18n('完整记录'), content: detailContent(recipe, snapshot, detailColumns(snapshot), row, index, headingField), fullScreen: definitions.length > 10});
     }
 
     function recordSheetEnabled(recipe, pageRecipe) {
@@ -1492,7 +1492,7 @@
         var heading = document.createElement('strong');
         heading.className = 'admin-mobile-record-head__title';
         heading.setAttribute('data-admin-mobile-overlay-title', '');
-        heading.textContent = title || '记录详情';
+        heading.textContent = title || i18n('记录详情');
         copy.appendChild(heading);
         if (subtitle && subtitle !== title) {
             var description = document.createElement('small');
@@ -1547,7 +1547,7 @@
 
     function recordActionButton(recipe, action, run, options) {
         options = options || {};
-        var label = text(options.label || actionLabel(recipe, action)) || '操作';
+        var label = text(options.label || actionLabel(recipe, action)) || i18n('操作');
         var danger = options.danger === true || actionDanger(recipe, action);
         var warning = !danger && /锁定|停用|禁用|驳回|冻结|下架|取消|清空|作废/.test(label);
         var configured = recipeAction(recipe, 'primary', action.id) || recipeAction(recipe, 'more', action.id);
@@ -1576,7 +1576,7 @@
     }
 
     function recordSwitchButton(action) {
-        var title = text(action.title || action.label) || '开关';
+        var title = text(action.title || action.label) || i18n('开关');
         var button = document.createElement('button');
         button.type = 'button';
         button.setAttribute('role', 'switch');
@@ -1597,11 +1597,11 @@
         button.append(copy, track);
         var applyState = function (nextState) {
             var checked = nextState.checked === true;
-            var currentLabel = text(nextState.currentLabel || (checked ? '已开启' : '已关闭'));
-            var nextLabel = text(nextState.nextLabel || (checked ? '关闭' : '开启'));
+            var currentLabel = text(nextState.currentLabel || (checked ? i18n('已开启') : i18n('已关闭')));
+            var nextLabel = text(nextState.nextLabel || (checked ? i18n('关闭') : i18n('开启')));
             button.className = 'admin-mobile-record-switch ' + (checked ? 'is-on' : 'is-off');
             button.setAttribute('aria-checked', checked ? 'true' : 'false');
-            button.setAttribute('aria-label', title + '，当前' + currentLabel + '，点击设为' + nextLabel);
+            button.setAttribute('aria-label', title + i18n('，当前') + currentLabel + i18n('，点击设为') + nextLabel);
         };
         applyState(action);
         button.addEventListener('click', function () {
@@ -1634,7 +1634,7 @@
             section.className = 'admin-mobile-record-section admin-mobile-record-section--badges';
             var sectionTitle = document.createElement('strong');
             sectionTitle.className = 'admin-mobile-record-section__title';
-            sectionTitle.textContent = text(definition.title || definition.label || definition.field) || '相关信息';
+            sectionTitle.textContent = text(definition.title || definition.label || definition.field) || i18n('相关信息');
 
             var list = document.createElement('div');
             list.className = 'admin-mobile-record-badges';
@@ -1656,7 +1656,7 @@
                 list.classList.add('is-empty');
                 var empty = document.createElement('p');
                 empty.className = 'admin-mobile-record-badges__empty';
-                empty.textContent = text(definition.emptyText) || '暂无相关信息';
+                empty.textContent = text(definition.emptyText) || i18n('暂无相关信息');
                 list.appendChild(empty);
             }
             section.append(sectionTitle, list);
@@ -1681,7 +1681,7 @@
             summarySection.className = 'admin-mobile-record-section admin-mobile-record-section--summary';
             var summaryTitle = document.createElement('strong');
             summaryTitle.className = 'admin-mobile-record-section__title';
-            summaryTitle.textContent = '记录摘要';
+            summaryTitle.textContent = i18n('记录摘要');
             summarySection.append(summaryTitle, summary);
             content.appendChild(summarySection);
         }
@@ -1700,7 +1700,7 @@
                 detailSection.className = 'admin-mobile-record-section admin-mobile-record-section--details';
                 var detailTitle = document.createElement('strong');
                 detailTitle.className = 'admin-mobile-record-section__title';
-                detailTitle.textContent = '详细信息';
+                detailTitle.textContent = i18n('详细信息');
                 detailSection.append(detailTitle, details);
                 content.appendChild(detailSection);
             }
@@ -1713,7 +1713,7 @@
             switchSection.className = 'admin-mobile-record-section admin-mobile-record-section--switches';
             var switchTitle = document.createElement('strong');
             switchTitle.className = 'admin-mobile-record-section__title';
-            switchTitle.textContent = '开关';
+            switchTitle.textContent = i18n('开关');
             var switchList = document.createElement('div');
             switchList.className = 'admin-mobile-record-switches';
             switchActions.forEach(function (action) {
@@ -1742,15 +1742,15 @@
             actionSection.className = 'admin-mobile-record-section admin-mobile-record-section--actions';
             var actionTitle = document.createElement('strong');
             actionTitle.className = 'admin-mobile-record-section__title';
-            actionTitle.textContent = '可用操作';
+            actionTitle.textContent = i18n('可用操作');
             actionSection.append(actionTitle, actionList);
             content.appendChild(actionSection);
         }
 
         return api.openSheet({
             id: 'row-record-' + snapshot.id + '-' + index,
-            title: title || '记录详情',
-            headerContent: recordHeaderContent(recipe, snapshot, recordColumns, row, index, title || '记录详情', recordSubtitle),
+            title: title || i18n('记录详情'),
+            headerContent: recordHeaderContent(recipe, snapshot, recordColumns, row, index, title || i18n('记录详情'), recordSubtitle),
             content: content,
             fullScreen: false,
             className: 'admin-mobile-overlay--record'
@@ -1809,7 +1809,7 @@
         priceWrap.className = 'admin-mobile-app-detail__price-wrap';
         var label = document.createElement('small');
         label.className = 'admin-mobile-app-detail__price-label';
-        label.textContent = text(offer.label || '应用价格');
+        label.textContent = text(offer.label || i18n('应用价格'));
         var price = document.createElement('strong');
         price.className = 'admin-mobile-app-detail__price';
         price.textContent = text(value == null || value === '' ? '-' : value) || '-';
@@ -1827,7 +1827,7 @@
             var badge = document.createElement('span');
             var tone = String(benefit.tone || 'success').trim().toLowerCase();
             badge.className = 'admin-mobile-app-detail__benefit is-' + (/^(?:success|neutral)$/.test(tone) ? tone : 'success');
-            badge.textContent = text(benefit.label || '专属权益');
+            badge.textContent = text(benefit.label || i18n('专属权益'));
             benefits.appendChild(badge);
         });
         if (benefits.children.length) section.appendChild(benefits);
@@ -1871,7 +1871,7 @@
         actionSection.className = 'admin-mobile-app-detail__action-section';
         var actionTitle = document.createElement('strong');
         actionTitle.className = 'admin-mobile-app-detail__action-title';
-        actionTitle.textContent = '可用操作';
+        actionTitle.textContent = i18n('可用操作');
         actionSection.appendChild(actionTitle);
         var actionList = document.createElement('div');
         actionList.className = 'admin-mobile-app-detail__actions';
@@ -1898,7 +1898,7 @@
         if (!actionList.children.length) {
             var empty = document.createElement('p');
             empty.className = 'admin-mobile-app-detail__action-empty';
-            empty.textContent = '当前应用暂无可执行操作';
+            empty.textContent = i18n('当前应用暂无可执行操作');
             actionList.appendChild(empty);
         }
         actionSection.appendChild(actionList);
@@ -1910,10 +1910,10 @@
         var cardCta = recipe && recipe.cardCta || {};
         var sheetSubtitle = Object.prototype.hasOwnProperty.call(cardCta, 'subtitle')
             ? text(cardCta.subtitle)
-            : '完整信息';
+            : i18n('完整信息');
         return api.openSheet({
             id: 'row-cta-' + snapshot.id + '-' + index,
-            title: text(cardCta.title || '应用详情'),
+            title: text(cardCta.title || i18n('应用详情')),
             subtitle: sheetSubtitle,
             content: cardCtaContent(recipe, snapshot, columns, row, index, heading, headingField, subtitle, rowActions),
             className: 'admin-mobile-overlay--app-market'
@@ -1925,7 +1925,7 @@
         var index = entry.index;
         var heading = primaryDefinitions.length
             ? primaryDefinitionValue(snapshot, primaryDefinitions[0], columns, row, index, recipe)
-            : (primary ? definitionValue(snapshot, mobileColumnDefinition(primary), columns, row, index, recipe) : ('记录 ' + (index + 1)));
+            : (primary ? definitionValue(snapshot, mobileColumnDefinition(primary), columns, row, index, recipe) : (i18n('记录 ') + (index + 1)));
         var values = [heading, cardSubtitle(recipe, snapshot, columns, row, index, primaryDefinitions, heading)];
         statusDefinitions.slice(0, 3).forEach(function (definition) {
             values.push(definitionValue(snapshot, definition, columns, row, index, recipe));
@@ -1945,7 +1945,7 @@
         }
         if (treeNode) {
             values.push(treeLevelLabel(treeNode.depth));
-            values.push(treeNode.parent && treeNode.parent.label ? '上级：' + treeNode.parent.label : (treeNode.depth ? '隶属于上一级' : '顶级分类'));
+            values.push(treeNode.parent && treeNode.parent.label ? i18n('上级：') + treeNode.parent.label : (treeNode.depth ? i18n('隶属于上一级') : i18n('顶级分类')));
         }
         return values.map(text).filter(Boolean).join(' ').toLocaleLowerCase();
     }
@@ -2062,20 +2062,20 @@
         if (state && state.options && state.options.length) {
             var stateGroup = document.createElement('fieldset');
             stateGroup.className = 'admin-mobile-state-filter';
-            stateGroup.innerHTML = '<legend>' + (storeFilter ? '应用分类' : '状态') + '</legend><div></div>';
+            stateGroup.innerHTML = '<legend>' + (storeFilter ? i18n('应用分类') : i18n('状态')) + '</legend><div></div>';
             state.options.forEach(function (option) {
                 var label = document.createElement('label');
                 label.innerHTML = '<input type="radio" name="admin-mobile-state" value=""><span></span>';
                 label.querySelector('input').value = option.value == null ? '' : option.value;
                 label.querySelector('input').checked = option.active === true;
-                label.querySelector('span').textContent = text(option.label || '全部');
+                label.querySelector('span').textContent = text(option.label || i18n('全部'));
                 stateGroup.querySelector('div').appendChild(label);
             });
             content.appendChild(stateGroup);
         }
         var actions = document.createElement('div');
         actions.className = 'admin-mobile-filter-actions';
-        actions.innerHTML = '<button type="button" data-admin-mobile-filter-reset>重置</button><button type="button" data-admin-mobile-filter-submit>应用筛选</button>';
+        actions.innerHTML = '<button type="button" data-admin-mobile-filter-reset>' + i18n('重置') + '</button><button type="button" data-admin-mobile-filter-submit>' + i18n('应用筛选') + '</button>';
         content.appendChild(actions);
         var restore = function () {
             if (duplicateStateField) duplicateStateField.removeAttribute('data-admin-mobile-state-duplicate');
@@ -2085,8 +2085,8 @@
         };
         var sheet = api.openSheet({
             id: 'filters-' + snapshot.id,
-            title: storeFilter ? '搜索应用' : '搜索与筛选',
-            subtitle: storeFilter ? '按名称搜索或选择应用分类' : '筛选条件会保留到本页刷新',
+            title: storeFilter ? i18n('搜索应用') : i18n('搜索与筛选'),
+            subtitle: storeFilter ? i18n('按名称搜索或选择应用分类') : i18n('筛选条件会保留到本页刷新'),
             content: content,
             fullScreen: ((snapshot.search && snapshot.search.definitions) || []).length > 6,
             onClose: function () {
@@ -2126,18 +2126,18 @@
         content.className = 'admin-mobile-filter-form';
         var field = document.createElement('label');
         field.className = 'admin-mobile-native-search admin-mobile-local-search';
-        field.innerHTML = '<span>关键词</span><input type="search" class="layui-input" inputmode="search" autocomplete="off" enterkeyhint="search">';
+        field.innerHTML = '<span>' + i18n('关键词') + '</span><input type="search" class="layui-input" inputmode="search" autocomplete="off" enterkeyhint="search">';
         var input = field.querySelector('input');
-        input.placeholder = '搜索当前已加载的记录';
+        input.placeholder = i18n('搜索当前已加载的记录');
         input.value = localQueries.get(snapshot.id) || '';
         var actions = document.createElement('div');
         actions.className = 'admin-mobile-filter-actions';
-        actions.innerHTML = '<button type="button" data-admin-mobile-filter-reset>重置</button><button type="button" data-admin-mobile-filter-submit>应用筛选</button>';
+        actions.innerHTML = '<button type="button" data-admin-mobile-filter-reset>' + i18n('重置') + '</button><button type="button" data-admin-mobile-filter-submit>' + i18n('应用筛选') + '</button>';
         content.append(field, actions);
         var sheet = api.openSheet({
             id: 'local-filter-' + snapshot.id,
             title: '搜索当前列表',
-            subtitle: '即时筛选当前页面已加载的记录',
+            subtitle: i18n('即时筛选当前页面已加载的记录'),
             content: content
         });
         if (!sheet) return false;
@@ -2179,7 +2179,7 @@
         if ((!api.shell || typeof api.shell.setSearch !== 'function') && ((snapshot.search && snapshot.search.instance) || (snapshot.state && snapshot.state.options && snapshot.state.options.length))) {
             var filter = document.createElement('button');
             var count = snapshotFilterCount(snapshot);
-            filter.type = 'button'; filter.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">tune</span><span>筛选' + (count ? '<b>' + count + '</b>' : '') + '</span>';
+            filter.type = 'button'; filter.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">tune</span><span>' + i18n('筛选') + (count ? '<b>' + count + '</b>' : '') + '</span>';
             filter.addEventListener('click', function () { openFilters(snapshot); });
             toolbar.appendChild(filter);
         }
@@ -2187,7 +2187,7 @@
             var localFilter = document.createElement('button');
             var localCount = localQueries.get(snapshot.id) ? 1 : 0;
             localFilter.type = 'button';
-            localFilter.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">search</span><span>筛选当前列表' + (localCount ? '<b>' + localCount + '</b>' : '') + '</span>';
+            localFilter.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">search</span><span>' + i18n('筛选当前列表') + (localCount ? '<b>' + localCount + '</b>' : '') + '</span>';
             localFilter.addEventListener('click', function () { openLocalFilter(snapshot, recipe); });
             toolbar.appendChild(localFilter);
         }
@@ -2197,7 +2197,7 @@
             select.setAttribute('aria-controls', 'admin-mobile-selection-dock-' + snapshot.id);
             select.setAttribute('aria-pressed', host.classList.contains('is-selecting') ? 'true' : 'false');
             select.setAttribute('aria-expanded', host.classList.contains('is-selecting') ? 'true' : 'false');
-            select.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">checklist</span><span>选择</span>';
+            select.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">checklist</span><span>' + i18n('选择') + '</span>';
             select.addEventListener('click', function () {
                 setSelectionMode(host, !host.classList.contains('is-selecting'));
                 renderSelectionDock(host, snapshot, recipe, desktop, rowEntries);
@@ -2206,7 +2206,7 @@
         }
         if ((snapshot.columns || []).some(function (column) { return column && column.sort === true; })) {
             var sort = document.createElement('button');
-            sort.type = 'button'; sort.className = 'admin-mobile-toolbar-icon'; sort.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">sort</span><span>排序</span>';
+            sort.type = 'button'; sort.className = 'admin-mobile-toolbar-icon'; sort.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">sort</span><span>' + i18n('排序') + '</span>';
             sort.addEventListener('click', function () { openSort(snapshot); });
             toolbar.appendChild(sort);
         }
@@ -2219,11 +2219,11 @@
             text(item.className || '').split(/\s+/).filter(Boolean).forEach(function (className) {
                 button.classList.add(className);
             });
-            var sourceDescription = text(target.getAttribute('data-admin-mobile-description') || item.description || '').trim();
+            var sourceDescription = i18n(text(target.getAttribute('data-admin-mobile-description') || item.description || '').trim());
             var buttonCopy = sourceDescription ? document.createElement('span') : null;
             var buttonLabel = document.createElement(sourceDescription ? 'strong' : 'span');
             var buttonDescription = sourceDescription ? document.createElement('small') : null;
-            buttonLabel.textContent = text(target.getAttribute('data-admin-mobile-label') || item.label || '操作');
+            buttonLabel.textContent = i18n(text(target.getAttribute('data-admin-mobile-label') || item.label || i18n('操作')));
             if (buttonCopy) {
                 buttonCopy.className = 'admin-mobile-store-enterprise-cta__copy';
                 buttonLabel.className = 'admin-mobile-store-enterprise-cta__title';
@@ -2260,11 +2260,11 @@
                 button.disabled = disabled;
                 button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
                 button.setAttribute('aria-busy', busy ? 'true' : 'false');
-                var sourceLabel = text(target.getAttribute('data-admin-mobile-label') || '').trim();
-                var dynamicLabel = busy || target.classList.contains('refresh') ? sourceText : (sourceLabel || text(item.label || '操作'));
+                var sourceLabel = i18n(text(target.getAttribute('data-admin-mobile-label') || '').trim());
+                var dynamicLabel = busy || target.classList.contains('refresh') ? sourceText : (sourceLabel || text(item.label || i18n('操作')));
                 buttonLabel.textContent = dynamicLabel;
                 if (buttonDescription) {
-                    buttonDescription.textContent = text(target.getAttribute('data-admin-mobile-description') || item.description || '').trim();
+                    buttonDescription.textContent = i18n(text(target.getAttribute('data-admin-mobile-description') || item.description || '').trim());
                 }
             };
             syncSourceState();
@@ -2292,7 +2292,7 @@
                     button.addEventListener('click', item.run); toolbar.appendChild(button);
                 });
             } else {
-                var more = document.createElement('button'); more.type = 'button'; more.className = 'admin-mobile-toolbar-icon'; more.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">more_horiz</span><span>页面操作</span>';
+                var more = document.createElement('button'); more.type = 'button'; more.className = 'admin-mobile-toolbar-icon'; more.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">more_horiz</span><span>' + i18n('页面操作') + '</span>';
                 more.addEventListener('click', function () { api.openActions({id: 'page-actions-' + snapshot.id, title: '页面操作', actions: pageActions}); });
                 toolbar.appendChild(more);
             }
@@ -2332,11 +2332,11 @@
         var allSelected = !snapshot.selection.single && selectableRows.length > 0 && selectableRows.every(function (row) { return rowSelected(snapshot, row); });
         dock.innerHTML = '<div class="admin-mobile-selection-dock__summary">' +
             '<span class="admin-mobile-selection-dock__mark material-icons-outlined" aria-hidden="true">check_circle</span>' +
-            '<strong role="status" aria-live="polite" aria-atomic="true">已选择 <b>' + selected + '</b> 项</strong>' +
+            '<strong role="status" aria-live="polite" aria-atomic="true">' + i18n('已选择') + ' <b>' + selected + '</b> ' + i18n('项') + '</strong>' +
             (snapshot.selection.single
                 ? '<span class="admin-mobile-selection-dock__select-spacer" aria-hidden="true"></span>'
-                : '<button type="button" class="admin-mobile-selection-dock__select-all" data-admin-mobile-select-all><span class="material-icons-outlined" aria-hidden="true">select_all</span><span>' + (allSelected ? '取消全选' : '全选本页') + '</span></button>') +
-            '<button type="button" class="admin-mobile-selection-dock__done" data-admin-mobile-select-done aria-label="完成选择"><span class="material-icons-outlined" aria-hidden="true">close</span></button>' +
+                : '<button type="button" class="admin-mobile-selection-dock__select-all" data-admin-mobile-select-all><span class="material-icons-outlined" aria-hidden="true">select_all</span><span>' + (allSelected ? i18n('取消全选') : i18n('全选本页')) + '</span></button>') +
+            '<button type="button" class="admin-mobile-selection-dock__done" data-admin-mobile-select-done aria-label="' + i18n('完成选择') + '"><span class="material-icons-outlined" aria-hidden="true">close</span></button>' +
             '</div><div class="admin-mobile-selection-dock__actions"></div>';
         var actionHost = dock.querySelector('.admin-mobile-selection-dock__actions');
         var batchActions = [];
@@ -2345,7 +2345,7 @@
             var target = item.selector && ((card && card.querySelector(item.selector)) || document.querySelector(item.selector));
             if (!controlAvailable(target)) return;
             batchActions.push({
-                label: text(item.label || '批量操作'),
+                label: text(item.label || i18n('批量操作')),
                 danger: item.danger === true,
                 disabled: selected < 1,
                 run: function () {
@@ -2396,9 +2396,9 @@
             operations.type = 'button';
             operations.className = 'admin-mobile-selection-dock__action';
             operations.disabled = selected < 1;
-            operations.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">tune</span><span>批量操作</span>';
+            operations.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">tune</span><span>' + i18n('批量操作') + '</span>';
             operations.addEventListener('click', function () {
-                api.openActions({id: 'batch-actions-' + snapshot.id, title: '批量操作', subtitle: '已选 ' + selected + ' 项', actions: batchActions});
+                api.openActions({id: 'batch-actions-' + snapshot.id, title: '批量操作', subtitle: i18n('已选 ') + selected + i18n(' 项'), actions: batchActions});
             });
             actionHost.appendChild(operations);
         }
@@ -2425,9 +2425,9 @@
             var pageSize = Math.max(1, Number(pagination.pageSize) || (snapshot.rows || []).length || 1);
             var start = Math.max(1, (Number(pagination.pageNumber) - 1) * pageSize + 1);
             var end = Math.min(Number(pagination.total) || start, start + Math.max(0, (snapshot.rows || []).length - 1));
-            footer.innerHTML = '<span class="admin-mobile-pagination-summary">第 ' + start + ' - ' + end + ' 条 · 共 ' + pagination.total + ' 条</span><span class="admin-mobile-pagination-controls"><button type="button" aria-label="上一页"><span class="material-icons-outlined" aria-hidden="true">chevron_left</span></button><strong aria-current="page">' + pagination.pageNumber + '</strong><button type="button" aria-label="下一页"><span class="material-icons-outlined" aria-hidden="true">chevron_right</span></button></span>';
+            footer.innerHTML = '<span class="admin-mobile-pagination-summary">' + i18n('第') + ' ' + start + ' - ' + end + i18n(' 条 · 共 ') + pagination.total + ' ' + i18n('条') + '</span><span class="admin-mobile-pagination-controls"><button type="button" aria-label="' + i18n('上一页') + '"><span class="material-icons-outlined" aria-hidden="true">chevron_left</span></button><strong aria-current="page">' + pagination.pageNumber + '</strong><button type="button" aria-label="' + i18n('下一页') + '"><span class="material-icons-outlined" aria-hidden="true">chevron_right</span></button></span>';
         } else {
-            footer.innerHTML = '<button type="button" aria-label="上一页"><span class="material-icons-outlined" aria-hidden="true">chevron_left</span></button><span>第 <strong>' + pagination.pageNumber + '</strong> / ' + pagination.totalPages + ' 页 · ' + pagination.total + ' 条</span><button type="button" aria-label="下一页"><span class="material-icons-outlined" aria-hidden="true">chevron_right</span></button>';
+            footer.innerHTML = '<button type="button" aria-label="' + i18n('上一页') + '"><span class="material-icons-outlined" aria-hidden="true">chevron_left</span></button><span>' + i18n('第') + ' <strong>' + pagination.pageNumber + '</strong> / ' + pagination.totalPages + i18n(' 页 · ') + pagination.total + ' ' + i18n('条') + '</span><button type="button" aria-label="' + i18n('下一页') + '"><span class="material-icons-outlined" aria-hidden="true">chevron_right</span></button>';
         }
         var buttons = footer.querySelectorAll('button');
         buttons[0].disabled = pagination.pageNumber <= 1;
@@ -2440,14 +2440,14 @@
     function renderLoadState(cards, snapshot) {
         var state = snapshot.status || {};
         if (state.loading === true || state.status === 'loading') {
-            cards.innerHTML = '<div class="admin-mobile-load-state" role="status" aria-live="polite"><span class="admin-mobile-load-spinner" aria-hidden="true"></span><strong>正在加载</strong><small>请稍候</small></div>';
+            cards.innerHTML = '<div class="admin-mobile-load-state" role="status" aria-live="polite"><span class="admin-mobile-load-spinner" aria-hidden="true"></span><strong>' + i18n('正在加载') + '</strong><small>' + i18n('请稍候') + '</small></div>';
             return true;
         }
         if (state.error || state.status === 'error') {
             var error = state.error || {};
-            var message = text(error.message || '数据加载失败');
-            cards.innerHTML = '<div class="admin-mobile-load-state admin-mobile-load-state--error" role="alert"><span class="material-icons-outlined" aria-hidden="true">cloud_off</span><strong>加载失败</strong><small></small><button type="button">重新加载</button></div>';
-            cards.querySelector('small').textContent = message || (error.status ? '请求状态：' + error.status : '请检查网络后重试');
+            var message = text(error.message || i18n('数据加载失败'));
+            cards.innerHTML = '<div class="admin-mobile-load-state admin-mobile-load-state--error" role="alert"><span class="material-icons-outlined" aria-hidden="true">cloud_off</span><strong>' + i18n('加载失败') + '</strong><small></small><button type="button">' + i18n('重新加载') + '</button></div>';
+            cards.querySelector('small').textContent = message || (error.status ? i18n('请求状态：') + error.status : i18n('请检查网络后重试'));
             cards.querySelector('button').addEventListener('click', function () {
                 var retry = state.retry || state.refresh || snapshot.refresh;
                 if (typeof retry === 'function') retry();
@@ -2585,11 +2585,11 @@
     }
 
     function treeLevelLabel(depth) {
-        return ['一级分类', '二级分类', '三级分类', '四级分类', '五级分类'][depth] || ('第' + (depth + 1) + '级分类');
+        return [i18n('一级分类'), i18n('二级分类'), i18n('三级分类'), i18n('四级分类'), i18n('五级分类')][depth] || (i18n('第') + (depth + 1) + i18n('级分类'));
     }
 
     function groupedTreeLevelLabel(depth) {
-        return depth === 0 ? '一级分类' : ('第 ' + (depth + 1) + ' 级分类');
+        return depth === 0 ? i18n('一级分类') : (i18n('第 ') + (depth + 1) + i18n(' 级分类'));
     }
 
     function enhanceNativeTableInteractions(table, recipe) {
@@ -2599,7 +2599,7 @@
             image.dataset.adminMobileAlbumAction = 'true';
             image.setAttribute('role', 'button');
             image.setAttribute('tabindex', '0');
-            image.setAttribute('aria-label', '选择图片 ' + (index + 1));
+            image.setAttribute('aria-label', i18n('选择图片 ') + (index + 1));
             image.addEventListener('keydown', function (event) {
                 if (event.repeat || (event.key !== 'Enter' && event.key !== ' ')) return;
                 event.preventDefault();
@@ -2661,7 +2661,7 @@
         if (referenceEnabled) {
             var subtitle = card.querySelector('.admin-mobile-card-heading small');
             if (subtitle) {
-                var parent = node.parent && node.parent.label ? '上级：' + node.parent.label : (node.depth ? '隶属于上一级' : '顶级分类');
+                var parent = node.parent && node.parent.label ? i18n('上级：') + node.parent.label : (node.depth ? i18n('隶属于上一级') : i18n('顶级分类'));
                 subtitle.textContent = treeLevelLabel(node.depth) + ' · ' + parent;
             }
             return;
@@ -2671,7 +2671,7 @@
         context.innerHTML = '<span class="material-icons-outlined" aria-hidden="true"></span><strong></strong><small></small>';
         context.querySelector('.material-icons-outlined').textContent = node.depth ? 'subdirectory_arrow_right' : 'account_tree';
         context.querySelector('strong').textContent = treeLevelLabel(node.depth);
-        context.querySelector('small').textContent = node.parent && node.parent.label ? '上级：' + node.parent.label : (node.depth ? '隶属于上一级' : '顶级分类');
+        context.querySelector('small').textContent = node.parent && node.parent.label ? i18n('上级：') + node.parent.label : (node.depth ? i18n('隶属于上一级') : i18n('顶级分类'));
         card.querySelector('header').insertAdjacentElement('afterend', context);
     }
 
@@ -2707,12 +2707,12 @@
             if (!toggle) return;
             var expanded = !collapsed.has(node.ownKey);
             toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-            toggle.setAttribute('aria-label', (expanded ? '收起分类：' : '展开分类：') + (node.label || '未命名分类'));
-            toggle.title = expanded ? '收起分类' : '展开分类';
+            toggle.setAttribute('aria-label', (expanded ? i18n('收起分类：') : i18n('展开分类：')) + (node.label || i18n('未命名分类')));
+            toggle.title = expanded ? i18n('收起分类') : i18n('展开分类');
             var toggleLabel = toggle.querySelector('[data-admin-mobile-tree-toggle-label]');
             if (toggleLabel) {
                 var childCount = Math.max(1, parseInt(toggle.getAttribute('data-admin-mobile-tree-child-count'), 10) || 0);
-                toggleLabel.textContent = (expanded ? '收起 ' : '展开 ') + childCount + ' 个下级分类';
+                toggleLabel.textContent = (expanded ? i18n('收起 ') : i18n('展开 ')) + childCount + i18n(' 个下级分类');
             }
             var icon = toggle.querySelector('.material-icons-outlined');
             if (icon) {
@@ -2858,7 +2858,7 @@
             return;
         }
         if (!rowEntries.length) {
-            cards.innerHTML = '<div class="admin-mobile-empty"><span class="material-icons-outlined" aria-hidden="true">inbox</span><strong>' + (localQuery ? '没有匹配的记录' : '暂无数据') + '</strong><small>' + (localQuery ? '换个关键词或重置当前筛选' : '调整筛选条件后再试') + '</small></div>';
+            cards.innerHTML = '<div class="admin-mobile-empty"><span class="material-icons-outlined" aria-hidden="true">inbox</span><strong>' + (localQuery ? i18n('没有匹配的记录') : i18n('暂无数据')) + '</strong><small>' + (localQuery ? i18n('换个关键词或重置当前筛选') : i18n('调整筛选条件后再试')) + '</small></div>';
             renderPagination(host, snapshot);
             renderSelectionDock(host, snapshot, recipe, desktop, []);
             return;
@@ -2875,11 +2875,11 @@
                 try { cardCtaVisible = cardCta.show(row, index, snapshot) !== false; } catch (error) { cardCtaVisible = false; }
             }
             card.classList.toggle('admin-mobile-data-card--cta', cardCtaVisible);
-            var heading = primaryDefinitions.length ? primaryDefinitionValue(snapshot, primaryDefinitions[0], columns, row, index, recipe) : (primary ? definitionValue(snapshot, mobileColumnDefinition(primary), columns, row, index, recipe) : ('记录 ' + (index + 1)));
+            var heading = primaryDefinitions.length ? primaryDefinitionValue(snapshot, primaryDefinitions[0], columns, row, index, recipe) : (primary ? definitionValue(snapshot, mobileColumnDefinition(primary), columns, row, index, recipe) : (i18n('记录 ') + (index + 1)));
             var recordDefinition = recipeDefinitions(recipe, 'recordTitle')[0];
             var recordHeading = recordDefinition ? definitionValue(snapshot, recordDefinition, columns, row, index, recipe) : heading;
             var recordHeadingField = recordDefinition && recordDefinition.field || (primaryDefinitions[0] && primaryDefinitions[0].field) || (primary && primary.field) || '';
-            var recordTitle = (text(recordHeading) || text(heading) || ('记录 ' + (index + 1))).replace(/\s+/g, ' ');
+            var recordTitle = (text(recordHeading) || text(heading) || (i18n('记录 ') + (index + 1))).replace(/\s+/g, ' ');
             var subtitle = cardSubtitle(recipe, snapshot, columns, row, index, primaryDefinitions, heading);
             var selectionType = snapshot.selection && snapshot.selection.type === 'radio' ? 'radio' : 'checkbox';
             card.innerHTML = '<header><label class="admin-mobile-select"><input type="' + selectionType + '" name="admin-mobile-select-' + id + '" aria-label="选择此项"><span></span></label><span class="admin-mobile-card-media"><span class="material-icons-outlined" aria-hidden="true"></span></span><button type="button" class="admin-mobile-card-heading" data-admin-mobile-card-detail><strong></strong><small></small></button><button type="button" data-admin-mobile-card-more aria-label="更多操作"><span class="material-icons-outlined" aria-hidden="true">more_horiz</span></button></header><div class="admin-mobile-card-status" hidden></div><dl class="admin-mobile-card-metrics"></dl><footer class="admin-mobile-card-actions"></footer>';
@@ -2922,7 +2922,7 @@
             var primaryCopyValue = primaryCopy && primaryCopy.copyField ? rawValue(row, primaryCopy.copyField) : null;
             var primaryCopyEnabled = headingControl.tagName === 'BUTTON' && primaryCopy && primaryCopy.copyField && primaryCopyValue != null && String(primaryCopyValue).trim() !== '';
             if (primaryCopyEnabled) {
-                var primaryCopyLabel = text(primaryCopy.label || '复制内容') || '复制内容';
+                var primaryCopyLabel = text(primaryCopy.label || i18n('复制内容')) || i18n('复制内容');
                 var primaryCopyHeadingControl = document.createElement('div');
                 primaryCopyHeadingControl.className = headingControl.className;
                 while (headingControl.firstChild) primaryCopyHeadingControl.appendChild(headingControl.firstChild);
@@ -2934,8 +2934,8 @@
                 primaryDetailControl.type = 'button';
                 primaryDetailControl.className = 'admin-mobile-card-heading-detail-control';
                 primaryDetailControl.setAttribute('data-admin-mobile-card-detail', '');
-                primaryDetailControl.setAttribute('aria-label', '查看详细信息：' + recordTitle);
-                primaryDetailControl.title = '查看详细信息';
+                primaryDetailControl.setAttribute('aria-label', i18n('查看详细信息：') + recordTitle);
+                primaryDetailControl.title = i18n('查看详细信息');
                 headingControl.insertBefore(primaryDetailControl, headingControl.firstChild);
 
                 var primaryCopyButton = document.createElement('button');
@@ -3044,15 +3044,15 @@
             if (list) list.remove();
             var checkbox = card.querySelector('input');
             var moreControl = card.querySelector('[data-admin-mobile-card-more]');
-            checkbox.setAttribute('aria-label', '选择记录：' + recordTitle);
-            moreControl.setAttribute('aria-label', recordTitle + '的更多操作');
+            checkbox.setAttribute('aria-label', i18n('选择记录：') + recordTitle);
+            moreControl.setAttribute('aria-label', recordTitle + i18n('的更多操作'));
             var inlineSwitchRendered = renderInlineSwitch(card, recipe, snapshot, columns, row, moreControl, recordTitle);
             var selectable = rowSelectable(snapshot, row, index);
             checkbox.checked = selectable && rowSelected(snapshot, row, index);
             checkbox.disabled = !selectable;
             checkbox.setAttribute('aria-disabled', selectable ? 'false' : 'true');
             card.classList.toggle('is-selection-disabled', !selectable);
-            if (!selectable) checkbox.closest('label').title = '此项不可选择';
+            if (!selectable) checkbox.closest('label').title = i18n('此项不可选择');
             checkbox.addEventListener('change', function () {
                 if (!selectable) {
                     checkbox.checked = false;
@@ -3094,7 +3094,7 @@
             if (inlineSwitchRendered) {
                 // The inline switch is the only row interaction for static configuration lists.
             } else if (cardCtaVisible) {
-                var ctaLabel = text(cardCta.label || '查看');
+                var ctaLabel = text(cardCta.label || i18n('查看'));
                 moreControl.classList.add('admin-mobile-card-cta');
                 moreControl.textContent = ctaLabel;
                 moreControl.setAttribute('aria-label', ctaLabel + recordTitle);
@@ -3112,7 +3112,7 @@
                         var configured = recipeAction(recipe, 'primary', action.id) || recipeAction(recipe, 'more', action.id);
                         return {label: actionLabel(recipe, action), icon: configured && configured.icon || action.icon, danger: actionDanger(recipe, action), run: function () { return invokeRecipeAction(snapshot, recipe, action, row, index); }};
                     }));
-                    var actionTitle = text((recipe && recipe.title) || '记录').replace(/管理$/, '') + '操作';
+                    var actionTitle = text((recipe && recipe.title) || i18n('记录')).replace(/管理$/, '') + i18n('操作');
                     if (actions.length) api.openActions({title: actionTitle, subtitle: recordHeading, actions: actions});
                 });
             }

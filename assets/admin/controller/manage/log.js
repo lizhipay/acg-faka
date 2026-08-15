@@ -8,7 +8,7 @@
     table = new Table("/admin/api/log/data", "#manage-log-table");
     const htmlEntities = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'};
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => htmlEntities[character]);
-    let risk = ['<span class="badge badge-light-success">无风险</span>', '<span class="badge badge-light-danger">风险较高</span>'];
+    let risk = ['<span class="badge badge-light-success">' + i18n('无风险') + '</span>', '<span class="badge badge-light-danger">' + i18n('风险较高') + '</span>'];
 
     table.setColumns([
         {
@@ -30,7 +30,7 @@
         }
         , {
             field: 'risk', title: '评估', formatter: function (val, item) {
-                return risk[Number(item.risk)] || '<span class="badge badge-light-secondary">未知</span>';
+                return risk[Number(item.risk)] || '<span class="badge badge-light-secondary">' + i18n('未知') + '</span>';
             }
         }
     ]);

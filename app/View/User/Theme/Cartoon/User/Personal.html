@@ -8,41 +8,41 @@
             <form class="layui-form form-data">
                 <div class="form-block">
                     <div>
-                        <div class="form-header">头像</div>
+                        <div class="form-header">#{t("头像")}</div>
                         <div class="form-body">
                             <input type="file" class="avatar-input" style="display:none;">
                             <input type="text" name="avatar" style="display:none;" value="#{$user.avatar}">
-                            <img class="avatar-img uc-avatar-edit" onclick="document.getElementsByClassName('avatar-input')[0].click()" src="#{$user.avatar}" alt="点击修改">
+                            <img class="avatar-img uc-avatar-edit" onclick="document.getElementsByClassName('avatar-input')[0].click()" src="#{$user.avatar}" alt="#{t('点击修改')}">
                         </div>
                     </div>
                     <div>
-                        <div class="form-header">QQ 号</div>
-                        <div class="form-body"><input type="number" value="#{$user.qq}" name="qq" autocomplete="off" placeholder="请输入 QQ 号" class="layui-input"></div>
+                        <div class="form-header">#{t("QQ 号")}</div>
+                        <div class="form-body"><input type="number" value="#{$user.qq}" name="qq" autocomplete="off" placeholder="#{t('请输入 QQ 号')}" class="layui-input"></div>
                     </div>
                     <div>
-                        <div class="form-header">真实姓名（提现）</div>
-                        <div class="form-body"><input type="text" value="#{$user.nicename}" name="nicename" autocomplete="off" placeholder="请输入您的真实姓名" class="layui-input"></div>
+                        <div class="form-header">#{t("真实姓名（提现）")}</div>
+                        <div class="form-body"><input type="text" value="#{$user.nicename}" name="nicename" autocomplete="off" placeholder="#{t('请输入您的真实姓名')}" class="layui-input"></div>
                     </div>
                     <div>
-                        <div class="form-header">自动结算方式</div>
+                        <div class="form-header">#{t("自动结算方式")}</div>
                         <div class="form-body">
                             <select name="settlement" lay-ignore>
-                                <option value="0" #{if $user.settlement == 0} selected #{/if}>支付宝</option>
-                                <option value="1" #{if $user.settlement == 1} selected #{/if}>微信</option>
+                                <option value="0" #{if $user.settlement == 0} selected #{/if}>#{t("支付宝")}</option>
+                                <option value="1" #{if $user.settlement == 1} selected #{/if}>#{t("微信")}</option>
                                 <option value="3" #{if $user.settlement == 3} selected #{/if}>USDT (TRC20)</option>
                             </select>
                         </div>
                     </div>
                     <div>
-                        <div class="form-header">支付宝账号（提现）</div>
-                        <div class="form-body"><input type="text" value="#{$user.alipay}" name="alipay" autocomplete="off" placeholder="兑现使用的支付宝账号" class="layui-input"></div>
+                        <div class="form-header">#{t("支付宝账号（提现）")}</div>
+                        <div class="form-body"><input type="text" value="#{$user.alipay}" name="alipay" autocomplete="off" placeholder="#{t('兑现使用的支付宝账号')}" class="layui-input"></div>
                     </div>
                     <div>
-                        <div class="form-header">钱包地址（TRC20）</div>
-                        <div class="form-body"><input type="text" value="#{$user.wallet_address}" name="wallet_address" autocomplete="off" placeholder="兑现使用的钱包地址" class="layui-input"></div>
+                        <div class="form-header">#{t("钱包地址（TRC20）")}</div>
+                        <div class="form-body"><input type="text" value="#{$user.wallet_address}" name="wallet_address" autocomplete="off" placeholder="#{t('兑现使用的钱包地址')}" class="layui-input"></div>
                     </div>
                     <div>
-                        <div class="form-header">微信收款二维码（提现）</div>
+                        <div class="form-header">#{t("微信收款二维码（提现）")}</div>
                         <div class="form-body">
                             <input type="file" class="wechat-input" style="display:none;">
                             <input type="text" name="wechat" style="display:none;" value="">
@@ -59,7 +59,7 @@
                     <!--end::HOOK-->
 
                     <div style="margin-top:24px;">
-                        <button type="button" class="uc-cta save-data"><span class="material-icons-outlined">save</span>保存修改</button>
+                        <button type="button" class="uc-cta save-data"><span class="material-icons-outlined">save</span>#{t("保存修改")}</button>
                     </div>
                 </div>
             </form>
@@ -68,32 +68,32 @@
             <div class="uc-tabpanel active" data-panel="security">
                 <div class="uc-info">
                     <div class="uc-info__row">
-                        <div class="uc-info__k">登录 IP 地址</div>
+                        <div class="uc-info__k">#{t("登录 IP 地址")}</div>
                         <div class="uc-info__v"><span class="uc-ip">#{$user.login_ip}</span></div>
                     </div>
                     <div class="uc-info__row">
-                        <div class="uc-info__k">登录时间</div>
+                        <div class="uc-info__k">#{t("登录时间")}</div>
                         <div class="uc-info__v">#{$user.login_time}</div>
                     </div>
                     <div class="uc-info__row">
-                        <div class="uc-info__k">上次登录 IP</div>
+                        <div class="uc-info__k">#{t("上次登录 IP")}</div>
                         <div class="uc-info__v">
-                            #{if $user.last_login_ip}<span class="uc-ip">#{$user.last_login_ip}</span>#{if $user.login_ip != $user.last_login_ip} <span class="uc-warn">（异地登录）</span>#{/if}#{else}-#{/if}
+                            #{if $user.last_login_ip}<span class="uc-ip">#{$user.last_login_ip}</span>#{if $user.login_ip != $user.last_login_ip} <span class="uc-warn">#{t("（异地登录）")}</span>#{/if}#{else}-#{/if}
                         </div>
                     </div>
                     <div class="uc-info__row">
-                        <div class="uc-info__k">上次登录时间</div>
+                        <div class="uc-info__k">#{t("上次登录时间")}</div>
                         <div class="uc-info__v">#{if $user.last_login_time}#{$user.last_login_time}#{else}-#{/if}</div>
                     </div>
                     <div class="uc-info__row">
-                        <div class="uc-info__k">商户 ID</div>
+                        <div class="uc-info__k">#{t("商户 ID")}</div>
                         <div class="uc-info__v"><span class="uc-chip">#{$user.id}</span></div>
                     </div>
                     <div class="uc-info__row">
-                        <div class="uc-info__k">商户密钥</div>
+                        <div class="uc-info__k">#{t("商户密钥")}</div>
                         <div class="uc-info__v">
                             <span class="uc-chip app-key">#{$user.app_key}</span>
-                            <span class="uc-minibtn uc-minibtn--reset reset-key"><span class="material-icons-outlined">refresh</span>重置</span>
+                            <span class="uc-minibtn uc-minibtn--reset reset-key"><span class="material-icons-outlined">refresh</span>#{t("重置")}</span>
                         </div>
                     </div>
                 </div>

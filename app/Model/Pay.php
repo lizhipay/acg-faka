@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $handle
  * @property float $cost
  * @property int $cost_type
+ * @property int $archived
  */
 class Pay extends Model
 {
@@ -35,5 +36,5 @@ class Pay extends Model
     /**
      * @var array
      */
-    protected $casts = ['id' => 'integer', 'commodity' => 'integer', 'recharge' => 'integer', 'sort' => 'integer', 'equipment' => 'integer', 'cost_type' => 'integer', 'cost' => 'float'];
+    protected $casts = ['id' => 'integer', 'commodity' => 'integer', 'recharge' => 'integer', 'sort' => 'integer', 'equipment' => 'integer', 'cost_type' => 'integer', 'cost' => 'float', 'archived' => 'integer'];
 }

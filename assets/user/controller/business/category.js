@@ -21,7 +21,8 @@
                             name: "pid",
                             type: "treeSelect",
                             dict: "category?tree=true",
-                            placeholder: "父级分类，可不选"
+                            placeholder: "父级分类，可不选",
+                            clearToZero: true
                         },
                         {
                             title: "图标",
@@ -95,7 +96,7 @@
                     class: "text-primary",
                     title: "编辑",
                     click: (event, value, row, index) => {
-                        modal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + "修改分类", row);
+                        modal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + i18n("修改分类"), row);
                     }
                 },
                 {
@@ -121,6 +122,6 @@
 
 
     $('.button-add').click(function () {
-        modal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> 添加分类`);
+        modal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> ${i18n('添加分类')}`);
     });
 }();

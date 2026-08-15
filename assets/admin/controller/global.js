@@ -18,15 +18,15 @@
                 let html = format.badge(`<i class="fa-duotone fa-regular fa-user"></i> ${res.data.username}`, 'a-badge-light edit-store-user');
 
                 if (res.data.level === 0) {
-                    html += format.badge(`<i class="fa-duotone fa-regular fa-crown"></i> 專業版`, 'a-badge a-badge-primary hide-mobile');
+                    html += format.badge(`<i class="fa-duotone fa-regular fa-crown"></i> ${i18n('專業版')}`, 'a-badge a-badge-primary hide-mobile');
                 }
 
                 if (res.data.level === 1) {
-                    html += format.badge(`<i class="fa-duotone fa-regular fa-crown"></i> 企業版`, 'a-badge a-badge-success');
+                    html += format.badge(`<i class="fa-duotone fa-regular fa-crown"></i> ${i18n('企業版')}`, 'a-badge a-badge-success');
                 }
 
                 if (res.data.developer == 1) {
-                    html += format.badge(`<span class="material-icons-outlined md-top-pill__icon" aria-hidden="true">terminal</span> 開發者`, 'a-badge a-badge-success hide-mobile');
+                    html += format.badge(`<span class="material-icons-outlined md-top-pill__icon" aria-hidden="true">terminal</span> ${i18n('開發者')}`, 'a-badge a-badge-success hide-mobile');
                     html += format.badge(`<span class="material-icons-outlined md-top-pill__icon" aria-hidden="true">account_balance_wallet</span> ${res.data.balance}`, 'a-badge a-badge-warning hide-mobile');
                 }
 
@@ -38,7 +38,7 @@
                         submit: '/admin/api/app/editPassword',
                         tab: [
                             {
-                                name: `<i class="fa-duotone fa-regular fa-user-pen"></i> 修改应用商店账户密码`,
+                                name: `<i class="fa-duotone fa-regular fa-user-pen"></i> ${i18n('修改应用商店账户密码')}`,
                                 form: [
                                     {
                                         title: false,
@@ -48,7 +48,7 @@
                                             dom.html(`<div class="">
                   <div class="alert alert-warning d-flex align-items-center" role="alert">
                     <p class="mb-0">
-                    <i class="fa-duotone fa-regular fa-circle-exclamation"></i> 旧密码输入错误超过10次，将会永久封禁账户，请慎重操作。
+                    <i class="fa-duotone fa-regular fa-circle-exclamation"></i> ${i18n('旧密码输入错误超过')}10${i18n('次，将会永久封禁账户，请慎重操作。')}
                     </p>
                   </div>`);
                                         }
@@ -73,7 +73,7 @@
                         autoPosition: true,
                         height: "auto",
                         maxmin: false,
-                        confirmText: `${util.icon("fa-duotone fa-regular fa-rotate")} 确认修改`,
+                        confirmText: `${util.icon("fa-duotone fa-regular fa-rotate")} ${i18n('确认修改')}`,
                         width: "320px"
                     });
                 });
@@ -91,12 +91,12 @@
                     }, 1500);
                 });
             } : false,
-            confirmText: `<i class="fa-duotone fa-regular fa-arrows-rotate"></i>立即更新`,
+            confirmText: `<i class="fa-duotone fa-regular fa-arrows-rotate"></i>${i18n('立即更新')}`,
             width: "620px",
             height: "720px",
             tab: [
                 {
-                    name: `<i class="fa-duotone fa-regular fa-code"></i> 版本列表`,
+                    name: `<i class="fa-duotone fa-regular fa-code"></i> ${i18n('版本列表')}`,
                     form: [
                         {
                             title: false,
@@ -147,7 +147,7 @@
                 if (_IsLatestVersion) {
                     $('.latest-version').css("color", "green").html("[ Latest ]");
                 } else {
-                    $('.latest-version').css("color", "red").html(`[ 更新 v${res.data.version} ]`);
+                    $('.latest-version').css("color", "red").html(`[ ${i18n('更新')} v${res.data.version} ]`);
                     let cache = localStorage.getItem(res.data.version);
                     //第一次检测到版本，主动打开更新窗口
                     if (!cache) {
@@ -161,10 +161,10 @@
                 });
             },
             error: () => {
-                $('.latest-update').css("color", "red").html("版本检查失败");
+                $('.latest-update').css("color", "red").html(i18n("版本检查失败"));
             },
             fail: () => {
-                $('.latest-update').css("color", "red").html("版本检查失败");
+                $('.latest-update').css("color", "red").html(i18n("版本检查失败"));
             }
         });
     }
@@ -180,15 +180,15 @@
             }
 
             if (res.themePlugin > 0){
-                $(`.theme-update`).html(`${res.themePlugin}个更新`).show();
+                $(`.theme-update`).html(`${res.themePlugin}${i18n('个更新')}`).show();
             }
 
             if (res.generalPlugin > 0){
-                $(`.general-update`).html(`${res.generalPlugin}个更新`).show();
+                $(`.general-update`).html(`${res.generalPlugin}${i18n('个更新')}`).show();
             }
 
             if (res.payPlugin > 0){
-                $(`.payPlugin-update`).html(`${res.payPlugin}个更新`).show();
+                $(`.payPlugin-update`).html(`${res.payPlugin}${i18n('个更新')}`).show();
             }
         });
     }
@@ -204,7 +204,7 @@
                 $('.ticket-admin-badge')
                     .text(count > 99 ? '99+' : count)
                     .prop('hidden', count < 1)
-                    .attr('aria-label', count > 0 ? `有 ${count} 张工单等待处理` : '没有待处理工单');
+                    .attr('aria-label', count > 0 ? `${i18n('有')} ${count} ${i18n('张工单等待处理')}` : i18n('没有待处理工单'));
             }
         });
     }

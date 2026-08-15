@@ -48,6 +48,9 @@ class Dict implements \App\Service\Dict
                 $select = DB::select("select {$field} from {$prefix}{$table[0]} {$whereX} order by id desc");
 
             } catch (\Exception $e) {
+                //缺列（如老站升级后 category 少 pid）等 SQL 错误此前被静默吞成空列表，
+                //前端只会表现为"下拉拉不出数据"，极难排查——落一条错误日志（issue #794）
+                \Kernel\Util\Log::inst()->error("字典查询失败[{$dictName}]: " . $e->getMessage());
                 return [];
             }
            return array_map('get_object_vars', $select);

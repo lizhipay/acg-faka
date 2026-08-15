@@ -1,13 +1,14 @@
 /*!
- * material-auth.css — Material skin for the admin login (app/View/Admin/Authentication/Login.html).
- * Overrides the bespoke neon-glass `ay-*` styles (auth.css) with a Material light/dark auth card.
- * Loaded after material-tokens.css + auth.css. Theme comes from the <head> FOUC guard.
- * Markup/JS untouched: #ay-form, #ay-captcha-img refresh, #ay-code (2FA), #ay-remember, #ay-eye.
+ * material-auth.css — Refined Material skin for the admin login (app/View/Admin/Authentication/Login.html).
+ * Overrides the bespoke neon-glass `ay-*` styles (auth.css). Loaded after md-tokens.css + auth.css.
+ * Theme comes from the <head> FOUC guard (html[data-theme=light|dark]); every color is an --md-* token.
+ * Markup/JS contract: #ay-form, #ay-captcha-img refresh, #ay-code (2FA), #ay-remember, #ay-eye,
+ * #ay-theme (theme toggle), #ay-caps (CapsLock hint), .ay-ico leading icons, Turnstile slot/inline holder.
  */
 
-/* page → flat Material background; drop the neon dim/petals decorations */
+/* ---------- page：店铺背景 + 主题化磨砂罩 ---------- */
 body.ay-bg {
-  background: var(--md-bg) !important;
+  background-color: var(--md-bg);
   color: var(--md-on-surface);
   font-family: var(--md-font);
   min-height: 100vh;
@@ -15,89 +16,309 @@ body.ay-bg {
   overflow-y: auto;
   overscroll-behavior-y: contain;
 }
-.ay-dim, .ay-petals { display: none !important; }
 
-/* card → Material surface (Paper); remove glass blur, neon border, 3D tilt */
+/* 磨砂罩：让店铺自选背景以柔和底纹透出，明暗各自收敛 */
+.ay-dim {
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(244, 245, 247, .72);
+  background: color-mix(in srgb, var(--md-bg) 74%, transparent);
+  -webkit-backdrop-filter: blur(26px) saturate(118%);
+  backdrop-filter: blur(26px) saturate(118%);
+}
+[data-theme="dark"] .ay-dim {
+  background: rgba(14, 16, 19, .82);
+  background: color-mix(in srgb, var(--md-bg) 84%, transparent);
+  -webkit-backdrop-filter: blur(26px) saturate(92%);
+  backdrop-filter: blur(26px) saturate(92%);
+}
+
+/* 樱花：以极低透明度回归，作为品牌身份的克制致意 */
+.ay-petals { display: block; }
+.ay-petals i {
+  background: linear-gradient(135deg, #ffd9ea, #ffb3d5);
+  opacity: .30;
+  filter: none;
+}
+.ay-petals i:nth-child(4n) { opacity: .20; }
+[data-theme="dark"] .ay-petals i {
+  background: linear-gradient(135deg, #3a4260, #4d5a82);
+  opacity: .22;
+}
+
+/* ---------- card：安静的高级感 ---------- */
 .ay-card {
-  width: min(420px, 92vw);
+  width: min(440px, 92vw);
+  margin-top: 0;
   background: var(--md-surface) !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
   border: 1px solid var(--md-divider);
-  border-radius: var(--md-radius-lg);
-  box-shadow: var(--md-e8);
-  transform: none !important;                 /* neutralize login.js 3D perspective */
+  border-radius: 24px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, .05),
+    0 24px 64px -24px rgba(15, 23, 42, .28);
+  transform: none !important;               /* 关闭 login.js 的 3D 倾斜（保留其 --mx/--my 供暗色聚光） */
+  transition: box-shadow .25s ease;
 }
-.ay-card::before, .ay-card::after { display: none !important; }
-.ay-card:hover { box-shadow: var(--md-e12); }
+[data-theme="dark"] .ay-card {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .04),
+    0 28px 80px -28px rgba(0, 0, 0, .75);
+}
+.ay-card:hover {
+  box-shadow:
+    0 2px 4px rgba(15, 23, 42, .05),
+    0 32px 80px -28px rgba(15, 23, 42, .34);
+}
+[data-theme="dark"] .ay-card:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .05),
+    0 32px 96px -28px rgba(0, 0, 0, .8);
+}
 
-.ay-logo { box-shadow: var(--md-e2); }
-.ay-title { color: var(--md-on-surface); font-weight: 600; letter-spacing: normal; }
-.ay-sub { color: var(--md-on-surface-med); }
+/* 顶部渐变发丝线：卡片的署名细节 */
+.ay-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  bottom: auto;
+  inset: 0 24px auto 24px;
+  height: 2px;
+  padding: 0;
+  border-radius: 2px;
+  -webkit-mask: none;
+  mask: none;
+  background: linear-gradient(90deg, transparent, rgba(25, 118, 210, .8), transparent);
+  background: linear-gradient(90deg,
+    transparent,
+    color-mix(in srgb, var(--md-primary) 85%, transparent),
+    transparent);
+  opacity: .9;
+}
 
-/* inputs → MUI outlined */
-.ay-input {
+/* 暗色下跟随鼠标的低亮聚光（复用 login.js 写入的 --mx/--my） */
+.ay-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  mix-blend-mode: normal;
+  opacity: 0;
+  transition: opacity .3s ease;
+  background: radial-gradient(300px 220px at var(--mx, 50%) var(--my, 50%),
+    rgba(144, 202, 249, .07), transparent 65%);
+}
+[data-theme="dark"] .ay-card:hover::after { opacity: 1; }
+
+/* ---------- 主题切换（卡片右上角幽灵按钮） ---------- */
+.ay-theme {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
   background: transparent;
-  border: 1px solid var(--md-outline);
-  border-radius: var(--md-radius);
-  color: var(--md-on-surface);
+  color: var(--md-on-surface-med);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease, transform .15s ease;
 }
-.ay-input:hover { border-color: var(--md-on-surface); }
-.ay-input:focus { border-color: var(--md-primary); box-shadow: 0 0 0 1px var(--md-primary); }
+.ay-theme:hover { background: var(--md-hover-overlay); color: var(--md-on-surface); }
+.ay-theme:active { transform: scale(.92); }
+.ay-theme:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 2px; }
+.ay-theme .ico-sun { display: none; }
+[data-theme="dark"] .ay-theme .ico-sun { display: block; }
+[data-theme="dark"] .ay-theme .ico-moon { display: none; }
 
-/* floating label (reuses the placeholder-shown mechanic) */
+/* ---------- head ---------- */
+.ay-head { padding: 32px 30px 6px; row-gap: 6px; }
+.ay-logo {
+  width: 60px;
+  height: 60px;
+  box-shadow:
+    0 0 0 1px var(--md-divider),
+    0 10px 28px -10px rgba(25, 118, 210, .45);
+  box-shadow:
+    0 0 0 1px var(--md-divider),
+    0 10px 28px -10px color-mix(in srgb, var(--md-primary) 45%, transparent);
+}
+.ay-title {
+  color: var(--md-on-surface);
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -.01em;
+}
+.ay-sub { color: var(--md-on-surface-med); font-size: 13px; }
+
+.ay-body { padding: 10px 30px 26px; }
+
+/* ---------- fields ---------- */
+.ay-field { margin: 16px 0 20px; }
+
+.ay-input {
+  height: 52px;
+  padding: 12px 44px 12px 14px;
+  background: var(--md-hover-overlay);
+  border: 1px solid var(--md-outline);
+  border-radius: 14px;
+  color: var(--md-on-surface);
+  font-size: 14.5px;
+  transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+.ay-field.has-ico .ay-input { padding-left: 46px; }
+.ay-input:hover { border-color: var(--md-on-surface-med); }
+.ay-input:focus {
+  background: var(--md-surface);
+  border-color: var(--md-primary);
+  box-shadow: 0 0 0 3px rgba(var(--md-primary-rgb, 25, 118, 210), .16);
+  transform: none;
+}
+
+/* 浏览器自动填充：贴合主题，去掉默认黄底 */
+.ay-input:-webkit-autofill {
+  -webkit-text-fill-color: var(--md-on-surface);
+  -webkit-box-shadow: 0 0 0 1000px var(--md-surface) inset;
+  transition: background-color 99999s ease-in-out 0s;
+}
+
+/* 数字输入（验证码 / 2FA）等宽微距 */
+.ay-input[name="captcha"],
+.ay-input[name="code"] {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .08em;
+}
+
+/* 浮动标签（沿用 placeholder-shown 机制） */
 .ay-label {
-  left: 10px;
+  left: 14px;
   top: 50%;
   z-index: 1;
   max-width: calc(100% - 20px);
   padding: 0 4px;
   overflow: hidden;
   background: transparent;
+  border: none;
+  border-radius: 0;
   color: var(--md-on-surface-med);
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
   transform: translateY(-50%);
   transform-origin: left center;
-  transition: top var(--md-dur-fast) var(--md-ease), transform var(--md-dur-fast) var(--md-ease), font-size var(--md-dur-fast) var(--md-ease), color var(--md-dur-fast) var(--md-ease), background-color var(--md-dur-fast) var(--md-ease);
+  transition:
+    top var(--md-dur-fast) var(--md-ease),
+    left var(--md-dur-fast) var(--md-ease),
+    font-size var(--md-dur-fast) var(--md-ease),
+    color var(--md-dur-fast) var(--md-ease),
+    background-color var(--md-dur-fast) var(--md-ease);
 }
+.ay-field.has-ico .ay-label { left: 46px; }
 .ay-input:is(:focus, :not(:placeholder-shown), :-webkit-autofill) + .ay-label {
   top: 0;
+  left: 12px;
   font-size: 12px;
   line-height: 20px;
   color: var(--md-on-surface-med);
   background: var(--md-surface);
   border: none;
-  border-radius: 0;
-  padding: 0 4px;
+  border-radius: 4px;
+  padding: 0 5px;
   transform: translateY(-50%);
 }
 .ay-input:focus + .ay-label { color: var(--md-primary); }
 
-/* password eye → Material icon button (recolor the inline-stroked svg) */
-.ay-eye { background: transparent; border: none; border-radius: var(--md-radius-pill); }
-.ay-eye:hover { background: var(--md-hover-overlay); }
-.ay-eye svg { stroke: var(--md-on-surface-med); }
+/* 前置语义图标：聚焦时随主色点亮 */
+.ay-ico {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  color: var(--md-on-surface-med);
+  opacity: .75;
+  pointer-events: none;
+  transition: color .16s ease, opacity .16s ease;
+}
+.ay-input:focus ~ .ay-ico { color: var(--md-primary); opacity: 1; }
 
-/* captcha image */
-.ay-captcha { border: 1px solid var(--md-divider); border-radius: var(--md-radius); }
+/* 密码可见性：眼睛随输入框类型切换开合两态 */
+.ay-eye {
+  width: 38px;
+  height: 38px;
+  right: 7px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--md-on-surface-med);
+  transition: background-color .15s ease, color .15s ease;
+}
+.ay-eye:hover { background: var(--md-hover-overlay); color: var(--md-on-surface); }
+.ay-eye:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 2px; }
+.ay-eye svg { stroke: currentColor; }
+.ay-eye .ay-eye-shut { display: none; }
+.ay-input[type="text"] ~ .ay-eye .ay-eye-shut { display: block; }
+.ay-input[type="text"] ~ .ay-eye .ay-eye-open { display: none; }
 
-/* remember checkbox + forgot link */
+/* 谷歌验证码：默认收起，账号确认绑定 2FA 后按需展开（login.js 识别 code 42001） */
+.ay-2fa.is-hidden { display: none; }
+.ay-2fa.ay-reveal { animation: ay-up .45s cubic-bezier(.16, 1, .3, 1) both; animation-delay: 0s !important; }
+
+/* 大写锁定提示 */
+.ay-caps {
+  display: block;
+  margin: 6px 2px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--md-warning);
+}
+.ay-caps::before { content: "⇪ "; }
+.ay-caps[hidden] { display: none; }
+
+/* 图形验证码 */
+.ay-input[name="captcha"] { padding-right: 118px; }
+.ay-captcha {
+  height: 38px;
+  right: 7px;
+  border: 1px solid var(--md-divider);
+  border-radius: 10px;
+  user-select: none;
+  transition: filter .15s ease, transform .15s ease;
+}
+.ay-captcha:hover { filter: brightness(1.06); opacity: 1; }
+.ay-captcha:active { transform: translateY(-50%) scale(.96); }
+
+/* ---------- 功能行 ---------- */
+.ay-row { margin: 0 0 16px; }
 .ay-check {
   color: var(--md-on-surface-med);
+  font-size: 13px;
   position: relative;
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
 }
+.ay-check:hover { color: var(--md-on-surface); }
 .ay-check input {
+  width: 18px;
+  height: 18px;
   border: 2px solid var(--md-on-surface-med);
-  border-radius: 3px;
+  border-radius: 5px;
   background: transparent;
   background-color: transparent !important;
   pointer-events: auto;
+  transition: border-color .15s ease, background-color .15s ease;
 }
 .ay-check input:hover { border-color: var(--md-on-surface); background: var(--md-hover-overlay); }
 .ay-check input:checked {
@@ -110,26 +331,103 @@ body.ay-bg {
   line-height: 1;
   pointer-events: none;
 }
-.ay-link { color: var(--md-primary); border-bottom: none; opacity: 1; }
-.ay-link:hover { text-decoration: underline; }
-
-/* submit → contained primary button */
-.ay-btn {
-  background: var(--md-primary);
-  color: var(--md-on-primary);
-  border-radius: var(--md-radius);
-  font-weight: 500;
-  letter-spacing: normal;
-  box-shadow: var(--md-e2);
+.ay-check input:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 2px; }
+.ay-link {
+  color: var(--md-primary);
+  border-bottom: none;
+  opacity: 1;
+  font-size: 13px;
 }
-.ay-btn:hover { background: var(--md-primary-hover); box-shadow: var(--md-e4); transform: none; }
-.ay-btn:active { box-shadow: var(--md-e8); }
-.ay-btn::after { display: none !important; }
+.ay-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-.ay-foot { color: var(--md-on-surface-med); }
+/* Turnstile 人机验证槽位（官方挂载点 / JS 兜底容器）融入表单节奏 */
+.turnstile-guard-slot,
+#turnstile-guard-inline { margin: 4px 0 16px !important; }
 
-/* Mobile auth ergonomics: the form remains reachable above the virtual keyboard
-   and every interactive control keeps an app-sized touch target. */
+/* ---------- 主按钮 ---------- */
+.ay-btn {
+  height: 50px;
+  border-radius: 14px;
+  color: var(--md-on-primary);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  background: var(--md-primary);
+  background: linear-gradient(135deg,
+    var(--md-primary),
+    color-mix(in srgb, var(--md-primary) 45%, #26c6da));
+  box-shadow: 0 12px 28px -12px rgba(var(--md-primary-rgb, 25, 118, 210), .55);
+  transition: transform .12s ease, box-shadow .2s ease, filter .2s ease;
+}
+.ay-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 16px 34px -12px rgba(var(--md-primary-rgb, 25, 118, 210), .65);
+}
+.ay-btn:active { transform: translateY(0) scale(.995); }
+.ay-btn:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 3px; }
+
+/* 收敛的高光扫过 */
+.ay-btn::after {
+  display: block !important;
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, .22) 50%,
+    rgba(255, 255, 255, 0) 100%);
+}
+
+/* 提交中：内联转轮 + 降饱和（login.js 置 disabled 并替换文案） */
+.ay-btn[disabled] {
+  pointer-events: none;
+  filter: saturate(.85) brightness(.98);
+  transform: none;
+}
+.ay-btn[disabled]::before {
+  content: "";
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  margin-right: 9px;
+  vertical-align: -2px;
+  border: 2px solid rgba(255, 255, 255, .45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ay-spin .8s linear infinite;
+}
+@keyframes ay-spin { to { transform: rotate(360deg); } }
+
+/* ---------- foot ---------- */
+.ay-foot {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--md-divider);
+  color: var(--md-on-surface-med);
+  font-size: 12px;
+  opacity: 1;
+}
+
+/* ---------- 入场编排（分层浮现，尊重动效偏好） ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .ay-card { animation: ay-in .5s cubic-bezier(.16, 1, .3, 1) both; }
+  .ay-head, .ay-field, .ay-row, .turnstile-guard-slot, .ay-btn, .ay-foot {
+    animation: ay-up .55s cubic-bezier(.16, 1, .3, 1) both;
+  }
+  .ay-head { animation-delay: .05s; }
+  .ay-field { animation-delay: .11s; }
+  .ay-row, .turnstile-guard-slot { animation-delay: .17s; }
+  .ay-btn { animation-delay: .22s; }
+  .ay-foot { animation-delay: .28s; }
+}
+@keyframes ay-in {
+  from { opacity: 0; transform: translateY(14px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ay-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- 移动端人体工学：表单保持在虚拟键盘之上，触控目标不缩水 ---------- */
 @media (max-width: 991.98px) {
   .ay-wrap {
     min-height: 100vh;
@@ -147,12 +445,13 @@ body.ay-bg {
     margin: auto 0;
     border-radius: 24px;
   }
-  .ay-head { padding: 22px 18px 6px; }
-  .ay-body { padding: 12px 18px 20px; }
-  .ay-field { margin: 14px 0 20px; }
+  .ay-head { padding: 24px 18px 4px; }
+  .ay-body { padding: 8px 18px 20px; }
+  .ay-field { margin: 14px 0 18px; }
   .ay-input,
   .ay-btn { min-height: 48px; font-size: 16px; }
   .ay-eye { width: 44px; height: 44px; right: 3px; }
+  .ay-theme { width: 44px; height: 44px; top: 8px; right: 8px; }
   .ay-captcha { min-width: 92px; height: 40px; right: 4px; }
   .ay-check,
   .ay-link { min-height: 44px; display: inline-flex; align-items: center; }
@@ -164,13 +463,19 @@ body.ay-bg {
   .ay-card { margin: 0; border-radius: 20px; }
   .ay-logo { width: 50px; height: 50px; }
   .ay-head { padding-top: 16px; row-gap: 4px; }
-  .ay-body { padding-top: 8px; }
-  .ay-field { margin: 12px 0 17px; }
+  .ay-body { padding-top: 6px; }
+  .ay-field { margin: 12px 0 16px; }
   .ay-row { align-items: flex-start; margin-bottom: 12px; }
 }
 
+/* ---------- 动效收敛 ---------- */
 @media (prefers-reduced-motion: reduce) {
   .ay-card,
   .ay-input,
-  .ay-btn { transition: none !important; }
+  .ay-btn,
+  .ay-theme,
+  .ay-label { transition: none !important; animation: none !important; }
+  .ay-head, .ay-field, .ay-row, .turnstile-guard-slot, .ay-foot { animation: none !important; }
+  .ay-btn::after { display: none !important; }
+  .ay-petals { display: none; }
 }

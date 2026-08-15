@@ -39,6 +39,12 @@ class AdminEntrance
             return; //Client::redirect 内部已 exit，这里仅为语义完整
         }
 
+        //MCP JSON-RPC 端点自带访问秘钥鉴权，放行安全入口门禁（仅 /admin/mcp/*；
+        //后台会话保护的 /admin/api/mcp/* 段为 api，不在此列，仍走门禁）
+        if ($route === "admin" && strtolower((string)($segments[1] ?? "")) === "mcp") {
+            return;
+        }
+
         //访问后台但未经安全入口 → 直接 404，不暴露后台入口的存在
         if ($route === "admin" && Session::get(self::SESSION) !== true) {
             self::deny();

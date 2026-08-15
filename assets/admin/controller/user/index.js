@@ -66,32 +66,32 @@
             }
             data = {...data, amount: amount, log: rawReason};
             const increase = action === '1';
-            const direction = increase ? '增加' : '扣减';
-            const username = escapeHtml(row.username || '未命名会员');
+            const direction = increase ? i18n('增加') : i18n('扣减');
+            const username = escapeHtml(row.username || i18n('未命名会员'));
             const userId = escapeHtml(row.id ?? '-');
             const current = escapeHtml(row[account.field] ?? '0');
             const reason = escapeHtml(rawReason);
-            const cumulativeLabel = account.totalLabel || '累计统计';
+            const cumulativeLabel = account.totalLabel || i18n('累计统计');
             const cumulative = increase
-                ? (String(data.total) === '1' ? `计入${cumulativeLabel}` : `不计入${cumulativeLabel}`)
-                : `扣减操作不影响${cumulativeLabel}`;
+                ? (String(data.total) === '1' ? `${i18n('计入')}${cumulativeLabel}` : `${i18n('不计入')}${cumulativeLabel}`)
+                : `${i18n('扣减操作不影响')}${cumulativeLabel}`;
             confirming = true;
             accountConfirmationOpen = true;
             Swal.fire({
-                title: `确认${direction}${account.label}`,
+                title: `${i18n('确认')}${direction}${account.label}`,
                 html: `<div style="text-align:left;line-height:1.8;">
-                    <div><b>会员：</b>${username}（ID ${userId}）</div>
-                    <div><b>当前${account.label}：</b>${current}</div>
-                    <div><b>变动方向：</b>${direction}</div>
-                    <div><b>变动数量：</b>${escapeHtml(amount)}</div>
-                    <div><b>累计统计：</b>${escapeHtml(cumulative)}</div>
-                    <div><b>操作原因：</b>${reason}</div>
-                    <div style="margin-top:10px;color:#d14343;">提交后会立即写入账单并改变会员${account.label}，无法在本页面一键撤销。</div>
+                    <div><b>${i18n('会员：')}</b>${username}（ID ${userId}）</div>
+                    <div><b>${i18n('当前')}${account.label}：</b>${current}</div>
+                    <div><b>${i18n('变动方向：')}</b>${direction}</div>
+                    <div><b>${i18n('变动数量：')}</b>${escapeHtml(amount)}</div>
+                    <div><b>${i18n('累计统计：')}</b>${escapeHtml(cumulative)}</div>
+                    <div><b>${i18n('操作原因：')}</b>${reason}</div>
+                    <div style="margin-top:10px;color:#d14343;">${i18n('提交后会立即写入账单并改变会员')}${account.label}，${i18n('无法在本页面一键撤销。')}</div>
                 </div>`,
                 icon: 'warning',
                 showCancelButton: true,
-                cancelButtonText: '返回修改',
-                confirmButtonText: `确认${direction}`
+                cancelButtonText: i18n('返回修改'),
+                confirmButtonText: `${i18n('确认')}${direction}`
             }).then(result => {
                 confirming = false;
                 accountConfirmationOpen = false;
@@ -104,12 +104,12 @@
                         requesting = false;
                         if (!controllerActive) return;
                         layer.close(popupIndex);
-                        message.alert(!res.msg || res.msg === 'success' ? '会员账户变动已保存。' : res.msg, 'success');
+                        message.alert(!res.msg || res.msg === 'success' ? i18n('会员账户变动已保存。') : res.msg, 'success');
                         table.refresh();
                     },
                     error: res => {
                         requesting = false;
-                        if (controllerActive) message.alert(res?.msg || '会员账户变动未能保存。', 'error');
+                        if (controllerActive) message.alert(res?.msg || i18n('会员账户变动未能保存。'), 'error');
                     },
                     fail: () => {
                         requesting = false;
@@ -140,23 +140,23 @@
     const renderBusinessDetail = (row, statistics) => {
         const business = row.business || {};
         const avatar = row.avatar || '/favicon.ico';
-        const shopName = business.shop_name || row.username || '未命名商户';
+        const shopName = business.shop_name || row.username || i18n('未命名商户');
         return `<div class="md-detail md-user-business-detail">
             <div class="md-detail__header">${mdUserCell({avatar: escapeHtml(avatar), username: escapeHtml(shopName), id: escapeHtml(row.id)})}</div>
             <div class="md-detail__body">
-                ${detailRow('浏览器标题', detailValue(business.title))}
-                ${detailRow('店铺公告', detailValue(business.notice))}
-                ${detailRow('客服 QQ', detailValue(business.service_qq))}
-                ${detailRow('客服链接', safeExternalLink(business.service_url))}
-                ${detailRow('子域名', safeExternalLink(business.subdomain, true))}
-                ${detailRow('绑定域名', safeExternalLink(business.topdomain, true))}
-                ${detailRow('主站商品', business.master_display == 1 ? '<span class="text-success">显示</span>' : '<span class="text-muted">隐藏</span>')}
-                ${detailRow('创建时间', detailValue(business.create_time))}
-                ${detailRow('今日交易', detailValue(statistics.today_order_amount))}
-                ${detailRow('昨日交易', detailValue(statistics.yesterday_order_amount))}
-                ${detailRow('本周交易', detailValue(statistics.week_order_amount))}
-                ${detailRow('本月交易', detailValue(statistics.month_order_amount))}
-                ${detailRow('总交易', detailValue(statistics.total_order_amount))}
+                ${detailRow(i18n('浏览器标题'), detailValue(business.title))}
+                ${detailRow(i18n('店铺公告'), detailValue(business.notice))}
+                ${detailRow(i18n('客服 QQ'), detailValue(business.service_qq))}
+                ${detailRow(i18n('客服链接'), safeExternalLink(business.service_url))}
+                ${detailRow(i18n('子域名'), safeExternalLink(business.subdomain, true))}
+                ${detailRow(i18n('绑定域名'), safeExternalLink(business.topdomain, true))}
+                ${detailRow(i18n('主站商品'), business.master_display == 1 ? '<span class="text-success">' + i18n('显示') + '</span>' : '<span class="text-muted">' + i18n('隐藏') + '</span>')}
+                ${detailRow(i18n('创建时间'), detailValue(business.create_time))}
+                ${detailRow(i18n('今日交易'), detailValue(statistics.today_order_amount))}
+                ${detailRow(i18n('昨日交易'), detailValue(statistics.yesterday_order_amount))}
+                ${detailRow(i18n('本周交易'), detailValue(statistics.week_order_amount))}
+                ${detailRow(i18n('本月交易'), detailValue(statistics.month_order_amount))}
+                ${detailRow(i18n('总交易'), detailValue(statistics.total_order_amount))}
             </div>
         </div>`;
     };
@@ -169,20 +169,20 @@
         };
         return `<div style="padding:0;" class="more-table"><table class="layui-table"><tbody>
             <tr><td colspan="2" style="text-align:center;"><img src="${escapeHtml(row.avatar || '/favicon.ico')}" alt="" style="height:80px;width:80px;border-radius:100%;box-shadow:1px 1px 10px 1px #ed9b9bb3;"></td></tr>
-            <tr><td>店铺名称</td><td>${detailValue(business.shop_name)}</td></tr>
-            <tr><td>浏览器标题</td><td>${detailValue(business.title)}</td></tr>
-            <tr><td>店铺公告</td><td>${detailValue(business.notice)}</td></tr>
-            <tr><td>客服QQ</td><td>${detailValue(business.service_qq)}</td></tr>
-            <tr><td>客服链接</td><td>${link(business.service_url)}</td></tr>
-            <tr><td>子域名</td><td>${link(business.subdomain, true)}</td></tr>
-            <tr><td>绑定域名</td><td>${link(business.topdomain, true)}</td></tr>
-            <tr><td>主站商品</td><td>${business.master_display == 1 ? '<span style="color:green;">显示</span>' : '<span style="color:green;">隐藏</span>'}</td></tr>
-            <tr><td>创建时间</td><td>${detailValue(business.create_time)}</td></tr>
-            <tr><td>今日交易</td><td>${detailValue(statistics.today_order_amount)}</td></tr>
-            <tr><td>昨日交易</td><td>${detailValue(statistics.yesterday_order_amount)}</td></tr>
-            <tr><td>本周交易</td><td>${detailValue(statistics.week_order_amount)}</td></tr>
-            <tr><td>本月交易</td><td>${detailValue(statistics.month_order_amount)}</td></tr>
-            <tr><td>总交易</td><td>${detailValue(statistics.total_order_amount)}</td></tr>
+            <tr><td>${i18n('店铺名称')}</td><td>${detailValue(business.shop_name)}</td></tr>
+            <tr><td>${i18n('浏览器标题')}</td><td>${detailValue(business.title)}</td></tr>
+            <tr><td>${i18n('店铺公告')}</td><td>${detailValue(business.notice)}</td></tr>
+            <tr><td>${i18n('客服')}QQ</td><td>${detailValue(business.service_qq)}</td></tr>
+            <tr><td>${i18n('客服链接')}</td><td>${link(business.service_url)}</td></tr>
+            <tr><td>${i18n('子域名')}</td><td>${link(business.subdomain, true)}</td></tr>
+            <tr><td>${i18n('绑定域名')}</td><td>${link(business.topdomain, true)}</td></tr>
+            <tr><td>${i18n('主站商品')}</td><td>${business.master_display == 1 ? '<span style="color:green;">' + i18n('显示') + '</span>' : '<span style="color:green;">' + i18n('隐藏') + '</span>'}</td></tr>
+            <tr><td>${i18n('创建时间')}</td><td>${detailValue(business.create_time)}</td></tr>
+            <tr><td>${i18n('今日交易')}</td><td>${detailValue(statistics.today_order_amount)}</td></tr>
+            <tr><td>${i18n('昨日交易')}</td><td>${detailValue(statistics.yesterday_order_amount)}</td></tr>
+            <tr><td>${i18n('本周交易')}</td><td>${detailValue(statistics.week_order_amount)}</td></tr>
+            <tr><td>${i18n('本月交易')}</td><td>${detailValue(statistics.month_order_amount)}</td></tr>
+            <tr><td>${i18n('总交易')}</td><td>${detailValue(statistics.total_order_amount)}</td></tr>
         </tbody></table></div>`;
     };
     const openBusinessDetail = row => {
@@ -196,8 +196,8 @@
                 maxmin: false,
                 tab: [{
                     name: mobile
-                        ? `<i class="fa-duotone fa-regular fa-store"></i> 商户详情`
-                        : `<i class="fa-duotone fa-regular fa-face-viewfinder"></i> 查看商家`,
+                        ? `<i class="fa-duotone fa-regular fa-store"></i> ${i18n('商户详情')}`
+                        : `<i class="fa-duotone fa-regular fa-face-viewfinder"></i> ${i18n('查看商家')}`,
                     form: [{
                         title: false,
                         name: 'business_detail',
@@ -356,7 +356,7 @@
                 const avatar = row?.avatar
                     ? `<img src="${escapeHtml(row.avatar)}" class="md-user-cell__avatar" alt="">`
                     : `<span class="md-user-cell__avatar md-user-cell__avatar--ph">${escapeHtml((username.charAt(0) || '?').toUpperCase())}</span>`;
-                return `<div class="md-user-cell md-user-cell--copyable">${avatar}<div class="md-user-cell__text"><span class="md-user-cell__name-row"><span class="md-user-cell__name">${escapeHtml(username)}</span><button type="button" class="md-copyable-cell__copy" aria-label="复制用户名" title="复制用户名">${util.icon("fa-duotone fa-regular fa-copy")}</button></span><span class="md-user-cell__id">${escapeHtml(userId)}</span></div></div>`;
+                return `<div class="md-user-cell md-user-cell--copyable">${avatar}<div class="md-user-cell__text"><span class="md-user-cell__name-row"><span class="md-user-cell__name">${escapeHtml(username)}</span><button type="button" class="md-copyable-cell__copy" aria-label="${i18n('复制用户名')}" title="${i18n('复制用户名')}">${util.icon("fa-duotone fa-regular fa-copy")}</button></span><span class="md-user-cell__id">${escapeHtml(userId)}</span></div></div>`;
             },
             events: {
                 'click .md-copyable-cell__copy': (event, _, row) => {
@@ -391,7 +391,7 @@
                 if (!_) return '-';
                 if (mobileAdminEnabled()) return format.group(_);
                 businessRows.set(String(row.id), row);
-                return `${escapeHtml(_.name)} <a class="text-primary md-user-business-detail-trigger" data-user-id="${Number(row.id) || 0}" href="javascript:void(0);">详细</a>`;
+                return `${escapeHtml(_.name)} <a class="text-primary md-user-business-detail-trigger" data-user-id="${Number(row.id) || 0}" href="javascript:void(0);">${i18n('详细')}</a>`;
             }
         }
         , {field: 'parent', title: '上级', formatter: (_, __) => mdUserCell(_)}
@@ -403,11 +403,11 @@
                     tips: "余额操作",
                     click: (event, value, row, index) => {
                         component.popup({
-                            submit: mobileAccountSubmit('/admin/api/user/recharge', row, {label: '余额', field: 'balance', totalLabel: '元气累计'}),
+                            submit: mobileAccountSubmit('/admin/api/user/recharge', row, {label: '余额', field: 'balance', totalLabel: i18n('元气累计')}),
                             submitRoute: '/admin/api/user/recharge',
                             tab: [
                                 {
-                                    name: "<i class='fa-duotone fa-regular fa-envelope-open-dollar'></i> 余额充值",
+                                    name: "<i class='fa-duotone fa-regular fa-envelope-open-dollar'></i> " + i18n('余额充值'),
                                     form: [
                                         {
                                             title: "类型",
@@ -416,8 +416,8 @@
                                             placeholder: "请选择",
                                             default: 1,
                                             dict: [
-                                                {id: 1, name: "<b style='color: green;'>充值</b>"},
-                                                {id: 0, name: "<b style='color: red;'>扣费</b>"},
+                                                {id: 1, name: "<b style='color: green;'>" + i18n('充值') + "</b>"},
+                                                {id: 0, name: "<b style='color: red;'>" + i18n('扣费') + "</b>"},
                                             ]
                                         },
                                         {
@@ -439,7 +439,7 @@
                             height: "auto",
                             width: "520px",
                             maxmin: false,
-                            confirmText: '核对并提交',
+                            confirmText: i18n('核对并提交'),
                             done: () => {
                                 table.refresh();
                             }
@@ -451,11 +451,11 @@
                     tips: "硬币操作",
                     click: (event, value, row, index) => {
                         component.popup({
-                            submit: mobileAccountSubmit('/admin/api/user/coin', row, {label: '硬币', field: 'coin', totalLabel: '硬币累计'}),
+                            submit: mobileAccountSubmit('/admin/api/user/coin', row, {label: '硬币', field: 'coin', totalLabel: i18n('硬币累计')}),
                             submitRoute: '/admin/api/user/coin',
                             tab: [
                                 {
-                                    name: `<i class="fa-duotone fa-regular fa-coins"></i> 硬币充值`,
+                                    name: `<i class="fa-duotone fa-regular fa-coins"></i> ${i18n('硬币充值')}`,
                                     form: [
                                         {
                                             title: "类型",
@@ -464,8 +464,8 @@
                                             placeholder: "请选择",
                                             default: 1,
                                             dict: [
-                                                {id: 1, name: "<b style='color: green;'>充值</b>"},
-                                                {id: 0, name: "<b style='color: red;'>扣费</b>"},
+                                                {id: 1, name: "<b style='color: green;'>" + i18n('充值') + "</b>"},
+                                                {id: 0, name: "<b style='color: red;'>" + i18n('扣费') + "</b>"},
                                             ]
                                         },
                                         {
@@ -487,7 +487,7 @@
                             height: "auto",
                             width: "520px",
                             maxmin: false,
-                            confirmText: '核对并提交',
+                            confirmText: i18n('核对并提交'),
                             done: () => {
                                 table.refresh();
                             }
@@ -498,7 +498,7 @@
                     icon: 'fa-duotone fa-regular fa-pen-to-square text-primary',
                     tips: '修改',
                     click: (event, value, row, index) => {
-                        modal(`<i class="fa-duotone fa-regular fa-user-pen"></i> 修改用户`, row);
+                        modal(`<i class="fa-duotone fa-regular fa-user-pen"></i> ${i18n('修改用户')}`, row);
                     }
                 },
                 {
@@ -518,13 +518,13 @@
                     show: _ => _.status === 1,
                     click: (event, value, row, index) => {
                         message.ask(
-                            `禁用后，会员“${escapeHtml(row.username || '未命名会员')}”（ID ${escapeHtml(row.id)}）将无法正常使用账户。确认禁用吗？`,
+                            `${i18n('禁用后，会员')}“${escapeHtml(row.username || i18n('未命名会员'))}”（ID ${escapeHtml(row.id)}）${i18n('将无法正常使用账户。确认禁用吗？')}`,
                             () => util.post('/admin/api/user/save', {id: row.id, status: 0}, () => {
                                 message.info("已禁用");
                                 table.refresh();
                             }),
-                            '确认禁用会员',
-                            '确认禁用'
+                            i18n('确认禁用会员'),
+                            i18n('确认禁用')
                         );
                     }
                 },
@@ -533,7 +533,7 @@
                     tips: '删除此用户',
                     click: (event, value, row, index) => {
 
-                        message.ask(`将永久删除会员“${escapeHtml(row.username || '未命名会员')}”（ID ${escapeHtml(row.id)}）及其关联数据，无法恢复。确认删除吗？`, () => {
+                        message.ask(`${i18n('将永久删除会员')}“${escapeHtml(row.username || i18n('未命名会员'))}”（ID ${escapeHtml(row.id)}）${i18n('及其关联数据，无法恢复。确认删除吗？')}`, () => {
                             util.post("/admin/api/user/del", {list: [row.id]}, () => {
                                 message.success("删除成功");
                                 table.refresh();
@@ -576,16 +576,16 @@
                     return '-';
                 }
                 const attributes = `data-user-id="${Number(item.id) || 0}" data-wechat-code="${escapeHtml(encodeURIComponent(String(val)))}"`;
-                if (!mobileAdminEnabled()) return `<a href="javascript:void(0);" class="text-primary md-user-wechat-qr-trigger" ${attributes}>查看</a>`;
-                return `<button type="button" class="btn btn-sm btn-light-primary md-user-wechat-qr-trigger" ${attributes}>查看</button>`;
+                if (!mobileAdminEnabled()) return `<a href="javascript:void(0);" class="text-primary md-user-wechat-qr-trigger" ${attributes}>${i18n('查看')}</a>`;
+                return `<button type="button" class="btn btn-sm btn-light-primary md-user-wechat-qr-trigger" ${attributes}>${i18n('查看')}</button>`;
             }
         }
         , {
             field: 'settlement',
             title: '结算方式',
             dict: [
-                {id: 0, name: `<span class="text-primary">支付宝</span>`},
-                {id: 1, name: `<span class="text-success">微信</span>`},
+                {id: 0, name: `<span class="text-primary">${i18n('支付宝')}</span>`},
+                {id: 1, name: `<span class="text-success">${i18n('微信')}</span>`},
             ]
         }
         ]
@@ -624,7 +624,7 @@
                     return;
                 }
                 message.ask(
-                    `将修改已选中的 ${selections.length} 名会员等级，并立即影响对应等级规则。确认继续吗？`,
+                    `${i18n('将修改已选中的')} ${selections.length} ${i18n('名会员等级，并立即影响对应等级规则。确认继续吗？')}`,
                     () => {
                         if (groupUpdatePending || !controllerActive) return;
                         groupUpdatePending = true;
@@ -635,12 +635,12 @@
                                 groupUpdatePending = false;
                                 if (!controllerActive) return;
                                 layer.close(popupIndex);
-                                message.success(response?.msg || '会员等级已更新');
+                                message.success(response?.msg || i18n('会员等级已更新'));
                                 table.refresh();
                             },
                             error: response => {
                                 groupUpdatePending = false;
-                                if (controllerActive) message.error(response?.msg || '会员等级更新失败');
+                                if (controllerActive) message.error(response?.msg || i18n('会员等级更新失败'));
                             },
                             fail: () => {
                                 groupUpdatePending = false;
@@ -648,13 +648,13 @@
                             }
                         });
                     },
-                    '确认批量修改会员等级',
-                    '确认修改'
+                    i18n('确认批量修改会员等级'),
+                    i18n('确认修改')
                 );
             },
             tab: [
                 {
-                    name: `<i class="fa-duotone fa-regular fa-user-pen"></i> 批量修改会员等级`,
+                    name: `<i class="fa-duotone fa-regular fa-user-pen"></i> ${i18n('批量修改会员等级')}`,
                     form: [
                         {
                             title: "",
@@ -697,7 +697,7 @@
             return;
         }
 
-        message.ask(`将永久删除已选中的 ${selections.length} 名会员及其关联数据，无法恢复。确认删除吗？`, function () {
+        message.ask(`${i18n('将永久删除已选中的')} ${selections.length} ${i18n('名会员及其关联数据，无法恢复。确认删除吗？')}`, function () {
             util.post("/admin/api/user/del", {list: selections}, res => {
                 message.success("全部删除完毕");
                 table.refresh();

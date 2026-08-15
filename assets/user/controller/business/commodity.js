@@ -18,13 +18,13 @@
         if (!item) return '-';
         if (!isSeattleCommodity) {
             const image = item.cover ? `<img src="${escapeHtml(item.cover)}" class="table-item-icon" alt="">` : '';
-            return `<span class="table-item">${image}<span class="table-item-name">${safeInlineHtml(item.name || '未命名商品')}</span></span>`;
+            return `<span class="table-item">${image}<span class="table-item-name">${safeInlineHtml(item.name || i18n('未命名商品'))}</span></span>`;
         }
         const image = item.cover
             ? `<span class="st-commodity-product-cell__media"><img src="${escapeHtml(item.cover)}" alt=""></span>`
             : '<span class="st-commodity-product-cell__media"><span class="material-icons-outlined" aria-hidden="true">inventory_2</span></span>';
         const category = item.category && item.category.name ? item.category.name : '未分类';
-        return `<span class="st-commodity-product-cell">${image}<span class="st-commodity-product-cell__copy"><strong>${safeInlineHtml(item.name || '未命名商品')}</strong><small>${safeInlineHtml(category)}</small></span></span>`;
+        return `<span class="st-commodity-product-cell">${image}<span class="st-commodity-product-cell__copy"><strong>${safeInlineHtml(item.name || i18n('未命名商品'))}</strong><small>${safeInlineHtml(category)}</small></span></span>`;
     };
     const modal = (title, assign = {}) => {
         component.popup({
@@ -80,7 +80,7 @@
                     ]
                 },
                 {
-                    name: util.icon("fa-duotone fa-regular fa-truck") + " 发货设置",
+                    name: util.icon("fa-duotone fa-regular fa-truck") + i18n(" 发货设置"),
                     form: [
                         {
                             title: "发货方式",
@@ -163,7 +163,7 @@
                     ]
                 },
                 {
-                    name: util.icon("fa-duotone fa-regular fa-pen-field") + " 控件",
+                    name: util.icon("fa-duotone fa-regular fa-pen-field") + i18n(" 控件"),
                     form: [
                         {
                             name: "widget",
@@ -173,7 +173,7 @@
                     ]
                 },
                 {
-                    name: util.icon("fa-duotone fa-regular fa-circle-info") + " 商品介绍",
+                    name: util.icon("fa-duotone fa-regular fa-circle-info") + i18n(" 商品介绍"),
                     form: [
                         {
                             title: false,
@@ -186,7 +186,7 @@
                     ]
                 },
                 {
-                    name: util.icon("fa-duotone fa-regular fa-shop-lock") + " 商品限制",
+                    name: util.icon("fa-duotone fa-regular fa-shop-lock") + i18n(" 商品限制"),
                     form: [
                         {
                             title: "最低购买数量",
@@ -294,12 +294,12 @@
                     ]
                 },
                 {
-                    name: util.icon("fa-duotone fa-regular fa-gears") + " 配置参数",
+                    name: util.icon("fa-duotone fa-regular fa-gears") + i18n(" 配置参数"),
                     form: [
                         {title: false, name: "config", type: "textarea", placeholder: "配置参数", height: 480},
                         {
                             title: false, name: "config_tips", type: "custom", complete: (_, __) => {
-                                __.html(`<div class="uc-cardtip"><div class="uc-cardtip__warn"><span class="material-icons-outlined">info</span><span>配置参数包含商品种类、多 SKU 等高级功能。修改前请先阅读<a href="https://faka.wiki/#/zh-cn/goods-config" target="_blank" rel="noopener noreferrer">配置文档</a>。</span></div></div>`);
+                                __.html(`<div class="uc-cardtip"><div class="uc-cardtip__warn"><span class="material-icons-outlined">info</span><span>${i18n('配置参数包含商品种类、多')} SKU ${i18n('等高级功能。修改前请先阅读')}<a href="https://faka.wiki/#/zh-cn/goods-config" target="_blank" rel="noopener noreferrer">${i18n('配置文档')}</a>。</span></div></div>`);
                             }
                         },
                     ]
@@ -434,7 +434,7 @@
                             type: "custom",
                             complete: (form, dom) => {
                                 dom.html(`<div class="uc-cardtip">
-          <p>一行一个库存卡密，内容随意。买家购买后直接获得该行内容，下面示例：</p>
+          <p>${i18n('一行一个库存卡密，内容随意。买家购买后直接获得该行内容，下面示例：')}</p>
           <pre class="uc-cardtip__code">ABCDEF-GHIJK-LMNOP
 VIP-2025-0821-XYZ</pre>
         </div>`);
@@ -447,16 +447,16 @@ VIP-2025-0821-XYZ</pre>
                             type: "custom",
                             complete: (form, dom) => {
                                 dom.html(`<div class="uc-cardtip">
-          <p>一行一个，必须使用 <code>║</code> 分隔，结构为：<b>卡密本体 ║ 预告信息 ║ 自选加价金额(可选)</b></p>
+          <p>${i18n('一行一个，必须使用')} <code>║</code> ${i18n('分隔，结构为：')}<b>${i18n('卡密本体')} ║ ${i18n('预告信息')} ║ ${i18n('自选加价金额')}(${i18n('可选')})</b></p>
           <ul class="uc-cardtip__legend">
-            <li><span class="a-badge a-badge-dark">卡密本体</span><span>买家付款后实际获得的完整内容</span></li>
-            <li><span class="a-badge a-badge-success">预告信息</span><span>买家下单时可见，用于自选</span></li>
-            <li><span class="a-badge a-badge-warning">自选加价金额</span><span>选填，不写默认为 0</span></li>
+            <li><span class="a-badge a-badge-dark">${i18n('卡密本体')}</span><span>${i18n('买家付款后实际获得的完整内容')}</span></li>
+            <li><span class="a-badge a-badge-success">${i18n('预告信息')}</span><span>${i18n('买家下单时可见，用于自选')}</span></li>
+            <li><span class="a-badge a-badge-warning">${i18n('自选加价金额')}</span><span>${i18n('选填，不写默认为')} 0</span></li>
           </ul>
-          <pre class="uc-cardtip__code">账号:testname--密码:testpassword123║大区:神境之地--等级:100║5.5
-ACC_US_12M_9F2K-7QPA-88XZ║地区:美区·时长:12个月║20
-ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
-          <div class="uc-cardtip__warn"><span class="material-icons-outlined">warning_amber</span><span>必须使用特殊符号 <strong>║</strong>（U+2551），不要用普通竖线 |</span></div>
+          <pre class="uc-cardtip__code">${i18n('账号')}:testname--${i18n('密码')}:testpassword123║${i18n('大区')}:${i18n('神境之地')}--${i18n('等级')}:100║5.5
+ACC_US_12M_9F2K-7QPA-88XZ║${i18n('地区')}:${i18n('美区')}·${i18n('时长')}:12${i18n('个月')}║20
+ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')}:6${i18n('个月')}</pre>
+          <div class="uc-cardtip__warn"><span class="material-icons-outlined">warning_amber</span><span>${i18n('必须使用特殊符号')} <strong>║</strong>（U+2551），${i18n('不要用普通竖线')} |</span></div>
         </div>`);
                             }
                         },
@@ -502,7 +502,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
         , {
             field: 'card_count', title: '库存', class: 'nowrap', width: isSeattleCommodity ? 104 : 120, formatter: function (val, item) {
                 if (item.delivery_way == 0) {
-                    return `${item.card_count} <button type="button" class="add-card a-badge-glass nowrap" data-id="${item.id}" title="上传卡密" aria-label="为此商品上传卡密">上传卡密</button>`;
+                    return `${item.card_count} <button type="button" class="add-card a-badge-glass nowrap" data-id="${item.id}" title="${i18n('上传卡密')}" aria-label="${i18n('为此商品上传卡密')}">${i18n('上传卡密')}</button>`;
                 }
                 return item.stock;
             }
@@ -657,7 +657,7 @@ ACC_JP_6M_0KLD-22MM-PP31║地区:日区·时长:6个月</pre>
 
 
     $('.button-add').click(function () {
-        modal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> 添加商品`);
+        modal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> ${i18n('添加商品')}`);
     });
 
 

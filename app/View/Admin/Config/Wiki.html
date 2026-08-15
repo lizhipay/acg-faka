@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="#{lang_code()}">
 <head>
     <meta charset="UTF-8">
-    <title>#{$pluginName} - 使用帮助</title>
+    <title>#{$pluginName} - #{t("使用帮助")}</title>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
-    <meta name="description" content="#{$pluginName} 使用帮助">
+    <meta name="description" content="#{$pluginName} #{t("使用帮助")}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
     <script>(function(){var e=document.documentElement;try{var p=localStorage.getItem('admin-theme')||'auto';var d=p==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p;e.setAttribute('data-theme',d);e.setAttribute('data-theme-pref',p);var m=localStorage.getItem('admin-layout-mode')==='desktop'?'desktop':((window.innerWidth||screen.width)<992?'mobile':'desktop');e.setAttribute('data-admin-layout',m);}catch(_){e.setAttribute('data-theme','light');e.setAttribute('data-admin-layout',(window.innerWidth||screen.width)<992?'mobile':'desktop');}})();</script>
     <link rel="shortcut icon" href="/favicon.ico"/>
@@ -103,11 +103,11 @@
             namespace: 'admin-wiki-' + #{$pluginKeyJson},
             depth: 6,
             noData: {
-                '/': '没有找到结果!',
+                '/': '#{t("没有找到结果!")}',
             },
             paths: 'auto',
             placeholder: {
-                '/': '输入关键词搜索',
+                '/': '#{t("输入关键词搜索")}',
             }
         },
         alias: {

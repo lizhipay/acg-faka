@@ -107,7 +107,7 @@
             if (!controllerActive) return;
             $('input[name=logo]').val(data.url);
             markFormDirty();
-            layer.msg('图标上传成功，但需要保存后才会生效');
+            layer.msg(i18n('图标上传成功，但需要保存后才会生效'));
             $('.image-input-wrapper').css({
                 "background-image": `url(${data.url})`
             });
@@ -115,14 +115,14 @@
 
         util.bindButtonUpload(".background-upload", "/admin/api/upload/send?mime=image", data => {
             if (!controllerActive) return;
-            layer.msg('背景图片上传成功，需要保存才会生效');
+            layer.msg(i18n('背景图片上传成功，需要保存才会生效'));
             $('input[name=background_url]').val(data.url);
             markFormDirty();
         });
 
         util.bindButtonUpload(".background-mobile-upload", "/admin/api/upload/send?mime=image", data => {
             if (!controllerActive) return;
-            layer.msg('手机背景图片上传成功，需要保存才会生效');
+            layer.msg(i18n('手机背景图片上传成功，需要保存才会生效'));
             $('input[name=background_mobile_url]').val(data.url);
             markFormDirty();
         });
@@ -138,7 +138,7 @@
         function modal(values = {}, contextLabel = '模板设置') {
             const themeKey = String(values?.info?.KEY || '');
             if (!/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(themeKey)) {
-                layer.msg('模板信息不完整，请刷新页面后重试');
+                layer.msg(i18n('模板信息不完整，请刷新页面后重试'));
                 return;
             }
             let submit = [];
@@ -153,20 +153,20 @@
                 try {
                     submit = eval(values.submit) ?? [];
                 } catch (error) {
-                    layer.msg('模板设置定义无法解析，请联系模板作者');
+                    layer.msg(i18n('模板设置定义无法解析，请联系模板作者'));
                     return;
                 }
             }
 
             if (!Array.isArray(submit) || submit.length === 0) {
-                layer.msg("该模板暂时没有可设置的选项");
+                layer.msg(i18n("该模板暂时没有可设置的选项"));
                 return;
             }
 
             const endpoint = `/admin/api/plugin/setThemeConfig?id=${encodeURIComponent(themeKey)}`;
             let themeSaveInFlight = false;
             component.popup({
-                mobileTitle: `${contextLabel} · ${String(values.info.NAME || '模板')}`,
+                mobileTitle: `${contextLabel} · ${String(values.info.NAME || i18n('模板'))}`,
                 submitRoute: endpoint,
                 submit: (data, index) => {
                     if (themeSaveInFlight || !controllerActive) return;
@@ -211,7 +211,7 @@
         $('.theme-mobile-setting').off(namespace).on('click' + namespace, function () {
             let userTheme = $('select[name=user_mobile_theme]').val();
             if (userTheme == 0) {
-                layer.msg("当前手机模板正在跟随 PC 模板，请先选择独立的手机模板后再配置");
+                layer.msg(i18n("当前手机模板正在跟随 PC 模板，请先选择独立的手机模板后再配置"));
                 return;
             }
             modal(themes[userTheme], '手机网站模板');
@@ -220,7 +220,7 @@
         $('.theme-user-setting').off(namespace).on('click' + namespace, function () {
             let userTheme = $('select[name=user_center_theme]').val();
             if (userTheme == 0) {
-                layer.msg("当前未选择可配置的 PC 会员中心模板，请先选择模板");
+                layer.msg(i18n("当前未选择可配置的 PC 会员中心模板，请先选择模板"));
                 return;
             }
             modal(themes[userTheme], 'PC 会员中心模板');
@@ -264,7 +264,7 @@
         });
         const guardDesktopPjaxLeave = event => {
             if (!formDirty || mobileGuardEnabled()) return;
-            if (window.confirm('当前网站设置还有未保存的修改，确定离开吗？')) {
+            if (window.confirm(i18n('当前网站设置还有未保存的修改，确定离开吗？'))) {
                 formDirty = false;
                 return;
             }

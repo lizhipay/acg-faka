@@ -93,14 +93,14 @@
         if (control.matches('label') && control.querySelector('input[type="file"]')) {
             var rowLabel = control.closest('.row, .form-group');
             rowLabel = rowLabel && rowLabel.querySelector('.col-form-label, [data-field-label]');
-            if (rowLabel && plainText(rowLabel.textContent)) return '上传 ' + plainText(rowLabel.textContent).replace(/[：:]$/, '');
+            if (rowLabel && plainText(rowLabel.textContent)) return i18n('上传 ') + plainText(rowLabel.textContent).replace(/[：:]$/, '');
             var fileTitle = control.getAttribute('aria-label') || control.getAttribute('title');
-            return plainText(fileTitle) || '上传文件';
+            return plainText(fileTitle) || i18n('上传文件');
         }
         var explicit = control.getAttribute('aria-label') || control.getAttribute('data-title') || control.getAttribute('title');
         var clone = control.cloneNode(true);
         clone.querySelectorAll('i, svg, .material-icons, .material-icons-outlined, .fa-spin, [aria-hidden="true"]').forEach(function (node) { node.remove(); });
-        return plainText(clone.textContent || control.value || explicit || control.name || control.id || '操作');
+        return plainText(clone.textContent || control.value || explicit || control.name || control.id || i18n('操作'));
     }
 
     function visible(control) {
@@ -318,7 +318,7 @@
             var focusTarget = select2 && select2.classList.contains('select2-container') ? select2.querySelector('.select2-selection') : invalid.control;
             if (focusTarget && typeof focusTarget.focus === 'function') focusTarget.focus({preventScroll: true});
         }, 180);
-        if (announce !== false && window.layer && typeof window.layer.msg === 'function') window.layer.msg('请检查「' + (invalid.label || '必填项') + '」');
+        if (announce !== false && window.layer && typeof window.layer.msg === 'function') window.layer.msg(i18n('请检查「') + (invalid.label || i18n('必填项')) + i18n('」'));
         return false;
     }
 
@@ -458,7 +458,7 @@
             badge = document.createElement('span');
             badge.className = 'admin-mobile-unsaved-indicator';
             badge.setAttribute('data-admin-mobile-page-unsaved', '');
-            badge.textContent = '未保存';
+            badge.textContent = i18n('未保存');
             heading.appendChild(badge);
         } else if (!dirty && badge) {
             badge.remove();
@@ -566,15 +566,15 @@
                 text: '当前页面还有未保存的内容。',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: '放弃修改',
-                cancelButtonText: '继续编辑',
+                confirmButtonText: i18n('放弃修改'),
+                cancelButtonText: i18n('继续编辑'),
                 reverseButtons: true,
                 focusCancel: true,
                 allowOutsideClick: false,
                 allowEscapeKey: false
             }).then(function (answer) { return answer.isConfirmed === true || answer.value === true; });
         } else {
-            result = Promise.resolve(window.confirm('当前页面还有未保存的内容，确定放弃修改吗？'));
+            result = Promise.resolve(window.confirm(i18n('当前页面还有未保存的内容，确定放弃修改吗？')));
         }
         session.leavePromise = result.then(function (confirmed) {
             session.leavePromise = null;
@@ -1058,7 +1058,7 @@
                 icon: actionIcon(action),
                 danger: action.danger,
                 disabled: action.disabled,
-                description: plainText(action.configured && action.configured.description) || (action.busy ? '当前任务正在处理' : ''),
+                description: plainText(action.configured && action.configured.description) || (action.busy ? i18n('当前任务正在处理') : ''),
                 run: function () { return runOriginal(action); }
             };
         });
@@ -1107,11 +1107,11 @@
                 nativeMore.type = 'button';
                 nativeMore.className = 'btn btn-light';
                 nativeMore.setAttribute('data-admin-mobile-page-actions-generated', (recipe && recipe.id) || 'generic');
-                nativeMore.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">more_horiz</span><span>更多操作</span>';
+                nativeMore.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">more_horiz</span><span>' + i18n('更多操作') + '</span>';
                 nativeMore.addEventListener('click', function () {
                     api.openActions({
                         id: 'page-actions-' + ((recipe && recipe.id) || 'generic'),
-                        title: (recipe && recipe.title) || '页面操作',
+                        title: (recipe && recipe.title) || i18n('页面操作'),
                         actions: sheetActions(nativeBar.remaining)
                     });
                 });
@@ -1127,7 +1127,7 @@
         toolbar.className = 'admin-mobile-list-toolbar admin-mobile-page-actions';
         toolbar.setAttribute('data-admin-mobile-page-actions-generated', (recipe && recipe.id) || 'generic');
         toolbar.setAttribute('role', 'toolbar');
-        toolbar.setAttribute('aria-label', '页面操作');
+        toolbar.setAttribute('aria-label', i18n('页面操作'));
         actions.forEach(function (action) {
             hideBridgedActionSource(session, action.control, (recipe && recipe.id) || 'generic');
         });
@@ -1147,11 +1147,11 @@
         if (actions.length > direct.length) {
             var more = document.createElement('button');
             more.type = 'button';
-            more.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">more_horiz</span><span>更多操作</span>';
+            more.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">more_horiz</span><span>' + i18n('更多操作') + '</span>';
             more.addEventListener('click', function () {
                 api.openActions({
                     id: 'page-actions-' + ((recipe && recipe.id) || 'generic'),
-                    title: (recipe && recipe.title) || '页面操作',
+                    title: (recipe && recipe.title) || i18n('页面操作'),
                     actions: sheetActions(actions.slice(direct.length))
                 });
             });

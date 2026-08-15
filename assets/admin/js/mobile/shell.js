@@ -23,17 +23,17 @@
 
     function markup() {
         return '<div id="admin-mobile-shell" class="admin-mobile-shell" aria-hidden="true">' +
-            '<button class="admin-mobile-restore" type="button" data-admin-mobile-layout="auto">返回手机版</button>' +
+            '<button class="admin-mobile-restore" type="button" data-admin-mobile-layout="auto">' + i18n('返回手机版') + '</button>' +
             '<header class="admin-mobile-appbar" data-admin-mobile-appbar>' +
-            '<div class="admin-mobile-appbar__top"><div class="admin-mobile-appbar__heading"><strong data-admin-mobile-title>后台管理</strong><span class="admin-mobile-enterprise-badge" data-admin-mobile-enterprise hidden>企业版</span></div>' +
-            '<button type="button" class="admin-mobile-icon-button" data-admin-mobile-appearance aria-label="外观模式" aria-haspopup="dialog" aria-expanded="false" aria-controls="admin-mobile-appearance-sheet"><span class="material-icons-outlined" aria-hidden="true">contrast</span></button>' +
-            '<a class="admin-mobile-icon-button admin-mobile-store-button" data-admin-mobile-store href="/admin/store/home" aria-label="应用商店"><span class="material-icons-outlined" aria-hidden="true">storefront</span></a></div>' +
-            '</header><nav class="admin-mobile-context-tabs" data-admin-mobile-context-tabs aria-label="当前功能导航" hidden></nav><nav class="admin-mobile-bottom-nav" data-admin-mobile-bottom-nav aria-label="后台主要导航">' +
-            '<a href="/admin/dashboard/index" data-admin-mobile-nav="home"><span class="material-icons-outlined" aria-hidden="true">space_dashboard</span><span>首页</span></a>' +
-            '<a href="/admin/order/index" data-admin-mobile-nav="orders"><span class="material-icons-outlined" aria-hidden="true">receipt_long</span><span>订单</span></a>' +
-            '<a href="/admin/ticket/index" data-admin-mobile-nav="tickets"><span class="admin-mobile-nav-icon"><span class="material-icons-outlined" aria-hidden="true">support_agent</span><span class="admin-mobile-ticket-badge ticket-admin-badge" aria-label="没有待处理工单" hidden>0</span></span><span>工单</span></a>' +
-            '<a href="/admin/user/index" data-admin-mobile-nav="members"><span class="material-icons-outlined" aria-hidden="true">group</span><span>会员</span></a>' +
-            '<button type="button" data-admin-mobile-all aria-haspopup="dialog" aria-expanded="false"><span class="material-icons-outlined" aria-hidden="true">apps</span><span>全部</span></button>' +
+            '<div class="admin-mobile-appbar__top"><div class="admin-mobile-appbar__heading"><strong data-admin-mobile-title>' + i18n('后台管理') + '</strong><span class="admin-mobile-enterprise-badge" data-admin-mobile-enterprise hidden>' + i18n('企业版') + '</span></div>' +
+            '<button type="button" class="admin-mobile-icon-button" data-admin-mobile-appearance aria-label="' + i18n('外观模式') + '" aria-haspopup="dialog" aria-expanded="false" aria-controls="admin-mobile-appearance-sheet"><span class="material-icons-outlined" aria-hidden="true">contrast</span></button>' +
+            '<a class="admin-mobile-icon-button admin-mobile-store-button" data-admin-mobile-store href="/admin/store/home" aria-label="' + i18n('应用商店') + '"><span class="material-icons-outlined" aria-hidden="true">storefront</span></a></div>' +
+            '</header><nav class="admin-mobile-context-tabs" data-admin-mobile-context-tabs aria-label="' + i18n('当前功能导航') + '" hidden></nav><nav class="admin-mobile-bottom-nav" data-admin-mobile-bottom-nav aria-label="' + i18n('后台主要导航') + '">' +
+            '<a href="/admin/dashboard/index" data-admin-mobile-nav="home"><span class="material-icons-outlined" aria-hidden="true">space_dashboard</span><span>' + i18n('首页') + '</span></a>' +
+            '<a href="/admin/order/index" data-admin-mobile-nav="orders"><span class="material-icons-outlined" aria-hidden="true">receipt_long</span><span>' + i18n('订单') + '</span></a>' +
+            '<a href="/admin/ticket/index" data-admin-mobile-nav="tickets"><span class="admin-mobile-nav-icon"><span class="material-icons-outlined" aria-hidden="true">support_agent</span><span class="admin-mobile-ticket-badge ticket-admin-badge" aria-label="' + i18n('没有待处理工单') + '" hidden>0</span></span><span>' + i18n('工单') + '</span></a>' +
+            '<a href="/admin/user/index" data-admin-mobile-nav="members"><span class="material-icons-outlined" aria-hidden="true">group</span><span>' + i18n('会员') + '</span></a>' +
+            '<button type="button" data-admin-mobile-all aria-haspopup="dialog" aria-expanded="false"><span class="material-icons-outlined" aria-hidden="true">apps</span><span>' + i18n('全部') + '</span></button>' +
             '</nav><div class="admin-mobile-backdrop" data-admin-mobile-backdrop hidden></div>' +
             '<div class="admin-mobile-overlay-host" data-admin-mobile-overlay-host></div></div>';
     }
@@ -110,10 +110,10 @@
         var count = button.querySelector('[data-admin-mobile-search-count]');
         var trail = button.querySelector('[data-admin-mobile-search-trail]');
         var options = searchAction || {};
-        var label = options.placeholder || '搜索后台功能';
+        var label = options.placeholder || i18n('搜索后台功能');
         var activeCount = Math.max(0, Number(options.count || 0) || 0);
         placeholder.textContent = label;
-        button.setAttribute('aria-label', activeCount > 0 ? label + '，已启用 ' + activeCount + ' 个筛选条件' : label);
+        button.setAttribute('aria-label', activeCount > 0 ? label + i18n('，已启用 ') + activeCount + i18n(' 个筛选条件') : label);
         count.hidden = activeCount < 1;
         count.textContent = activeCount > 99 ? '99+' : String(activeCount);
         trail.textContent = searchAction ? 'tune' : 'apps';
@@ -124,7 +124,7 @@
         if (api.activeRecipe && api.activeRecipe.title) return String(api.activeRecipe.title).trim();
         var title = document.querySelector('#kt_toolbar .md-page-title, #pjax-container h1, #pjax-container h2');
         if (title && title.textContent.trim()) return title.textContent.trim();
-        return (document.title || '后台管理').split('-')[0].trim();
+        return (document.title || i18n('后台管理')).split('-')[0].trim();
     }
 
     function syncStoreStatus() {
@@ -214,10 +214,10 @@
 
     function appearanceContent() {
         var selected = readTheme();
-        return '<div class="admin-mobile-choice-list" role="radiogroup" aria-label="外观模式">' +
-            [['light', 'light_mode', '白天', '明亮清晰'], ['auto', 'brightness_auto', '自动', '跟随系统'], ['dark', 'dark_mode', '黑夜', '柔和低亮']].map(function (item) {
+        return '<div class="admin-mobile-choice-list" role="radiogroup" aria-label="' + i18n('外观模式') + '">' +
+            [['light', 'light_mode', i18n('白天'), i18n('明亮清晰')], ['auto', 'brightness_auto', i18n('自动'), i18n('跟随系统')], ['dark', 'dark_mode', i18n('黑夜'), i18n('柔和低亮')]].map(function (item) {
                 return '<button type="button" role="radio" aria-checked="' + (selected === item[0]) + '" data-admin-mobile-theme="' + item[0] + '"><span class="material-icons-outlined" aria-hidden="true">' + item[1] + '</span><span><strong>' + item[2] + '</strong><small>' + item[3] + '</small></span><span class="material-icons-outlined" aria-hidden="true">check</span></button>';
-            }).join('') + '</div><button type="button" class="admin-mobile-desktop-choice" data-admin-mobile-layout="desktop"><span class="material-icons-outlined" aria-hidden="true">desktop_windows</span><span><strong>切换桌面版</strong><small>可随时返回手机版</small></span></button>';
+            }).join('') + '</div><button type="button" class="admin-mobile-desktop-choice" data-admin-mobile-layout="desktop"><span class="material-icons-outlined" aria-hidden="true">desktop_windows</span><span><strong>' + i18n('切换桌面版') + '</strong><small>' + i18n('可随时返回手机版') + '</small></span></button>';
     }
 
     function handleClick(event) {
@@ -232,7 +232,7 @@
             });
         } else if (appearance && api.openSheet) {
             runDialogControl('appearance', function () {
-                return api.openSheet({id: 'appearance', title: '外观模式', subtitle: '选择适合当前环境的显示方式', content: appearanceContent()});
+                return api.openSheet({id: 'appearance', title: '外观模式', subtitle: i18n('选择适合当前环境的显示方式'), content: appearanceContent()});
             });
         } else if (layout) {
             var mode = layout.getAttribute('data-admin-mobile-layout');
@@ -252,7 +252,7 @@
     api.shell = {
         ensure: ensure,
         setTitle: function (title) {
-            ensure().querySelectorAll('[data-admin-mobile-title]').forEach(function (node) { node.textContent = title || '后台管理'; });
+            ensure().querySelectorAll('[data-admin-mobile-title]').forEach(function (node) { node.textContent = title || i18n('后台管理'); });
         },
         setSearch: function (options) {
             options = options || {};

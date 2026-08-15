@@ -1,12 +1,12 @@
 <div class="uc-subtab">
-    <a href="/user/security/personal" data-ptab="info" #{if $title=="个人资料"}class="active"#{/if}><span class="material-icons-outlined">badge</span>个人资料</a>
-    <a href="/user/security/personal?tab=edit" data-ptab="edit"><span class="material-icons-outlined">edit</span>修改个人信息</a>
-    <a href="/user/security/password" #{if $title=="密码设置"}class="active"#{/if}><span class="material-icons-outlined">password</span>密码设置</a>
+    <a href="/user/security/personal" data-ptab="info" #{if active('/user/security/personal')}class="active"#{/if}><span class="material-icons-outlined">badge</span>#{t("个人资料")}</a>
+    <a href="/user/security/personal?tab=edit" data-ptab="edit"><span class="material-icons-outlined">edit</span>#{t("修改个人信息")}</a>
+    <a href="/user/security/password" #{if active('/user/security/password')}class="active"#{/if}><span class="material-icons-outlined">password</span>#{t("密码设置")}</a>
     #{if $config.registered_type == 2}
-    <a href="/user/security/email" #{if $title=="邮箱设置"}class="active"#{/if}><span class="material-icons-outlined">mail</span>邮箱设置</a>
+    <a href="/user/security/email" #{if active('/user/security/email')}class="active"#{/if}><span class="material-icons-outlined">mail</span>#{t("邮箱设置")}</a>
     #{/if}
     #{if $config.registered_type == 1}
-    <a href="/user/security/phone" #{if $title=="手机设置"}class="active"#{/if}><span class="material-icons-outlined">smartphone</span>手机设置</a>
+    <a href="/user/security/phone" #{if active('/user/security/phone')}class="active"#{/if}><span class="material-icons-outlined">smartphone</span>#{t("手机设置")}</a>
     #{/if}
     <!--start::HOOK-->
     #{hook(\App\Consts\Hook::USER_VIEW_SECURITY_NAV)}

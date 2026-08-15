@@ -39,16 +39,16 @@
         util.post('/admin/api/commodityGroup/deleteImpact', {list: list}, res => {
             if (!controllerActive) return;
             const impact = res.data || {};
-            const groupNames = (Array.isArray(impact.group_names) ? impact.group_names : []).map(escapeHtml).join('、') || '所选商品分组';
-            const levelNames = (Array.isArray(impact.affected_level_names) ? impact.affected_level_names : []).map(escapeHtml).join('、');
+            const groupNames = (Array.isArray(impact.group_names) ? impact.group_names : []).map(escapeHtml).join(i18n('、')) || i18n('所选商品分组');
+            const levelNames = (Array.isArray(impact.affected_level_names) ? impact.affected_level_names : []).map(escapeHtml).join(i18n('、'));
             const levelText = Number(impact.affected_level_count || 0) > 0
-                ? `<br><br>同时会从 <b>${Number(impact.affected_level_count)} 个会员等级</b>中清除对应折扣：${levelNames}`
-                : '<br><br>没有会员等级使用这些分组折扣。';
+                ? `<br><br>${i18n('同时会从')} <b>${Number(impact.affected_level_count)} ${i18n('个会员等级')}</b>${i18n('中清除对应折扣：')}${levelNames}`
+                : '<br><br>' + i18n('没有会员等级使用这些分组折扣。');
             message.ask(
-                `将永久删除 <b>${Number(impact.group_count || list.length)} 个商品分组</b>：${groupNames}${levelText}<br><br>商品本身不会被删除。确认继续吗？`,
+                `${i18n('将永久删除')} <b>${Number(impact.group_count || list.length)} ${i18n('个商品分组')}</b>：${groupNames}${levelText}<br><br>${i18n('商品本身不会被删除。确认继续吗？')}`,
                 () => controllerActive && done(),
-                '确认删除商品分组',
-                '确认删除'
+                i18n('确认删除商品分组'),
+                i18n('确认删除')
             );
         });
     };
@@ -92,7 +92,7 @@
                     ]
                 },
                 {
-                    name: `${util.icon("fa-duotone fa-regular fa-tags me-1")}商品折扣`,
+                    name: `${util.icon("fa-duotone fa-regular fa-tags me-1")}${i18n('商品折扣')}`,
                     hide: !assign.hasOwnProperty("id"),
                     form: [
                         {
@@ -142,7 +142,7 @@
                                                     value: data.value
                                                 },
                                                 done: () => {
-                                                    if (controllerActive && !form.isDestroyed) layer.msg("折扣已生效");
+                                                    if (controllerActive && !form.isDestroyed) layer.msg(i18n("折扣已生效"));
                                                 }
                                             });
 
@@ -218,8 +218,8 @@
                                         const mobileSearchId = `commodity-group-mobile-keyword-${form.unique}`;
                                         const initialSelection = JSON.stringify(normalizeCommodityIds(assign.commodity_list));
                                         const mobileSearch = useMobileTree ? `<div data-commodity-group-mobile-search style="display:grid;gap:8px;margin:0 0 14px;">
-                                            <label for="${mobileSearchId}" style="font-weight:700;">搜索商品</label>
-                                            <input id="${mobileSearchId}" class="layui-input" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="输入商品名称">
+                                            <label for="${mobileSearchId}" style="font-weight:700;">${i18n('搜索商品')}</label>
+                                            <input id="${mobileSearchId}" class="layui-input" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="${i18n('输入商品名称')}">
                                             <small role="status" aria-live="polite" style="color:var(--admin-mobile-muted,#7a7f86);"></small>
                                         </div>` : '';
                                         dom.html(`<input type="hidden" name="commodity_list1" value="${escapeHtml(initialSelection)}">${mobileSearch}<div class="mcy-card"><table id="commodity-table"></table></div>`);
@@ -316,7 +316,7 @@
                                                 if (!controllerActive || form.isDestroyed || !CommodityListTable || CommodityListTable.isDestroyed) return;
                                                 const host = document.querySelector(`[data-admin-mobile-table="${CommodityListTable.unique}"]`);
                                                 if (!host) {
-                                                    $status.text('正在加载商品列表…');
+                                                    $status.text(i18n('正在加载商品列表…'));
                                                     return;
                                                 }
                                                 const cards = Array.from(host.querySelectorAll('.admin-mobile-data-card'));
@@ -352,7 +352,7 @@
                                                     button.disabled = Boolean(query);
                                                     button.setAttribute('aria-disabled', query ? 'true' : 'false');
                                                 });
-                                                $status.text(query ? `找到 ${directMatches.length} 个匹配项` : `共 ${cards.length} 项`);
+                                                $status.text(query ? `${i18n('找到')} ${directMatches.length} ${i18n('个匹配项')}` : `${i18n('共')} ${cards.length} ${i18n('项')}`);
                                             };
                                             const scheduleMobileSearch = () => {
                                                 if (frame) cancelAnimationFrame(frame);
@@ -410,7 +410,7 @@
                     class: "text-primary",
                     title: "修改",
                     click: (event, value, row, index) => {
-                        modal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + "修改等级", row);
+                        modal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + i18n("修改等级"), row);
                     }
                 },
                 {
@@ -422,7 +422,7 @@
                             util.post("/admin/api/group/del", {id: row.id}, () => {
                                 if (!controllerActive) return;
                                 table.refresh();
-                                layer.msg("删除成功");
+                                layer.msg(i18n("删除成功"));
                             })
                         });
                     }
@@ -435,12 +435,12 @@
 
 
     $('.btn-group-create').off(namespace).on('click' + namespace, function () {
-        modal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> 添加等级`);
+        modal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> ${i18n('添加等级')}`);
     });
 
 
     $('.btn-commodity-group-create').off(namespace).on('click' + namespace, function () {
-        CommodityGroupModal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> 添加商品分组`);
+        CommodityGroupModal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> ${i18n('添加商品分组')}`);
     });
 
 
@@ -459,7 +459,7 @@
                     class: "text-primary",
                     title: "设置",
                     click: (event, value, row, index) => {
-                        CommodityGroupModal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + "修改商品分组", row);
+                        CommodityGroupModal(util.icon("fa-duotone fa-regular fa-pen-to-square me-1") + i18n("修改商品分组"), row);
                     }
                 },
                 {

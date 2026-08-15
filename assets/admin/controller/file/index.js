@@ -38,7 +38,7 @@
 
     function formatSize(bytes, exists) {
         bytes = parseInt(bytes) || 0;
-        if (!exists) return '<span class="text-danger">已丢失</span>';
+        if (!exists) return '<span class="text-danger">' + i18n('已丢失') + '</span>';
         if (bytes <= 0) return '0 B';
         if (bytes < 1024) return bytes + ' B';
         if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
@@ -51,13 +51,13 @@
 
     function fileTypeLabel(type) {
         return ({
-            image: '图片',
-            message: '消息图片',
-            ticket: '工单图片',
-            video: '视频 / 音频',
-            doc: '文档',
-            other: '其他'
-        })[type] || '其他';
+            image: i18n('图片'),
+            message: i18n('消息图片'),
+            ticket: i18n('工单图片'),
+            video: i18n('视频 / 音频'),
+            doc: i18n('文档'),
+            other: i18n('其他')
+        })[type] || i18n('其他');
     }
 
     function safePublicUrl(path) {
@@ -88,15 +88,15 @@
                 if (!controllerActive) return;
                 const cleanupComplete = res?.data?.cleanup_complete !== false;
                 if (cleanupComplete) {
-                    message.success(res?.msg || '文件已删除');
+                    message.success(res?.msg || i18n('文件已删除'));
                 } else {
-                    message.alert(escapeHtml(res?.msg || '文件记录已删除，但隔离文件仍待运维清理'), 'warning');
+                    message.alert(escapeHtml(res?.msg || i18n('文件记录已删除，但隔离文件仍待运维清理')), 'warning');
                 }
                 table.refresh();
             },
             error: function (res) {
                 deletePending = false;
-                if (controllerActive) message.alert(escapeHtml(res?.msg || '文件删除已被阻止'), 'warning');
+                if (controllerActive) message.alert(escapeHtml(res?.msg || i18n('文件删除已被阻止')), 'warning');
             },
             fail: function () {
                 deletePending = false;
@@ -117,16 +117,16 @@
                 const impact = res?.data || {};
                 const fileCount = Number(impact.file_count || 0);
                 const referenceCount = Number(impact.reference_count || 0);
-                const details = `数据库记录 ${fileCount} 个；磁盘文件 ${Number(impact.existing_file_count || 0)} 个；缩略图 ${Number(impact.thumbnail_count || 0)} 个；已丢失文件 ${Number(impact.missing_file_count || 0)} 个。`;
+                const details = `${i18n('数据库记录')} ${fileCount} ${i18n('个；磁盘文件')} ${Number(impact.existing_file_count || 0)} ${i18n('个；缩略图')} ${Number(impact.thumbnail_count || 0)} ${i18n('个；已丢失文件')} ${Number(impact.missing_file_count || 0)} ${i18n('个。')}`;
                 if (impact.can_delete !== true) {
                     message.alert(
                         `<div style="text-align:left;line-height:1.8;">
-                            <div><b>删除预检未通过。</b></div>
+                            <div><b>${i18n('删除预检未通过。')}</b></div>
                             <div style="margin-top:8px;">${details}</div>
-                            <div>不存在记录 ${Number(impact.missing_record_count || 0)} 个；安全路径 ${Number(impact.safe_path_count || 0)} 个；受保护路径 ${Number(impact.protected_count || 0)} 个。</div>
-                            <div>可靠识别的业务引用 ${referenceCount} 条，其中工单凭证 ${Number(impact.ticket_reference_count || 0)} 条、同路径上传记录 ${Number(impact.upload_path_reference_count || 0)} 条。</div>
-                            <div>工单正文图片 ${Number(impact.ticket_message_reference_count || 0)} 条、系统消息正文图片 ${Number(impact.system_message_reference_count || 0)} 条。</div>
-                            <div style="margin-top:8px;color:#d14343;">系统已整批阻止删除。请先解除业务引用；危险路径不会被删除。</div>
+                            <div>${i18n('不存在记录')} ${Number(impact.missing_record_count || 0)} ${i18n('个；安全路径')} ${Number(impact.safe_path_count || 0)} ${i18n('个；受保护路径')} ${Number(impact.protected_count || 0)} ${i18n('个。')}</div>
+                            <div>${i18n('可靠识别的业务引用')} ${referenceCount} ${i18n('条，其中工单凭证')} ${Number(impact.ticket_reference_count || 0)} ${i18n('条、同路径上传记录')} ${Number(impact.upload_path_reference_count || 0)} ${i18n('条。')}</div>
+                            <div>${i18n('工单正文图片')} ${Number(impact.ticket_message_reference_count || 0)} ${i18n('条、系统消息正文图片')} ${Number(impact.system_message_reference_count || 0)} ${i18n('条。')}</div>
+                            <div style="margin-top:8px;color:#d14343;">${i18n('系统已整批阻止删除。请先解除业务引用；危险路径不会被删除。')}</div>
                             <div style="margin-top:8px;color:#64748b;font-size:12px;">${escapeHtml(impact.reference_scope || '')}</div>
                         </div>`,
                         'warning'
@@ -135,19 +135,19 @@
                 }
                 message.ask(
                     `<div style="text-align:left;line-height:1.8;">
-                        <div><b>将永久删除 ${fileCount} 个文件记录。</b></div>
+                        <div><b>${i18n('将永久删除')} ${fileCount} ${i18n('个文件记录。')}</b></div>
                         <div style="margin-top:8px;">${details}</div>
-                        <div>业务引用 ${referenceCount} 条；所有路径均已通过上传目录边界检查。</div>
-                        <div style="margin-top:8px;color:#d14343;">文件会先原子移入非公开隔离区，数据库提交后再清理；操作无法恢复。</div>
+                        <div>${i18n('业务引用')} ${referenceCount} ${i18n('条；所有路径均已通过上传目录边界检查。')}</div>
+                        <div style="margin-top:8px;color:#d14343;">${i18n('文件会先原子移入非公开隔离区，数据库提交后再清理；操作无法恢复。')}</div>
                     </div>`,
                     function () { deleteFiles(ids); },
-                    '确认永久删除文件？',
-                    '确认删除'
+                    i18n('确认永久删除文件？'),
+                    i18n('确认删除')
                 );
             },
             error: function (res) {
                 deletePreviewPending = false;
-                if (controllerActive) message.alert(escapeHtml(res?.msg || '无法计算删除影响，已阻止删除'), 'warning');
+                if (controllerActive) message.alert(escapeHtml(res?.msg || i18n('无法计算删除影响，已阻止删除')), 'warning');
             },
             fail: function () {
                 deletePreviewPending = false;
@@ -162,7 +162,7 @@
         const mobile = mobileAdminEnabled();
         const image = document.createElement('img');
         image.src = previewUrl;
-        image.alt = row.name || '图片预览';
+        image.alt = row.name || i18n('图片预览');
         image.style.cssText = mobile
             ? 'display:block;width:100%;height:100%;object-fit:contain;background:#0f1419;'
             : 'display:block;width:auto;max-width:90vw;max-height:90vh;';
@@ -171,7 +171,7 @@
         document.body.appendChild(image);
         openControllerLayer({
             type: 1,
-            title: mobile ? '图片预览' : false,
+            title: mobile ? i18n('图片预览') : false,
             closeBtn: mobile ? 1 : 0,
             anim: mobile ? 2 : 5,
             area: mobile ? ['100%', '100%'] : 'auto',
@@ -183,7 +183,7 @@
             content: $(image),
             success: function (layero) {
                 image.style.display = 'block';
-                layero.attr('role', 'dialog').attr('aria-label', '图片预览');
+                layero.attr('role', 'dialog').attr('aria-label', i18n('图片预览'));
             },
             end: function () {
                 image.remove();
@@ -198,8 +198,8 @@
         { checkbox: true },
         {
             field: 'note', title: '文件', formatter: function (v, row) {
-                const name = escapeHtml(row.name || '未知文件');
-                const path = escapeHtml(row.path || '路径不安全，已受保护');
+                const name = escapeHtml(row.name || i18n('未知文件'));
+                const path = escapeHtml(row.path || i18n('路径不安全，已受保护'));
                 const note = v ? '<span class="md-file__note">' + escapeHtml(v) + '</span>' : '';
                 const previewUrl = safePublicUrl(row.thumb_url || row.url);
                 const previewable = row.previewable === true && row.exists && Boolean(previewUrl);
@@ -221,8 +221,8 @@
         {
             field: 'user_id', title: '归属', formatter: function (v, row) {
                 return v
-                    ? '<span class="a-badge a-badge-primary">' + escapeHtml(row.user ? row.user.username : ('用户#' + v)) + '</span>'
-                    : '<span class="a-badge a-badge-secondary">后台</span>';
+                    ? '<span class="a-badge a-badge-primary">' + escapeHtml(row.user ? row.user.username : (i18n('用户#') + v)) + '</span>'
+                    : '<span class="a-badge a-badge-secondary">' + i18n('后台') + '</span>';
             }
         },
         { field: 'create_time', title: '上传时间', formatter: function (v) { return escapeHtml(v); } },
@@ -249,7 +249,7 @@
                     click: function (event, value, row) {
                         let submitting = false;
                         component.popup({
-                            title: util.icon('fa-duotone fa-regular fa-pen-to-square me-1') + '编辑备注',
+                            title: util.icon('fa-duotone fa-regular fa-pen-to-square me-1') + i18n('编辑备注'),
                             width: '440px', height: 'auto', autoPosition: true,
                             tab: [{ name: '编辑备注', form: [{ title: '备注', name: 'note', type: 'input', placeholder: '最多 32 字，留空则清除' }] }],
                             assign: { note: row.note || '' },
@@ -261,13 +261,13 @@
                                     data: { id: row.id, note: data.note },
                                     done: function (res) {
                                         if (!controllerActive) return;
-                                        message.success(res?.msg || '备注已保存');
+                                        message.success(res?.msg || i18n('备注已保存'));
                                         layer.close(index);
                                         table.refresh();
                                     },
                                     error: function (res) {
                                         submitting = false;
-                                        if (controllerActive) message.error(res?.msg || '备注保存失败');
+                                        if (controllerActive) message.error(res?.msg || i18n('备注保存失败'));
                                     },
                                     fail: function () {
                                         submitting = false;
@@ -330,7 +330,7 @@
     // 工具栏：批量删除
     $('.file-batch-del').off(namespace).on('click' + namespace, function () {
         const ids = table.getSelectionIds();
-        if (!ids.length) { layer.msg('请至少勾选一个文件'); return; }
+        if (!ids.length) { layer.msg(i18n('请至少勾选一个文件')); return; }
         confirmFileDelete(ids);
     });
 

@@ -46,8 +46,8 @@
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
             <!--begin::Row-->
-            <h2 class="admin-mobile-only-section">会员概览</h2>
-            <div class="md-stat-grid" data-admin-mobile-stats="mini" role="region" aria-label="会员数据概览">
+            <h2 class="admin-mobile-only-section">#{t("会员概览")}</h2>
+            <div class="md-stat-grid" data-admin-mobile-stats="mini" role="region" aria-label="#{t('会员数据概览')}">
                 #{include file="../Component/StatCard.html" accent="primary" icon="fa-users" label="总用户" value=$userCount}
                 #{include file="../Component/StatCard.html" accent="success" icon="fa-shop" label="商家" value=$businessCount}
                 #{include file="../Component/StatCard.html" accent="primary" icon="fa-wallet" label="当前余额" value=$balance itemClass="md-stat-grid__item--wide"}
@@ -58,14 +58,14 @@
             <!--end::Row-->
 
             <!--begin::Tables Widget 9-->
-            <h2 class="admin-mobile-only-section">会员列表</h2>
+            <h2 class="admin-mobile-only-section">#{t("会员列表")}</h2>
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->
                 <div class="card-header">
                     <div class="card-toolbar">
-                        <button class="btn btn-sm btn-light-primary handle me-3"><i class="fa-duotone fa-regular fa-user-pen"></i>修改会员等级
+                        <button class="btn btn-sm btn-light-primary handle me-3"><i class="fa-duotone fa-regular fa-user-pen"></i>#{t("修改会员等级")}
                         </button>
-                        <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fa-duotone fa-regular fa-trash-can"></i> 移除选中用户 </button>
+                        <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fa-duotone fa-regular fa-trash-can"></i> #{t("移除选中用户")} </button>
                         <!--start::HOOK-->
                         #{hook(\App\Consts\Hook::ADMIN_VIEW_USER_TOOLBAR)}
                         <!--end::HOOK-->

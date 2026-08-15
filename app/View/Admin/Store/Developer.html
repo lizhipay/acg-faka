@@ -9,12 +9,247 @@
     <div class="post d-flex flex-column-fluid" id="kt_post">
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
+            <!--begin::MCP Card-->
+            <div class="card mb-5 mb-xl-8" id="mcp-card" style="display:none;">
+                <div class="card-body p-0">
+                    <div class="mcp-hero">
+                        <div class="mcp-hero__icon"><i class="fa-duotone fa-regular fa-robot"></i></div>
+                        <div class="mcp-hero__text">
+                            <div class="mcp-hero__title">
+                                <span>#{t("MCP · AI 接入")}</span>
+                                <span class="mcp-status" id="mcp-status"><i class="mcp-status__dot"></i><em id="mcp-status-text"></em></span>
+                            </div>
+                            <div class="mcp-hero__sub">#{t("让 Claude、Cursor 等 AI 工具安全调用你的开发者中心与本机插件：查询 · 创建 · 传包 · 定价 · 启停 · 配置 · 日志")}</div>
+                        </div>
+                        <div class="mcp-hero__actions">
+                            <button type="button" class="mcp-switch d-none" id="mcp-toggle" role="switch" aria-checked="false" title="#{t('启用 / 停用')}"><span class="mcp-switch__knob"></span></button>
+                        </div>
+                    </div>
+
+                    <div class="mcp-warn d-none" id="mcp-https-warn">
+                        <i class="fa-duotone fa-regular fa-shield-exclamation"></i>
+                        <span>#{t("当前为明文 HTTP：秘钥将明文传输，建议仅在可信内网使用；桌面版 / Codex 所需的 --allow-http 已自动写入配置。")}</span>
+                    </div>
+
+                    <div id="mcp-unconfigured" class="mcp-empty d-none">
+                        <div class="mcp-empty__icon"><i class="fa-duotone fa-regular fa-key"></i></div>
+                        <div class="mcp-empty__title">#{t("一把秘钥，接入你的 AI 工作流")}</div>
+                        <div class="mcp-empty__sub">#{t("生成访问秘钥后，Claude、Cursor 等 AI 工具即可替你打理插件的查询、创建、传包与定价。")}</div>
+                        <button type="button" class="btn btn-primary btn-sm" id="mcp-generate">
+                            <i class="fa-duotone fa-regular fa-key"></i> #{t("生成访问秘钥")}
+                        </button>
+                    </div>
+
+                    <div id="mcp-configured" class="d-none">
+                        <div class="mcp-steps">
+                            <span class="mcp-steps__item"><i>1</i>#{t("选择工具")}</span>
+                            <span class="mcp-steps__sep"></span>
+                            <span class="mcp-steps__item"><i>2</i>#{t("复制配置")}</span>
+                            <span class="mcp-steps__sep"></span>
+                            <span class="mcp-steps__item"><i>3</i>#{t("重启工具，直接对话")}</span>
+                        </div>
+
+                        <div class="mcp-clients" id="mcp-clients" role="tablist"></div>
+
+                        <div class="mcp-code">
+                            <div class="mcp-code__bar">
+                                <span class="mcp-code__dots"><i></i><i></i><i></i></span>
+                                <span class="mcp-code__file" id="mcp-config-file"></span>
+                                <button type="button" class="mcp-code__copy" data-copy="config"><i class="fa-duotone fa-regular fa-copy"></i><span>#{t("复制配置")}</span></button>
+                            </div>
+                            <pre class="mcp-code__body" id="mcp-config"></pre>
+                        </div>
+                        <div class="mcp-code__hint" id="mcp-config-hint"></div>
+
+                        <div class="mcp-conn">
+                            <div class="mcp-conn__row">
+                                <span class="mcp-conn__label"><i class="fa-duotone fa-regular fa-globe"></i>#{t("端点")}</span>
+                                <code class="mcp-conn__value" id="mcp-url"></code>
+                                <span class="mcp-conn__tools">
+                                    <button type="button" class="mcp-iconbtn" data-copy="url" title="#{t('复制')}"><i class="fa-duotone fa-regular fa-copy"></i></button>
+                                </span>
+                            </div>
+                            <div class="mcp-conn__row">
+                                <span class="mcp-conn__label"><i class="fa-duotone fa-regular fa-key"></i>#{t("秘钥")}</span>
+                                <code class="mcp-conn__value" id="mcp-key" data-hidden="1"></code>
+                                <span class="mcp-conn__tools">
+                                    <button type="button" class="mcp-iconbtn" id="mcp-reveal" title="#{t('显示 / 隐藏')}"><i class="fa-duotone fa-regular fa-eye"></i></button>
+                                    <button type="button" class="mcp-iconbtn" data-copy="key" title="#{t('复制')}"><i class="fa-duotone fa-regular fa-copy"></i></button>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="mcp-foot">
+                            <span class="mcp-foot__note"><i class="fa-duotone fa-regular fa-shield-check"></i>#{t("秘钥可操作你名下的商店插件，以及本机已装插件的启停 / 配置 / 日志；配置读取默认脱敏，不涉及资金与账号密码；每次调用均有审计，泄露可随时重置或停用。")}</span>
+                            <button type="button" class="mcp-resetbtn" id="mcp-reset"><i class="fa-duotone fa-regular fa-arrows-rotate"></i>#{t("重置秘钥")}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <style>
+                /* ===== MCP · AI 接入卡片（全部取自 --md-* 设计 token，双主题自适配）===== */
+                #mcp-card { position: relative; overflow: hidden; }
+                #mcp-card::before {
+                    content: ""; position: absolute; top: -150px; left: -110px; width: 400px; height: 400px;
+                    border-radius: 50%; pointer-events: none;
+                    background: radial-gradient(closest-side, rgba(var(--md-primary-rgb), .07), transparent 70%);
+                }
+
+                /* --- 头部 --- */
+                #mcp-card .mcp-hero { display: flex; align-items: center; gap: 14px; padding: 20px 24px 14px; }
+                #mcp-card .mcp-hero__icon {
+                    flex: 0 0 auto; width: 46px; height: 46px; border-radius: 14px;
+                    display: flex; align-items: center; justify-content: center; font-size: 20px;
+                    color: var(--md-primary);
+                    background: linear-gradient(135deg, rgba(var(--md-primary-rgb), .16), rgba(var(--md-primary-rgb), .05));
+                    border: 1px solid rgba(var(--md-primary-rgb), .18);
+                }
+                #mcp-card .mcp-hero__text { flex: 1 1 auto; min-width: 0; }
+                #mcp-card .mcp-hero__title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 15.5px; font-weight: 700; color: var(--md-on-surface); letter-spacing: .2px; }
+                #mcp-card .mcp-hero__sub { margin-top: 3px; font-size: 12.5px; color: var(--md-on-surface-med); }
+
+                /* --- 状态胶囊（运行中带呼吸灯） --- */
+                #mcp-card .mcp-status {
+                    display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 10px;
+                    border-radius: 999px; font-size: 11.5px; font-weight: 600;
+                    background: var(--md-surface-2); color: var(--md-on-surface-med); border: 1px solid var(--md-divider);
+                }
+                #mcp-card .mcp-status em { font-style: normal; }
+                #mcp-card .mcp-status__dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .55; }
+                #mcp-card .mcp-status--on { background: rgba(var(--md-success-rgb), .1); border-color: rgba(var(--md-success-rgb), .25); color: var(--md-success); }
+                #mcp-card .mcp-status--on .mcp-status__dot { opacity: 1; animation: mcpPulse 2.2s var(--md-ease) infinite; }
+                @keyframes mcpPulse {
+                    0% { box-shadow: 0 0 0 0 rgba(var(--md-success-rgb), .4); }
+                    70% { box-shadow: 0 0 0 6px rgba(var(--md-success-rgb), 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(var(--md-success-rgb), 0); }
+                }
+                @media (prefers-reduced-motion: reduce) { #mcp-card .mcp-status--on .mcp-status__dot { animation: none; } }
+
+                /* --- 总开关 --- */
+                #mcp-card .mcp-switch {
+                    flex: 0 0 auto; width: 42px; height: 24px; border-radius: 999px; padding: 2px;
+                    display: inline-flex; align-items: center; cursor: pointer;
+                    border: 1px solid var(--md-divider); background: var(--md-surface-2);
+                    transition: background var(--md-dur) var(--md-ease), border-color var(--md-dur) var(--md-ease);
+                }
+                #mcp-card .mcp-switch__knob {
+                    width: 18px; height: 18px; border-radius: 50%; background: var(--md-surface);
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+                    transition: transform var(--md-dur) var(--md-ease), background var(--md-dur) var(--md-ease);
+                }
+                #mcp-card .mcp-switch[aria-checked="true"] { background: var(--md-primary); border-color: var(--md-primary); }
+                #mcp-card .mcp-switch[aria-checked="true"] .mcp-switch__knob { transform: translateX(18px); background: #fff; }
+
+                /* --- HTTP 告警条 --- */
+                #mcp-card .mcp-warn {
+                    display: flex; align-items: flex-start; gap: 8px; margin: 0 24px 6px; padding: 9px 12px;
+                    border-radius: 10px; font-size: 12px; line-height: 1.55;
+                    color: var(--md-warning); background: rgba(var(--md-warning-rgb), .09); border: 1px solid rgba(var(--md-warning-rgb), .22);
+                }
+                #mcp-card .mcp-warn i { margin-top: 1px; }
+
+                /* --- 三步引导 --- */
+                #mcp-card .mcp-steps { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 6px 24px 12px; font-size: 12px; color: var(--md-on-surface-med); }
+                #mcp-card .mcp-steps__item { display: inline-flex; align-items: center; gap: 7px; }
+                #mcp-card .mcp-steps__item i {
+                    width: 17px; height: 17px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+                    font-style: normal; font-size: 10.5px; font-weight: 700;
+                    color: var(--md-primary); background: rgba(var(--md-primary-rgb), .1); border: 1px solid rgba(var(--md-primary-rgb), .25);
+                }
+                #mcp-card .mcp-steps__sep { flex: 0 0 18px; height: 1px; background: var(--md-divider); }
+
+                /* --- 客户端 pills --- */
+                #mcp-card .mcp-clients { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 24px 14px; }
+                #mcp-card .mcp-client {
+                    appearance: none; height: 30px; padding: 0 13px; border-radius: 999px; cursor: pointer;
+                    border: 1px solid var(--md-divider); background: transparent; color: var(--md-on-surface-med);
+                    font-size: 12.5px; font-weight: 500; letter-spacing: .1px;
+                    transition: background var(--md-dur-fast, .12s) var(--md-ease), color var(--md-dur-fast, .12s) var(--md-ease), border-color var(--md-dur-fast, .12s) var(--md-ease);
+                }
+                #mcp-card .mcp-client:hover { background: var(--md-hover-overlay); color: var(--md-on-surface); }
+                #mcp-card .mcp-client.active { background: rgba(var(--md-primary-rgb), .1); border-color: rgba(var(--md-primary-rgb), .45); color: var(--md-primary); font-weight: 600; }
+
+                /* --- 终端式代码窗（双主题下刻意保持深色，如真实终端） --- */
+                #mcp-card .mcp-code { margin: 0 24px; border-radius: 14px; overflow: hidden; border: 1px solid var(--md-divider); background: #0d1117; box-shadow: var(--md-e1); }
+                #mcp-card .mcp-code__bar { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; background: rgba(255, 255, 255, .04); border-bottom: 1px solid rgba(255, 255, 255, .07); }
+                #mcp-card .mcp-code__dots { display: inline-flex; gap: 6px; }
+                #mcp-card .mcp-code__dots i { width: 10px; height: 10px; border-radius: 50%; }
+                #mcp-card .mcp-code__dots i:nth-child(1) { background: #ff5f57; }
+                #mcp-card .mcp-code__dots i:nth-child(2) { background: #febc2e; }
+                #mcp-card .mcp-code__dots i:nth-child(3) { background: #28c840; }
+                #mcp-card .mcp-code__file { flex: 1; min-width: 0; text-align: center; font: 500 11.5px/1 ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; color: #7d8590; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                #mcp-card .mcp-code__copy {
+                    display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; cursor: pointer;
+                    border-radius: 8px; border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .05); color: #adbac7; font-size: 11.5px;
+                    transition: background .15s var(--md-ease), color .15s var(--md-ease), border-color .15s var(--md-ease);
+                }
+                #mcp-card .mcp-code__copy:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+                #mcp-card .mcp-code__copy.copied { color: #3fb950; border-color: rgba(63, 185, 80, .4); }
+                #mcp-card .mcp-code__body { margin: 0; padding: 14px 16px; max-height: 260px; overflow: auto; font: 12px/1.7 ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; color: #e6edf3; white-space: pre; background: transparent; border: 0; }
+                #mcp-card .mcp-code__hint { padding: 8px 26px 0; font-size: 11.5px; line-height: 1.6; color: var(--md-on-surface-med); }
+
+                /* --- 端点 / 秘钥 --- */
+                #mcp-card .mcp-conn { margin: 14px 24px 0; border: 1px solid var(--md-divider); border-radius: 12px; overflow: hidden; }
+                #mcp-card .mcp-conn__row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; transition: background .15s var(--md-ease); }
+                #mcp-card .mcp-conn__row + .mcp-conn__row { border-top: 1px solid var(--md-divider); }
+                #mcp-card .mcp-conn__row:hover { background: var(--md-hover-overlay); }
+                #mcp-card .mcp-conn__label { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; width: 76px; font-size: 12px; color: var(--md-on-surface-med); }
+                #mcp-card .mcp-conn__value { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 12px/1.5 ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .2px; color: var(--md-on-surface); background: transparent; padding: 0; }
+                #mcp-card .mcp-conn__tools { display: inline-flex; gap: 4px; opacity: .45; transition: opacity .15s var(--md-ease); }
+                #mcp-card .mcp-conn__row:hover .mcp-conn__tools,
+                #mcp-card .mcp-conn__tools:focus-within { opacity: 1; }
+                #mcp-card .mcp-iconbtn {
+                    appearance: none; border: 0; background: transparent; width: 26px; height: 26px; border-radius: 8px; cursor: pointer;
+                    display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: var(--md-on-surface-med);
+                    transition: background .15s var(--md-ease), color .15s var(--md-ease);
+                }
+                #mcp-card .mcp-iconbtn:hover { background: var(--md-hover-overlay); color: var(--md-on-surface); }
+                #mcp-card .mcp-iconbtn.copied { color: var(--md-success); }
+
+                /* --- 底部：安全说明 + 重置 --- */
+                #mcp-card .mcp-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 24px 18px; }
+                #mcp-card .mcp-foot__note { display: inline-flex; align-items: flex-start; gap: 7px; max-width: 72ch; font-size: 11.5px; line-height: 1.6; color: var(--md-on-surface-med); }
+                #mcp-card .mcp-foot__note i { margin-top: 2px; color: var(--md-success); }
+                #mcp-card .mcp-resetbtn {
+                    display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 13px; cursor: pointer;
+                    border-radius: 999px; border: 1px solid rgba(var(--md-error-rgb), .3); background: transparent; color: var(--md-error);
+                    font-size: 12px; font-weight: 600;
+                    transition: background .15s var(--md-ease), border-color .15s var(--md-ease);
+                }
+                #mcp-card .mcp-resetbtn:hover { background: rgba(var(--md-error-rgb), .08); border-color: rgba(var(--md-error-rgb), .5); }
+
+                /* --- 空状态 --- */
+                #mcp-card .mcp-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 34px 24px 38px; }
+                #mcp-card .mcp-empty__icon {
+                    width: 58px; height: 58px; border-radius: 18px; margin-bottom: 14px;
+                    display: flex; align-items: center; justify-content: center; font-size: 24px;
+                    color: var(--md-primary);
+                    background: linear-gradient(135deg, rgba(var(--md-primary-rgb), .14), rgba(var(--md-primary-rgb), .04));
+                    border: 1px solid rgba(var(--md-primary-rgb), .2);
+                }
+                #mcp-card .mcp-empty__title { font-size: 15px; font-weight: 700; color: var(--md-on-surface); }
+                #mcp-card .mcp-empty__sub { margin: 6px 0 16px; max-width: 52ch; font-size: 12.5px; color: var(--md-on-surface-med); }
+
+                /* --- 窄屏 --- */
+                @media (max-width: 575.98px) {
+                    #mcp-card .mcp-hero { padding: 16px 16px 10px; }
+                    #mcp-card .mcp-warn { margin: 0 16px 6px; }
+                    #mcp-card .mcp-steps { padding: 4px 16px 10px; }
+                    #mcp-card .mcp-steps__sep { display: none; }
+                    #mcp-card .mcp-clients { padding: 0 16px 12px; }
+                    #mcp-card .mcp-code { margin: 0 16px; }
+                    #mcp-card .mcp-code__hint { padding: 8px 18px 0; }
+                    #mcp-card .mcp-conn { margin: 12px 16px 0; }
+                    #mcp-card .mcp-foot { padding: 12px 16px 16px; }
+                }
+            </style>
+            <!--end::MCP Card-->
             <!--begin::Tables Widget 9-->
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->
                 <div class="card-header border-0">
                     <div class="card-toolbar">
-                        <button type="button" class="btn btn-sm btn-light-primary me-3 developerCreatePlugin"><i class="fa-duotone fa-regular fa-layer-plus"></i> 创建插件
+                        <button type="button" class="btn btn-sm btn-light-primary me-3 developerCreatePlugin"><i class="fa-duotone fa-regular fa-layer-plus"></i> #{t("创建插件")}
                         </button>
                     </div>
                 </div>

@@ -27,7 +27,7 @@
         return {
             id: row.id || row.user_message_id || source.user_message_id || 0,
             message_id: row.message_id || source.id || 0,
-            title: row.title || source.title || '未命名消息',
+            title: row.title || source.title || i18n('未命名消息'),
             summary: row.summary || source.summary || '',
             content: row.content || source.content || '',
             jump_url: row.jump_url || source.jump_url || row.url || source.url || row.link_url || source.link_url || '',
@@ -65,7 +65,7 @@
                     <span class="uc-message-cell__dot"></span>
                     <span class="uc-message-cell__copy">
                         <strong>${escapeHtml(item.title)}</strong>
-                        <small>${escapeHtml(item.summary || '点击查看消息详情')}</small>
+                        <small>${escapeHtml(item.summary || i18n('点击查看消息详情'))}</small>
                     </span>
                 </div>`;
             }
@@ -74,8 +74,8 @@
             field: 'read_time',
             title: '状态',
             formatter: value => value
-                ? '<span class="uc-message-status is-read"><span class="material-icons-outlined" aria-hidden="true">drafts</span>已读</span>'
-                : '<span class="uc-message-status is-unread"><span class="material-icons-outlined" aria-hidden="true">mark_email_unread</span>未读</span>'
+                ? '<span class="uc-message-status is-read"><span class="material-icons-outlined" aria-hidden="true">drafts</span>' + i18n('已读') + '</span>'
+                : '<span class="uc-message-status is-unread"><span class="material-icons-outlined" aria-hidden="true">mark_email_unread</span>' + i18n('未读') + '</span>'
         },
         {field: 'create_time', title: '接收时间'},
         {
@@ -104,7 +104,7 @@
     ]);
     table.onResponse(response => {
         const total = Math.max(0, Number(response && response.data && response.data.total) || 0);
-        $page.find('.uc-card__sub').text(total > 0 ? `共 ${total} 条消息 · 打开后自动标记为已读` : '打开消息后自动标记为已读');
+        $page.find('.uc-card__sub').text(total > 0 ? `${i18n('共')} ${total} ${i18n('条消息')} · ${i18n('打开后自动标记为已读')}` : i18n('打开消息后自动标记为已读'));
     });
     table.onComplete(() => {
         cartoonPage && renderCartoonMobile(table.getMobileSnapshot('complete'));
@@ -181,7 +181,7 @@
 
         if (!mobile) {
             $modeIcon.text('delete_sweep');
-            $modeLabel.length ? $modeLabel[0].nodeValue = '删除选中' : $modeButton.append(document.createTextNode('删除选中'));
+            $modeLabel.length ? $modeLabel[0].nodeValue = i18n('删除选中') : $modeButton.append(document.createTextNode(i18n('删除选中')));
             $modeButton.attr('aria-pressed', 'false');
             $bar.prop('hidden', true);
             return;
@@ -189,28 +189,28 @@
 
         $modeIcon.text(cartoonSelectionMode ? 'close' : 'checklist');
         $modeLabel.length
-            ? $modeLabel[0].nodeValue = cartoonSelectionMode ? '取消选择' : '选择消息'
-            : $modeButton.append(document.createTextNode(cartoonSelectionMode ? '取消选择' : '选择消息'));
+            ? $modeLabel[0].nodeValue = cartoonSelectionMode ? i18n('取消选择') : i18n('选择消息')
+            : $modeButton.append(document.createTextNode(cartoonSelectionMode ? i18n('取消选择') : i18n('选择消息')));
         $modeButton.attr('aria-pressed', cartoonSelectionMode ? 'true' : 'false');
         $page.toggleClass('is-message-selecting', cartoonSelectionMode);
         $bar.prop('hidden', !cartoonSelectionMode);
-        $page.find('[data-message-selection-count]').text(`已选 ${ids.length} 条`);
+        $page.find('[data-message-selection-count]').text(`${i18n('已选')} ${ids.length} ${i18n('条')}`);
         $page.find('[data-message-selection-delete]').prop('disabled', ids.length < 1);
         $page.find('[data-message-selection-all]')
             .prop('disabled', selectable.length < 1)
-            .text(selectable.length > 0 && selected.length === selectable.length ? '取消全选' : '全选本页');
+            .text(selectable.length > 0 && selected.length === selectable.length ? i18n('取消全选') : i18n('全选本页'));
     }
 
     function cartoonMessageCard(row, index, selectedIds) {
         const item = normalizeMessage(row);
         const selected = selectedIds.includes(Number(item.id));
         const title = escapeHtml(item.title);
-        const summary = escapeHtml(item.summary || '点击查看消息详情');
-        const time = escapeHtml(item.create_time || '时间未知');
+        const summary = escapeHtml(item.summary || i18n('点击查看消息详情'));
+        const time = escapeHtml(item.create_time || i18n('时间未知'));
         const stateIcon = item.read_time ? 'drafts' : 'mark_email_unread';
-        const stateText = item.read_time ? '已读' : '未读';
+        const stateText = item.read_time ? i18n('已读') : i18n('未读');
         return `<article class="uc-message-mobile-card${item.read_time ? '' : ' is-unread'}${selected ? ' is-selected' : ''}" data-message-card-id="${Number(item.id)}">
-            <button type="button" class="uc-message-mobile-card__select" data-message-select="${Number(item.id)}" aria-label="${selected ? '取消选择' : '选择'}消息：${title}" aria-pressed="${selected ? 'true' : 'false'}">
+            <button type="button" class="uc-message-mobile-card__select" data-message-select="${Number(item.id)}" aria-label="${selected ? i18n('取消选择') : i18n('选择')}${i18n('消息：')}${title}" aria-pressed="${selected ? 'true' : 'false'}">
                 <span class="material-icons-outlined" aria-hidden="true">${selected ? 'check_circle' : 'radio_button_unchecked'}</span>
             </button>
             <button type="button" class="uc-message-mobile-card__content" data-message-open="${Number(item.id)}">
@@ -222,8 +222,8 @@
                 <span class="uc-message-mobile-card__summary">${summary}</span>
             </button>
             <div class="uc-message-mobile-card__actions">
-                <button type="button" data-message-open="${Number(item.id)}"><span class="material-icons-outlined" aria-hidden="true">visibility</span>查看详情</button>
-                <button type="button" class="is-danger" data-message-delete="${Number(item.id)}"><span class="material-icons-outlined" aria-hidden="true">delete_outline</span>删除</button>
+                <button type="button" data-message-open="${Number(item.id)}"><span class="material-icons-outlined" aria-hidden="true">visibility</span>${i18n('查看详情')}</button>
+                <button type="button" class="is-danger" data-message-delete="${Number(item.id)}"><span class="material-icons-outlined" aria-hidden="true">delete_outline</span>${i18n('删除')}</button>
             </div>
         </article>`;
     }
@@ -241,23 +241,23 @@
 
         $list.attr('aria-busy', status.loading ? 'true' : 'false');
         if (status.loading) {
-            $list.html('<div class="uc-message-mobile-loading" aria-label="正在加载消息"><i></i><i></i><i></i></div>');
-            $page.find('[data-message-mobile-result]').text('正在加载消息');
+            $list.html('<div class="uc-message-mobile-loading" aria-label="' + i18n('正在加载消息') + '"><i></i><i></i><i></i></div>');
+            $page.find('[data-message-mobile-result]').text(i18n('正在加载消息'));
         } else if (status.error) {
-            $list.html('<div class="uc-message-mobile-feedback is-error"><span class="material-icons-outlined" aria-hidden="true">cloud_off</span><strong>消息加载失败</strong><small>网络可能暂时不可用，请重新加载。</small><button type="button" data-message-retry><span class="material-icons-outlined" aria-hidden="true">refresh</span>重新加载</button></div>');
-            $page.find('[data-message-mobile-result]').text('加载失败，未显示旧数据');
-            $page.find('.uc-card__sub').text('消息加载失败 · 可重新加载');
+            $list.html('<div class="uc-message-mobile-feedback is-error"><span class="material-icons-outlined" aria-hidden="true">cloud_off</span><strong>' + i18n('消息加载失败') + '</strong><small>' + i18n('网络可能暂时不可用，请重新加载。') + '</small><button type="button" data-message-retry><span class="material-icons-outlined" aria-hidden="true">refresh</span>' + i18n('重新加载') + '</button></div>');
+            $page.find('[data-message-mobile-result]').text(i18n('加载失败，未显示旧数据'));
+            $page.find('.uc-card__sub').text(i18n('消息加载失败 · 可重新加载'));
         } else if (!rows.length) {
-            $list.html(`<div class="uc-message-mobile-feedback"><span class="material-icons-outlined" aria-hidden="true">${cartoonKeyword || cartoonStatus !== '' ? 'search_off' : 'inbox'}</span><strong>${cartoonKeyword || cartoonStatus !== '' ? '没有找到符合条件的消息' : '暂时没有消息'}</strong><small>${cartoonKeyword || cartoonStatus !== '' ? '换个关键词或筛选条件试试。' : '收到的新消息会出现在这里。'}</small></div>`);
-            $page.find('[data-message-mobile-result]').text('共 0 条消息');
+            $list.html(`<div class="uc-message-mobile-feedback"><span class="material-icons-outlined" aria-hidden="true">${cartoonKeyword || cartoonStatus !== '' ? 'search_off' : 'inbox'}</span><strong>${cartoonKeyword || cartoonStatus !== '' ? i18n('没有找到符合条件的消息') : i18n('暂时没有消息')}</strong><small>${cartoonKeyword || cartoonStatus !== '' ? i18n('换个关键词或筛选条件试试。') : i18n('收到的新消息会出现在这里。')}</small></div>`);
+            $page.find('[data-message-mobile-result]').text(i18n('共 0 条消息'));
         } else {
             $list.html(rows.map((row, index) => cartoonMessageCard(row, index, selectedIds)).join(''));
-            $page.find('[data-message-mobile-result]').text(`共 ${total} 条消息`);
+            $page.find('[data-message-mobile-result]').text(`${i18n('共')} ${total} ${i18n('条消息')}`);
         }
 
         const currentPage = Math.max(1, Number(pagination.pageNumber) || 1);
         const totalPages = Math.max(0, Number(pagination.totalPages) || 0);
-        $page.find('[data-message-mobile-page]').text(totalPages > 0 ? `第 ${currentPage} / ${totalPages} 页` : '');
+        $page.find('[data-message-mobile-page]').text(totalPages > 0 ? `${i18n('第')} ${currentPage} / ${totalPages} ${i18n('页')}` : '');
         const $pager = $page.find('[data-message-mobile-pagination]');
         $pager.prop('hidden', Boolean(status.loading || status.error || totalPages <= 1));
         $pager.find('[data-message-page="previous"]').prop('disabled', currentPage <= 1);
@@ -399,7 +399,7 @@
             error: response => {
                 if (!isPageCurrent()) return;
                 $trigger.removeClass('is-loading');
-                message.error((response && response.msg) || '消息读取失败');
+                message.error((response && response.msg) || i18n('消息读取失败'));
             },
             fail: () => {
                 if (!isPageCurrent()) return;
@@ -416,7 +416,7 @@
             return;
         }
         const pagination = table.getPagination();
-        message.ask(ids.length > 1 ? `确定删除选中的 ${ids.length} 条消息吗？删除后无法恢复。` : '确定删除这条消息吗？删除后无法恢复。', () => {
+        message.ask(ids.length > 1 ? `${i18n('确定删除选中的')} ${ids.length} ${i18n('条消息吗？删除后无法恢复。')}` : i18n('确定删除这条消息吗？删除后无法恢复。'), () => {
             util.post('/user/api/message/del', {list: ids}, () => {
                 message.success('消息已删除');
                 cartoonSelectionMode = false;

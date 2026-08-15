@@ -60,6 +60,7 @@ try {
     Context::set(Base::IS_INSTALL, file_exists(BASE_PATH . '/kernel/Install/Lock'));
     Context::set(Base::OPCACHE, extension_loaded("Zend OPcache") || extension_loaded("opcache"));
     Context::set(Base::STORE_STATUS, file_exists(BASE_PATH . "/kernel/Plugin.php"));
+    Context::set(Base::LANGUAGE, \Kernel\Util\Lang::detect());
 
     $count = count($s);
     $controller = "App\\Controller";
@@ -176,10 +177,10 @@ try {
         exit(feedback("404 Not Found"));
     } elseif ($e instanceof \Kernel\Exception\ParameterMissException) {
         header('content-type:application/json;charset=utf-8');
-        exit(json_encode(["code" => $e->getCode(), "msg" => $e->getMessage()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        exit(json_encode(["code" => $e->getCode(), "msg" => lang($e->getMessage())], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     } elseif ($e instanceof \Kernel\Exception\JSONException) {
         header('content-type:application/json;charset=utf-8');
-        exit(json_encode(["code" => $e->getCode(), "msg" => $e->getMessage()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        exit(json_encode(["code" => $e->getCode(), "msg" => lang($e->getMessage())], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     } elseif ($e instanceof \Kernel\Exception\ViewException) {
         header("Content-type: text/html; charset=utf-8");
         exit(feedback($e->getFile() . "<br>" . $e->getMessage()));

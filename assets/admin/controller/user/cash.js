@@ -39,7 +39,7 @@
     const cashCopyButton = (key, label, value, mobile) => {
         const normalized = String(value ?? '').trim();
         if (!mobile || !normalized || normalized === '-') return '';
-        return `<button type="button" class="md-cash-copy-button" data-cash-copy="${key}" aria-label="复制${escapeHtml(label)}"><span class="material-icons-outlined" aria-hidden="true">content_copy</span></button>`;
+        return `<button type="button" class="md-cash-copy-button" data-cash-copy="${key}" aria-label="${i18n('复制')}${escapeHtml(label)}"><span class="material-icons-outlined" aria-hidden="true">content_copy</span></button>`;
     };
     const cashCopyableValue = (html, key, label, value, mobile) => `<span class="md-cash-copy-value"><span class="md-cash-copy-value__text">${html || '-'}</span>${cashCopyButton(key, label, value, mobile)}</span>`;
     const cashAccountValue = map => {
@@ -65,13 +65,13 @@
             ? '<div class="md-cash-wechat-qr" data-cash-wechat-qr></div>'
             : escapeHtml(account || '-');
         return `<div class="md-detail md-cash-payment-detail">
-            <div class="md-detail__header">${mdUserCell({avatar: escapeHtml(user.avatar || '/favicon.ico'), username: escapeHtml(user.username || '未知会员'), id: escapeHtml(user.id)})}</div>
+            <div class="md-detail__header">${mdUserCell({avatar: escapeHtml(user.avatar || '/favicon.ico'), username: escapeHtml(user.username || i18n('未知会员')), id: escapeHtml(user.id)})}</div>
             <div class="md-detail__body">
-                ${detailRow('提现金额', `<strong class="text-success">¥ ${escapeHtml(map.amount)}</strong>`)}
-                ${detailRow('收款方式', escapeHtml(cashCardNames[Number(map.card)] || '未知方式'))}
-                ${detailRow('收款人', cashCopyableValue(escapeHtml(recipient || '-'), 'recipient', '收款人', recipient, mobile))}
-                ${detailRow('收款账号', cashCopyableValue(accountHtml, 'account', '收款账号', accountCopyValue, mobile))}
-                ${detailRow('提交时间', escapeHtml(map.create_time || '-'))}
+                ${detailRow(i18n('提现金额'), `<strong class="text-success">¥ ${escapeHtml(map.amount)}</strong>`)}
+                ${detailRow(i18n('收款方式'), escapeHtml(cashCardNames[Number(map.card)] || i18n('未知方式')))}
+                ${detailRow(i18n('收款人'), cashCopyableValue(escapeHtml(recipient || '-'), 'recipient', i18n('收款人'), recipient, mobile))}
+                ${detailRow(i18n('收款账号'), cashCopyableValue(accountHtml, 'account', i18n('收款账号'), accountCopyValue, mobile))}
+                ${detailRow(i18n('提交时间'), escapeHtml(map.create_time || '-'))}
             </div>
         </div>`;
     };
@@ -115,7 +115,7 @@
                         const mobile = mobileAdminEnabled();
                         openControllerLayer({
                             type: 1,
-                            title: mobile ? '确认打款' : '<i class="fa-duotone fa-regular fa-money-bill-transfer"></i> 提现打款',
+                            title: mobile ? '确认打款' : '<i class="fa-duotone fa-regular fa-money-bill-transfer"></i> ' + i18n('提现打款'),
                             content: cashAccountContent(map, mobile),
                             area: mobile ? ['100%', 'auto'] : '480px',
                             offset: mobile ? 'b' : 'auto',
@@ -124,7 +124,7 @@
                             resize: false,
                             move: !mobile,
                             anim: mobile && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? -1 : (mobile ? 2 : 0),
-                            btn: mobile ? ['确认已打款', '取消'] : ['<i class="fa-duotone fa-regular fa-sack-dollar"></i> 已打款', '<i class="fa-duotone fa-regular fa-xmark"></i> 取消'],
+                            btn: mobile ? ['确认已打款', '取消'] : ['<i class="fa-duotone fa-regular fa-sack-dollar"></i> ' + i18n('已打款'), '<i class="fa-duotone fa-regular fa-xmark"></i> ' + i18n('取消')],
                             success: layero => {
                                 if (map.card == 1 && map?.user?.wechat) {
                                     $(layero).find('[data-cash-wechat-qr]').qrcode({
@@ -147,8 +147,8 @@
                                     const label = key === 'recipient' ? '收款人' : '收款账号';
                                     util.copyTextToClipboard(
                                         copyValue,
-                                        () => message.success(`${label}已复制`),
-                                        () => message.error(`复制${label}失败，请长按内容复制`)
+                                        () => message.success(`${label}${i18n('已复制')}`),
+                                        () => message.error(`${i18n('复制')}${label}${i18n('失败，请长按内容复制')}`)
                                     );
                                 });
                             },
@@ -180,12 +180,12 @@
                                 Swal.fire({
                                     title: '确认已完成打款',
                                     html: `<div style="text-align:left;line-height:1.8;">
-                                        <div><b>会员：</b>${escapeHtml(user.username || '未知会员')}（ID ${escapeHtml(user.id ?? '-')}）</div>
-                                        <div><b>申请金额：</b>¥${escapeHtml(map.amount ?? '0')}</div>
-                                        <div><b>收款方式：</b>${escapeHtml(cashCardNames[Number(map.card)] || '未知方式')}</div>
-                                        <div><b>收款人：</b>${escapeHtml(user.nicename || '-')}</div>
-                                        <div><b>收款账号：</b>${escapeHtml(cashAccountValue(map))}</div>
-                                        <div style="margin-top:10px;color:#d14343;">请先在对应渠道完成真实打款。确认后只会把申请标记为已付款，无法在本页面一键撤销。</div>
+                                        <div><b>${i18n('会员：')}</b>${escapeHtml(user.username || i18n('未知会员'))}（ID ${escapeHtml(user.id ?? '-')}）</div>
+                                        <div><b>${i18n('申请金额：')}</b>¥${escapeHtml(map.amount ?? '0')}</div>
+                                        <div><b>${i18n('收款方式：')}</b>${escapeHtml(cashCardNames[Number(map.card)] || i18n('未知方式'))}</div>
+                                        <div><b>${i18n('收款人：')}</b>${escapeHtml(user.nicename || '-')}</div>
+                                        <div><b>${i18n('收款账号：')}</b>${escapeHtml(cashAccountValue(map))}</div>
+                                        <div style="margin-top:10px;color:#d14343;">${i18n('请先在对应渠道完成真实打款。确认后只会把申请标记为已付款，无法在本页面一键撤销。')}</div>
                                     </div>`,
                                     icon: 'warning',
                                     showCancelButton: true,
@@ -301,9 +301,9 @@
             Swal.fire({
                 title: '确认批量自动结算',
                 html: `<div style="text-align:left;line-height:1.8;">
-                    <div><b>最低账户余额：</b>¥${escapeHtml(amount.toFixed(2))}</div>
-                    <div><b>匹配范围：</b>所有站内余额大于或等于该金额的会员</div>
-                    <div style="margin-top:10px;color:#d14343;">提交后会批量创建提现记录并扣减符合条件会员的余额，可能影响多名会员，无法在本页面一键撤销。</div>
+                    <div><b>${i18n('最低账户余额：')}</b>¥${escapeHtml(amount.toFixed(2))}</div>
+                    <div><b>${i18n('匹配范围：')}</b>${i18n('所有站内余额大于或等于该金额的会员')}</div>
+                    <div style="margin-top:10px;color:#d14343;">${i18n('提交后会批量创建提现记录并扣减符合条件会员的余额，可能影响多名会员，无法在本页面一键撤销。')}</div>
                 </div>`,
                 icon: 'warning',
                 showCancelButton: true,

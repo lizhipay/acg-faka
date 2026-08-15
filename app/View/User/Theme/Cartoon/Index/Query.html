@@ -4,17 +4,17 @@
   <div class="panel">
     <div class="panel-header">
       <span class="icon">🔍</span>
-      <h6 class="panel-title">订单查询</h6>
+      <h6 class="panel-title">#{t("订单查询")}</h6>
     </div>
     <div class="panel-body">
       <form class="order-query-form">
         <div class="d-flex justify-content-center align-items-center gap-3">
           <div style="width: 300px;">
-            <input type="text" class="form-control" name="keywords" value="#{$tradeNo}" placeholder="订单号/联系方式">
+            <input type="text" class="form-control" name="keywords" value="#{$tradeNo}" placeholder="#{t('订单号/联系方式')}">
           </div>
           <div>
             <button type="submit" class="btn btn-primary btn-search-query">
-              <i class="fa-duotone fa-regular fa-search me-2"></i>查询订单
+              <i class="fa-duotone fa-regular fa-search me-2"></i>#{t("查询订单")}
             </button>
           </div>
         </div>
@@ -27,7 +27,7 @@
     <div class="panel">
       <div class="panel-header">
         <span class="icon">📋</span>
-        <h6 class="panel-title">查询结果</h6>
+        <h6 class="panel-title">#{t("查询结果")}</h6>
       </div>
       <div class="panel-body">
         <div class="order-list">
@@ -44,8 +44,8 @@
         <div class="mb-3">
           <i class="fa-duotone fa-regular fa-search" style="font-size: 3rem; color: #6b7280;"></i>
         </div>
-        <h6 class="text-muted">未找到相关订单</h6>
-        <p class="text-muted mb-0">请检查输入信息是否正确，或联系客服协助查询</p>
+        <h6 class="text-muted">#{t("未找到相关订单")}</h6>
+        <p class="text-muted mb-0">#{t("请检查输入信息是否正确，或联系客服协助查询")}</p>
       </div>
     </div>
   </div>
@@ -57,7 +57,7 @@
         <div class="mb-3 mt-3">
           <i class="fa-duotone fa-regular fa-spinner-third icon-spin" style="font-size: 2rem; color: var(--acg-primary);"></i>
         </div>
-        <p class="text-muted mb-0">正在查询订单信息...</p>
+        <p class="text-muted mb-0">#{t("正在查询订单信息...")}</p>
       </div>
     </div>
   </div>

@@ -114,7 +114,9 @@ class Shop implements \App\Service\Shop
         if ($commodityRecommend == 1 && $master) {
             array_unshift($array, [
                 "id" => 'recommend',
-                "name" => Config::get("commodity_name"),
+                //内置推荐分类的名字是配置项，默认「推荐」在词包里就有；
+                //商家改成自定义名称时走 dyn 场景，由 LANG_MISS 交给翻译插件补。
+                "name" => lang((string)Config::get("commodity_name"), "dyn"),
                 "sort" => 1,
                 "create_time" => "-",
                 "owner" => 0,
@@ -139,6 +141,7 @@ class Shop implements \App\Service\Shop
      */
     public function getItem(int|string $commodityId, ?User $user = null, ?UserGroup $group = null): array
     {
+        \App\Util\Schema::ensureCommodityTags();
 
         $commodity = Commodity::query()->with(['owner' => function (Relation $relation) {
             $relation->select(["id", "username", "avatar"]);
@@ -148,7 +151,8 @@ class Shop implements \App\Service\Shop
                 "status", "owner", "delivery_way", "contact_type", "password_status", "level_price",
                 "level_disable", "coupon", "shared_id", "shared_code", "shared_premium", "shared_premium_type", "seckill_status",
                 "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden",
-                "widget", "minimum", "maximum", "shared_sync", "config", "stock", "code", "shared_amount_sync", "shared_config_sync"])
+                "widget", "minimum", "maximum", "shared_sync", "config", "stock", "code", "shared_amount_sync", "shared_config_sync",
+                "tags"])
             ->withCount(['order as order_sold' => function (Builder $relation) {
                 $relation->where("delivery_status", 1);
             }]);
@@ -175,47 +179,26 @@ class Shop implements \App\Service\Shop
         if ($shared) {
             //远端同步
             if ($commodity->shared_sync == 1) {
-                /**
-                 * @var Commodity $new
-                 */
-                $new = Commodity::query()->find($commodity->id);
+                //!! 这里必须走 syncRemoteItem，不能自己再算一遍加价 !!
+                //以前这里抄了一份 AdjustmentPrice(..., shared_premium_type, shared_premium)，
+                //而加价模板（type=2）在那套算法里没有分支，会掉进百分比分支、
+                //乘上一个为 0 的 shared_premium —— 售价被刷成进货价。
+                //于是后台同步刚写好的加价，被任意一次详情页访问抹掉，价格来回跳。
+                $this->shared->syncRemoteItem($commodity->id);
 
-                $remoteItem = $this->shared->item($shared, $new->shared_code);
-
-                $base = $this->shared->AdjustmentPrice(Ini::toConfig($remoteItem['config'] ?: []), (string)$remoteItem['price'], (string)$remoteItem['user_price'], $new->shared_premium_type, $new->shared_premium);
-
-                $_config = $remoteItem['config'] ?: [];
-
-                if (!empty($_config['sku'])) {
-                    $base['config']['sku_cost'] = $_config['sku'];
+                $fresh = Commodity::query()->find($commodity->id);
+                if ($fresh) {
+                    //只回填这几个字段：$commodity 是按列查出来的，整体 refresh 会把
+                    //factory_price 这类成本字段也带进响应里
+                    foreach ([
+                        'price', 'user_price', 'config', 'level_price',
+                        'draft_status', 'draft_premium', 'seckill_status',
+                        'seckill_start_time', 'seckill_end_time', 'widget',
+                        'minimum', 'maximum', 'stock', 'contact_type',
+                    ] as $field) {
+                        $commodity->{$field} = $fresh->{$field};
+                    }
                 }
-
-                if (!empty($_config['category'])) {
-                    $base['config']['category_cost'] = $_config['category'];
-                }
-
-                if ($commodity->shared_amount_sync === 1) {
-                    $commodity->price = $new->price = $base['price'];
-                    $commodity->user_price = $new->user_price = $base['user_price'];
-                }
-
-
-                if ($commodity->shared_config_sync === 1) {
-                    $commodity->config = $new->config = Ini::toConfig($base['config']);
-                }
-
-                $commodity->draft_status = $new->draft_status = $remoteItem['draft_status'];
-                $commodity->draft_premium = $new->draft_premium = $remoteItem['draft_premium'] > 0 ? $this->shared->AdjustmentAmount($new->shared_premium_type, $new->shared_premium, $remoteItem['draft_premium']) : 0;
-                $commodity->seckill_status = $new->seckill_status = $remoteItem['seckill_status'];
-                $commodity->seckill_start_time = $new->seckill_start_time = $remoteItem['seckill_start_time'];
-                $commodity->seckill_end_time = $new->seckill_end_time = $remoteItem['seckill_end_time'];
-                $commodity->widget = $new->widget = is_array($remoteItem['widget']) ? json_encode($remoteItem['widget']) : $remoteItem['widget'];
-                $commodity->minimum = $new->minimum = $remoteItem['minimum'];
-                $commodity->maximum = $new->maximum = $remoteItem['maximum'];
-                $commodity->stock = $new->stock = $remoteItem['stock'];
-                $commodity->contact_type = $new->contact_type = $remoteItem['contact_type'];
-
-                $new->save();
             }
         } else if ($commodity->delivery_way == 0) {
             $commodity->stock = Card::query()->where("commodity_id", $commodity->id)->where("status", 0)->count();
@@ -223,7 +206,12 @@ class Shop implements \App\Service\Shop
         }
 
         //解析商品配置
-        $this->order->parseConfig($commodity, $group);
+        try {
+            $this->order->parseConfig($commodity, $group);
+        } catch (JSONException $e) {
+            //配置脏数据时给出可定位的提示，避免只抛一句裸的解析错误让商家无从排查
+            throw new JSONException("该商品配置异常，请商家检查商品[{$commodity->id}]的批发/规格/会员价配置：" . $e->getMessage());
+        }
 
 
         //处理分站
@@ -263,6 +251,9 @@ class Shop implements \App\Service\Shop
             $array['widget'] = json_decode($commodity->widget, true);
         }
 
+        //标签（#807）：入库是 JSON 字符串，给前端的是数组
+        $array['tags'] = Commodity::parseTags($array['tags'] ?? null);
+
         return $array;
     }
 
@@ -273,13 +264,14 @@ class Shop implements \App\Service\Shop
     public function getHideStock(int|string|null $stock): string
     {
         $stock = (int)$stock;
-        return match (true) {
+        //模糊库存文案直接出现在接口返回里，前端不再二次判断，这里就地翻译
+        return lang(match (true) {
             $stock <= 0 => "已售罄",
             $stock <= 5 => "即将售罄",
             $stock <= 20 => "一般",
             $stock <= 100 => "充足",
             default => "非常多"
-        };
+        }, "tpl");
     }
 
     /**
@@ -449,34 +441,40 @@ class Shop implements \App\Service\Shop
             $commodity->name = $userCommodity->name;
         }
 
+        //分站自定义商品介绍：留空才沿用主站的。主站介绍里常带自己的广告和联系方式，
+        //分站原样照搬等于给上游引流(#805)
+        if (trim((string)$userCommodity->description) !== '') {
+            $commodity->description = $userCommodity->description;
+        }
+
         $config = $commodity->config ?: [];
 
         if ($userCommodity->premium > 0) {
 
-            $commodity->price = (new Decimal($commodity->price))->mul($userCommodity->premium / 100)->add($commodity->price)->getAmount();
-            $commodity->user_price = (new Decimal($commodity->user_price))->mul($userCommodity->premium / 100)->add($commodity->user_price)->getAmount();
+            $commodity->price = $userCommodity->applyRounding((new Decimal($commodity->price))->mul($userCommodity->premium / 100)->add($commodity->price)->getAmount());
+            $commodity->user_price = $userCommodity->applyRounding((new Decimal($commodity->user_price))->mul($userCommodity->premium / 100)->add($commodity->user_price)->getAmount());
 
             if ($commodity->draft_premium > 0) {
-                $commodity->draft_premium = (new Decimal($commodity->draft_premium))->mul($userCommodity->premium / 100)->add($commodity->draft_premium)->getAmount();
+                $commodity->draft_premium = $userCommodity->applyRounding((new Decimal($commodity->draft_premium))->mul($userCommodity->premium / 100)->add($commodity->draft_premium)->getAmount());
             }
 
             if (is_array($config['category'])) {
                 foreach ($config['category'] as &$price) {
-                    $price = (new Decimal($price))->mul($userCommodity->premium / 100)->add($price)->getAmount();
+                    $price = $userCommodity->applyRounding((new Decimal($price))->mul($userCommodity->premium / 100)->add($price)->getAmount());
                 }
             }
 
 
             if (is_array($config['wholesale'])) {
                 foreach ($config['wholesale'] as &$price) {
-                    $price = (new Decimal($price))->mul($userCommodity->premium / 100)->add($price)->getAmount();
+                    $price = $userCommodity->applyRounding((new Decimal($price))->mul($userCommodity->premium / 100)->add($price)->getAmount());
                 }
             }
 
             if (is_array($config['category_wholesale'])) {
                 foreach ($config['category_wholesale'] as &$arr) {
                     foreach ($arr as &$price) {
-                        $price = (new Decimal($price))->mul($userCommodity->premium / 100)->add($price)->getAmount();
+                        $price = $userCommodity->applyRounding((new Decimal($price))->mul($userCommodity->premium / 100)->add($price)->getAmount());
                     }
                 }
             }
@@ -484,7 +482,7 @@ class Shop implements \App\Service\Shop
             if (is_array($config['sku'])) {
                 foreach ($config['sku'] as &$arr) {
                     foreach ($arr as &$price) {
-                        $price = (new Decimal($price))->mul($userCommodity->premium / 100)->add($price)->getAmount();
+                        $price = $userCommodity->applyRounding((new Decimal($price))->mul($userCommodity->premium / 100)->add($price)->getAmount());
                     }
                 }
             }
@@ -525,7 +523,7 @@ class Shop implements \App\Service\Shop
         }
 
         if ($userCommodity->premium > 0) {
-            return (new Decimal($amount))->mul($userCommodity->premium / 100)->add($amount)->getAmount();
+            return $userCommodity->applyRounding((new Decimal($amount))->mul($userCommodity->premium / 100)->add($amount)->getAmount());
         }
 
         return (string)$amount;

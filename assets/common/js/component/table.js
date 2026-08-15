@@ -19,10 +19,14 @@
             return i18n('正在加载') + '..';
         },
         formatShowingRows: function (from, to, total) {
-            return total > 0 ? '第 ' + from + ' - ' + to + ' 条 · 共 ' + total + ' 条' : '共 0 条';
+            //整句做词条，避免逐词拼接在英/日语序下读不通
+            return total > 0
+                ? i18n('显示第 {from} - {to} 条，共 {total} 条')
+                    .replace('{from}', from).replace('{to}', to).replace('{total}', total)
+                : i18n('共 0 条');
         },
         formatRecordsPerPage: function (number) {
-            return '每页 ' + number + ' 条';
+            return i18n('每页 {n} 条').replace('{n}', number);
         }
     });
 }());
@@ -1070,7 +1074,7 @@ class Table {
         }
         const title = document.createElement('span');
         title.className = 'btn-title';
-        title.textContent = button.title ?? '';
+        title.textContent = i18n(button.title ?? '');
         target.append(title);
         wrapper.append(target);
         return target;
@@ -1421,7 +1425,11 @@ class Table {
                     let html = `<select lay-ignore class="metadata-select" data-field="${column.field}" data-id="${item.id}" ${tableReload}>`
                     _Dict.advanced(column.dict, res => {
                         res.forEach(dt => {
-                            html += `<option value="${dt.id}" ${(val === dt.id ? 'selected' : '')}>${dt.name}</option>`;
+                            // 按字符串比较：用户切换后回写的是 select 的字符串值（"0"），
+                            // 而字典 id 常是数字（0）。用 === 会两边都不匹配 -> 重绘后没有
+                            // 任何 option 被选中，浏览器回落到第一项，表现为"切换不过去"。
+                            const selected = String(val) === String(dt.id) ? 'selected' : '';
+                            html += `<option value="${dt.id}" ${selected}>${dt.name}</option>`;
                         });
                     })
                     return html + '</select>';
@@ -1439,7 +1447,9 @@ class Table {
                     if (colorMatch && !btnCls.includes(colorMatch[0])) {
                         btnCls = (btnCls + " " + colorMatch[0]).trim();
                     }
-                    html += `<a type="button" role="button" tabindex="0" class="a-badge-glass ${hide + btnCls} me-1 mb-1 index-${i}">${s.icon ? `<i class="${s.icon}"></i> ` : ""}<span class="btn-title">${s.title ?? ""}</span></a>`;
+                    // data-btn-title 存**未翻译**的原文标题:按钮文字会随语言变,
+                    // 主题若想识别"这是哪个按钮"必须认这个键,不能去比对 .btn-title 的可见文字。
+                    html += `<a type="button" role="button" tabindex="0" data-btn-title="${s.title ?? ""}" class="a-badge-glass ${hide + btnCls} me-1 mb-1 index-${i}">${s.icon ? `<i class="${s.icon}"></i> ` : ""}<span class="btn-title">${i18n(s.title ?? "")}</span></a>`;
                     events['click .index-' + i] = s.click;
                     events['keydown .index-' + i] = function (event, value, row, index) {
                         if (!['Enter', ' '].includes(event.key)) return;
@@ -1506,7 +1516,7 @@ class Table {
                     if (val === "" || val === undefined || val === null) {
                         return '-';
                     }
-                    return `<img style="${circle}" class="render-image" role="button" tabindex="0" src="${val}" data-id="${item.id}" alt="放大图片">`;
+                    return `<img style="${circle}" class="render-image" role="button" tabindex="0" src="${val}" data-id="${item.id}" alt="${i18n('放大图片')}">`;
                 }
                 break;
             default:
@@ -1665,7 +1675,7 @@ class Table {
                     $(document).off(this.floatEventNamespace).on(`keydown${this.floatEventNamespace}`, function (event) {
                         if (event.key === 'Control' && $(`.lock-hotkeys`).length > 0 && isCtrlPressed === false) {
                             isCtrlPressed = true;
-                            $(`.lock-hotkeys`).html(`按Shift或<b style="cursor: pointer;" class="lock-hotkeys-cancel text-primary">点我关闭</b>`).css("color", "#40e440");
+                            $(`.lock-hotkeys`).html(`${i18n('按')}Shift${i18n('或')}<b style="cursor: pointer;" class="lock-hotkeys-cancel text-primary">${i18n('点我关闭')}</b>`).css("color", "#40e440");
                         }
 
                         if (event.key === 'Shift' && isCtrlPressed === true) {
@@ -1696,7 +1706,7 @@ class Table {
                             const index = $(this).data('index');
                             const item = _this.$table.bootstrapTable('getData')[index];
 
-                            let html = `<b style="color: #ff2e2e;" class="lock-hotkeys">按Ctrl锁住窗口</b><br>`;
+                            let html = `<b style="color: #ff2e2e;" class="lock-hotkeys">${i18n('按')}Ctrl${i18n('锁住窗口')}</b><br>`;
                             _this.floatMessage.forEach(det => {
                                 const title = escapeTableHtml(det.title ? i18n(det.title) : '');
                                 const source = util.parseStringObject(item, util.replaceDotWithHyphen(det.field));
