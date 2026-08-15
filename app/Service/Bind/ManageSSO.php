@@ -133,6 +133,12 @@ class ManageSSO implements \App\Service\ManageSSO
             'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
         ]);
 
+        //登录成功通知点位（会话已签发；钩子异常不影响登录结果）
+        try {
+            hook(\App\Consts\Hook::ADMIN_API_AUTH_LOGIN_AFTER, $login['manage']);
+        } catch (\Throwable $e) {
+        }
+
         return ["username" => $login['manage']->email, "avatar" => $login['manage']->avatar];
     }
 

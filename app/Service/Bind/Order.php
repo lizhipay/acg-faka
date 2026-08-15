@@ -728,6 +728,38 @@ class Order implements \App\Service\Order
             }
         }
 
+        //商品类型(race)与规格(sku)必选校验。
+        //不校验会被这样绕过：商品配了分类却不提交 race —— valuation() 的分类定价分支
+        //(!empty($race)) 直接跳过，按基础价计费；库存统计与发货取卡的 race 过滤同样是
+        //条件式的，于是用最低价即可取走任意分类的卡密（含高价分类）。sku 同理，
+        //少提交一个规格就少算一份加价。这里在计价与库存判断之前把参数钉死。
+        $configCommodity = clone $commodity;
+        $this->parseConfig($configCommodity, $userGroup);
+        $commodityConfig = is_array($configCommodity->config) ? $configCommodity->config : [];
+
+        if (!empty($commodityConfig['category']) && is_array($commodityConfig['category'])) {
+            if ($race === '') {
+                throw new JSONException("请选择商品类型");
+            }
+            if (!array_key_exists($race, $commodityConfig['category'])) {
+                throw new JSONException("此商品类型不存在[{$race}]");
+            }
+        }
+
+        if (!empty($commodityConfig['sku']) && is_array($commodityConfig['sku'])) {
+            foreach ($commodityConfig['sku'] as $skuName => $skuOptions) {
+                if (!is_array($skuOptions) || $skuOptions === []) {
+                    continue;
+                }
+                if (!is_array($sku) || !isset($sku[$skuName]) || (string)$sku[$skuName] === '') {
+                    throw new JSONException("请选择{$skuName}");
+                }
+                if (!array_key_exists((string)$sku[$skuName], $skuOptions)) {
+                    throw new JSONException("{$skuName}选择错误");
+                }
+            }
+        }
+
         $rent = 0;
 
         if ($commodity->shared) {
@@ -1026,6 +1058,30 @@ class Order implements \App\Service\Order
 
 
     /**
+     * 支付回调校验失败的统一出口：写支付插件日志 → 触发 SERVICE_PAY_CALLBACK_FAIL → 抛出给网关的错误。
+     * 钩子里的异常不改变原有失败流程。
+     * @param string $handle 支付插件
+     * @param string $reason handle|not_found|credential|plugin|sign|status|duplicate|amount
+     * @param string $error 返回给网关的错误文本
+     * @param string|null $tradeNo
+     * @param array $map 回调原始数据
+     * @param string|null $logMessage 为空则不写支付插件日志
+     * @param string $logType
+     * @throws JSONException
+     */
+    public static function callbackFail(string $handle, string $reason, string $error, ?string $tradeNo, array $map, ?string $logMessage = null, string $logType = "CALLBACK"): void
+    {
+        if ($logMessage !== null) {
+            PayConfig::log($handle, $logType, $logMessage);
+        }
+        try {
+            hook(Hook::SERVICE_PAY_CALLBACK_FAIL, $handle, $reason, $tradeNo, $map);
+        } catch (\Throwable $e) {
+        }
+        throw new JSONException($error);
+    }
+
+    /**
      * 初始化回调
      * @throws JSONException
      */
@@ -1034,6 +1090,7 @@ class Order implements \App\Service\Order
         $payInfo = PayConfig::info($handle);
         $payConfig = PayConfig::config($handle);
         $callback = $payInfo['callback'];
+        $tradeNo = (string)($map[$callback[\App\Consts\Pay::FIELD_ORDER_KEY] ?? ''] ?? '') ?: null;
 
         $autoload = BASE_PATH . '/app/Pay/' . $handle . "/Vendor/autoload.php";
         if (file_exists($autoload)) {
@@ -1045,19 +1102,16 @@ class Order implements \App\Service\Order
             //核心兜底：验签已开启，但插件未配置任何凭据（密钥/密文/公钥）时直接拒绝，
             //防止空密钥导致 md5(data.'') 之类可被伪造的回调通过验签。
             if (!self::payCredentialConfigured($payConfig)) {
-                PayConfig::log($handle, "CALLBACK", "支付凭据未配置，拒绝回调");
-                throw new JSONException("pay credential not configured");
+                self::callbackFail($handle, "credential", "pay credential not configured", $tradeNo, $map, "支付凭据未配置，拒绝回调");
             }
             $class = "\\App\\Pay\\{$handle}\\Impl\\Signature";
             if (!class_exists($class)) {
-                PayConfig::log($handle, "CALLBACK", "插件未实现接口");
-                throw new JSONException("signature not implements interface");
+                self::callbackFail($handle, "plugin", "signature not implements interface", $tradeNo, $map, "插件未实现接口");
             }
             $signature = new $class;
             Context::set(\App\Consts\Pay::DAFA, $map);
             if (!$signature->verification($map, $payConfig)) {
-                PayConfig::log($handle, "CALLBACK", "签名验证失败");
-                throw new JSONException("sign error");
+                self::callbackFail($handle, "sign", "sign error", $tradeNo, $map, "签名验证失败");
             }
             $map = Context::get(\App\Consts\Pay::DAFA);
         }
@@ -1065,8 +1119,7 @@ class Order implements \App\Service\Order
         //验证状态
         if ($callback[\App\Consts\Pay::IS_STATUS]) {
             if ((string)$map[$callback[\App\Consts\Pay::FIELD_STATUS_KEY]] !== (string)$callback[\App\Consts\Pay::FIELD_STATUS_VALUE]) {
-                PayConfig::log($handle, "CALLBACK", "状态验证失败");
-                throw new JSONException("status error");
+                self::callbackFail($handle, "status", "status error", $tradeNo, $map, "状态验证失败");
             }
         }
 
@@ -1225,6 +1278,13 @@ class Order implements \App\Service\Order
         //判断订单是否存在类别
         if ($order->race) {
             $cards = $cards->where("race", $order->race);
+        } else {
+            //订单没有类别时只能发无类别的卡密：早期数据或异常下单若漏掉 race，
+            //这里不加限制就会从全部类别里随机发货，等于按基础价发出高价分类的卡。
+            //取不到就保持未发货（与库存不足同一处理），不会误发。
+            $cards = $cards->where(function ($query) {
+                $query->whereNull("race")->orWhere("race", "");
+            });
         }
 
         //判断sku存在
@@ -1270,23 +1330,23 @@ class Order implements \App\Service\Order
     {
         $handle = Firewall::inst()->xssKiller($handle);
         if (!Str::isValid($handle) || !PayConfig::isValid($handle)) {
-            throw new JSONException("handle not found");
+            self::callbackFail((string)$handle, "handle", "handle not found", null, $map);
         }
 
         $tradeNo = $this->getCallbackTradeNo($handle, $map);
 
         if (!$tradeNo) {
-            throw new JSONException("order number not found");
+            self::callbackFail($handle, "not_found", "order number not found", null, $map);
         }
 
         $order = \App\Model\Order::with(['pay'])->where("trade_no", $tradeNo)->first();
 
-        if (!$order->pay) {
-            throw new JSONException("pay not found");
+        if (!$order || !$order->pay) {
+            self::callbackFail($handle, "handle", "pay not found", $tradeNo, $map);
         }
 
         if ($order->pay->handle !== $handle) {
-            throw new JSONException("pay handle not found");
+            self::callbackFail($handle, "handle", "pay handle not found", $tradeNo, $map);
         }
 
         $callback = $this->callbackInitialize($handle, $map);
@@ -1295,16 +1355,13 @@ class Order implements \App\Service\Order
             //获取订单
             $order = \App\Model\Order::query()->where("trade_no", $callback['trade_no'])->first();
             if (!$order) {
-                PayConfig::log($handle, "CALLBACK", "订单不存在");
-                throw new JSONException("order not found");
+                self::callbackFail($handle, "not_found", "order not found", (string)$callback['trade_no'], $map, "订单不存在");
             }
             if ((int)$order->status !== 0) {
-                PayConfig::log($handle, "CALLBACK", "重复通知，当前订单已支付");
-                throw new JSONException("order status error");
+                self::callbackFail($handle, "duplicate", "order status error", (string)$callback['trade_no'], $map, "重复通知，当前订单已支付");
             }
             if ($order->amount !== (float)$callback['amount']) {
-                PayConfig::log($handle, "CALLBACK", "订单金额不匹配");
-                throw new JSONException("amount error");
+                self::callbackFail($handle, "amount", "amount error", (string)$callback['trade_no'], $map, "订单金额不匹配");
             }
             //第三方支付订单成功，累计充值
             if ($order->owner != 0 && $owner = User::query()->find($order->owner)) {

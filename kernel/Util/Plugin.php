@@ -126,7 +126,7 @@ class Plugin
     /**
      * @param int $point
      * @param mixed ...$args
-     * @return array|Stock|string|void
+     * @return array|Stock|string|bool|void
      * @throws \ReflectionException
      */
     public static function hook(int $point, mixed &...$args)
@@ -145,6 +145,12 @@ class Plugin
 
                 // Stock 是短路信号，必须最先判
                 if ($result instanceof Stock) {
+                    return $result;
+                }
+
+                // bool 同样是决策信号（如 SERVICE_SMTP_SEND_BEFORE 返回 true 表示已由插件接管），
+                // 之前会被静默丢弃导致该契约从未生效，这里与 Stock 同级短路返回。
+                if (is_bool($result)) {
                     return $result;
                 }
 

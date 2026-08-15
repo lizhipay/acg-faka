@@ -150,23 +150,23 @@ class Recharge implements \App\Service\Recharge
     {
         $handle = Firewall::inst()->xssKiller($handle);
         if (!Str::isValid($handle) || !PayConfig::isValid($handle)) {
-            throw new JSONException("handle not found");
+            \App\Service\Bind\Order::callbackFail((string)$handle, "handle", "handle not found", null, $map, null, "CALLBACK-RECHARGE");
         }
 
         $tradeNo = $this->order->getCallbackTradeNo($handle, $map);
 
         if (!$tradeNo) {
-            throw new JSONException("order number not found");
+            \App\Service\Bind\Order::callbackFail($handle, "not_found", "order number not found", null, $map, null, "CALLBACK-RECHARGE");
         }
 
         $order = UserRecharge::with(['pay'])->where("trade_no", $tradeNo)->first();
 
-        if (!$order->pay) {
-            throw new JSONException("pay not found");
+        if (!$order || !$order->pay) {
+            \App\Service\Bind\Order::callbackFail($handle, "handle", "pay not found", $tradeNo, $map, null, "CALLBACK-RECHARGE");
         }
 
         if ($order->pay->handle !== $handle) {
-            throw new JSONException("pay handle not found");
+            \App\Service\Bind\Order::callbackFail($handle, "handle", "pay handle not found", $tradeNo, $map, null, "CALLBACK-RECHARGE");
         }
 
         $callback = $this->order->callbackInitialize($handle, $map);
@@ -178,18 +178,15 @@ class Recharge implements \App\Service\Recharge
             $order = UserRecharge::query()->where("trade_no", $callback['trade_no'])->first();
 
             if (!$order) {
-                PayConfig::log($handle, "CALLBACK-RECHARGE", "订单不存在");
-                throw new JSONException("order not found");
+                \App\Service\Bind\Order::callbackFail($handle, "not_found", "order not found", (string)$callback['trade_no'], $map, "订单不存在", "CALLBACK-RECHARGE");
             }
 
             if ((int)$order->status !== 0) {
-                PayConfig::log($handle, "CALLBACK-RECHARGE", "重复通知，当前订单已支付");
-                throw new JSONException("order status error");
+                \App\Service\Bind\Order::callbackFail($handle, "duplicate", "order status error", (string)$callback['trade_no'], $map, "重复通知，当前订单已支付", "CALLBACK-RECHARGE");
             }
 
             if ($order->amount !== (float)$callback['amount']) {
-                PayConfig::log($handle, "CALLBACK-RECHARGE", "订单金额不匹配");
-                throw new JSONException("amount error");
+                \App\Service\Bind\Order::callbackFail($handle, "amount", "amount error", (string)$callback['trade_no'], $map, "订单金额不匹配", "CALLBACK-RECHARGE");
             }
 
             //订单更新

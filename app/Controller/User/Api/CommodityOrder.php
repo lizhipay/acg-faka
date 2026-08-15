@@ -224,9 +224,16 @@ class CommodityOrder extends User
             throw new JSONException("该订单不是手动发货订单");
         }
 
+        $overwrote = (int)$order->delivery_status === 1 || trim((string)$order->secret) !== '';
         $order->secret = $message;
         $order->delivery_status = 1;
         $order->save();
+
+        //发货完成通知点位（钩子异常不影响发货结果）
+        try {
+            hook(\App\Consts\Hook::ORDER_MANUAL_DELIVERY_AFTER, $order, $overwrote);
+        } catch (\Throwable $e) {
+        }
 
         return $this->json(200, "发货成功");
     }

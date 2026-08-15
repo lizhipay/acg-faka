@@ -311,7 +311,8 @@ if (!function_exists("hook")) {
     function hook(int $point, mixed &...$args)
     {
         $result = Plugin::hook($point, ...$args);
-        if ($result) {
+        //false 也是有效的决策结果（如 SMTP 钩子里表示“已处理但失败”），不能被当成空值吞掉
+        if ($result !== null && $result !== "" && $result !== []) {
             return $result;
         }
     }

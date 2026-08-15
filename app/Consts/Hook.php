@@ -85,6 +85,13 @@ interface Hook
     const USER_API_AUTH_LOGIN_BEGIN = 0x21;
     //登录账户之后，HOOK时传参：$user 注册成功后的用户对象
     const USER_API_AUTH_LOGIN_AFTER = 0x22;
+    //会员登录失败（账号不存在/密码错误/已封禁），HOOK时传参：string $account 提交的账号, string $reason not_found|password|banned
+    const USER_API_AUTH_LOGIN_FAIL = 0x23;
+
+    //后台登录成功，HOOK时传参：Manage $manage
+    const ADMIN_API_AUTH_LOGIN_AFTER = 0x61;
+    //后台登录失败（含频率限制拦截），HOOK时传参：string $email 提交的账号, string $reason
+    const ADMIN_API_AUTH_LOGIN_FAIL = 0x62;
 
 
     //核心初始化完成
@@ -118,6 +125,8 @@ interface Hook
 
     //在HTTP请求后，在返还给用户之前，拿到的返回数据
     const HTTP_ROUTE_RESPONSE = 0x47;
+    //路由未命中（控制器或方法不存在，即将输出 404），HOOK时传参：string $routePath 请求的路由
+    const HTTP_NOT_FOUND = 0x48;
 
     //挂载点 app\View\User\* -> INDEX -> 头部
     const USER_VIEW_INDEX_HEADER = 0x10001;
@@ -179,6 +188,21 @@ interface Hook
     const SERVICE_SMTP_SEND_SUCCESS = 0x3001;
     //邮件发送失败 -> array $config, string $email, string $title, string $content
     const SERVICE_SMTP_SEND_ERROR = 0x3002;
+
+    //支付回调校验失败（签名/金额/handle/凭据/状态/订单不存在/重复通知），HOOK时传参：
+    //string $handle 支付插件, string $reason handle|not_found|credential|plugin|sign|status|duplicate|amount, ?string $tradeNo 订单号, array $map 回调原始数据
+    const SERVICE_PAY_CALLBACK_FAIL = 0x3010;
+
+
+    //工单：会员创建工单成功（事务已提交），HOOK时传参：Ticket $ticket, TicketMessage $message 首条消息
+    const USER_API_TICKET_CREATE_AFTER = 0x2100;
+    //工单：会员回复工单成功（事务已提交），HOOK时传参：Ticket $ticket, TicketMessage $message
+    const USER_API_TICKET_REPLY_AFTER = 0x2101;
+    //工单：管理员回复工单成功，HOOK时传参：Ticket $ticket, TicketMessage $message, Manage $manage
+    const ADMIN_API_TICKET_REPLY_AFTER = 0x2102;
+
+    //手动发货商品由后台/商家写入卡密完成发货，HOOK时传参：Order $order, bool $overwrite 是否覆盖了已有发货内容
+    const ORDER_MANUAL_DELIVERY_AFTER = 0x2200;
 
 
     //order

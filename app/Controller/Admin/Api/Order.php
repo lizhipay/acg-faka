@@ -375,7 +375,7 @@ class Order extends Manage
             FILTER_NULL_ON_FAILURE
         ) === true;
 
-        DB::transaction(function () use ($id, $secret, $overwriteConfirmed): void {
+        [$deliveredOrder, $overwrote] = DB::transaction(function () use ($id, $secret, $overwriteConfirmed): array {
             $order = \App\Model\Order::query()
                 ->where('id', $id)
                 ->lockForUpdate()
@@ -409,7 +409,14 @@ class Order extends Manage
             if (!$order->save()) {
                 throw new JSONException('发货失败，请重试');
             }
+            return [$order, $hasExistingDelivery];
         });
+
+        //发货完成通知点位（事务已提交；钩子异常不影响发货结果）
+        try {
+            hook(\App\Consts\Hook::ORDER_MANUAL_DELIVERY_AFTER, $deliveredOrder, $overwrote);
+        } catch (\Throwable $e) {
+        }
 
         ManageLog::log($this->getManage(), "[手动发货]({$id})修改了发货信息");
         return $this->json(200, '（＾∀＾）发货成功');

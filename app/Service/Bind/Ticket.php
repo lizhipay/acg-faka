@@ -958,7 +958,7 @@ class Ticket implements \App\Service\Ticket
 
         $title = $this->cleanTitle((string)($map['title'] ?? ''));
         $rawContent = (string)($map['content'] ?? '');
-        $ticket = DB::transaction(function () use ($user, $map, $type, $priority, $title, $rawContent) {
+        [$ticket, $firstMessage] = DB::transaction(function () use ($user, $map, $type, $priority, $title, $rawContent) {
             if (!User::query()->lockForUpdate()->find((int)$user->id)) {
                 throw new JSONException('会员不存在或登录状态已失效');
             }
@@ -1004,16 +1004,31 @@ class Ticket implements \App\Service\Ticket
             $ticket->last_message_time = $date;
             $ticket->save();
 
-            $this->appendMessage($ticket, TicketMessage::SENDER_USER, (int)$user->id, (string)$user->username, $content);
+            $firstMessage = $this->appendMessage($ticket, TicketMessage::SENDER_USER, (int)$user->id, (string)$user->username, $content);
             $ticket->save();
-            return $ticket;
+            return [$ticket, $firstMessage];
         });
+
+        $this->fireHook(\App\Consts\Hook::USER_API_TICKET_CREATE_AFTER, $ticket, $firstMessage);
 
         return [
             'id' => (int)$ticket->id,
             'ticket_no' => (string)$ticket->ticket_no,
             'url' => '/user/ticket/detail?id=' . (int)$ticket->id,
         ];
+    }
+
+    /**
+     * 工单事件通知点位：事务已提交后触发，钩子异常不影响接口结果。
+     * @param int $point
+     * @param mixed ...$args
+     */
+    private function fireHook(int $point, mixed ...$args): void
+    {
+        try {
+            hook($point, ...$args);
+        } catch (\Throwable $e) {
+        }
     }
 
     public function userReply(User $user, int $id, string $content): array
@@ -1042,6 +1057,8 @@ class Ticket implements \App\Service\Ticket
             $ticket->save();
             return [$message, $ticket];
         });
+
+        $this->fireHook(\App\Consts\Hook::USER_API_TICKET_REPLY_AFTER, $ticket, $message);
 
         return [
             'message' => $this->normalizeMessage($message),
@@ -1098,6 +1115,8 @@ class Ticket implements \App\Service\Ticket
             ManageLog::log($manage, ($mode === 'resolve' ? '回复并解决了' : '回复了') . "工单({$ticket->ticket_no})");
             return [$message, $ticket];
         });
+
+        $this->fireHook(\App\Consts\Hook::ADMIN_API_TICKET_REPLY_AFTER, $ticket, $message, $manage);
 
         return [
             'message' => $this->normalizeMessage($message),

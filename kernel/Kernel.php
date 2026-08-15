@@ -174,6 +174,11 @@ try {
     }
 } catch (Throwable $e) {
     if ($e instanceof NotFoundException) {
+        try {
+            $notFoundRoute = (string)(Context::get(Base::ROUTE) ?? ($_GET['s'] ?? ''));
+            hook(\App\Consts\Hook::HTTP_NOT_FOUND, $notFoundRoute);
+        } catch (Throwable $ignored) {
+        }
         exit(feedback("404 Not Found"));
     } elseif ($e instanceof \Kernel\Exception\ParameterMissException) {
         header('content-type:application/json;charset=utf-8');
