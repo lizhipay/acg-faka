@@ -193,6 +193,9 @@ class App implements \App\Service\App
             //安装
             Plugin::runHookState($key, \Kernel\Annotation\Plugin::INSTALL);
         }
+
+        //扩展自带词包：{扩展目录}/Lang/{语言}.json，装完立即入库
+        \Kernel\Util\Lang::scanExtensionPacks();
     }
 
     /**
@@ -246,6 +249,9 @@ class App implements \App\Service\App
             }
         }
 
+        //扩展自带词包可能随升级更新，按文件指纹重新导入变化的部分
+        \Kernel\Util\Lang::scanExtensionPacks();
+
         $files = [BASE_PATH . '/runtime/plugin/store.cache', BASE_PATH . '/runtime/plugin/update.cache'];
         foreach ($files as $file) {
             if (is_file($file)) {
@@ -274,6 +280,9 @@ class App implements \App\Service\App
             //开始卸载
             File::delDirectory($pluginPath);
         }
+
+        //连同该扩展带来的词条一起清掉，避免卸载后残留在词库里
+        \Kernel\Util\Lang::forgetExtension($key);
     }
 
     /**

@@ -40,6 +40,11 @@ class Upload extends User
         $type = strtolower((string)$request->get("mime"));
         $thumbHeight = (int)$request->get("thumb_height");
 
+        //前端上传地址永远带 ?mime=；到这里为空基本都是服务器环境把 URL 参数吞了（issue #794）
+        if ($type === '') {
+            throw new JSONException("上传参数丢失：服务器未收到 mime 参数，请检查伪静态规则(try_files 是否带 \$args)、WAF 或 CDN 是否丢弃了链接参数");
+        }
+
         if (!in_array($type, self::MIME)) {
             throw new JSONException("mime not supported");
         }

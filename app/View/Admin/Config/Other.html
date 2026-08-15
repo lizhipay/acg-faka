@@ -15,7 +15,7 @@
                 <div class="card-header border-0 cursor-pointer">
                     <!--begin::Card title-->
                     <div class="card-title m-0">
-                        <h3 class="fw-bolder m-0">其他设置</h3>
+                        <h3 class="fw-bolder m-0">#{t("其他设置")}</h3>
                     </div>
                     <!--end::Card title-->
                 </div>
@@ -24,30 +24,30 @@
                 <div id="kt_account_profile_details" class="collapse show">
                     <!--begin::Form-->
                     <form id="data-form" class="form" data-admin-mobile-settings-page="other">
-                        <nav class="admin-mobile-settings-nav" aria-label="其他设置分区">
-                            <a href="#mobile-other-domain">域名与主站</a>
-                            <a href="#mobile-other-recharge">充值</a>
-                            <a href="#mobile-other-support">客服</a>
-                            <a href="#mobile-other-cash">提现</a>
-                            <a href="#mobile-other-home">首页展示</a>
+                        <nav class="admin-mobile-settings-nav" aria-label="#{t('其他设置分区')}">
+                            <a href="#mobile-other-domain">#{t("域名与主站")}</a>
+                            <a href="#mobile-other-recharge">#{t("充值")}</a>
+                            <a href="#mobile-other-support">#{t("客服")}</a>
+                            <a href="#mobile-other-cash">#{t("提现")}</a>
+                            <a href="#mobile-other-home">#{t("首页展示")}</a>
                         </nav>
                         <!--begin::Card body-->
                         <div class="card-body p-9">
 
                             <h2 class="admin-mobile-settings-section-title" id="mobile-other-domain"
-                                data-admin-mobile-description="设置支付回调、主站域名、DNS 解析和主站商家展示。">域名与主站</h2>
+                                data-admin-mobile-description="设置支付回调、主站域名、DNS 解析和主站商家展示。">#{t("域名与主站")}</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label fw-bold fs-6">自定义支付回调域名(<a
-                                            href="https://faka.wiki/#/zh-cn/setting-other" target="_blank" style="color: red;">详细教程</a>)</label>
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("自定义支付回调域名(")}<a
+                                            href="https://faka.wiki/#/zh-cn/setting-other" target="_blank" style="color: red;">#{t("详细教程")}</a>)</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="callback_domain"
                                            inputmode="url"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="自定义支付回调域名，需要带http://" value="#{$config.callback_domain|escape:'html'}"/>
+                                           placeholder="#{t('自定义支付回调域名，需要带http://')}" value="#{$config.callback_domain|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -57,7 +57,7 @@
                             <div class="row mb-6">
                                 <!--begin::Label-->
                                 <label class="col-lg-4 col-form-label fw-bold fs-6" for="callback-ip-whitelist">
-                                    支付回调白名单 IP
+                                    #{t("支付回调白名单 IP")}
                                 </label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
@@ -86,7 +86,7 @@
                                 <!--begin::Label-->
                                 <label class="col-lg-4 col-form-label fw-bold fs-6 required"
                                        for="callback-ip-whitelist-rules">
-                                    回调白名单 IP 规则
+                                    #{t("回调白名单 IP 规则")}
                                 </label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
@@ -100,10 +100,10 @@
                                               autocomplete="off"
                                               class="form-control form-control-lg form-control-solid"
                                               aria-describedby="callback-ip-whitelist-rules-help"
-                                              placeholder="每行一条，例如：&#10;203.0.113.10&#10;203.0.113.0/24&#10;203.0.113.*&#10;2001:db8::/32">#{$config.callback_ip_whitelist_rules|escape:'html'}</textarea>
+                                              placeholder="#{t('每行一条，例如：&#10;203.0.113.10&#10;203.0.113.0/24&#10;203.0.113.*&#10;2001:db8::/32')}">#{$config.callback_ip_whitelist_rules|escape:'html'}</textarea>
                                     <div class="form-text" id="callback-ip-whitelist-rules-help">
-                                        每行一条，支持精确 IPv4/IPv6、CIDR 和末尾 IPv4 通配规则。使用 CDN
-                                        或反向代理时，以“受信代理 IP”设置解析后的来源 IP 为准。
+                                        #{t("每行一条，支持精确 IPv4/IPv6、CIDR 和末尾 IPv4 通配规则。使用 CDN
+                                        或反向代理时，以“受信代理 IP”设置解析后的来源 IP 为准。")}
                                     </div>
                                 </div>
                                 <!--end::Col-->
@@ -113,14 +113,14 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label  fw-bold fs-6 required">主站域名配置(支持多域名,使用逗号分割)</label>
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6 required">#{t("主站域名配置(支持多域名,使用逗号分割)")}</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <textarea name="domain"
                                               inputmode="url"
                                               class="form-control form-control-lg form-control-solid"
-                                              placeholder="多个域名使用逗号分割">#{$config.domain|escape:'html'}</textarea>
+                                              placeholder="#{t('多个域名使用逗号分割')}">#{$config.domain|escape:'html'}</textarea>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -129,14 +129,14 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">DNS-CNAME(域名解析)</label>
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">#{t("DNS-CNAME(域名解析)")}</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="cname"
                                            inputmode="url"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="CNAME域名" value="#{$config.cname|escape:'html'}"/>
+                                           placeholder="#{t('CNAME域名')}" value="#{$config.cname|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -145,7 +145,27 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label fw-bold fs-6 required">主站显示其他商家商品</label>
+                                <label class="col-lg-4 col-form-label fw-bold fs-6" for="force-login">#{t("游客下单强制登录")}</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 d-flex align-items-center">
+                                    <div class="form-check form-check-solid form-switch fv-row">
+                                        <input class="form-check-input w-45px h-30px" type="checkbox"
+                                               id="force-login"
+                                               name="force_login"
+                                               value="1" #{if $config.force_login == 1} checked #{/if}/>
+                                        <label class="form-check-label" for="force-login"></label>
+                                    </div>
+                                    <div class="form-text ms-4 mt-0">#{t("开启后，未登录用户无法下单购买任何商品，下单时会提示先登录。")}</div>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6 required">#{t("主站显示其他商家商品")}</label>
                                 <!--begin::Label-->
                                 <!--begin::Label-->
                                 <div class="col-lg-8 d-flex align-items-center">
@@ -164,7 +184,7 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label fw-bold fs-6">你想要显示那些供货商到主站</label>
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("你想要显示那些供货商到主站")}</label>
                                 <!--begin::Label-->
                                 <!--begin::Label-->
                                 <div class="col-lg-8 d-flex align-items-center">
@@ -176,11 +196,11 @@
 
 
                             <h2 class="admin-mobile-settings-section-title" id="mobile-other-recharge"
-                                data-admin-mobile-description="设置单次充值金额范围和充值赠送规则。">充值</h2>
+                                data-admin-mobile-description="设置单次充值金额范围和充值赠送规则。">#{t("充值")}</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">单次最低充值金额</label>
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">#{t("单次最低充值金额")}</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
@@ -188,7 +208,7 @@
                                            inputmode="decimal"
                                            pattern="(?:0|[1-9][0-9]{0,8})(?:\.[0-9]{1,2})?"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="单次最低充值金额，0代表不限制，默认10元" value="#{$config.recharge_min|escape:'html'}"/>
+                                           placeholder="#{t('单次最低充值金额，0代表不限制，默认10元')}" value="#{$config.recharge_min|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -197,7 +217,7 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">单次最高充值金额</label>
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">#{t("单次最高充值金额")}</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
@@ -205,7 +225,7 @@
                                            inputmode="decimal"
                                            pattern="(?:0|[1-9][0-9]{0,8})(?:\.[0-9]{1,2})?"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="单次最高充值金额，0代表不限制" value="#{$config.recharge_max|escape:'html'}"/>
+                                           placeholder="#{t('单次最高充值金额，0代表不限制')}" value="#{$config.recharge_max|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -214,7 +234,7 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label fw-bold fs-6">充值赠送</label>
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("充值赠送")}</label>
                                 <!--begin::Label-->
                                 <!--begin::Label-->
                                 <div class="col-lg-8 d-flex align-items-center">
@@ -232,33 +252,33 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label  fw-bold fs-6">充值赠送配置</label>
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6">#{t("充值赠送配置")}</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <textarea name="recharge_welfare_config" style="height: 100px;"
                                               class="form-control form-control-lg form-control-solid"
-                                              placeholder="配置规则：假如充值100元赠送5元的情况下：
+                                              placeholder="#{t('配置规则：假如充值100元赠送5元的情况下：
 100-5
-一行一个规则。">#{$config.recharge_welfare_config|escape:'html'}</textarea>
+一行一个规则。')}">#{$config.recharge_welfare_config|escape:'html'}</textarea>
                                 </div>
                                 <!--end::Col-->
                             </div>
                             <!--end::Input group-->
 
                             <h2 class="admin-mobile-settings-section-title" id="mobile-other-support"
-                                data-admin-mobile-description="设置主站客服 QQ 和网页客服地址。">客服</h2>
+                                data-admin-mobile-description="设置主站客服 QQ 和网页客服地址。">#{t("客服")}</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label  fw-bold fs-6">客服QQ(主站)</label>
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6">#{t("客服QQ(主站)")}</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="service_qq"
                                            inputmode="numeric"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="客服QQ" value="#{$config.service_qq|escape:'html'}"/>
+                                           placeholder="#{t('客服QQ')}" value="#{$config.service_qq|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -266,25 +286,25 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label  fw-bold fs-6">网页客服地址(主站)</label>
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6">#{t("网页客服地址(主站)")}</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <input type="text" name="service_url"
                                            inputmode="url"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="网页客服地址" value="#{$config.service_url|escape:'html'}"/>
+                                           placeholder="#{t('网页客服地址')}" value="#{$config.service_url|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
                             <!--end::Input group-->
 
                             <h2 class="admin-mobile-settings-section-title" id="mobile-other-cash"
-                                data-admin-mobile-description="设置可用提现方式、单笔手续费和最低提现金额。">提现</h2>
+                                data-admin-mobile-description="设置可用提现方式、单笔手续费和最低提现金额。">#{t("提现")}</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">提现方式</label>
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">#{t("提现方式")}</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
@@ -294,14 +314,14 @@
                                         <label class="form-check form-check-inline form-check-solid me-5">
                                             <input class="form-check-input" name="cash_type_alipay" type="checkbox"
                                                    value="1" #{if $config.cash_type_alipay == 1} checked #{/if}>
-                                            <span class="fw-bold ps-2 fs-6">支付宝</span>
+                                            <span class="fw-bold ps-2 fs-6">#{t("支付宝")}</span>
                                         </label>
                                         <!--end::Option-->
                                         <!--begin::Option-->
                                         <label class="form-check form-check-inline form-check-solid me-5">
                                             <input class="form-check-input" name="cash_type_wechat" type="checkbox"
                                                    value="1" #{if $config.cash_type_wechat == 1} checked #{/if}>
-                                            <span class="fw-bold ps-2 fs-6">微信</span>
+                                            <span class="fw-bold ps-2 fs-6">#{t("微信")}</span>
                                         </label>
                                         <!--end::Option-->
                                         <!--begin::Option-->
@@ -315,7 +335,7 @@
                                         <label class="form-check form-check-inline form-check-solid me-5">
                                             <input class="form-check-input" name="cash_type_balance" type="checkbox"
                                                    value="1" #{if $config.cash_type_balance == 1} checked #{/if}>
-                                            <span class="fw-bold ps-2 fs-6">钱包余额</span>
+                                            <span class="fw-bold ps-2 fs-6">#{t("钱包余额")}</span>
                                         </label>
                                         <!--end::Option-->
                                     </div>
@@ -328,7 +348,7 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">提现手续费(单笔固定)</label>
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">#{t("提现手续费(单笔固定)")}</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
@@ -336,7 +356,7 @@
                                            inputmode="decimal"
                                            pattern="(?:0|[1-9][0-9]{0,8})(?:\.[0-9]{1,2})?"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="提现手续费" value="#{$config.cash_cost|escape:'html'}"/>
+                                           placeholder="#{t('提现手续费')}" value="#{$config.cash_cost|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -344,7 +364,7 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required  fw-bold fs-6">最低提现金额</label>
+                                <label class="col-lg-4 col-form-label required  fw-bold fs-6">#{t("最低提现金额")}</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
@@ -352,27 +372,27 @@
                                            inputmode="decimal"
                                            pattern="(?:0|[1-9][0-9]{0,8})(?:\.[0-9]{1,2})?"
                                            class="form-control form-control-lg form-control-solid"
-                                           placeholder="最低提现金额" value="#{$config.cash_min|escape:'html'}"/>
+                                           placeholder="#{t('最低提现金额')}" value="#{$config.cash_min|escape:'html'}"/>
                                 </div>
                                 <!--end::Col-->
                             </div>
                             <!--end::Input group-->
 
                             <h2 class="admin-mobile-settings-section-title" id="mobile-other-home"
-                                data-admin-mobile-description="设置默认展开分类、首页商品推荐和推荐分类名称。">首页展示</h2>
+                                data-admin-mobile-description="设置默认展开分类、首页商品推荐和推荐分类名称。">#{t("首页展示")}</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label fw-bold fs-6">默认展开分类</label>
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("默认展开分类")}</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
                                     <!--begin::Input-->
                                     <select name="default_category" class="form-select form-select-solid form-select-lg"
                                             data-control="select2" data-hide-search="true">
-                                        <option value="0" #{if $config.default_category == 0} selected #{/if}>不展开
+                                        <option value="0" #{if $config.default_category == 0} selected #{/if}>#{t("不展开")}
                                         </option>
-                                        <option value="recommend" #{if $config.default_category == "recommend"} selected #{/if}>推荐
+                                        <option value="recommend" #{if $config.default_category == "recommend"} selected #{/if}>#{t("推荐")}
                                         </option>
                                         #{foreach $category as $cate}
                                             <option value="#{$cate.id|escape:'html'}" #{if $config.default_category == $cate.id} selected #{/if}>#{$cate.name|escape:'html'}</option>
@@ -387,7 +407,7 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label fw-bold fs-6">首页商品推荐</label>
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("首页商品推荐")}</label>
                                 <!--begin::Label-->
                                 <!--begin::Label-->
                                 <div class="col-lg-8 d-flex align-items-center">
@@ -405,11 +425,11 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label  fw-bold fs-6">推荐分类名称</label>
+                                <label class="col-lg-4 col-form-label  fw-bold fs-6">#{t("推荐分类名称")}</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->
                                 <div class="col-lg-8 fv-row">
-                                    <textarea class="form-control form-control-lg form-control-solid"   name="commodity_name" placeholder="首页推荐分类名称"   rows="1">#{$config.commodity_name|escape:'html'}</textarea>
+                                    <textarea class="form-control form-control-lg form-control-solid"   name="commodity_name" placeholder="#{t('首页推荐分类名称')}"   rows="1">#{$config.commodity_name|escape:'html'}</textarea>
                                 </div>
                                 <!--end::Col-->
                             </div>
@@ -419,7 +439,7 @@
                         <!--end::Card body-->
                         <!--begin::Actions-->
                         <div class="card-footer d-flex justify-content-center py-6 px-9">
-                            <button type="button" class="btn btn-primary save-data"><i class="fa-duotone fa-regular fa-floppy-disk me-2"></i>保存设置</button>
+                            <button type="button" class="btn btn-primary save-data"><i class="fa-duotone fa-regular fa-floppy-disk me-2"></i>#{t("保存设置")}</button>
                         </div>
                         <!--end::Actions-->
                     </form>

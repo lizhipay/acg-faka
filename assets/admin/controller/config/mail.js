@@ -2,7 +2,6 @@
     const mobileAdminEnabled = () => Boolean(window.AdminMobile && window.AdminMobile.isEnabled && window.AdminMobile.isEnabled());
     const sendMessageIcon = '<svg class="md-message-send-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.5 6.5h10a2 2 0 0 1 2 2v2.25M3.5 7l5 4 5-4M3.5 6.5v9a2 2 0 0 0 2 2h7.25M14 14h6m-2.5-2.5L20 14l-2.5 2.5"/></svg>';
     const namespace = '.mdConfigMailController';
-    const promptLayers = new Set();
     let controllerActive = true;
     let saveInFlight = false;
     let testSending = false;
@@ -32,7 +31,6 @@
     }
 
     function closePrompt(index) {
-        promptLayers.delete(index);
         layer.close(index);
     }
 
@@ -54,7 +52,7 @@
     $('.save-data').off(namespace).on('click' + namespace, function () {
         if (!controllerActive || saveInFlight) return;
         if (testSending) {
-            layer.msg('测试邮件正在发送，请稍候再保存');
+            layer.msg(i18n('测试邮件正在发送，请稍候再保存'));
             return;
         }
         const revision = formRevision();
@@ -74,7 +72,7 @@
                     if (input.isConnected && input.value === value) input.value = '';
                 });
                 if (dirtyVersion === submittedVersion) formDirty = false;
-                layer.msg(res.msg || "保存成功");
+                layer.msg(res.msg || i18n("保存成功"));
                 emitFormState('admin:mobile:form-saved', revision);
             },
             error: res => {
@@ -82,7 +80,7 @@
                 saveInFlight = false;
                 setSaveBusy(false);
                 if (mobileAdminEnabled()) window.AdminMobile?.pageWorkflows?.focusFormError?.(document.getElementById('data-form'), res?.msg);
-                message.error(res?.msg || '邮箱设置保存失败');
+                message.error(res?.msg || i18n('邮箱设置保存失败'));
             },
             fail: () => {
                 if (!controllerActive) return;
@@ -96,11 +94,11 @@
     function sendTest(email, index) {
         const normalized = String(email || '').trim();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
-            layer.msg('请输入正确的邮箱地址');
+            layer.msg(i18n('请输入正确的邮箱地址'));
             return false;
         }
         if (testSending) {
-            layer.msg('测试邮件正在发送，请稍候');
+            layer.msg(i18n('测试邮件正在发送，请稍候'));
             return false;
         }
         testSending = true;
@@ -111,7 +109,7 @@
             closePrompt(index);
         }, res => {
             testSending = false;
-            if (controllerActive) message.error(res?.msg || '测试邮件发送失败');
+            if (controllerActive) message.error(res?.msg || i18n('测试邮件发送失败'));
         }, () => {
             testSending = false;
             if (controllerActive) message.error('网络异常，测试邮件发送失败');
@@ -121,50 +119,35 @@
 
     $('.send-test-message').off(namespace).on('click' + namespace, function () {
         if (saveInFlight) {
-            layer.msg('邮箱设置正在保存，请稍候再测试');
+            layer.msg(i18n('邮箱设置正在保存，请稍候再测试'));
             return;
         }
         if (formDirty) {
-            layer.msg('请先保存当前邮箱设置，再发送测试邮件');
+            layer.msg(i18n('请先保存当前邮箱设置，再发送测试邮件'));
             return;
         }
-        const mobile = mobileAdminEnabled();
-        if (mobile) {
-            component.popup({
-                width: '420px',
-                height: 'auto',
-                autoPosition: true,
-                confirmText: sendMessageIcon + '<span>发送测试邮件</span>',
-                tab: [{
-                    name: '发送测试邮件',
-                    form: [{
-                        title: '邮箱地址',
-                        name: 'email',
-                        type: 'input',
-                        placeholder: '请输入接收测试邮件的地址',
-                        required: true,
-                        regex: {value: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$', message: '请输入正确的邮箱地址'}
-                    }]
-                }],
-                renderComplete: prepareTestInput,
-                submit: function (data, index) { return sendTest(data.email, index); }
-            });
-            return;
-        }
-        let promptIndex = null;
-        promptIndex = layer.prompt({
-            title: '邮箱地址',
-            formType: 0,
-            area: 'auto',
-            offset: 'auto',
-            skin: 'md-config-test-layer',
-            resize: true,
-            move: true,
-            end: function () { promptLayers.delete(promptIndex); }
-        }, function (email, index) {
-            sendTest(email, index);
+        //两端统一走站内弹窗组件：layui 原生 layer.prompt 是个没有样式的小方块，
+        //和后台其他配置弹窗完全不搭
+        component.popup({
+            width: mobileAdminEnabled() ? '420px' : '480px',
+            height: 'auto',
+            autoPosition: true,
+            confirmText: sendMessageIcon + '<span>' + i18n('发送测试邮件') + '</span>',
+            tab: [{
+                name: util.icon('fa-duotone fa-regular fa-paper-plane') + ' ' + i18n('发送测试邮件'),
+                form: [{
+                    title: '邮箱地址',
+                    name: 'email',
+                    type: 'input',
+                    placeholder: '请输入接收测试邮件的地址',
+                    required: true,
+                    tips: '将用当前已保存的 SMTP 配置向该地址发送一封测试邮件。',
+                    regex: {value: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$', message: i18n('请输入正确的邮箱地址')}
+                }]
+            }],
+            renderComplete: prepareTestInput,
+            submit: function (data, index) { return sendTest(data.email, index); }
         });
-        if (promptIndex !== undefined && promptIndex !== null) promptLayers.add(promptIndex);
     });
 
     function destroy() {
@@ -176,8 +159,6 @@
         setSaveBusy(false);
         $('#data-form, .save-data, .send-test-message').off(namespace);
         $(document).off('pjax:beforeReplace' + namespace);
-        promptLayers.forEach(index => layer.close(index));
-        promptLayers.clear();
         if (window.__mdConfigMailDestroy === destroy) delete window.__mdConfigMailDestroy;
     }
 

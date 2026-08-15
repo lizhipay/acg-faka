@@ -59,7 +59,7 @@
             ? '<span class="admin-mobile-load-spinner" aria-hidden="true"></span>'
             : '<span class="material-icons-outlined" aria-hidden="true">cloud_off</span>';
         const button = typeof retry === 'function'
-            ? '<button type="button" class="btn btn-light-primary admin-store-service-retry">重新加载</button>'
+            ? '<button type="button" class="btn btn-light-primary admin-store-service-retry">' + i18n('重新加载') + '</button>'
             : '';
         let $state = $container.children('.admin-store-service-state').first();
         if (!$state.length) {
@@ -84,7 +84,7 @@
         return (data, index) => {
             if (!controllerActive) return;
             if (submitting) {
-                layer.msg(`${actionName}正在提交，请勿重复操作`);
+                layer.msg(`${actionName}${i18n('正在提交，请勿重复操作')}`);
                 return;
             }
             submitting = true;
@@ -94,33 +94,72 @@
                 done: res => {
                     if (!controllerActive) return;
                     if (index !== undefined && index !== null) layer.close(index);
-                    message.success(res?.msg && res.msg !== 'success' ? (storePlainText(res.msg) || `${actionName}成功`) : `${actionName}成功`);
+                    message.success(res?.msg && res.msg !== 'success' ? (storePlainText(res.msg) || `${actionName}${i18n('成功')}`) : `${actionName}${i18n('成功')}`);
                     if (typeof onDone === 'function') onDone(res);
                 },
                 error: res => {
                     submitting = false;
-                    if (controllerActive) message.error(storePlainText(res?.msg) || `${actionName}失败，请检查填写内容。`);
+                    if (controllerActive) message.error(storePlainText(res?.msg) || `${actionName}${i18n('失败，请检查填写内容。')}`);
                 },
                 fail: () => {
                     submitting = false;
-                    if (controllerActive) message.error(`网络异常，${actionName}请求未完成。`);
+                    if (controllerActive) message.error(`${i18n('网络异常，')}${actionName}${i18n('请求未完成。')}`);
                 }
             });
         };
     };
 
+    /**
+     * 「服务端自动打包」说明块。
+     *
+     * 以前这里是一个必填的 zip 上传框，作者要自己压缩再传，翻车方式很多：
+     * 忘了删 Config.php（等于把自己的密钥和启用状态发给所有买家）、
+     * 把日志打进去、把插件文件夹本身也打进去、包内版本号和填的对不上被打回。
+     * 现在默认由服务器从本机插件目录直接打，上传框降级成可选兜底。
+     */
+    const autoPackNotice = (dom, row, isUpdate) => {
+        const dirMap = {0: 'app/Plugin/', 1: 'app/Pay/', 2: 'app/View/User/Theme/'};
+        const dir = (dirMap[Number(row?.type)] || 'app/Plugin/') + (row?.plugin_key || '');
+        const isTheme = Number(row?.type) === 2;
+
+        const configLine = isTheme
+            ? i18n('模版的 Config.php 是接口定义，会原样保留')
+            : (isUpdate
+                ? i18n('Config.php 整个剔除，不会覆盖用户站点的配置')
+                : i18n('Config.php 清空为 return []; 不会带上本站密钥'));
+
+        dom.html(`
+            <style>
+            .dev-auto{border:1px solid var(--md-divider,#e6edf5);border-radius:10px;padding:12px 14px;
+                      font-size:13px;line-height:1.8;background:rgba(46,125,50,.05)}
+            .dev-auto b{color:var(--md-on-surface,#0f172a)}
+            .dev-auto code{background:rgba(0,0,0,.06);border-radius:4px;padding:1px 6px;
+                           font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;word-break:break-all}
+            .dev-auto ul{margin:6px 0 0;padding-left:18px;color:var(--md-on-surface-med,#64748b);font-size:12px}
+            </style>
+            <div class="dev-auto">
+                <b>${util.icon("fa-duotone fa-regular fa-wand-magic-sparkles")} ${i18n('服务器自动打包')}</b>
+                <div style="margin-top:4px">${i18n('无需自己压缩，提交后直接从本机目录打包上传：')}<code>${dir}</code></div>
+                <ul>
+                    <li>${configLine}</li>
+                    <li>${i18n('自动排除 runtime.log 等日志与运行态文件')}</li>
+                    <li>${i18n('填写的版本号会写回插件的 Info，保证包内版本与提交一致')}</li>
+                </ul>
+            </div>`);
+    };
+
     if (mobileAdminEnabled()) {
-        showServiceState('loading', '正在进入开发者中心', '正在核对账号权限并读取应用列表。');
+        showServiceState('loading', i18n('正在进入开发者中心'), i18n('正在核对账号权限并读取应用列表。'));
     } else {
         $StoreContent.hide();
     }
 
     function _Modal() {
         component.popup({
-            submit: createSingleSubmit('/admin/api/app/developerCreatePlugin', '创建应用', () => table.refresh()),
+            submit: createSingleSubmit('/admin/api/app/developerCreatePlugin', i18n('创建应用'), () => table.refresh()),
             tab: [
                 {
-                    name: `${util.icon("fa-duotone fa-regular fa-layer-plus")} 创建插件`,
+                    name: `${util.icon("fa-duotone fa-regular fa-layer-plus")} ${i18n('创建插件')}`,
                     form: [
                         {
                             title: "插件图标",
@@ -140,7 +179,7 @@
                             placeholder: "插件唯一标识，仅支持字母，也就是你插件文件夹的名字",
                             regex: {
                                 value: '^[A-Za-z]+$',
-                                message: '插件标识仅支持英文字母'
+                                message: i18n('插件标识仅支持英文字母')
                             }
                         },
                         {
@@ -204,7 +243,7 @@
 
             autoPosition: true,
             adaptiveHeight: true,
-            confirmText: `${util.icon("fa-duotone fa-regular fa-layer-plus")} 确认提交`,
+            confirmText: `${util.icon("fa-duotone fa-regular fa-layer-plus")} ${i18n('确认提交')}`,
             renderComplete: unique => {
                 const $form = $('.' + unique);
                 $form.find('input[name="icon"]').attr({
@@ -237,6 +276,231 @@
     }
 
 
+    let mcpBusy = false;
+    let mcpState = null;
+    let mcpClient = 'claude-code';
+    let mcpSnippets = {};
+    let mcpHints = {};
+
+    // 客户端清单：id / 展示名 / 配置落点（代码窗标题栏展示）
+    const MCP_CLIENTS = [
+        {id: 'claude-code', name: 'Claude Code', file: 'Terminal'},
+        {id: 'claude-desktop', name: 'Claude Desktop', file: 'claude_desktop_config.json'},
+        {id: 'cursor', name: 'Cursor', file: '~/.cursor/mcp.json'},
+        {id: 'cline', name: 'Cline', file: 'cline_mcp_settings.json'},
+        {id: 'windsurf', name: 'Windsurf', file: '~/.codeium/windsurf/mcp_config.json'},
+        {id: 'vscode', name: 'VS Code', file: '.vscode/mcp.json'},
+        {id: 'codex', name: 'Codex', file: '~/.codex/config.toml'},
+        {id: 'opencode', name: 'opencode', file: 'opencode.json'},
+        {id: 'gemini-cli', name: 'Gemini CLI', file: '~/.gemini/settings.json'}
+    ];
+
+    function mcpCopyFallback(text, done) {
+        const el = document.createElement('textarea');
+        el.value = text;
+        el.style.position = 'fixed';
+        el.style.opacity = '0';
+        document.body.appendChild(el);
+        el.focus();
+        el.select();
+        try {
+            document.execCommand('copy');
+            done();
+        } catch (e) {
+            message.error(i18n('复制失败，请手动复制'));
+        }
+        document.body.removeChild(el);
+    }
+
+    function mcpCopy(text, btn) {
+        if (!text) return;
+        const done = () => {
+            message.success(i18n('已复制'));
+            // 按钮即时形变反馈：图标切成对勾，1.4s 后还原
+            if (btn) {
+                const $b = $(btn).addClass('copied');
+                const $i = $b.find('i').first();
+                const prev = $i.attr('class');
+                $i.attr('class', 'fa-duotone fa-regular fa-check');
+                setTimeout(() => {
+                    if (!controllerActive) return;
+                    $b.removeClass('copied');
+                    $i.attr('class', prev);
+                }, 1400);
+            }
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done).catch(() => mcpCopyFallback(text, done));
+        } else {
+            mcpCopyFallback(text, done);
+        }
+    }
+
+    // Claude Desktop / Codex 走 mcp-remote 桥接：mcp-remote 默认拒绝非本机明文 HTTP，http 站点要加 --allow-http。
+    // 其余客户端原生支持 HTTP，直接 url+headers，无需 Node.js/桥接（各家字段名不同）。
+    function buildMcpSnippets(url, key) {
+        const isHttp = /^http:\/\//i.test(url);
+        const remoteArgs = ['-y', 'mcp-remote', url];
+        if (isHttp) remoteArgs.push('--allow-http');
+        remoteArgs.push('--header', `X-Access-Key:${key}`);
+        const headers = {'X-Access-Key': key};
+        mcpSnippets = {
+            'claude-code': `claude mcp add --transport http acg-faka ${url} --header "X-Access-Key: ${key}"`,
+            'claude-desktop': JSON.stringify({mcpServers: {'acg-faka': {command: 'npx', args: remoteArgs}}}, null, 2),
+            'cursor': JSON.stringify({mcpServers: {'acg-faka': {url: url, headers: headers}}}, null, 2),
+            'cline': JSON.stringify({mcpServers: {'acg-faka': {type: 'streamableHttp', url: url, headers: headers}}}, null, 2),
+            'windsurf': JSON.stringify({mcpServers: {'acg-faka': {serverUrl: url, headers: headers}}}, null, 2),
+            'vscode': JSON.stringify({servers: {'acg-faka': {type: 'http', url: url, headers: headers}}}, null, 2),
+            'codex': `[mcp_servers.acg-faka]\ncommand = "npx"\nargs = ${JSON.stringify(remoteArgs)}`,
+            'opencode': JSON.stringify({'$schema': 'https://opencode.ai/config.json', mcp: {'acg-faka': {type: 'remote', url: url, enabled: true, headers: headers}}}, null, 2),
+            'gemini-cli': JSON.stringify({mcpServers: {'acg-faka': {httpUrl: url, headers: headers}}}, null, 2)
+        };
+        const bridged = isHttp ? i18n('（明文 HTTP 已自动附带 --allow-http）') : '';
+        mcpHints = {
+            'claude-code': i18n('在终端运行这行命令，重启 Claude Code 后即可看到 acg-faka 工具。'),
+            'claude-desktop': i18n('粘贴进 设置 → 开发者 → 编辑配置，保存后 Cmd+Q 完全退出并重新打开，需已安装 Node.js') + bridged,
+            'cursor': i18n('保存到该文件（或项目内 .cursor/mcp.json），在 设置 → MCP 里确认开启即可。'),
+            'cline': i18n('Cline 面板 → MCP Servers → Configure 打开该文件粘贴；type 必须是 streamableHttp。'),
+            'windsurf': i18n('保存后在 Cascade 的 MCP 面板点刷新；注意字段名是 serverUrl。'),
+            'vscode': i18n('保存到项目 .vscode/mcp.json，Copilot Chat 切到 Agent 模式即可使用。'),
+            'codex': i18n('追加到该文件末尾，保存后重启 Codex，需已安装 Node.js') + bridged,
+            'opencode': i18n('保存到项目 opencode.json 或 ~/.config/opencode/opencode.json，重启生效。'),
+            'gemini-cli': i18n('合并进该文件的 mcpServers 字段，重启 Gemini CLI 生效。')
+        };
+    }
+
+    function renderMcpKey() {
+        const $key = $('#mcp-key');
+        if (!$key.length) return;
+        const hidden = $key.attr('data-hidden') !== '0';
+        const key = String(mcpState?.access_key || '');
+        $key.text(hidden ? '•'.repeat(Math.min(44, Math.max(24, key.length))) : key);
+        $('#mcp-reveal i').attr('class', hidden ? 'fa-duotone fa-regular fa-eye' : 'fa-duotone fa-regular fa-eye-slash');
+    }
+
+    function renderMcpClients() {
+        const $box = $('#mcp-clients');
+        if (!$box.length) return;
+        $box.empty();
+        MCP_CLIENTS.forEach(c => {
+            $('<button type="button" class="mcp-client" role="tab"></button>')
+                .attr('data-client', c.id)
+                .attr('aria-selected', c.id === mcpClient ? 'true' : 'false')
+                .toggleClass('active', c.id === mcpClient)
+                .text(c.name)
+                .appendTo($box);
+        });
+    }
+
+    function updateMcpConfig() {
+        const meta = MCP_CLIENTS.find(c => c.id === mcpClient) || MCP_CLIENTS[0];
+        $('#mcp-config').text(mcpSnippets[mcpClient] || '');
+        $('#mcp-config-file').text(meta.file);
+        $('#mcp-config-hint').html(`${util.icon('fa-duotone fa-regular fa-circle-info')} ${escapeHtml(mcpHints[mcpClient] || '')}`);
+    }
+
+    function renderMcp(data) {
+        if (!controllerActive || !data) return;
+        const $card = $('#mcp-card');
+        if (!$card.length) return;
+        mcpState = data;
+        $card.show();
+        const configured = Boolean(data.configured);
+        $('#mcp-unconfigured').toggleClass('d-none', configured);
+        $('#mcp-configured').toggleClass('d-none', !configured);
+        $('#mcp-https-warn').toggleClass('d-none', Boolean(data.https));
+        $('#mcp-toggle').toggleClass('d-none', !configured).attr('aria-checked', data.enabled ? 'true' : 'false');
+
+        const $status = $('#mcp-status');
+        $status.removeClass('mcp-status--on');
+        if (!configured) {
+            $('#mcp-status-text').text(i18n('未配置'));
+        } else if (data.enabled) {
+            $status.addClass('mcp-status--on');
+            $('#mcp-status-text').text(i18n('运行中'));
+        } else {
+            $('#mcp-status-text').text(i18n('已停用'));
+        }
+
+        if (configured) {
+            buildMcpSnippets(String(data.url || ''), String(data.access_key || ''));
+            renderMcpClients();
+            updateMcpConfig();
+            $('#mcp-url').text(String(data.url || ''));
+            renderMcpKey();
+        }
+    }
+
+    function loadMcp() {
+        util.post({
+            url: '/admin/api/mcp/info',
+            loader: false,
+            done: res => renderMcp(res?.data),
+            error: () => $('#mcp-card').hide(),
+            fail: () => $('#mcp-card').hide()
+        });
+    }
+
+    function mcpAction(url) {
+        if (mcpBusy) return;
+        mcpBusy = true;
+        util.post({
+            url: url,
+            done: res => {
+                mcpBusy = false;
+                if (!controllerActive) return;
+                message.success(storePlainText(res?.msg) || i18n('操作成功'));
+                renderMcp(res?.data);
+            },
+            error: res => {
+                mcpBusy = false;
+                if (controllerActive) message.error(storePlainText(res?.msg) || i18n('操作失败'));
+            },
+            fail: () => {
+                mcpBusy = false;
+                if (controllerActive) message.error(i18n('网络异常，请求未完成。'));
+            }
+        });
+    }
+
+    function initMcp() {
+        const $card = $('#mcp-card');
+        if (!$card.length) return;
+        $card.off(namespace);
+        $card.on('click' + namespace, '.mcp-client', function () {
+            mcpClient = String($(this).data('client'));
+            $('#mcp-clients .mcp-client').removeClass('active').attr('aria-selected', 'false');
+            $(this).addClass('active').attr('aria-selected', 'true');
+            updateMcpConfig();
+        });
+        $card.on('click' + namespace, '[data-copy]', function () {
+            const kind = $(this).data('copy');
+            const text = kind === 'config' ? (mcpSnippets[mcpClient] || '')
+                : kind === 'url' ? String(mcpState?.url || '')
+                    : String(mcpState?.access_key || '');
+            mcpCopy(text, this);
+        });
+        $card.on('click' + namespace, '#mcp-reveal', function () {
+            const $key = $('#mcp-key');
+            $key.attr('data-hidden', $key.attr('data-hidden') !== '0' ? '0' : '1');
+            renderMcpKey();
+        });
+        $card.on('click' + namespace, '#mcp-generate, #mcp-reset', function () {
+            const isReset = this.id === 'mcp-reset';
+            const ask = isReset
+                ? i18n('确定重置访问秘钥？旧秘钥将立即失效，已接入的 AI 工具需要重新配置。')
+                : i18n('确定生成访问秘钥？');
+            layer.confirm(ask, {icon: 3, title: i18n('提示')}, index => {
+                layer.close(index);
+                mcpAction('/admin/api/mcp/reset');
+            });
+        });
+        $card.on('click' + namespace, '#mcp-toggle', function () {
+            mcpAction('/admin/api/mcp/toggle');
+        });
+        loadMcp();
+    }
+
     util.post({
         url: "/admin/api/app/service",
         loader: false,
@@ -249,6 +513,7 @@
 
             clearServiceState();
             $StoreContent.show();
+            initMcp();
             table.setColumns([
                 {
                     field: 'plugin_name', title: '应用名称', formatter: function (val, item) {
@@ -278,17 +543,17 @@
                 {
                     field: 'price', title: '市场售价', formatter: function (val, item) {
                         if (item.price == 0) {
-                            return format.badge(`免费`, "a-badge-success");
+                            return format.badge(`${i18n('免费')}`, "a-badge-success");
                         }
 
                         let html = " <span class='a-badge a-badge-danger'>￥" + escapeHtml(item.price) + "</span> ";
                         if (item.group == 1) {
-                            html += format.badge(`专业版免费`, "a-badge-primary");
-                            html += format.badge(`企业版免费`, "a-badge-success");
+                            html += format.badge(`${i18n('专业版免费')}`, "a-badge-primary");
+                            html += format.badge(`${i18n('企业版免费')}`, "a-badge-success");
                         }
 
                         if (item.group == 2) {
-                            html += format.badge(`企业版免费`, "a-badge-success");
+                            html += format.badge(`${i18n('企业版免费')}`, "a-badge-success");
                         }
                         return `<span class="a-badge-group nowrap">${html}</span>`;
                     }
@@ -306,10 +571,10 @@
                             class: "text-success",
                             click: (event, value, row, index) => {
                                 component.popup({
-                                    submit: createSingleSubmit('/admin/api/app/developerPluginPriceSet', '更新定价', () => table.refresh()),
+                                    submit: createSingleSubmit('/admin/api/app/developerPluginPriceSet', i18n('更新定价'), () => table.refresh()),
                                     tab: [
                                         {
-                                            name: `${util.icon("fa-duotone fa-regular fa-circle-dollar")} 市场定价`,
+                                            name: `${util.icon("fa-duotone fa-regular fa-circle-dollar")} ${i18n('市场定价')}`,
                                             form: [
                                                 {
                                                     title: false,
@@ -343,21 +608,33 @@
                             class: "text-primary",
                             click: (event, value, row, index) => {
                                 component.popup({
-                                    submit: createSingleSubmit('/admin/api/app/developerCreateKit', '上传安装包', () => table.refresh()),
+                                    submit: createSingleSubmit('/admin/api/app/developerCreateKit', i18n('上传安装包'), () => table.refresh()),
                                     tab: [
                                         {
-                                            name: `${util.icon("fa-duotone fa-regular fa-cloud-arrow-up")} 上传安装包`,
+                                            name: `${util.icon("fa-duotone fa-regular fa-cloud-arrow-up")} ${i18n('上传安装包')}`,
                                             form: [
+                                                {
+                                                    title: false,
+                                                    name: "auto_tips",
+                                                    type: "custom",
+                                                    complete: (form, dom) => autoPackNotice(dom, row, false)
+                                                },
+                                                {
+                                                    title: "版本号",
+                                                    name: "version",
+                                                    type: "input",
+                                                    default: row?.version || "",
+                                                    placeholder: "如 1.0.0，会自动写入插件的 Info"
+                                                },
                                                 {
                                                     title: false,
                                                     name: "resource",
                                                     uploadUrl: '/admin/api/upload/send',
                                                     type: "file",
-                                                    required: true,
                                                     exts: "zip",
                                                     acceptMime: ".zip",
-                                                    placeholder: "点击上传或拖动文件(.zip)",
-                                                    tips: "插件安装包请直接在您插件根目录进行打包，而不是将插件文件夹也一起打包上来，并且仅支持zip打包方式，请勿设置压缩包密码，如果插件带数据库，请将数据库安装SQL命令写到install.sql中(sql文件中不要带注释)，并且放置在插件根目录"
+                                                    placeholder: "（可选）自带压缩包时点此上传",
+                                                    tips: "留空即由服务器自动打包，这是推荐做法。只有插件不在本机时才需要自己上传：请在插件根目录内打包（不要把插件文件夹一起打进去），仅支持zip且不要设密码；带数据库的把install.sql放在插件根目录(sql文件中不要带注释)"
                                                 },
                                             ]
                                         },
@@ -366,7 +643,7 @@
                                     assign: row,
                                     autoPosition: true,
                                     adaptiveHeight: true,
-                                    confirmText: `${util.icon("fa-duotone fa-regular fa-cloud-arrow-up")} 确认提交`,
+                                    confirmText: `${util.icon("fa-duotone fa-regular fa-cloud-arrow-up")} ${i18n('确认提交')}`,
                                     width: "380px"
                                 });
                             }
@@ -378,29 +655,35 @@
                             class: "text-primary",
                             click: (event, value, row, index) => {
                                 component.popup({
-                                    submit: createSingleSubmit('/admin/api/app/developerUpdatePlugin', '上传更新包', () => table.refresh()),
+                                    submit: createSingleSubmit('/admin/api/app/developerUpdatePlugin', i18n('上传更新包'), () => table.refresh()),
                                     tab: [
                                         {
-                                            name: `${util.icon("fa-duotone fa-regular fa-cloud-arrow-up")} 上传更新包`,
+                                            name: `${util.icon("fa-duotone fa-regular fa-cloud-arrow-up")} ${i18n('上传更新包')}`,
                                             form: [
+                                                {
+                                                    title: false,
+                                                    name: "auto_tips",
+                                                    type: "custom",
+                                                    complete: (form, dom) => autoPackNotice(dom, row, true)
+                                                },
+                                                {
+                                                    title: "版本号",
+                                                    name: "audit_version",
+                                                    type: "input",
+                                                    default: row?.version || "",
+                                                    placeholder: "如 1.0.4，会自动写入插件的 Info",
+                                                    required: true
+                                                },
                                                 {
                                                     title: false,
 
                                                     name: "audit_resource",
                                                     uploadUrl: '/admin/api/upload/send',
                                                     type: "file",
-                                                    required: true,
                                                     exts: "zip",
                                                     acceptMime: ".zip",
-                                                    placeholder: "点击上传或拖动文件(.zip)",
-                                                    tips: '更新包说明，如果带有更新数据库的情况下，请仔细编写update.sql放置插件更新包的根目录（请使用SQL命令检测当前更改项是否可以更改再去更改,否则产生错误将使插件更新失败，并且该update.sql应该从最初始版本累计，sql文件中不要带注释），如果是支付扩展或者通用扩展，请一定要删除配置文件Config.php'
-                                                },
-                                                {
-                                                    title: "版本号",
-                                                    name: "audit_version",
-                                                    type: "input",
-                                                    placeholder: "这个更新包内Info信息中的版本号，请填写一致",
-                                                    required: true
+                                                    placeholder: "（可选）自带压缩包时点此上传",
+                                                    tips: '留空即由服务器自动打包（会自动剔除Config.php和日志，并把版本号写进Info）。只有插件不在本机时才需要自己上传：带更新数据库的请把update.sql放在插件根目录（用SQL命令先检测再更改，否则更新会失败；该update.sql应从最初始版本累计，sql文件中不要带注释），支付扩展和通用扩展务必删除Config.php'
                                                 },
                                                 {
                                                     title: "更新内容",
@@ -417,7 +700,7 @@
                                     assign: row,
                                     autoPosition: true,
                                     adaptiveHeight: true,
-                                    confirmText: `${util.icon("fa-duotone fa-regular fa-cloud-arrow-up")} 确认提交`,
+                                    confirmText: `${util.icon("fa-duotone fa-regular fa-cloud-arrow-up")} ${i18n('确认提交')}`,
                                     renderComplete: unique => {
                                         $('.' + unique + ' input[name="audit_version"]').attr({
                                             autocapitalize: 'none',
@@ -456,8 +739,8 @@
             if (!controllerActive) return;
             showServiceState(
                 'error',
-                '开发者中心暂时无法连接',
-                '网络请求未完成，账号权限和应用数据都没有改变。',
+                i18n('开发者中心暂时无法连接'),
+                i18n('网络请求未完成，账号权限和应用数据都没有改变。'),
                 () => window.location.reload()
             );
         }
@@ -467,6 +750,7 @@
         if (!controllerActive) return;
         controllerActive = false;
         $('.developerCreatePlugin').off(namespace);
+        $('#mcp-card').off(namespace);
         $('.admin-store-service-retry').off('click.mdStoreDeveloperRetry');
         $(document).off('pjax:beforeReplace' + namespace);
         if (table && !table.isDestroyed && typeof table.destroy === 'function') table.destroy();

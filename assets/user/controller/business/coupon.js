@@ -15,14 +15,14 @@
         const codes = String(data.code || '');
         const okN = Number(data.success) || 0;
         const failN = Number(data.error) || 0;
-        const meta = `<span class="a-badge a-badge-success">成功 ${okN} 张</span>`
-            + (failN > 0 ? `<span class="a-badge a-badge-danger">失败 ${failN} 张</span>` : '');
+        const meta = `<span class="a-badge a-badge-success">${i18n('成功')} ${okN} ${i18n('张')}</span>`
+            + (failN > 0 ? `<span class="a-badge a-badge-danger">${i18n('失败')} ${failN} ${i18n('张')}</span>` : '');
         layer.open({
             type: 1,
-            title: `${util.icon("fa-duotone fa-regular fa-circle-check")} 代券生成成功`,
+            title: `${util.icon("fa-duotone fa-regular fa-circle-check")} ${i18n('代券生成成功')}`,
             area: util.isPc() ? '480px' : ["100%", "100%"],
             shadeClose: true,
-            content: `<div class="md-secret"><div class="md-secret__meta">${meta}</div><div class="md-secret__code">${escapeHtml(codes)}</div><div class="md-secret__bar"><button type="button" class="md-secret__btn" data-act="copy">${util.icon("fa-duotone fa-regular fa-copy")} 复制</button><button type="button" class="md-secret__btn md-secret__btn--primary" data-act="download">${util.icon("fa-duotone fa-regular fa-download")} 下载</button></div></div>`,
+            content: `<div class="md-secret"><div class="md-secret__meta">${meta}</div><div class="md-secret__code">${escapeHtml(codes)}</div><div class="md-secret__bar"><button type="button" class="md-secret__btn" data-act="copy">${util.icon("fa-duotone fa-regular fa-copy")} ${i18n('复制')}</button><button type="button" class="md-secret__btn md-secret__btn--primary" data-act="download">${util.icon("fa-duotone fa-regular fa-download")} ${i18n('下载')}</button></div></div>`,
             success: (layero) => {
                 layero.find('[data-act="copy"]').on('click', () => {
                     util.copyTextToClipboard(codes, () => message.success('代券已复制'));
@@ -32,7 +32,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `代券_${okN}张.txt`;
+                    a.download = `${i18n('代券')}_${okN}${i18n('张')}.txt`;
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
@@ -47,7 +47,7 @@
             submit: '/user/api/coupon/save',
             tab: [
                 {
-                    name: util.icon("fa-duotone fa-regular fa-ticket") + " 生成代券",
+                    name: util.icon("fa-duotone fa-regular fa-ticket") + i18n(" 生成代券"),
                     form: [
                         {
                             title: "商品分类",
@@ -220,7 +220,7 @@
         , {
             field: 'money', title: '面值', class: 'nowrap', width: 90, formatter: (_, __) => {
                 if (__.mode == 1) {
-                    return format.badge((_ * 10) + "折", "a-badge-success");
+                    return format.badge((_ * 10) + i18n("折"), "a-badge-success");
                 }
                 return format.badge(`￥${_}`, "a-badge-primary");
             }
@@ -228,22 +228,22 @@
         , {
             field: 'commodity', title: '抵扣范围', class: 'nowrap', width: 220, formatter: function (val, item) {
                 if (!item.commodity && !item.category) {
-                    return '<span class="text-danger">全场通用</span>';
+                    return '<span class="text-danger">' + i18n('全场通用') + '</span>';
                 }
 
                 if (!item.commodity && item.category) {
-                    return '<span class="text-primary">商品分类 · </span>' + safeInlineHtml(item.category.name || '未命名分类');
+                    return '<span class="text-primary">' + i18n('商品分类 ·') + ' </span>' + safeInlineHtml(item.category.name || i18n('未命名分类'));
                 }
 
                 let d = format.badge(safeInlineHtml(item.commodity.name), "a-badge-success");
 
                 if (item.race) {
-                    d += format.badge(`种类:${escapeHtml(item.race)}`, "a-badge-info");
+                    d += format.badge(`${i18n('种类')}:${escapeHtml(item.race)}`, "a-badge-info");
                 }
 
                 if (!util.isEmptyOrNotJson(item.sku)) {
                     for (const skuKey in item.sku) {
-                        d += format.badge(`${escapeHtml(skuKey)}:${escapeHtml(item.sku[skuKey])}`, "a-badge-info");
+                        d += format.badge(`${escapeHtml(i18n(skuKey))}:${escapeHtml(i18n(item.sku[skuKey]))}`, "a-badge-info");
                     }
                 }
 
@@ -254,7 +254,7 @@
         , {
             field: 'expire_time', title: '到期时间', class: 'nowrap', width: 170, formatter: function (val, item) {
                 if (!item.expire_time) {
-                    return format.badge("永久", "a-badge-success");
+                    return format.badge(i18n("永久"), "a-badge-success");
                 }
                 return format.badge(escapeHtml(item.expire_time), "a-badge-warning");
             }
@@ -268,8 +268,8 @@
         {
             field: 'operation', title: '操作', type: 'button', class: 'nowrap', width: 220, buttons: [
                 {
-                    icon: 'fa-duotone fa-regular fa-lock-keyhole',
-                    class: "text-primary",
+                    icon: 'fa-duotone fa-regular fa-lock-keyhole-open',
+                    class: "text-success",
                     title: "锁定",
                     show: _ => _.status == 0,
                     click: (event, value, row, index) => {
@@ -279,8 +279,8 @@
                         });
                     }
                 }, {
-                    icon: 'fa-duotone fa-regular fa-lock-keyhole-open',
-                    class: "text-success",
+                    icon: 'fa-duotone fa-regular fa-lock-keyhole',
+                    class: "text-warning",
                     title: "解锁",
                     show: _ => _.status == 2,
                     click: (event, value, row, index) => {
@@ -364,7 +364,7 @@
     $('.button-del').click(() => {
         let data = table.getSelectionIds();
         if (data.length == 0) {
-            layer.msg("请至少勾选 1 个代券再进行操作");
+            layer.msg(i18n("请至少勾选 1 个代券再进行操作"));
             return;
         }
         message.ask("确定删除选中的代券吗？此操作无法恢复。", () => {
@@ -377,7 +377,7 @@
     $('.button-lock').click(() => {
         let data = table.getSelectionIds();
         if (data.length == 0) {
-            layer.msg("请至少勾选 1 个代券进行操作");
+            layer.msg(i18n("请至少勾选 1 个代券进行操作"));
             return;
         }
 
@@ -392,7 +392,7 @@
     $('.button-unlock').click(() => {
         let data = table.getSelectionIds();
         if (data.length == 0) {
-            layer.msg("请至少勾选 1 个代券进行操作");
+            layer.msg(i18n("请至少勾选 1 个代券进行操作"));
             return;
         }
         message.ask("确定解锁选中的代券吗？", () => {

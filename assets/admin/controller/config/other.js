@@ -62,12 +62,12 @@
                 displayPending.delete(key);
                 if (!controllerActive) return;
                 setSubstationDisplayList(res?.data);
-                layer.msg(res?.msg || '显示状态已更新');
+                layer.msg(res?.msg || i18n('显示状态已更新'));
                 table.refresh();
             },
             error: res => {
                 displayPending.delete(key);
-                if (controllerActive) message.error(res?.msg || '主站显示状态更新失败');
+                if (controllerActive) message.error(res?.msg || i18n('主站显示状态更新失败'));
             },
             fail: () => {
                 displayPending.delete(key);
@@ -99,9 +99,9 @@
             field: 'status', title: '主站显示', formatter: function (val, item) {
                 let html = '';
                 if (substationDisplaySet.has(String(item?.user?.id ?? ''))) {
-                    html += '<span class="badge badge-light-success">已显示</span>';
+                    html += '<span class="badge badge-light-success">' + i18n('已显示') + '</span>';
                 } else {
-                    html += '<span class="badge badge-light-danger">已隐藏</span>';
+                    html += '<span class="badge badge-light-danger">' + i18n('已隐藏') + '</span>';
                 }
                 return html;
             }
@@ -150,7 +150,7 @@
                 if (!controllerActive) return;
                 saveInFlight = false;
                 setSaveBusy(false);
-                layer.msg(res.msg || '保存成功');
+                layer.msg(res.msg || i18n('保存成功'));
                 emitFormState('admin:mobile:form-saved', revision);
             },
             error: res => {
@@ -158,7 +158,7 @@
                 saveInFlight = false;
                 setSaveBusy(false);
                 if (window.AdminMobile?.isEnabled?.()) window.AdminMobile?.pageWorkflows?.focusFormError?.(document.getElementById('data-form'), res?.msg);
-                message.error(res?.msg || '其他设置保存失败');
+                message.error(res?.msg || i18n('其他设置保存失败'));
             },
             fail: () => {
                 if (!controllerActive) return;

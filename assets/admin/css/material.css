@@ -51,9 +51,14 @@ html { background-color: var(--md-bg); }
  * ============================================================= */
 .md-theme-switch { position: relative; }
 
-#md-theme-toggle { color: var(--md-on-surface-med); border-radius: var(--md-radius-pill); }
-#md-theme-toggle:hover { background-color: var(--md-hover-overlay); color: var(--md-on-surface); }
+#md-theme-toggle,
+#md-lang-toggle { color: var(--md-on-surface-med); border-radius: var(--md-radius-pill); }
+#md-theme-toggle:hover,
+#md-lang-toggle:hover { background-color: var(--md-hover-overlay); color: var(--md-on-surface); }
 #md-theme-toggle > .md-ico { display: none; line-height: 1; }
+/* 语言按钮用内联 SVG（图标字体只有 duotone 实心字重，配不出细线地球），
+   靠 currentColor 继承上面那条颜色/hover 规则 */
+#md-lang-toggle > .md-lang-ico { display: block; }
 html[data-theme-pref="light"] #md-theme-toggle .md-ico-light,
 html[data-theme-pref="dark"]  #md-theme-toggle .md-ico-dark,
 html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-block; }
@@ -142,6 +147,22 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
     overflow-y: auto !important;
     overscroll-behavior-y: contain;
   }
+}
+
+/* Hide the sidebar scrollbar without disabling the scroll itself. Metronic's
+ * .hover-scroll-overlay-y reserves a ~0.65rem gutter and paints a thumb on hover
+ * (style.bundle.css ~47878); that visible track is noise next to the nav pills.
+ * Scrolling stays fully functional — wheel, trackpad, keyboard and drag are
+ * untouched; only the painted scrollbar is removed. */
+:root[data-theme] #kt_aside_menu_wrapper {
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* legacy Edge */
+}
+
+:root[data-theme] #kt_aside_menu_wrapper::-webkit-scrollbar {
+  display: none;                /* WebKit / Blink */
+  width: 0;
+  height: 0;
 }
 
 /* menu rows → compact rounded pills (ref: ~35px tall, 18px radius, 8px inset, 2px gap) */
@@ -925,43 +946,63 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
   :root[data-theme] .dash-profile__name { font-size: 18px; }
 }
 
-/* --- 官方公告 (dashboard announcements) — MUI mini-cards, token-driven light/dark.
-   标题 HTML 来自商店 API（含内联着色的 <官方>/<推荐> 及蓝/绿/红文字），保留其颜色；
-   仅重做容器：surface-2 卡片 + 细边框 + 主色强调条 + hover 抬升 + 弱化时间戳。 --- */
-:root[data-theme] .ad-html { display: flex; flex-direction: column; gap: 8px; }
+/* --- 官方公告 (dashboard announcements) — 渐变浅底卡 + 渐变图标徽章 + 圆形箭头，
+   与插件推广卡同一设计语言（主色 tint 渐变 + hover 抬升 + 箭头反色填充）。
+   标题 HTML 来自商店 API（含内联着色的 <官方>/<推荐> 及蓝/绿/红文字），保留其颜色；仅重做容器。 --- */
+:root[data-theme] .ad-html { display: flex; flex-direction: column; gap: 10px; }
 :root[data-theme] .md-ad-item {
   position: relative;
-  padding: 12px 14px 12px 18px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
   border-radius: var(--md-radius);
-  /* surface + 中性叠加：暗色下提亮(凸起)、亮色下压暗(与白卡区分) —— surface-2 在亮色是纯白会糊 */
+  border: 1px solid rgba(var(--md-primary-rgb), .20);
   background-color: var(--md-surface);
-  background-image: linear-gradient(0deg, var(--md-hover-overlay), var(--md-hover-overlay));
-  border: 1px solid var(--md-divider);
-  overflow: hidden;
-  transition: border-color .15s ease, box-shadow .15s ease, background-image .15s ease;
-}
-:root[data-theme] .md-ad-item::before {
-  content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px;
-  border-radius: 0 3px 3px 0; background: var(--md-primary); opacity: .85;
+  background-image: linear-gradient(135deg, rgba(var(--md-primary-rgb), .08), rgba(var(--md-primary-rgb), .02));
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 :root[data-theme] .md-ad-item:hover {
-  border-color: rgba(var(--md-primary-rgb), .40);
-  box-shadow: var(--md-e1);
-  background-image: linear-gradient(0deg, var(--md-selected-overlay), var(--md-selected-overlay));
+  border-color: rgba(var(--md-primary-rgb), .45);
+  box-shadow: 0 6px 18px rgba(var(--md-primary-rgb), .15);
+  transform: translateY(-1px);
 }
+:root[data-theme] .md-ad-item__icon {
+  flex: none; width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--md-primary), #7c4dff);
+  color: #fff; font-size: 16px;
+  box-shadow: 0 4px 10px rgba(var(--md-primary-rgb), .35);
+}
+:root[data-theme] .md-ad-item__body { flex: 1; min-width: 0; }
 :root[data-theme] .md-ad-item__title {
   display: block;
   font-size: 13.5px; font-weight: 600; line-height: 1.6;
   color: var(--md-on-surface); text-decoration: none; word-break: break-word;
 }
-:root[data-theme] .md-ad-item__title:hover { color: var(--md-on-surface); }
-/* 拉伸链接：整卡可点（标题里的 <span>/<b> 无嵌套 <a>，安全） */
-:root[data-theme] .md-ad-item__title::after { content: ""; position: absolute; inset: 0; }
-:root[data-theme] .md-ad-item__time {
-  display: flex; align-items: center; gap: 5px; margin-top: 7px;
-  font-size: 12px; color: var(--md-on-surface-med);
+:root[data-theme] .md-ad-item__title:hover { color: var(--md-on-surface); text-decoration: none; }
+/* 不做整卡拉伸链接：遮罩会挡住文字选取（公告里有 QQ 号等需要复制的内容）。可点区域 = 标题链接 + 右侧箭头。 */
+:root[data-theme] .md-ad-item__go {
+  flex: none; width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--md-primary-rgb), .35);
+  color: var(--md-primary); font-size: 11px; text-decoration: none;
+  transition: background .18s ease, color .18s ease, border-color .18s ease;
 }
-:root[data-theme] .md-ad-item__time i { font-size: 12px; }
+:root[data-theme] .md-ad-item:hover .md-ad-item__go {
+  background: var(--md-primary); border-color: var(--md-primary); color: var(--md-on-primary, #fff);
+}
+/* 无链接的公告（url 为空或 '#'）：<a> 不带 href 天然不可点；不抬升；右侧换成弱化的提示图标（无边框圈） */
+:root[data-theme] .md-ad-item--static .md-ad-item__go {
+  border-color: transparent; color: var(--md-on-surface-med); font-size: 15px;
+}
+:root[data-theme] .md-ad-item--static:hover .md-ad-item__go {
+  background: transparent; border-color: transparent; color: var(--md-on-surface-med);
+}
+:root[data-theme] .md-ad-item--static .md-ad-item__title { cursor: text; }
+:root[data-theme] .md-ad-item--static:hover {
+  transform: none; box-shadow: none; border-color: rgba(var(--md-primary-rgb), .20);
+}
 :root[data-theme] .dashboard-data-feedback:not([hidden]),
 :root[data-theme] .dashboard-chart-feedback:not([hidden]) { display: block; margin-bottom: 12px; }
 :root[data-theme] .dashboard-request-state {
@@ -1071,7 +1112,8 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
 }
 
 /* theme toggle → circular icon button, aligned with the avatar */
-:root[data-theme] #md-theme-toggle { border-radius: 50% !important; }
+:root[data-theme] #md-theme-toggle,
+:root[data-theme] #md-lang-toggle { border-radius: 50% !important; }
 
 /* node select → custom dropdown with vendor icons (built by material.js) */
 :root[data-theme] .md-nodesel { position: relative; display: inline-flex; align-items: center; }
@@ -2164,6 +2206,17 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
   outline: 2px solid var(--md-primary); outline-offset: 2px;
 }
 :root[data-theme] .md-copyable-cell__copy i { margin: 0; font-size: 16px; }
+/* 卡密信息等超长文本单元格：钳制3行并保底列宽，
+ * 桌面窄屏让表格走横向滚动而不是逐字竖排，移动卡片不再被整段卡密撑爆 */
+:root[data-theme] .md-copyable-cell--clamp .md-copyable-cell__value {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  word-break: break-all;
+  min-width: 200px;
+  max-width: min(340px, 100%);
+}
 :root[data-theme] .md-user-cell--copyable .md-user-cell__text { max-width: 100%; }
 :root[data-theme] .md-user-cell__name-row {
   display: flex; align-items: center; min-width: 0;
@@ -2577,4 +2630,134 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
   :root[data-theme] .md-remote-product-picker__toolbar-actions { display: grid; grid-template-columns: 1fr 1fr; }
   :root[data-theme] .md-remote-product-picker__action { width: 100%; }
   :root[data-theme] .md-remote-product-picker__items { padding-left: 20px; }
+}
+
+/* ==========================================================================
+   商品标签编辑器（#807）
+   attribute 组件默认把两个输入撑成整行，在商品抽屉里会竖着堆成两行。
+   标签只有「文字 + 颜色 token」两个短值，并排更好用。只作用于这一个字段。
+   ========================================================================== */
+:root[data-theme] .component-tags .widget-block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+:root[data-theme] .component-tags .widget-block > input.widget-w220 {
+    flex: 1 1 42%;
+    min-width: 0;
+}
+
+:root[data-theme] .component-tags .widget-block > input.widget-w500 {
+    flex: 1 1 58%;
+    min-width: 0;
+}
+
+:root[data-theme] .component-tags .widget-block > div {
+    flex: 0 0 auto;
+    margin-left: 0 !important;
+}
+
+/* allowEmpty 属性字段：一行都没有时，标签不能再当浮动图例
+   （.mui-float 那套只在框里有 .layui-input 时才成立，行删光后框没了，
+   图例会掉回左上角跟「未设置 / 添加」叠在一起）。这里换成普通的上下布局。 */
+:root[data-theme] .layui-form-item.mui-float.is-attr-empty > .layui-form-label {
+    position: static !important;
+    display: block;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0 0 6px;
+    background: none !important;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--md-on-surface-med);
+    text-align: left;
+    transform: none !important;
+}
+
+:root[data-theme] .layui-form-item.mui-float.is-attr-empty > .component-content {
+    margin-left: 0 !important;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* allowEmpty 属性字段的「添加」按钮与空态提示（商品标签在用） */
+:root[data-theme] .component-content > .widget-attr-adder {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--md-primary);
+    text-decoration: none;
+}
+
+:root[data-theme] .component-content > .widget-attr-adder:hover {
+    color: var(--md-primary-hover);
+}
+
+:root[data-theme] .component-content > .widget-attr-empty {
+    display: inline-block;
+    margin-right: 10px;
+    font-size: 13px;
+    color: var(--md-on-surface-dis);
+}
+
+/* 属性行的拖拽手柄（sortable 字段用，商品标签在用） */
+:root[data-theme] .widget-block > .widget-attr-handle {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    align-self: stretch;
+    cursor: grab;
+    user-select: none;
+    color: var(--md-on-surface-dis);
+    font-size: 15px;
+    line-height: 1;
+    border-radius: 6px;
+    touch-action: none;           /* 触屏上不让页面跟着滚，否则拖不动 */
+    transition: color .15s, background-color .15s;
+}
+
+:root[data-theme] .widget-block > .widget-attr-handle:hover {
+    color: var(--md-on-surface);
+    background: var(--md-hover-overlay);
+}
+
+/* 被拖起来的那一行：抬高、加影、微微放大，明确「拿在手里」 */
+:root[data-theme] .widget-block.is-dragging {
+    position: relative;
+    z-index: 20;
+    cursor: grabbing;
+    box-shadow: var(--md-e8);
+    border-radius: 10px;
+    background: var(--md-surface);
+    scale: 1.01;
+    transition: box-shadow .15s, scale .15s;
+}
+
+:root[data-theme] .widget-block.is-dragging > .widget-attr-handle {
+    cursor: grabbing;
+    color: var(--md-primary);
+    background: rgba(var(--md-primary-rgb), .12);
+}
+
+/* 拖动过程中别让文本被选中，也别让输入框抢焦点 */
+:root[data-theme] .component-content.is-sorting {
+    user-select: none;
+}
+
+:root[data-theme] .component-content.is-sorting .widget-block:not(.is-dragging) {
+    pointer-events: none;
+}
+
+/* 让出的空位淡一点，视线跟着走 */
+:root[data-theme] .component-content.is-sorting .widget-block:not(.is-dragging) {
+    opacity: .72;
 }

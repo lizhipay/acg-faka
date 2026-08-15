@@ -1,0 +1,52 @@
+#{include file="../Header.html"}
+<style>
+    /* 应用预览的确认框：style.bundle.css 给所有 Swal 正文写死了 max-height:200px，
+       预览表格会被压成三四行只能内滚，这里只对本页的预览框放开高度。 */
+    .swal2-container .swal2-html-container.md-price-preview {
+        max-height: min(56vh, 520px);
+    }
+</style>
+
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file="../Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <!--begin::Container-->
+        <div id="kt_content_container" class="container-fluid">
+
+            <div class="alert alert-primary d-flex align-items-center mb-5">
+                <i class="fa-duotone fa-regular fa-circle-info fs-2 me-3"></i>
+                <div>
+                    <b>#{t("加价模板")}</b>
+                    #{t("：先定好一套定价规则（在成本价或当前售价基础上，按百分比或固定金额加价，并可为每个会员等级单独设定），再一键套用到一批商品。对接商品上游调价后，用它批量重算最省事。")}
+                </div>
+            </div>
+
+            <div class="card mb-5 mb-xl-8">
+                <div class="card-header border-0">
+                    <div class="card-toolbar">
+                        <button class="btn btn-sm btn-light-primary btn-tpl-create me-3">
+                            <i class="fa-duotone fa-regular fa-circle-plus"></i> #{t("新建模板")}
+                        </button>
+                        <button class="btn btn-sm btn-light-danger btn-tpl-del me-3">
+                            <i class="fa-duotone fa-regular fa-trash-can"></i> #{t("删除选中模板")}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body py-3">
+                    <table id="price-template-table"></table>
+                </div>
+            </div>
+
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+#{ready("/assets/admin/controller/shared/priceTemplate.js")}
+#{include file="../Footer.html"}

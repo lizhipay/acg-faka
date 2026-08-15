@@ -28,6 +28,7 @@ use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
 use Kernel\Exception\RuntimeException;
 use Kernel\Util\Decimal;
+use Kernel\Util\Log;
 
 #[Interceptor([Waf::class, UserVisitor::class])]
 class Index extends User
@@ -50,7 +51,8 @@ class Index extends User
      */
     public function data(): array
     {
-        $category = Tree::generate($this->shop->getCategory($this->getUserGroup()));
+        //分类名是站长自定义的动态文案，建树前在平层统一走 dyn 翻译
+        $category = Tree::generate(\Kernel\Util\Lang::transList($this->shop->getCategory($this->getUserGroup()), ['name']));
         hook(Hook::USER_API_INDEX_CATEGORY_LIST, $category);
         return $this->json(200, "success", $category);
     }
@@ -62,6 +64,8 @@ class Index extends User
      */
     public function commodity(): array
     {
+        \App\Util\Schema::ensureCommodityTags();
+
         $keywords = (string)$_GET['keywords'];
         $limit = (int)$_GET['limit'];
         $page = (int)$_GET['page'];
@@ -130,7 +134,8 @@ class Index extends User
                 'id', 'name', 'cover',
                 'status', 'delivery_way', 'price',
                 'user_price',
-                'level_disable', 'level_price', 'hide', 'owner', 'inventory_hidden', "recommend", 'category_id', 'stock', 'shared_id'
+                'level_disable', 'level_price', 'hide', 'owner', 'inventory_hidden', "recommend", 'category_id', 'stock', 'shared_id',
+                'tags'
             ])
             ->withCount(['order as order_sold' => function (Builder $relation) {
                 $relation->where("delivery_status", 1);
@@ -159,12 +164,21 @@ class Index extends User
 
         //最终的商品数据遍历
         foreach ($data as $key => $val) {
-            $parseGroupConfig = Commodity::parseGroupConfig($val['level_price'], $userGroup);
+            try {
+                $parseGroupConfig = Commodity::parseGroupConfig($val['level_price'], $userGroup);
+            } catch (\Throwable $e) {
+                //会员等级配置损坏时按无等级配置处理，单个商品的脏数据不能拖垮整个列表
+                $parseGroupConfig = null;
+                Log::inst()->error("商品[{$val['id']}]会员等级配置解析失败，已按默认处理：" . $e->getMessage());
+            }
             if (!in_array((string)$val['category_id'], $cates) || $val['hide'] == 1 && (!$parseGroupConfig || !isset($parseGroupConfig['show']) || $parseGroupConfig['show'] != 1)) {
                 //隐藏商品
                 unset($data[$key]);
                 continue;
             }
+
+            //标签（#807）：入库是 JSON 字符串，给前端的是数组，脏数据当成没标签
+            $data[$key]['tags'] = Commodity::parseTags($val['tags'] ?? null);
 
             if ($val['delivery_way'] == 0 && !$val['shared_id']) {
                 $data[$key]['stock'] = Card::query()->where("status", 0)->where("commodity_id", $val['id'])->count();
@@ -172,9 +186,14 @@ class Index extends User
 
             //如果登录后，则自动计算登录后的价格
             if ($user) {
-                $tradeAmount = $this->order->valuation(commodity: $commodity[$key], group: $userGroup);
-                $data[$key]['price'] = $tradeAmount;
-                $data[$key]['user_price'] = $tradeAmount;
+                try {
+                    $tradeAmount = $this->order->valuation(commodity: $commodity[$key], group: $userGroup);
+                    $data[$key]['price'] = $tradeAmount;
+                    $data[$key]['user_price'] = $tradeAmount;
+                } catch (\Throwable $e) {
+                    //估价失败（通常是商品配置脏数据）时降级为原价展示，单个商品不能拖垮整个列表
+                    Log::inst()->error("商品[{$val['id']}]会员价计算失败，已降级为原价展示：" . $e->getMessage());
+                }
             }
 
             unset(
@@ -191,8 +210,8 @@ class Index extends User
                 $var = $userCommodityMap[$val['id']];
 
                 if ($var->premium > 0) {
-                    $data[$key]['price'] = (new Decimal($data[$key]['price'], 2))->mul($var->premium / 100)->add($data[$key]['price'])->getAmount();
-                    $data[$key]['user_price'] = (new Decimal($data[$key]['user_price'], 2))->mul($var->premium / 100)->add($data[$key]['user_price'])->getAmount();
+                    $data[$key]['price'] = $var->applyRounding((new Decimal($data[$key]['price'], 2))->mul($var->premium / 100)->add($data[$key]['price'])->getAmount());
+                    $data[$key]['user_price'] = $var->applyRounding((new Decimal($data[$key]['user_price'], 2))->mul($var->premium / 100)->add($data[$key]['user_price'])->getAmount());
                 }
                 if ($var->name) {
                     $data[$key]['name'] = $var->name;
@@ -208,6 +227,8 @@ class Index extends User
 
         $data = array_values($data);
         hook(Hook::USER_API_INDEX_COMMODITY_LIST, $data);
+        //商品名（含分站自定义名）是动态文案，最终出口统一走 dyn 翻译；下单按 id 提交不受影响
+        $data = \Kernel\Util\Lang::transList($data, ['name', 'category.name']);
         $json = $this->json(200, "success", $data);
         $json['total'] = $total;
         return $json;
@@ -225,6 +246,12 @@ class Index extends User
         $array['stock_state'] = $this->shop->getStockState($array['stock']);
         if ($array['inventory_hidden'] == 1) {
             $array['stock'] = $this->shop->getHideStock($array['stock']);
+        }
+
+        //商品名与介绍是动态文案；介绍是富文本，dyn 场景由翻译插件的富文本模型成批处理
+        $array['name'] = lang((string)$array['name'], "dyn");
+        if (isset($array['description']) && is_string($array['description'])) {
+            $array['description'] = lang($array['description'], "dyn");
         }
 
         return $this->json(200, 'success', $array);
@@ -259,7 +286,7 @@ class Index extends User
             //加价算法
             foreach ($data['list'] as &$item) {
                 if ($item['draft_premium'] > 0) {
-                    $item['draft_premium'] = $this->shared->AdjustmentAmount($commodity->shared_premium_type, $commodity->shared_premium, $item['draft_premium']);
+                    $item['draft_premium'] = $this->shared->AdjustmentExtra($commodity, $item['draft_premium']);
                 }
             }
         } else {
@@ -302,6 +329,9 @@ class Index extends User
                 }
             }
         }
+
+        //预选卡预告信息是动态文案，展示层翻译；下单按 card_id 提交不受影响
+        $data['list'] = \Kernel\Util\Lang::transList($data['list'], ['draft']);
 
         return $this->json(data: $data);
     }
@@ -375,6 +405,8 @@ class Index extends User
         $pay = Pay::query()->orderBy("sort", "asc")->where("commodity", 1)->whereRaw($let)->get(['id', 'name', 'icon', 'handle'])->toArray();
 
         hook(Hook::USER_API_INDEX_PAY_LIST, $pay);
+        //支付方式名是站长自定义的动态文案，出口统一走 dyn 翻译（与后台支付接口列表口径一致）
+        $pay = \Kernel\Util\Lang::transList($pay, ['name']);
         return $this->json(200, 'success', $pay);
     }
 

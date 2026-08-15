@@ -2,9 +2,9 @@
 <div class="uc-main uc-message-page" data-cartoon-message-page>
     <section class="uc-message-hero">
         <div>
-            <span class="uc-message-hero__eyebrow"><span class="material-icons-outlined">mark_email_unread</span>专属消息收件箱</span>
-            <h1>消息中心</h1>
-            <p>重要通知、服务动态与专属消息，都可以在这里随时查看。</p>
+            <span class="uc-message-hero__eyebrow"><span class="material-icons-outlined">mark_email_unread</span>#{t("专属消息收件箱")}</span>
+            <h1>#{t("消息中心")}</h1>
+            <p>#{t("重要通知、服务动态与专属消息，都可以在这里随时查看。")}</p>
         </div>
         <span class="uc-message-hero__art" aria-hidden="true"><span class="material-icons-outlined">notifications_active</span></span>
     </section>
@@ -13,55 +13,55 @@
         <div class="uc-card__head">
             <span class="material-icons-outlined">inbox</span>
             <div class="uc-message-board__heading">
-                <span class="uc-card__title">全部消息</span>
-                <span class="uc-card__sub">打开消息后自动标记为已读</span>
+                <span class="uc-card__title">#{t("全部消息")}</span>
+                <span class="uc-card__sub">#{t("打开消息后自动标记为已读")}</span>
             </div>
             <div class="uc-message-actions">
                 <button type="button" class="uc-message-action uc-message-action--delete" data-message-action="delete-selected">
-                    <span class="material-icons-outlined">delete_sweep</span>删除选中
+                    <span class="material-icons-outlined">delete_sweep</span>#{t("删除选中")}
                 </button>
                 <button type="button" class="uc-message-action uc-message-action--clear" data-message-action="clear">
-                    <span class="material-icons-outlined">cleaning_services</span>清空全部
+                    <span class="material-icons-outlined">cleaning_services</span>#{t("清空全部")}
                 </button>
             </div>
         </div>
         <div class="uc-card__body">
-            <div class="uc-message-mobile" aria-label="手机消息列表">
+            <div class="uc-message-mobile" aria-label="#{t('手机消息列表')}">
                 <form class="uc-message-mobile-search" data-message-mobile-search role="search">
                     <label class="uc-message-mobile-search__field">
                         <span class="material-icons-outlined" aria-hidden="true">search</span>
-                        <input type="search" name="keyword" autocomplete="off" enterkeyhint="search" placeholder="搜索消息标题" aria-label="搜索消息标题">
-                        <button type="button" class="uc-message-mobile-search__clear" data-message-search-clear aria-label="清除搜索词" hidden>
+                        <input type="search" name="keyword" autocomplete="off" enterkeyhint="search" placeholder="#{t('搜索消息标题')}" aria-label="#{t('搜索消息标题')}">
+                        <button type="button" class="uc-message-mobile-search__clear" data-message-search-clear aria-label="#{t('清除搜索词')}" hidden>
                             <span class="material-icons-outlined" aria-hidden="true">cancel</span>
                         </button>
                     </label>
-                    <button type="submit" class="uc-message-mobile-search__submit">搜索</button>
+                    <button type="submit" class="uc-message-mobile-search__submit">#{t("搜索")}</button>
                 </form>
 
-                <div class="uc-message-mobile-filters" role="group" aria-label="消息状态筛选">
-                    <button type="button" class="is-active" data-message-status="" aria-pressed="true">全部</button>
-                    <button type="button" data-message-status="0" aria-pressed="false">未读</button>
-                    <button type="button" data-message-status="1" aria-pressed="false">已读</button>
+                <div class="uc-message-mobile-filters" role="group" aria-label="#{t('消息状态筛选')}">
+                    <button type="button" class="is-active" data-message-status="" aria-pressed="true">#{t("全部")}</button>
+                    <button type="button" data-message-status="0" aria-pressed="false">#{t("未读")}</button>
+                    <button type="button" data-message-status="1" aria-pressed="false">#{t("已读")}</button>
                 </div>
 
                 <div class="uc-message-mobile-meta" aria-live="polite">
-                    <span data-message-mobile-result>正在加载消息</span>
+                    <span data-message-mobile-result>#{t("正在加载消息")}</span>
                     <span data-message-mobile-page></span>
                 </div>
                 <div class="uc-message-mobile-list" data-message-mobile-list aria-live="polite" aria-busy="true"></div>
 
-                <nav class="uc-message-mobile-pagination" data-message-mobile-pagination aria-label="消息分页" hidden>
-                    <button type="button" data-message-page="previous"><span class="material-icons-outlined" aria-hidden="true">chevron_left</span>上一页</button>
+                <nav class="uc-message-mobile-pagination" data-message-mobile-pagination aria-label="#{t('消息分页')}" hidden>
+                    <button type="button" data-message-page="previous"><span class="material-icons-outlined" aria-hidden="true">chevron_left</span>#{t("上一页")}</button>
                     <span data-message-page-label></span>
-                    <button type="button" data-message-page="next">下一页<span class="material-icons-outlined" aria-hidden="true">chevron_right</span></button>
+                    <button type="button" data-message-page="next">#{t("下一页")}<span class="material-icons-outlined" aria-hidden="true">chevron_right</span></button>
                 </nav>
 
                 <div class="uc-message-selection-bar" data-message-selection-bar hidden>
-                    <button type="button" class="uc-message-selection-bar__cancel" data-message-selection-cancel>取消</button>
-                    <span data-message-selection-count>已选 0 条</span>
-                    <button type="button" data-message-selection-all>全选本页</button>
+                    <button type="button" class="uc-message-selection-bar__cancel" data-message-selection-cancel>#{t("取消")}</button>
+                    <span data-message-selection-count>#{t("已选 0 条")}</span>
+                    <button type="button" data-message-selection-all>#{t("全选本页")}</button>
                     <button type="button" class="uc-message-selection-bar__delete" data-message-selection-delete disabled>
-                        <span class="material-icons-outlined" aria-hidden="true">delete</span>删除
+                        <span class="material-icons-outlined" aria-hidden="true">delete</span>#{t("删除")}
                     </button>
                 </div>
             </div>

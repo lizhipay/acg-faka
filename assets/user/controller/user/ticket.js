@@ -34,15 +34,15 @@
     }
 
     function prettyTime(value) {
-        if (!value) return '刚刚';
+        if (!value) return i18n('刚刚');
         const normalized = String(value).replace(/-/g, '/');
         const time = new Date(normalized).getTime();
         if (!Number.isFinite(time)) return escapeHtml(value);
         const seconds = Math.max(0, Math.floor((Date.now() - time) / 1000));
-        if (seconds < 60) return '刚刚';
-        if (seconds < 3600) return `${Math.floor(seconds / 60)} 分钟前`;
-        if (seconds < 86400) return `${Math.floor(seconds / 3600)} 小时前`;
-        if (seconds < 604800) return `${Math.floor(seconds / 86400)} 天前`;
+        if (seconds < 60) return i18n('刚刚');
+        if (seconds < 3600) return `${Math.floor(seconds / 60)} ${i18n('分钟前')}`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)} ${i18n('小时前')}`;
+        if (seconds < 604800) return `${Math.floor(seconds / 86400)} ${i18n('天前')}`;
         return escapeHtml(value);
     }
 
@@ -51,10 +51,10 @@
             return `<span class="uc-ticket-row__context"><span class="material-icons-outlined">inventory_2</span>${escapeHtml(row.commodity_name)}</span>`;
         }
         if (row.order_trade_no) {
-            const guest = number(row.order_source, number(row.order_source_code, 0)) === 2 || row.order_source === 'guest' ? '<em>游客订单</em>' : '';
+            const guest = number(row.order_source, number(row.order_source_code, 0)) === 2 || row.order_source === 'guest' ? '<em>' + i18n('游客订单') + '</em>' : '';
             return `<span class="uc-ticket-row__context"><span class="material-icons-outlined">receipt_long</span>${escapeHtml(row.order_trade_no)}${guest}</span>`;
         }
-        return '<span class="uc-ticket-row__context is-empty"><span class="material-icons-outlined">link_off</span>未关联商品或订单</span>';
+        return '<span class="uc-ticket-row__context is-empty"><span class="material-icons-outlined">link_off</span>' + i18n('未关联商品或订单') + '</span>';
     }
 
     function renderRow(row) {
@@ -62,8 +62,8 @@
         const priority = PRIORITY[number(row.priority, 1)] || PRIORITY[1];
         const status = STATUS[number(row.status, 0)] || STATUS[0];
         const unread = Math.max(0, number(row.user_unread, 0));
-        const excerpt = row.last_message_excerpt || '工单已创建，等待进一步沟通。';
-        const sender = number(row.last_sender_type, 0) === 1 ? '客服' : (number(row.last_sender_type, 0) === 2 ? '系统' : '我');
+        const excerpt = row.last_message_excerpt || i18n('工单已创建，等待进一步沟通。');
+        const sender = number(row.last_sender_type, 0) === 1 ? i18n('客服') : (number(row.last_sender_type, 0) === 2 ? i18n('系统') : i18n('我'));
         const time = row.last_message_time || row.update_time || row.create_time;
 
         return `<a class="uc-ticket-row${unread > 0 ? ' has-unread' : ''}" href="/user/ticket/detail?id=${encodeURIComponent(row.id)}">
@@ -72,12 +72,12 @@
             <span class="uc-ticket-row__main">
                 <span class="uc-ticket-row__top">
                     <span class="uc-ticket-row__number">${escapeHtml(row.ticket_no || `#${row.id}`)}</span>
-                    <span class="uc-ticket-pill ${type.className}">${type.label}</span>
-                    <span class="uc-ticket-pill ${priority.className}"><i></i>${priority.label}</span>
-                    <span class="uc-ticket-pill ${status.className}"><span class="material-icons-outlined">${status.icon}</span>${status.label}</span>
-                    ${unread > 0 ? `<span class="uc-ticket-row__unread">${unread > 99 ? '99+' : unread} 条新回复</span>` : ''}
+                    <span class="uc-ticket-pill ${type.className}">${i18n(type.label)}</span>
+                    <span class="uc-ticket-pill ${priority.className}"><i></i>${i18n(priority.label)}</span>
+                    <span class="uc-ticket-pill ${status.className}"><span class="material-icons-outlined">${status.icon}</span>${i18n(status.label)}</span>
+                    ${unread > 0 ? `<span class="uc-ticket-row__unread">${unread > 99 ? '99+' : unread} ${i18n('条新回复')}</span>` : ''}
                 </span>
-                <strong class="uc-ticket-row__title">${escapeHtml(row.title || '未命名工单')}</strong>
+                <strong class="uc-ticket-row__title">${escapeHtml(row.title || i18n('未命名工单'))}</strong>
                 <span class="uc-ticket-row__excerpt"><b>${sender}：</b>${escapeHtml(excerpt)}</span>
                 <span class="uc-ticket-row__bottom">${contextHtml(row)}<span class="uc-ticket-row__time"><span class="material-icons-outlined">update</span>${prettyTime(time)}</span></span>
             </span>
@@ -102,7 +102,7 @@
         $pagination.prop('hidden', state.total <= state.limit);
         $pagination.find('[data-page-action="prev"]').prop('disabled', state.page <= 1);
         $pagination.find('[data-page-action="next"]').prop('disabled', state.page >= pages);
-        $pagination.find('.uc-ticket-pagination__meta').text(`第 ${state.page} / ${pages} 页 · 共 ${state.total} 张`);
+        $pagination.find('.uc-ticket-pagination__meta').text(`${i18n('第')} ${state.page} / ${pages} ${i18n('页')} · ${i18n('共')} ${state.total} ${i18n('张')}`);
     }
 
     function showLoading() {
@@ -119,8 +119,8 @@
         $('.uc-ticket-list').hide().empty();
         $('.uc-ticket-empty').prop('hidden', true);
         $('.uc-ticket-error').prop('hidden', false);
-        $('.uc-ticket-error strong').text(pendingUpgrade ? '工单功能尚未启用' : '暂时无法读取工单');
-        $('.uc-ticket-error small').text(pendingUpgrade ? '请联系管理员完成 3.5.1 数据库升级' : '请检查网络后再试一次');
+        $('.uc-ticket-error strong').text(pendingUpgrade ? i18n('工单功能尚未启用') : i18n('暂时无法读取工单'));
+        $('.uc-ticket-error small').text(pendingUpgrade ? i18n('请联系管理员完成 3.5.1 数据库升级') : i18n('请检查网络后再试一次'));
         $('.uc-ticket-pagination').prop('hidden', true);
     }
 
@@ -142,7 +142,7 @@
                 if (version !== requestVersion) return;
                 const payload = res && res.data ? res.data : {};
                 if (payload.ready === false) {
-                    showError({msg: '工单数据库尚未升级，请先完成 3.5.1 数据库升级'});
+                    showError({msg: i18n('工单数据库尚未升级，请先完成 3.5.1 数据库升级')});
                     return;
                 }
                 const list = Array.isArray(payload.list) ? payload.list : [];
@@ -154,8 +154,8 @@
                 if (!list.length) {
                     $('.uc-ticket-list').hide().empty();
                     const filtered = state.keyword !== '' || state.status !== '' || state.type !== '';
-                    $('.uc-ticket-empty strong').text(filtered ? '没有符合条件的工单' : '这里还没有工单');
-                    $('.uc-ticket-empty p').text(filtered ? '换一个关键词或筛选条件，也许能找到你要的记录。' : '遇到疑问时，不必反复寻找客服入口，创建一张工单就能持续跟进。');
+                    $('.uc-ticket-empty strong').text(filtered ? i18n('没有符合条件的工单') : i18n('这里还没有工单'));
+                    $('.uc-ticket-empty p').text(filtered ? i18n('换一个关键词或筛选条件，也许能找到你要的记录。') : i18n('遇到疑问时，不必反复寻找客服入口，创建一张工单就能持续跟进。'));
                     $('.uc-ticket-empty').prop('hidden', false);
                 } else {
                     $('.uc-ticket-empty').prop('hidden', true);

@@ -39,7 +39,8 @@ abstract class User extends \App\Controller\Base\User
             //加载helper
             require(BASE_PATH . "/app/View/User/Helper.php");
 
-            $data['title'] = $title;
+            //页面标题统一在此翻译，各控制器仍传中文原文
+            $data['title'] = lang($title, "tpl");
             $data['app']['version'] = \config("app")['version'];
             $cfg = Config::list();
 
@@ -68,7 +69,8 @@ abstract class User extends \App\Controller\Base\User
             //加载helper
             require(BASE_PATH . "/app/View/User/Helper.php");
 
-            $data['title'] = $title;
+            //页面标题统一在此翻译，各控制器仍传中文原文
+            $data['title'] = lang($title, "tpl");
             $data['app']['version'] = \config("app")['version'];
             $data['favicon'] = "/favicon.ico";
 
@@ -111,6 +113,7 @@ abstract class User extends \App\Controller\Base\User
             $domain = Client::getDomain();
             $business = Business::query()->where("subdomain", $domain)->first() ?? Business::query()->where("topdomain", $domain)->first();
             if ($business) {
+                $data['isBusinessSite'] = true; //分站域名标记，供主题按主站/分站区分展示（如 Seattle 快捷入口）
                 $data['config']['shop_name'] = $business->shop_name;
                 $data['config']['title'] = $business->title;
                 $data['config']['notice'] = $business->notice;

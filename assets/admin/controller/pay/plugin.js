@@ -27,8 +27,8 @@
             secured.default = '';
             secured.required = isRequired && !hasStoredValue;
             secured.tips = hasStoredValue
-                ? '敏感信息不会回显；留空表示保留已保存的值'
-                : (isRequired ? '首次配置必须填写；保存后不会回显' : '敏感信息不会回显');
+                ? i18n('敏感信息不会回显；留空表示保留已保存的值')
+                : (isRequired ? i18n('首次配置必须填写；保存后不会回显') : i18n('敏感信息不会回显'));
         }
         return secured;
     };
@@ -89,9 +89,9 @@
                 this.updateNum++;
             }
 
-            $('#updateNum').html('<b class="text-danger">[' + this.updateNum + ']个插件需要更新</b>');
+            $('#updateNum').html('<b class="text-danger">[' + this.updateNum + ']' + i18n('个插件需要更新') + '</b>');
 
-            return ' <span style="cursor: pointer;" class="badge badge-light-success updatePlugin">更新-&gt;' + escapeHtml(plugin.version) + '</span>';
+            return ' <span style="cursor: pointer;" class="badge badge-light-success updatePlugin">' + i18n('更新-&gt;') + escapeHtml(plugin.version) + '</span>';
         }
     }
 
@@ -101,7 +101,7 @@
             message.error("初始化更新失败，请刷新页面重试");
             return;
         }
-        const updateContent = escapeHtml(plugin?.update_content || '该更新没有提供说明').replace(/\n/g, '<br>');
+        const updateContent = escapeHtml(plugin?.update_content || i18n('该更新没有提供说明')).replace(/\n/g, '<br>');
         message.ask(updateContent, () => {
             if (!controllerActive) return;
             util.post('/admin/api/app/upgrade', {
@@ -113,7 +113,7 @@
                 message.info(res.msg);
                 if (res.code == 200) window.location.reload();
             });
-        }, `<b class="text-primary"><i class="fa-duotone fa-regular fa-sparkles"></i> ${escapeHtml(row?.info?.name)}</b> <span class="text-primary" style="font-size:14px;">${escapeHtml(row?.info?.version)}</span> <i class="fa-duotone fa-regular fa-right-long text-danger"></i> <span class="text-success" style="font-size:14px;">${escapeHtml(plugin.version)}</span>`, "立即更新");
+        }, `<b class="text-primary"><i class="fa-duotone fa-regular fa-sparkles"></i> ${escapeHtml(row?.info?.name)}</b> <span class="text-primary" style="font-size:14px;">${escapeHtml(row?.info?.version)}</span> <i class="fa-duotone fa-regular fa-right-long text-danger"></i> <span class="text-success" style="font-size:14px;">${escapeHtml(plugin.version)}</span>`, i18n("立即更新"));
     };
 
     const modal = (title, assign = {}) => {
@@ -186,8 +186,8 @@
                                 type: 1,
                                 shade: 0.4,
                                 shadeClose: true,
-                                title: '<i class="fa-duotone fa-regular fa-ban-bug"></i> 日志',
-                                btn: ["清空日志", "关闭"],
+                                title: '<i class="fa-duotone fa-regular fa-ban-bug"></i> ' + i18n('日志'),
+                                btn: [i18n("清空日志"), i18n("关闭")],
                                 content: '<textarea class="log-textarea form-control" style="width:100%;height:100%;resize:none;"></textarea>',
                                 area: mobile ? ["100%", "100%"] : ["860px", "660px"],
                                 skin: mobile ? 'admin-mobile-layer-popup admin-mobile-layer-popup--task admin-mobile-layer-popup--danger-action md-pay-plugin-log-layer' : 'md-pay-plugin-log-layer',
@@ -200,9 +200,9 @@
                                         util.post('/admin/api/pay/ClearPluginLog', {handle: mapItem.id}, res => {
                                             if (!controllerActive || _LogPid !== logPid || !$logText) return;
                                             $logText.val('');
-                                            layer.msg("日志已清空");
+                                            layer.msg(i18n("日志已清空"));
                                         });
-                                    }, '确认清空日志？', '确认清空');
+                                    }, i18n('确认清空日志？'), i18n('确认清空'));
                                     return false;
                                 },
                                 success: (layero, index) => {
@@ -257,7 +257,7 @@
         , {
             field: 'version',
             class: "nowrap",
-            title: '<span id="updateNum">版本号</span>',
+            title: '<span id="updateNum">' + i18n('版本号') + '</span>',
             formatter: function (val, item) {
                 const currentVersion = item?.info?.version;
                 return '<span class="md-version">v' + escapeHtml(currentVersion) + '</span>' + pluginUpdate.renderButton(item.id, currentVersion);
@@ -301,7 +301,7 @@
                     },
                     error: res => {
                         if (!controllerActive) return;
-                        message.error(res?.msg || '置顶状态保存失败');
+                        message.error(res?.msg || i18n('置顶状态保存失败'));
                         table.refresh(true);
                     },
                     fail: () => {
@@ -325,7 +325,7 @@
                 {
                     icon: 'fa-duotone fa-regular fa-trash-can text-danger',
                     click: (event, value, row, index) => {
-                        message.ask(`你想要卸载 <b class="text-danger">${escapeHtml(row?.info?.name ?? row.id)}</b> 吗，该操作会清空插件所有数据，且无法恢复，请慎重操作！`, () => {
+                        message.ask(`${i18n('你想要卸载')} <b class="text-danger">${escapeHtml(row?.info?.name ?? row.id)}</b> ${i18n('吗，该操作会清空插件所有数据，且无法恢复，请慎重操作！')}`, () => {
                             if (!controllerActive) return;
                             util.post('/admin/api/app/uninstall', {
                                 plugin_key: row.id,
@@ -345,7 +345,7 @@
     table.onResponse(response => {
         pluginUpdate.updateNum = 0;
         pluginUpdate.countedKeys.clear();
-        $(`#updateNum`).html("版本号");
+        $(`#updateNum`).html(i18n("版本号"));
         (response?.data?.list ?? []).forEach(item => {
             const available = pluginUpdate.getAvailable(item.id, item?.info?.version);
             item.__adminMobilePayUpdateVersion = available?.version ?? '';

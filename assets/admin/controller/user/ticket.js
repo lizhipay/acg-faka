@@ -43,7 +43,7 @@
     const isTerminal = status => Number(status) >= 2;
     const isOpen = () => $drawer.hasClass('is-open') && !$drawer.prop('hidden');
     const isCurrent = (token, id) => !pageDestroyed && token === session && id === ticketId && isOpen();
-    const statusText = status => ({0: '待客服', 1: '等待用户', 2: '已解决', 3: '已关闭'})[Number(status)] || '处理中';
+    const statusText = status => ({0: i18n('待客服'), 1: i18n('等待用户'), 2: i18n('已解决'), 3: i18n('已关闭')})[Number(status)] || i18n('处理中');
 
     const setMobileMenu = open => {
         const active = !!open && isOpen();
@@ -64,7 +64,7 @@
         $composer.toggleClass('is-expanded', active);
         $composer.find('.md-ticket-composer-tools')
             .attr('aria-expanded', active ? 'true' : 'false')
-            .attr('aria-label', active ? '收起回复工具' : '展开回复工具');
+            .attr('aria-label', active ? i18n('收起回复工具') : i18n('展开回复工具'));
         requestAnimationFrame(() => {
             $panel.scrollTop(0);
             editorApi?.cm?.refresh();
@@ -193,27 +193,27 @@
         const id = Number(row.id);
         const excerpt = row.last_message_excerpt
             ? `<span class="md-ticket-cell__excerpt">${esc(row.last_message_excerpt)}</span>`
-            : '<span class="md-ticket-cell__excerpt">尚无沟通摘要</span>';
-        return `<div class="md-ticket-cell${unread ? ' md-ticket-cell--unread' : ''}" role="button" tabindex="0" data-ticket-id="${Number.isInteger(id) && id > 0 ? id : ''}" aria-label="查看工单 ${esc(row.ticket_no || '')}">`
+            : '<span class="md-ticket-cell__excerpt">' + i18n('尚无沟通摘要') + '</span>';
+        return `<div class="md-ticket-cell${unread ? ' md-ticket-cell--unread' : ''}" role="button" tabindex="0" data-ticket-id="${Number.isInteger(id) && id > 0 ? id : ''}" aria-label="${i18n('查看工单')} ${esc(row.ticket_no || '')}">`
             + `<span class="md-ticket-cell__top"><span class="md-ticket-unread-dot" aria-hidden="true"></span><span class="md-ticket-cell__number">${esc(row.ticket_no)}</span></span>`
-            + `<strong class="md-ticket-cell__title">${esc(row.title || '未命名工单')}</strong>${excerpt}</div>`;
+            + `<strong class="md-ticket-cell__title">${esc(row.title || i18n('未命名工单'))}</strong>${excerpt}</div>`;
     };
 
     const typePriorityCell = row => `<div class="md-ticket-badge-stack">${_Dict.result('_ticket_type', row.type) || '-'}${_Dict.result('_ticket_priority', row.priority) || ''}</div>`;
 
     const relationCell = row => {
         if (Number(row.type) === 0) {
-            if (!row.commodity_name) return '<span class="md-ticket-muted">未关联商品</span>';
-            return `<div class="md-ticket-relation"><span class="md-ticket-relation__icon"><i class="fa-duotone fa-regular fa-box"></i></span><div><strong>${esc(row.commodity_name)}</strong><span>咨询商品</span></div></div>`;
+            if (!row.commodity_name) return '<span class="md-ticket-muted">' + i18n('未关联商品') + '</span>';
+            return `<div class="md-ticket-relation"><span class="md-ticket-relation__icon"><i class="fa-duotone fa-regular fa-box"></i></span><div><strong>${esc(row.commodity_name)}</strong><span>${i18n('咨询商品')}</span></div></div>`;
         }
-        if (!row.order_trade_no) return '<span class="md-ticket-muted">未关联订单</span>';
-        const source = row.order_source === 2 || row.order_source === 'guest' ? '游客订单' : '账号订单';
+        if (!row.order_trade_no) return '<span class="md-ticket-muted">' + i18n('未关联订单') + '</span>';
+        const source = row.order_source === 2 || row.order_source === 'guest' ? i18n('游客订单') : i18n('账号订单');
         return `<div class="md-ticket-relation"><span class="md-ticket-relation__icon md-ticket-relation__icon--order"><i class="fa-duotone fa-regular fa-receipt"></i></span><div><strong>${esc(row.order_trade_no)}</strong><span>${source}</span></div></div>`;
     };
 
     const activityCell = row => {
-        const actor = Number(row.last_sender_type) === 0 ? '用户' : (Number(row.last_sender_type) === 1 ? '管理员' : '系统');
-        const excerpt = row.last_message_excerpt ? esc(row.last_message_excerpt) : '暂无新动态';
+        const actor = Number(row.last_sender_type) === 0 ? i18n('用户') : (Number(row.last_sender_type) === 1 ? i18n('管理员') : i18n('系统'));
+        const excerpt = row.last_message_excerpt ? esc(row.last_message_excerpt) : i18n('暂无新动态');
         return `<div class="md-ticket-activity"><span><b>${actor}</b> · ${excerpt}</span><time>${esc(row.last_message_time || row.update_time || row.create_time || '-')}</time></div>`;
     };
 
@@ -248,15 +248,15 @@
         $drawer.find('.md-ticket-composer').prop('hidden', terminal);
         $drawer.find('.md-ticket-terminal').prop('hidden', !terminal);
         $drawer.find('.md-ticket-live-dot').toggleClass('is-terminal', terminal);
-        $drawer.find('.md-ticket-terminal strong').text(ticket.status === 2 ? '这张工单已经解决' : '这张工单已经关闭');
+        $drawer.find('.md-ticket-terminal strong').text(ticket.status === 2 ? i18n('这张工单已经解决') : i18n('这张工单已经关闭'));
         $drawer.find('.md-ticket-terminal span').text(ticket.status === 2
-            ? '管理员已给出最终答复，历史沟通仍会完整保留。'
-            : '工单已被管理员直接关闭，历史沟通仍会完整保留。');
+            ? i18n('管理员已给出最终答复，历史沟通仍会完整保留。')
+            : i18n('工单已被管理员直接关闭，历史沟通仍会完整保留。'));
         if (terminal) {
             stopPolling();
             drafts.delete(ticketId);
             if (editorApi) editorApi.setHTML('');
-            setSyncState('记录已归档');
+            setSyncState(i18n('记录已归档'));
         }
         setBusy(busy);
     };
@@ -266,7 +266,7 @@
             const user = ticket?.user || {};
             const image = safeImageUrl(user.avatar);
             if (image) return `<img src="${esc(image)}" alt="">`;
-            return esc(String(user.username || '用').charAt(0).toUpperCase());
+            return esc(String(user.username || i18n('用')).charAt(0).toUpperCase());
         }
         return '<i class="fa-duotone fa-regular fa-user-shield"></i>';
     };
@@ -275,7 +275,7 @@
         const senderType = Number(messageItem.sender_type);
         const kind = Number(messageItem.kind || 0);
         if (senderType === 2 || kind === 2) {
-            return $(`<div class="md-ticket-event" data-message-id="${Number(messageItem.id) || 0}"><span><i class="fa-duotone fa-regular fa-lock-keyhole"></i>${esc(messageItem.content || '工单状态已更新')}</span><time>${esc(messageItem.create_time || '')}</time></div>`);
+            return $(`<div class="md-ticket-event" data-message-id="${Number(messageItem.id) || 0}"><span><i class="fa-duotone fa-regular fa-lock-keyhole"></i>${esc(messageItem.content || i18n('工单状态已更新'))}</span><time>${esc(messageItem.create_time || '')}</time></div>`);
         }
 
         const admin = senderType === 1;
@@ -288,7 +288,7 @@
             + `<div class="md-ticket-message__bubble markdown-body">${sanitizeRichHtml(messageItem.content)}</div></div></article>`;
         const $node = $(html);
         $node.find('a').attr({target: '_blank', rel: 'noopener noreferrer'});
-        $node.find('img').attr({loading: 'lazy', role: 'button', tabindex: '0', 'aria-label': '预览工单图片'});
+        $node.find('img').attr({loading: 'lazy', role: 'button', tabindex: '0', 'aria-label': i18n('预览工单图片')});
         return $node;
     };
 
@@ -320,7 +320,7 @@
         });
 
         if (initial && added === 0) {
-            $messages.html('<div class="md-ticket-empty"><i class="fa-duotone fa-regular fa-comment"></i><strong>还没有沟通记录</strong><span>用户提交的内容会显示在这里</span></div>');
+            $messages.html('<div class="md-ticket-empty"><i class="fa-duotone fa-regular fa-comment"></i><strong>' + i18n('还没有沟通记录') + '</strong><span>' + i18n('用户提交的内容会显示在这里') + '</span></div>');
         } else if (added > 0) {
             $messages.find('.md-ticket-empty').remove();
         }
@@ -359,7 +359,7 @@
         const visual = avatar
             ? `<img src="${esc(avatar)}" alt="">`
             : `<span>${esc(String(user.username || '?').charAt(0).toUpperCase())}</span>`;
-        $drawer.find('.ticket-user-context').html(`<div class="md-ticket-person"><div class="md-ticket-person__avatar">${visual}</div><div><strong>${esc(user.username || '未知用户')}</strong><span>会员 ID · ${esc(user.id || '-')}</span></div></div>`);
+        $drawer.find('.ticket-user-context').html(`<div class="md-ticket-person"><div class="md-ticket-person__avatar">${visual}</div><div><strong>${esc(user.username || i18n('未知用户'))}</strong><span>${i18n('会员')} ID · ${esc(user.id || '-')}</span></div></div>`);
     };
 
     const contextRow = (label, value, strong = false) => `<div class="md-ticket-context-row"><span>${esc(label)}</span><${strong ? 'strong' : 'em'}>${esc(value || '-')}</${strong ? 'strong' : 'em'}></div>`;
@@ -369,15 +369,15 @@
             const commodity = current.commodity || {};
             const cover = safeImageUrl(commodity.cover);
             const visual = cover ? `<img src="${esc(cover)}" alt="">` : '<i class="fa-duotone fa-regular fa-box"></i>';
-            $drawer.find('.ticket-relation-context').html(`<div class="md-ticket-product"><div class="md-ticket-product__cover">${visual}</div><div><span>咨询商品</span><strong>${esc(commodity.name || current.commodity_name || '未关联商品')}</strong><em>商品 ID · ${esc(commodity.id || '-')}</em></div></div>`);
+            $drawer.find('.ticket-relation-context').html(`<div class="md-ticket-product"><div class="md-ticket-product__cover">${visual}</div><div><span>${i18n('咨询商品')}</span><strong>${esc(commodity.name || current.commodity_name || i18n('未关联商品'))}</strong><em>${i18n('商品')} ID · ${esc(commodity.id || '-')}</em></div></div>`);
             return;
         }
 
         const order = current.order || {};
         const guest = Number(current.order_source) === 2 || current.order_source === 'guest';
         $drawer.find('.ticket-relation-context').html(
-            `<div class="md-ticket-order-head"><span class="md-ticket-relation__icon md-ticket-relation__icon--order"><i class="fa-duotone fa-regular fa-receipt"></i></span><div><span>${guest ? '游客订单' : '账号订单'}</span><strong>${esc(order.trade_no || current.order_trade_no || '未关联订单')}</strong></div></div>`
-            + `<div class="md-ticket-context-rows">${contextRow('订单金额', order.amount !== undefined ? `¥${order.amount}` : '-')}${contextRow('购买数量', order.card_num)}${contextRow('下单时间', order.create_time)}${contextRow('支付时间', order.pay_time)}</div>`
+            `<div class="md-ticket-order-head"><span class="md-ticket-relation__icon md-ticket-relation__icon--order"><i class="fa-duotone fa-regular fa-receipt"></i></span><div><span>${guest ? i18n('游客订单') : i18n('账号订单')}</span><strong>${esc(order.trade_no || current.order_trade_no || i18n('未关联订单'))}</strong></div></div>`
+            + `<div class="md-ticket-context-rows">${contextRow(i18n('订单金额'), order.amount !== undefined ? `¥${order.amount}` : '-')}${contextRow(i18n('购买数量'), order.card_num)}${contextRow(i18n('下单时间'), order.create_time)}${contextRow(i18n('支付时间'), order.pay_time)}</div>`
         );
     };
 
@@ -389,25 +389,25 @@
             return;
         }
         $card.prop('hidden', false);
-        $drawer.find('.ticket-proof-context').html(`<button type="button" class="md-ticket-proof" data-proof="${esc(proof)}"><img src="${esc(proof)}" alt="购买凭证"><span><i class="fa-duotone fa-regular fa-eye"></i>点击查看原图</span></button>`);
+        $drawer.find('.ticket-proof-context').html(`<button type="button" class="md-ticket-proof" data-proof="${esc(proof)}"><img src="${esc(proof)}" alt="${i18n('购买凭证')}"><span><i class="fa-duotone fa-regular fa-eye"></i>${i18n('点击查看原图')}</span></button>`);
     };
 
     const renderTicket = current => {
         ticket = current;
         const user = current.user || {};
-        const memberName = String(user.username || '未知用户').trim() || '未知用户';
+        const memberName = String(user.username || i18n('未知用户')).trim() || i18n('未知用户');
         const memberId = user.id == null ? '' : String(user.id).trim();
-        $drawer.find('.md-ticket-number').text(current.ticket_no || `工单 #${current.id}`);
-        $drawer.find('.md-ticket-hero__title').text(current.title || '未命名工单');
-        $drawer.find('.md-ticket-mobile-title').text(current.title || '未命名工单');
+        $drawer.find('.md-ticket-number').text(current.ticket_no || `${i18n('工单')} #${current.id}`);
+        $drawer.find('.md-ticket-hero__title').text(current.title || i18n('未命名工单'));
+        $drawer.find('.md-ticket-mobile-title').text(current.title || i18n('未命名工单'));
         $drawer.find('.md-ticket-mobile-member').text(memberName + (memberId ? `#${memberId}` : ''));
         $drawer.find('.md-ticket-detail-type').html(_Dict.result('_ticket_type', Number(current.type)) || '');
         $drawer.find('.md-ticket-detail-priority').html(_Dict.result('_ticket_priority', Number(current.priority)) || '');
-        $drawer.find('.md-ticket-detail-time').html(`<i class="fa-duotone fa-regular fa-clock"></i> 创建于 ${esc(current.create_time || '-')}`);
+        $drawer.find('.md-ticket-detail-time').html(`<i class="fa-duotone fa-regular fa-clock"></i> ${i18n('创建于')} ${esc(current.create_time || '-')}`);
         renderUserContext(current.user);
         renderRelationContext(current);
         renderProof(current);
-        $drawer.find('.ticket-time-context').html(`<div class="md-ticket-context-rows">${contextRow('创建时间', current.create_time, true)}${contextRow('最后更新', current.update_time || current.last_message_time, true)}${contextRow('工单编号', current.ticket_no, true)}</div>`);
+        $drawer.find('.ticket-time-context').html(`<div class="md-ticket-context-rows">${contextRow(i18n('创建时间'), current.create_time, true)}${contextRow(i18n('最后更新'), current.update_time || current.last_message_time, true)}${contextRow(i18n('工单编号'), current.ticket_no, true)}</div>`);
         applyStatus(current.status);
     };
 
@@ -468,37 +468,37 @@
         historyLoading = false;
         $drawer.removeClass('has-error').addClass('is-loading');
         resetMobileLayers();
-        $drawer.find('.md-ticket-number').text('正在读取工单');
-        $drawer.find('.md-ticket-hero__title').text('请稍候…');
-        $drawer.find('.md-ticket-mobile-title').text('工单处理');
-        $drawer.find('.md-ticket-mobile-member').text('正在读取…');
-        $drawer.find('.md-ticket-mobile-status').text('连接中');
+        $drawer.find('.md-ticket-number').text(i18n('正在读取工单'));
+        $drawer.find('.md-ticket-hero__title').text(i18n('请稍候…'));
+        $drawer.find('.md-ticket-mobile-title').text(i18n('工单处理'));
+        $drawer.find('.md-ticket-mobile-member').text(i18n('正在读取…'));
+        $drawer.find('.md-ticket-mobile-status').text(i18n('连接中'));
         $drawer.find('.md-ticket-detail-type, .md-ticket-detail-priority, .md-ticket-detail-status, .md-ticket-detail-time').empty();
         $drawer.find('.md-ticket-live-dot').removeClass('is-terminal');
         $drawer.find('.md-ticket-hero__actions, .md-ticket-context, .md-ticket-composer').prop('hidden', false);
         $drawer.find('.md-ticket-terminal, .ticket-proof-card').prop('hidden', true);
         $drawer.find('.ticket-user-context, .ticket-relation-context, .ticket-time-context').html('<div class="md-ticket-context-skeleton"></div>');
         $drawer.find('.ticket-proof-context').empty();
-        $messages.html('<div class="md-ticket-loading"><span></span><span></span><span></span><p>正在整理沟通记录</p></div>');
-        $historyButton.prop('hidden', true).prop('disabled', false).removeClass('is-loading').find('span').text('加载更早的沟通记录');
-        setSyncState('正在连接', true);
+        $messages.html('<div class="md-ticket-loading"><span></span><span></span><span></span><p>' + i18n('正在整理沟通记录') + '</p></div>');
+        $historyButton.prop('hidden', true).prop('disabled', false).removeClass('is-loading').find('span').text(i18n('加载更早的沟通记录'));
+        setSyncState(i18n('正在连接'), true);
         setBusy(true);
     };
 
     const showFatal = text => {
         stopPolling();
         $drawer.removeClass('is-loading').addClass('has-error').attr('aria-busy', 'false');
-        $drawer.find('.md-ticket-number').text('读取失败');
-        $drawer.find('.md-ticket-hero__title').text('无法读取这张工单');
-        $drawer.find('.md-ticket-mobile-title').text('读取失败');
-        $drawer.find('.md-ticket-mobile-member').text('请返回后重试');
-        $drawer.find('.md-ticket-mobile-status').text('连接失败');
+        $drawer.find('.md-ticket-number').text(i18n('读取失败'));
+        $drawer.find('.md-ticket-hero__title').text(i18n('无法读取这张工单'));
+        $drawer.find('.md-ticket-mobile-title').text(i18n('读取失败'));
+        $drawer.find('.md-ticket-mobile-member').text(i18n('请返回后重试'));
+        $drawer.find('.md-ticket-mobile-status').text(i18n('连接失败'));
         $drawer.find('.md-ticket-detail-type, .md-ticket-detail-priority, .md-ticket-detail-status, .md-ticket-detail-time').empty();
-        $messages.html(`<div class="md-ticket-empty md-ticket-empty--error"><i class="fa-duotone fa-regular fa-circle-exclamation"></i><strong>${esc(text || '工单不存在或已失效')}</strong><span>你可以关闭抽屉后重试</span><button type="button" class="btn btn-light-primary md-ticket-fatal-close">关闭详情</button></div>`);
+        $messages.html(`<div class="md-ticket-empty md-ticket-empty--error"><i class="fa-duotone fa-regular fa-circle-exclamation"></i><strong>${esc(text || i18n('工单不存在或已失效'))}</strong><span>${i18n('你可以关闭抽屉后重试')}</span><button type="button" class="btn btn-light-primary md-ticket-fatal-close">${i18n('关闭详情')}</button></div>`);
         $drawer.find('.md-ticket-context, .md-ticket-composer, .md-ticket-terminal, .md-ticket-hero__actions').prop('hidden', true);
         $historyButton.prop('hidden', true);
         busy = false;
-        setSyncState('读取失败');
+        setSyncState(i18n('读取失败'));
     };
 
     const pollMessages = () => {
@@ -506,12 +506,12 @@
         const token = session;
         const id = ticketId;
         polling = true;
-        setSyncState('同步中', true);
+        setSyncState(i18n('同步中'), true);
         const finishPoll = text => {
             if (!isCurrent(token, id)) return;
             polling = false;
             if (ticket && isTerminal(ticket.status)) {
-                setSyncState('记录已归档');
+                setSyncState(i18n('记录已归档'));
                 return;
             }
             setSyncState(text);
@@ -520,8 +520,8 @@
             url: '/admin/api/ticket/messages',
             data: {id: id, after_id: lastMessageId},
             loader: false,
-            error: () => finishPoll('稍后重试'),
-            fail: () => finishPoll('稍后重试'),
+            error: () => finishPoll(i18n('稍后重试')),
+            fail: () => finishPoll(i18n('稍后重试')),
             done: response => {
                 if (!isCurrent(token, id)) return;
                 const data = response.data || {};
@@ -536,7 +536,7 @@
                     refreshList(80);
                     $(document).trigger('ticket:badge-refresh');
                 }
-                finishPoll('已同步');
+                finishPoll(i18n('已同步'));
             }
         });
     };
@@ -557,7 +557,7 @@
                 if (!isCurrent(token, id)) return;
                 const data = response.data || {};
                 if (!data.ticket) {
-                    showFatal('没有找到这张工单');
+                    showFatal(i18n('没有找到这张工单'));
                     return;
                 }
                 renderTicket(data.ticket);
@@ -566,13 +566,13 @@
                 initEditor();
                 $drawer.removeClass('is-loading').attr('aria-busy', 'false');
                 setBusy(false);
-                setSyncState(isTerminal(ticket.status) ? '记录已归档' : '已同步');
+                setSyncState(isTerminal(ticket.status) ? i18n('记录已归档') : i18n('已同步'));
                 startPolling();
                 refreshList(80);
                 $(document).trigger('ticket:badge-refresh');
             },
-            error: response => { if (isCurrent(token, id)) showFatal(response?.msg || '工单读取失败'); },
-            fail: () => { if (isCurrent(token, id)) showFatal('网络连接失败，请稍后重试'); }
+            error: response => { if (isCurrent(token, id)) showFatal(response?.msg || i18n('工单读取失败')); },
+            fail: () => { if (isCurrent(token, id)) showFatal(i18n('网络连接失败，请稍后重试')); }
         });
     };
 
@@ -613,8 +613,8 @@
         const token = session;
         const id = ticketId;
         historyLoading = true;
-        $historyButton.prop('disabled', true).addClass('is-loading').find('span').text('正在加载…');
-        const finish = (hasMore, text = '加载更早的沟通记录') => {
+        $historyButton.prop('disabled', true).addClass('is-loading').find('span').text(i18n('正在加载…'));
+        const finish = (hasMore, text = i18n('加载更早的沟通记录')) => {
             if (!isCurrent(token, id)) return;
             historyLoading = false;
             $historyButton.prop('disabled', false).removeClass('is-loading').prop('hidden', !hasMore).find('span').text(text);
@@ -629,8 +629,8 @@
                 prependMessages(data.list || []);
                 finish(!!data.has_more);
             },
-            error: () => finish(true, '加载失败，点击重试'),
-            fail: () => finish(true, '加载失败，点击重试')
+            error: () => finish(true, i18n('加载失败，点击重试')),
+            fail: () => finish(true, i18n('加载失败，点击重试'))
         });
     };
 
@@ -662,12 +662,12 @@
                     if (data.status !== undefined) applyStatus(data.status);
                     editorApi?.setHTML('');
                     setComposerExpanded(false);
-                    message.success(mode === 'resolve' ? '回复已发送，工单已解决' : '回复已发送');
+                    message.success(mode === 'resolve' ? i18n('回复已发送，工单已解决') : i18n('回复已发送'));
                     setBusy(false);
                 },
                 error: response => {
                     if (!isCurrent(token, id)) return;
-                    message.error(response?.msg || '回复发送失败');
+                    message.error(response?.msg || i18n('回复发送失败'));
                     setBusy(false);
                 },
                 fail: () => {
@@ -703,7 +703,7 @@
                 },
                 error: response => {
                     if (!isCurrent(token, id)) return;
-                    message.error(response?.msg || '关闭工单失败');
+                    message.error(response?.msg || i18n('关闭工单失败'));
                     setBusy(false);
                 },
                 fail: () => {
@@ -712,7 +712,7 @@
                     setBusy(false);
                 }
             });
-        }, '直接关闭工单？', '确认关闭');
+        }, i18n('直接关闭工单？'), i18n('确认关闭'));
     };
 
     const closeDrawer = (refresh = true) => {
@@ -823,7 +823,7 @@
         .on('click.mdTicketDrawer', '.ticket-resolve-action', () => {
             if (busy) return;
             setMobileMenu(false);
-            message.ask('这条回复会作为最终答复发送，并把工单标记为“已解决”。', () => sendReply('resolve'), '回复并解决工单？', '确认发送');
+            message.ask('这条回复会作为最终答复发送，并把工单标记为“已解决”。', () => sendReply('resolve'), i18n('回复并解决工单？'), i18n('确认发送'));
         })
         .on('click.mdTicketDrawer', '.ticket-close-action', () => {
             setMobileMenu(false);

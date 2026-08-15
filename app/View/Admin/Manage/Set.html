@@ -20,7 +20,7 @@
               <!--begin::Input group-->
               <div class="row mb-6">
                 <!--begin::Label-->
-                <label class="col-lg-4 col-form-label fw-bold fs-6">头像</label>
+                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("头像")}</label>
                 <!--end::Label-->
                 <!--begin::Col-->
                 <div class="col-lg-8">
@@ -34,7 +34,7 @@
                     <!--begin::Label-->
                     <label class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
                            data-kt-image-input-action="change" data-bs-toggle="tooltip"
-                           title="更换头像" aria-label="更换头像">
+                           title="#{t('更换头像')}" aria-label="#{t('更换头像')}">
                       <i class="fa-duotone fa-regular fa-pen"></i>
                       <!--begin::Inputs-->
                       <input type="file" class="upload-logo"
@@ -46,14 +46,14 @@
                     <!--begin::Cancel-->
                     <span class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
                           data-kt-image-input-action="cancel" data-bs-toggle="tooltip"
-                          title="取消更换头像" aria-label="取消更换头像">
+                          title="#{t('取消更换头像')}" aria-label="#{t('取消更换头像')}">
 																<i class="fa-duotone fa-regular fa-xmark"></i>
 															</span>
                     <!--end::Cancel-->
                   </div>
                   <!--end::Image input-->
                   <!--begin::Hint-->
-                  <div class="form-text">支持文件格式: png, jpg, jpeg, ico.</div>
+                  <div class="form-text">#{t("支持文件格式: png, jpg, jpeg, ico.")}</div>
                   <!--end::Hint-->
                 </div>
                 <!--end::Col-->
@@ -63,14 +63,14 @@
               <!--begin::Input group-->
               <div class="row mb-6">
                 <!--begin::Label-->
-                <label class="col-lg-4 col-form-label required fw-bold fs-6">昵称</label>
+                <label class="col-lg-4 col-form-label required fw-bold fs-6">#{t("昵称")}</label>
                 <!--end::Label-->
                 <!--begin::Col-->
                 <div class="col-lg-8 fv-row">
                   <input type="text" name="nickname"
                          class="form-control form-control-lg form-control-solid"
                          autocomplete="nickname" maxlength="32"
-                         placeholder="昵称" value="#{$user.nickname|escape:'html'}"/>
+                         placeholder="#{t('昵称')}" value="#{$user.nickname|escape:'html'}"/>
                 </div>
                 <!--end::Col-->
               </div>
@@ -79,13 +79,13 @@
               <!--begin::Input group-->
               <div class="row mb-6">
                 <!--begin::Label-->
-                <label class="col-lg-4 col-form-label  fw-bold fs-6">旧密码</label>
+                <label class="col-lg-4 col-form-label  fw-bold fs-6">#{t("旧密码")}</label>
                 <!--end::Label-->
                 <!--begin::Col-->
                 <div class="col-lg-8 fv-row">
                   <input type="password" name="old_password"
                          class="form-control form-control-lg form-control-solid"
-                         placeholder="不修改请留空" value=""/>
+                         placeholder="#{t('不修改请留空')}" value=""/>
                 </div>
                 <!--end::Col-->
               </div>
@@ -95,14 +95,14 @@
               <!--begin::Input group-->
               <div class="row mb-6">
                 <!--begin::Label-->
-                <label class="col-lg-4 col-form-label  fw-bold fs-6">新密码</label>
+                <label class="col-lg-4 col-form-label  fw-bold fs-6">#{t("新密码")}</label>
                 <!--end::Label-->
                 <!--begin::Col-->
                 <div class="col-lg-8 fv-row">
                   <input type="password" name="password"
                          class="form-control form-control-lg form-control-solid"
                          maxlength="256"
-                         placeholder="不修改请留空" value=""/>
+                         placeholder="#{t('不修改请留空')}" value=""/>
                 </div>
                 <!--end::Col-->
               </div>
@@ -111,14 +111,14 @@
               <!--begin::Input group-->
               <div class="row mb-6">
                 <!--begin::Label-->
-                <label class="col-lg-4 col-form-label  fw-bold fs-6">确认新密码</label>
+                <label class="col-lg-4 col-form-label  fw-bold fs-6">#{t("确认新密码")}</label>
                 <!--end::Label-->
                 <!--begin::Col-->
                 <div class="col-lg-8 fv-row">
                   <input type="password" name="re_password"
                          class="form-control form-control-lg form-control-solid"
                          maxlength="256"
-                         placeholder="不修改请留空" value=""/>
+                         placeholder="#{t('不修改请留空')}" value=""/>
                 </div>
                 <!--end::Col-->
               </div>
@@ -126,12 +126,12 @@
 
               <!--begin::Input group 谷歌验证器-->
               <div class="row mb-6">
-                <label class="col-lg-4 col-form-label fw-bold fs-6">谷歌验证器</label>
+                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("谷歌验证器")}</label>
                 <div class="col-lg-8 fv-row">
-                  <span id="g2fa-status" class="text-muted me-2" role="status">正在读取绑定状态…</span>
-                  <button type="button" id="g2fa-bind-btn" class="btn btn-sm btn-light-primary" style="display:none;"><i class="fa-duotone fa-regular fa-qrcode me-1"></i>绑定</button>
-                  <button type="button" id="g2fa-unbind-btn" class="btn btn-sm btn-light-danger" style="display:none;"><i class="fa-duotone fa-regular fa-link-slash me-1"></i>解绑</button>
-                  <button type="button" id="g2fa-retry-btn" class="btn btn-sm btn-light" style="display:none;"><i class="fa-duotone fa-regular fa-rotate me-1"></i>重试</button>
+                  <span id="g2fa-status" class="text-muted me-2" role="status">#{t("正在读取绑定状态…")}</span>
+                  <button type="button" id="g2fa-bind-btn" class="btn btn-sm btn-light-primary" style="display:none;"><i class="fa-duotone fa-regular fa-qrcode me-1"></i>#{t("绑定")}</button>
+                  <button type="button" id="g2fa-unbind-btn" class="btn btn-sm btn-light-danger" style="display:none;"><i class="fa-duotone fa-regular fa-link-slash me-1"></i>#{t("解绑")}</button>
+                  <button type="button" id="g2fa-retry-btn" class="btn btn-sm btn-light" style="display:none;"><i class="fa-duotone fa-regular fa-rotate me-1"></i>#{t("重试")}</button>
                 </div>
               </div>
               <!--end::Input group 谷歌验证器-->
@@ -141,8 +141,8 @@
             <!--end::Card body-->
             <!--begin::Actions-->
             <div class="card-footer d-flex justify-content-center py-6 px-9">
-              <button type="button" class="btn btn-light-primary save-data" style="margin-right: 20px;"><i class="fa-duotone fa-regular fa-floppy-disk"></i> 确认修改</button>
-              <a href="/admin/authentication/logout" class="btn btn-light-danger logout"><i class="fa-duotone fa-regular fa-right-from-bracket"></i> 注销登录</a>
+              <button type="button" class="btn btn-light-primary save-data" style="margin-right: 20px;"><i class="fa-duotone fa-regular fa-floppy-disk"></i> #{t("确认修改")}</button>
+              <a href="/admin/authentication/logout" class="btn btn-light-danger logout"><i class="fa-duotone fa-regular fa-right-from-bracket"></i> #{t("注销登录")}</a>
             </div>
             <!--end::Actions-->
           </form>
@@ -156,23 +156,23 @@
       <div class="card mb-5 mb-xl-10 md-device-sessions" aria-labelledby="md-device-sessions-title">
         <div class="card-header border-0 pt-6">
           <div class="card-title d-flex flex-column align-items-start">
-            <h2 id="md-device-sessions-title" class="fw-bolder mb-1">登录设备</h2>
-            <span class="text-muted fs-7">每台设备独立登录，可随时退出不再使用的设备</span>
+            <h2 id="md-device-sessions-title" class="fw-bolder mb-1">#{t("登录设备")}</h2>
+            <span class="text-muted fs-7">#{t("每台设备独立登录，可随时退出不再使用的设备")}</span>
           </div>
           <div class="card-toolbar d-flex flex-wrap gap-2" data-admin-mobile-local-actions>
             <button type="button" class="btn btn-light-danger md-session-revoke-others">
-              <i class="fa-duotone fa-regular fa-right-from-bracket"></i>退出其他设备
+              <i class="fa-duotone fa-regular fa-right-from-bracket"></i>#{t("退出其他设备")}
             </button>
             <button type="button" class="btn btn-danger md-session-revoke-all">
-              <i class="fa-duotone fa-regular fa-shield-xmark"></i>退出全部设备
+              <i class="fa-duotone fa-regular fa-shield-xmark"></i>#{t("退出全部设备")}
             </button>
           </div>
         </div>
         <div class="card-body pt-3">
-          <div id="md-device-session-status" class="text-muted py-6 text-center" role="status">正在读取登录设备…</div>
+          <div id="md-device-session-status" class="text-muted py-6 text-center" role="status">#{t("正在读取登录设备…")}</div>
           <div id="md-device-session-list" class="md-device-session-list" data-admin-mobile-local-actions aria-live="polite"></div>
           <button type="button" class="btn btn-light-primary md-session-retry mx-auto" style="display:none;">
-            <i class="fa-duotone fa-regular fa-rotate"></i>重新读取
+            <i class="fa-duotone fa-regular fa-rotate"></i>#{t("重新读取")}
           </button>
         </div>
       </div>

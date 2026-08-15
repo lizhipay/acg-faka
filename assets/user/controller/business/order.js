@@ -19,38 +19,38 @@
     };
     const hasPermission = (row, permission) => row?.merchant_permissions?.[permission] === true;
     const deviceLabel = (value, row) => {
-        if (!hasPermission(row, 'view_purchase_info')) return '受保护';
+        if (!hasPermission(row, 'view_purchase_info')) return i18n('受保护');
         return ({
             0: `${util.icon('fa-duotone fa-regular fa-window')} PC`,
-            1: `${util.icon('fa-duotone fa-regular fa-robot')} 安卓`,
+            1: `${util.icon('fa-duotone fa-regular fa-robot')} ${i18n('安卓')}`,
             2: `${util.icon('fa-duotone fa-regular fa-apple-whole')} IOS`,
             3: `${util.icon('fa-duotone fa-regular fa-tablet')} iPad`
-        })[Number(value)] || '未知设备';
+        })[Number(value)] || i18n('未知设备');
     };
     const safeItem = item => {
         if (!item) return '-';
         const image = item.cover ? `<img src="${escapeHtml(item.cover)}" class="table-item-icon" alt="">` : '';
-        return `<span class="table-item">${image}<span class="table-item-name">${safeInlineHtml(item.name || '未命名商品')}</span></span>`;
+        return `<span class="table-item">${image}<span class="table-item-name">${safeInlineHtml(item.name || i18n('未命名商品'))}</span></span>`;
     };
     const safeUser = item => {
-        if (!item) return '<span class="text-gray">访客</span>';
+        if (!item) return '<span class="text-gray">' + i18n('访客') + '</span>';
         const image = item.avatar ? `<img src="${escapeHtml(item.avatar)}" class="table-item-icon" alt="">` : '';
-        return `<span class="table-item table-item-user">${image}<span class="table-item-name">${escapeHtml(item.username || '会员')}</span></span>`;
+        return `<span class="table-item table-item-user">${image}<span class="table-item-name">${escapeHtml(item.username || i18n('会员'))}</span></span>`;
     };
     const safePay = item => {
         if (!item) return '-';
         const image = item.icon ? `<img src="${escapeHtml(item.icon)}" class="item-icon" alt="">` : '';
-        return `<span class="pay-item">${image}<span class="item-name">${escapeHtml(item.name || '未知方式')}</span></span>`;
+        return `<span class="pay-item">${image}<span class="item-name">${escapeHtml(item.name || i18n('未知方式'))}</span></span>`;
     };
     const openSecret = map => {
         const secret = String(map && map.secret || '');
         const tradeNo = String(map && map.trade_no || '');
         layer.open({
             type: 1,
-            title: `${util.icon("fa-duotone fa-regular fa-eye")} 查看交付内容`,
+            title: `${util.icon("fa-duotone fa-regular fa-eye")} ${i18n('查看交付内容')}`,
             area: util.isPc() ? '520px' : ["100%", "100%"],
             shadeClose: true,
-            content: `<div class="md-secret"><div class="md-secret__meta"><span class="a-badge a-badge-info">订单 ${escapeHtml(tradeNo || '—')}</span><span class="a-badge a-badge-success">只读内容</span></div><pre class="md-secret__code">${escapeHtml(secret || '暂无交付内容')}</pre><div class="md-secret__bar"><button type="button" class="md-secret__btn md-secret__btn--primary" data-order-secret-copy>${util.icon("fa-duotone fa-regular fa-copy")} 复制交付内容</button></div></div>`,
+            content: `<div class="md-secret"><div class="md-secret__meta"><span class="a-badge a-badge-info">${i18n('订单')} ${escapeHtml(tradeNo || '—')}</span><span class="a-badge a-badge-success">${i18n('只读内容')}</span></div><pre class="md-secret__code">${escapeHtml(secret || i18n('暂无交付内容'))}</pre><div class="md-secret__bar"><button type="button" class="md-secret__btn md-secret__btn--primary" data-order-secret-copy>${util.icon("fa-duotone fa-regular fa-copy")} ${i18n('复制交付内容')}</button></div></div>`,
             success: layerObject => {
                 $(layerObject).find('[data-order-secret-copy]').on('click', () => {
                     util.copyTextToClipboard(secret, () => message.success('交付内容已复制'), () => message.error('复制失败，请手动选择内容'));
@@ -101,12 +101,12 @@
                 let d = ``;
 
                 if (__.race) {
-                    d += format.badge(`分类:${escapeHtml(__.race)}`, "a-badge-info");
+                    d += format.badge(`${i18n('分类')}:${escapeHtml(__.race)}`, "a-badge-info");
                 }
 
                 if (!util.isEmptyOrNotJson(__.sku)) {
                     for (const skuKey in __.sku) {
-                        d += format.badge(`${escapeHtml(skuKey)}:${escapeHtml(__.sku[skuKey])}`, "a-badge-info");
+                        d += format.badge(`${escapeHtml(i18n(skuKey))}:${escapeHtml(i18n(__.sku[skuKey]))}`, "a-badge-info");
                     }
                 }
 
@@ -148,7 +148,7 @@
                     title: "手动发货",
                     show: _ => hasPermission(_, 'delivery') && Number(_.status) === 1 && Number(_?.commodity?.delivery_way) === 1,
                     click: (event, value, map, index) => {
-                        modal(`${util.icon("fa-duotone fa-regular fa-truck-ramp-box")} 发货内容`, map);
+                        modal(`${util.icon("fa-duotone fa-regular fa-truck-ramp-box")} ${i18n('发货内容')}`, map);
                     }
                 },
 
@@ -174,12 +174,12 @@
                         const rows = Object.values(parsed).map(item => {
                             const label = item && typeof item === 'object' ? item.cn : '';
                             const content = item && typeof item === 'object' ? item.value : item;
-                            return `<tr><th>${escapeHtml(label || '字段')}</th><td>${escapeHtml(content == null ? '—' : content)}</td></tr>`;
+                            return `<tr><th>${escapeHtml(label || i18n('字段'))}</th><td>${escapeHtml(content == null ? '—' : content)}</td></tr>`;
                         }).join('');
                         layer.open({
                             type: 1,
                             shadeClose: true,
-                            title: `${util.icon('fa-duotone fa-regular fa-rectangle-list')} 购买信息`,
+                            title: `${util.icon('fa-duotone fa-regular fa-rectangle-list')} ${i18n('购买信息')}`,
                             content: `<div class="more-table"><table class="layui-table"><tbody>${rows}</tbody></table></div>`,
                             area: util.isPc() ? "480px" : ["100%", "100%"]
                         });

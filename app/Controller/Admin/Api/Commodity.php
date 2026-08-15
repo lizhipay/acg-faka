@@ -103,40 +103,26 @@ class Commodity extends Manage
      * @param array<string, array<int, int>> $referenceCounts
      * @return array{deletable_ids:int[], deletable_names:string[], blocked_count:int, blocked_names:string[]}
      */
+    /**
+     * 有关联数据不再阻止删除 —— 关联的卡密、订单、优惠券、商户映射、工单
+     * 会由 cascadeDeleteCommodityRelations() 一并删掉。
+     * 这里只负责把名字挑出来，给前端的确认弹窗用。
+     */
     private function commodityDeletionPlan(array $commodityIds, array $namesById, array $referenceCounts): array
     {
-        $deletableIds = [];
         $deletableNames = [];
-        $blockedNames = [];
-        $blockedCount = 0;
-
         foreach ($commodityIds as $commodityId) {
-            $blocked = false;
-            foreach ($referenceCounts as $counts) {
-                if ((int)($counts[$commodityId] ?? 0) > 0) {
-                    $blocked = true;
-                    break;
-                }
+            if (count($deletableNames) >= 3) {
+                break;
             }
-            $name = (string)($namesById[$commodityId] ?? "商品 #{$commodityId}");
-            if ($blocked) {
-                $blockedCount++;
-                if (count($blockedNames) < 3) {
-                    $blockedNames[] = $name;
-                }
-                continue;
-            }
-            $deletableIds[] = $commodityId;
-            if (count($deletableNames) < 3) {
-                $deletableNames[] = $name;
-            }
+            $deletableNames[] = (string)($namesById[$commodityId] ?? "商品 #{$commodityId}");
         }
 
         return [
-            'deletable_ids' => $deletableIds,
+            'deletable_ids' => $commodityIds,
             'deletable_names' => $deletableNames,
-            'blocked_count' => $blockedCount,
-            'blocked_names' => $blockedNames,
+            'blocked_count' => 0,
+            'blocked_names' => [],
         ];
     }
 
@@ -150,6 +136,84 @@ class Commodity extends Manage
      * @return array
      * @throws JSONException
      */
+    /**
+     * 连带删除商品名下的全部关联数据。
+     *
+     * 顺序是有讲究的：先删子表再删主表，否则 order_option / ticket_message
+     * 会变成谁也引用不到的孤儿行。整个过程由 del() 的事务包着，中途失败全回滚。
+     *
+     * !! 这会真的删掉订单和工单 !!
+     * 也就是说该商品的销售与售后历史一并消失，账单统计里对不上。
+     * 这是产品上明确选择的行为（删商品即清干净），不是疏漏。
+     */
+    private function cascadeDeleteCommodityRelations(array $commodityIds): void
+    {
+        $orderIds = \App\Model\Order::query()
+            ->whereIn('commodity_id', $commodityIds)
+            ->pluck('id')
+            ->map(static fn($id): int => (int)$id)
+            ->all();
+        if ($orderIds !== []) {
+            \App\Model\OrderOption::query()->whereIn('order_id', $orderIds)->delete();
+        }
+
+        $ticketIds = \App\Model\Ticket::query()
+            ->whereIn('commodity_id', $commodityIds)
+            ->pluck('id')
+            ->map(static fn($id): int => (int)$id)
+            ->all();
+        if ($ticketIds !== []) {
+            \App\Model\TicketMessage::query()->whereIn('ticket_id', $ticketIds)->delete();
+        }
+
+        \App\Model\Order::query()->whereIn('commodity_id', $commodityIds)->delete();
+        \App\Model\Ticket::query()->whereIn('commodity_id', $commodityIds)->delete();
+        \App\Model\Card::query()->whereIn('commodity_id', $commodityIds)->delete();
+        \App\Model\Coupon::query()->whereIn('commodity_id', $commodityIds)->delete();
+        \App\Model\UserCommodity::query()->whereIn('commodity_id', $commodityIds)->delete();
+
+        $this->detachFromCommodityGroups($commodityIds);
+    }
+
+    /**
+     * 商品分组把成员存成 JSON 数组，没有外键，只能逐个读出来重写。
+     * 删的是「成员引用」不是分组本身 —— 分组里通常还挂着别的商品。
+     */
+    private function detachFromCommodityGroups(array $commodityIds): void
+    {
+        $lookup = array_fill_keys($commodityIds, true);
+
+        foreach (\App\Model\CommodityGroup::query()->orderBy('id')->lockForUpdate()->get() as $group) {
+            $references = $group->commodity_list;
+            if (!is_array($references)) {
+                $references = [$references];
+            }
+
+            $kept = [];
+            $changed = false;
+            foreach ($references as $reference) {
+                if (is_int($reference)) {
+                    $referenceId = $reference;
+                } elseif (is_string($reference) && ctype_digit(trim($reference))) {
+                    $referenceId = (int)trim($reference);
+                } else {
+                    $kept[] = $reference;
+                    continue;
+                }
+                if (isset($lookup[$referenceId])) {
+                    $changed = true;
+                    continue;
+                }
+                $kept[] = $reference;
+            }
+
+            if ($changed) {
+                $group->commodity_list = array_values($kept);
+                $group->save();
+            }
+        }
+    }
+
     private function commodityDeleteImpact(array $requestedIds, bool $lock = false): array
     {
         if ($requestedIds === []) {
@@ -371,16 +435,34 @@ class Commodity extends Manage
             'id', 'category_id', 'name', 'description', 'cover', 'factory_price', 'price', 'user_price',
             'status', 'api_status', 'delivery_way', 'delivery_auto_mode', 'delivery_message', 'contact_type',
             'password_status', 'sort', 'coupon', 'shared_id', 'shared_code', 'shared_premium',
-            'shared_premium_type', 'seckill_status', 'seckill_start_time', 'seckill_end_time', 'draft_status',
+            'shared_premium_type', 'shared_premium_template',
+            'seckill_status', 'seckill_start_time', 'seckill_end_time', 'draft_status',
             'draft_premium', 'inventory_hidden', 'leave_message', 'recommend', 'send_email', 'only_user',
             'purchase_count', 'widget', 'level_price', 'level_disable', 'minimum', 'maximum', 'shared_sync',
             'config', 'hide', 'stock', 'inventory_sync', 'shared_amount_sync', 'shared_config_sync',
+            'tags',
             'pay_intercept',
             'dock_g_id', 'dock_mode', 'dock_mode_value', 'dock_lucky_decimal', 'dock_sync_price',
             'dock_sync_content', 'dock_sync_title', 'dock_sync_now',
             'asyn_request_status', 'asyn_request_type', 'asyn_request_url', 'asyn_request_template',
         ];
         $map = array_intersect_key($raw, array_flip($allowed));
+
+        // 标签（#807）：表单提交的是 attribute 组件的 [{name,value}]，
+        // 这里归一化成 [{text,color}] 并做数量/长度/颜色白名单裁剪
+        if (array_key_exists('tags', $map)) {
+            \App\Util\Schema::ensureCommodityTags();
+            $map['tags'] = \App\Model\Commodity::normalizeTags($map['tags']);
+        }
+
+        //商品介绍是管理员富文本，取未过滤原文入库(#775)，与卡密secret的unsafePost先例一致；商户端保存不豁免
+        if (array_key_exists('description', $map)) {
+            $rawDescription = $request->unsafePost('description');
+            if (is_string($rawDescription) && !str_contains($rawDescription, "\0")) {
+                $map['description'] = $rawDescription;
+            }
+        }
+
         $id = isset($map['id']) ? (int)$map['id'] : 0;
         $current = $id > 0 ? \App\Model\Commodity::query()->find($id) : null;
         if ($id > 0 && !$current) {
@@ -410,6 +492,20 @@ class Commodity extends Manage
             }
         }
 
+        //加价模板（issue #798）：选了模板就必须指向一个存在的模板；切回普通加价时要把模板清掉，
+        //否则每次远端同步还会按老模板重算价格
+        if (array_key_exists('shared_premium_type', $map)) {
+            if ((int)$map['shared_premium_type'] === \App\Model\PriceTemplate::SHARED_PREMIUM_TYPE) {
+                $templateId = (int)($map['shared_premium_template'] ?? 0);
+                if ($templateId < 1 || !\App\Model\PriceTemplate::query()->whereKey($templateId)->exists()) {
+                    throw new JSONException('加价模式选择了加价模板，请再选择一个有效的模板');
+                }
+                $map['shared_premium_template'] = $templateId;
+            } else {
+                $map['shared_premium_template'] = 0;
+            }
+        }
+
         if (isset($map['seckill_status']) && (int)$map['seckill_status'] === 1) {
             if (empty($map['seckill_start_time']) || empty($map['seckill_end_time'])) {
                 throw new JSONException("您开启了秒杀功能，所以请指定秒杀的开始时间和结束时间哦(｡￫‿￩｡)");
@@ -428,6 +524,11 @@ class Commodity extends Manage
         //解析配置文件
         if (!empty($map['config'])) {
             Ini::toArray($map['config']);
+        }
+
+        //校验会员等级独立配置，脏数据入库会导致登录用户的商品列表整体报错
+        if (!empty($map['level_price'])) {
+            \App\Model\Commodity::validateLevelPrice((string)$map['level_price']);
         }
 
         foreach (['factory_price', 'price', 'user_price', 'shared_premium', 'draft_premium'] as $moneyField) {
@@ -511,15 +612,15 @@ class Commodity extends Manage
             if (count($requestedIds) === 1 && $impact['missing_count'] > 0) {
                 throw new JSONException('商品不存在，请刷新后重试');
             }
-            if (count($requestedIds) === 1 && $impact['blocked_count'] > 0) {
-                throw new JSONException(
-                    "所选商品已有业务数据，禁止物理删除。关联卡密 {$impact['card_count']} 张、订单 {$impact['order_count']} 笔、优惠券 {$impact['coupon_count']} 张、商户映射 {$impact['merchant_mapping_count']} 条、工单 {$impact['ticket_count']} 条、商品分组 {$impact['commodity_group_count']} 个；请先解除关联，或改为下架/隐藏商品。"
-                );
+
+            $ids = $impact['commodity_ids'];
+            if ($ids !== []) {
+                $this->cascadeDeleteCommodityRelations($ids);
             }
 
-            $expectedDeleteCount = $impact['deletable_count'];
+            $expectedDeleteCount = count($ids);
             $deleted = $expectedDeleteCount > 0
-                ? \App\Model\Commodity::query()->whereIn('id', $impact['deletable_ids'])->delete()
+                ? \App\Model\Commodity::query()->whereIn('id', $ids)->delete()
                 : 0;
             if ($deleted !== $expectedDeleteCount) {
                 throw new JSONException('商品删除数量异常，操作已回滚，请刷新后重试');

@@ -8,6 +8,7 @@ use App\Interceptor\Waf;
 use App\Model\ManageLog;
 use App\Util\Opcache;
 use App\Util\PayConfig;
+use App\Util\PluginPacker;
 use App\Util\Theme;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
@@ -174,6 +175,9 @@ class App extends Manage
             $plugins['rows'][$index]['icon'] = \App\Service\App::APP_URL . "/{$plugins['rows'][$index]['icon']}";
         }
 
+        //应用商店条目来自官方远端，属动态文案：只翻展示用的名称与简介，plugin_key 不动
+        $plugins['rows'] = \Kernel\Util\Lang::transList($plugins['rows'], ['plugin_name', 'description']);
+
         $json = $this->json(data: [
             "list" => $plugins['rows'],
             "total" => $plugins['count']
@@ -329,6 +333,10 @@ class App extends Manage
         foreach ($plugins['rows'] as &$plugin) {
             $plugin['icon'] = \App\Service\App::APP_URL . "/{$plugin['icon']}";
         }
+        unset($plugin);
+
+        //开发者中心列表同样是远端动态文案
+        $plugins['rows'] = \Kernel\Util\Lang::transList($plugins['rows'], ['plugin_name', 'description']);
 
         $json = $this->json(data: [
             "list" => $plugins['rows'],
@@ -360,7 +368,19 @@ class App extends Manage
      */
     public function developerCreateKit(): array
     {
-        $file = $_POST['resource'];
+        $file = (string)($_POST['resource'] ?? '');
+
+        if ($file === '') {
+            //没传压缩包 = 走服务端自动打包（开发者中心的默认方式）
+            $_POST['resource'] = $this->autoPackage(
+                (int)($_POST['id'] ?? 0),
+                trim((string)($_POST['version'] ?? '')),
+                false
+            );
+            unset($_POST['version']);
+            return $this->json(200, "提交成功", $this->app->developerCreateKit($_POST));
+        }
+
         if (!file_exists(BASE_PATH . $file)) {
             throw new JSONException("请重新上传插件包");
         }
@@ -376,7 +396,47 @@ class App extends Manage
         unlink(BASE_PATH . $file);
         //需要审核的安装包临时存放地址
         $_POST['resource'] = $upload['path'];
+        unset($_POST['version']);
         return $this->json(200, "提交成功", $this->app->developerCreateKit($_POST));
+    }
+
+    /**
+     * 从本机插件目录现打一个包并直传商店，返回商店的临时 path。
+     *
+     * 开发者原本要自己 zip 好再上传，很容易出事：忘了删 Config.php（把自己的
+     * 密钥和启用状态发给所有用户）、把日志一起打进去、把插件文件夹本身也打进去、
+     * 或者包内版本号和填的版本号对不上被审核打回。这些现在全部由服务端保证。
+     *
+     * @param string $version 非空则先写回插件自己的版本文件再打包，保证两者一致
+     * @param bool $isUpdate true=更新包（剔除 Config.php），false=安装包（Config.php 清空成 return [];）
+     * @throws JSONException
+     */
+    private function autoPackage(int $pluginId, string $version, bool $isUpdate): string
+    {
+        $plugin = PluginPacker::resolveFromStore($this->app, $pluginId);
+        $type = (int)$plugin['type'];
+        $key = (string)$plugin['plugin_key'];
+        $dir = PluginPacker::sourceDir($key, $type);
+
+        if ($version !== '') {
+            PluginPacker::syncVersion($dir, $type, $version);
+        }
+
+        $bytes = PluginPacker::pack($dir, $type, $key, $isUpdate);
+
+        $upload = $this->app->upload([
+            [
+                'name' => 'file',
+                'contents' => $bytes,
+                'filename' => 'file.zip'
+            ]
+        ]);
+
+        $path = (string)($upload['path'] ?? '');
+        if ($path === '') {
+            throw new JSONException("插件包上传失败，商店未返回路径");
+        }
+        return $path;
     }
 
     /**
@@ -393,7 +453,19 @@ class App extends Manage
      */
     public function developerUpdatePlugin(): array
     {
-        $file = $_POST['audit_resource'];
+        $file = (string)($_POST['audit_resource'] ?? '');
+
+        if ($file === '') {
+            //没传压缩包 = 服务端自动打包。版本号同时写回插件的 Info，
+            //包内版本与 audit_version 必定一致，不会再被审核以「版本不符」打回
+            $_POST['audit_resource'] = $this->autoPackage(
+                (int)($_POST['id'] ?? 0),
+                trim((string)($_POST['audit_version'] ?? '')),
+                true
+            );
+            return $this->json(200, "提交成功", $this->app->developerUpdatePlugin($_POST));
+        }
+
         if (!file_exists(BASE_PATH . $file)) {
             throw new JSONException("请重新上传插件包");
         }

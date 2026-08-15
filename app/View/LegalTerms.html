@@ -568,7 +568,7 @@
 
     document.getElementById('agreeCheckbox').addEventListener('change', function (e) {
         if (this.checked && !hasScrolled) {
-            layer.msg('请先阅读全部协议内容');
+            layer.msg(i18n('请先阅读全部协议内容'));
             this.checked = false;
             return;
         }
@@ -587,11 +587,11 @@
 
     function agreeTerms() {
         if (!hasScrolled) {
-            layer.msg('请完整阅读用户协议');
+            layer.msg(i18n('请完整阅读用户协议'));
             return;
         }
         if (!hasChecked) {
-            layer.msg('请勾选同意协议选项');
+            layer.msg(i18n('请勾选同意协议选项'));
             return;
         }
 

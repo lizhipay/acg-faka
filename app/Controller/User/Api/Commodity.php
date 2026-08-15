@@ -163,6 +163,11 @@ class Commodity extends User
             Ini::toArray((string)$map['config']);
         }
 
+        //校验会员等级独立配置，脏数据入库会导致登录用户的商品列表整体报错
+        if (array_key_exists('level_price', $map) && $map['level_price'] !== '') {
+            \App\Model\Commodity::validateLevelPrice((string)$map['level_price']);
+        }
+
         $save = new Save(\App\Model\Commodity::class);
         $save->setMap($map);
         $save->addForceMap("owner", $user->id);

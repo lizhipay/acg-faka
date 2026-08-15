@@ -36,10 +36,13 @@ class Authentication extends Manage
             throw new JSONException("登录尝试过于频繁，请稍后再试");
         }
         //图形验证码：无论对错校验后即作废，单次有效（防机器人爆破）
-        $captchaOk = Captcha::check((int)$this->request->post("captcha"), "adminLogin");
-        Captcha::destroy("adminLogin");
-        if (!$captchaOk) {
-            throw new JSONException("验证码错误");
+        //网站设置-其他验证码可关闭（未显式关闭时默认开启，保证老站升级后行为不变）
+        if ((string)\App\Model\Config::get("admin_login_verification") !== '0') {
+            $captchaOk = Captcha::check((int)$this->request->post("captcha"), "adminLogin");
+            Captcha::destroy("adminLogin");
+            if (!$captchaOk) {
+                throw new JSONException("验证码错误");
+            }
         }
         $remember = (bool)$this->request->post("remember", Filter::BOOLEAN);
         $code = (string)$this->request->post("code");

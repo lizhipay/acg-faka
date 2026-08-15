@@ -3903,6 +3903,12 @@ layui.define(['form', 'jquery'], function (exports) {
       },
       setting: function () {
         var setting = {
+          view: {
+            //允许节点通过自身的 fontCss 属性声明文字样式(如"设为顶级"节点高亮)，不开启HTML渲染
+            fontCss: function (treeId, treeNode) {
+              return treeNode.fontCss || {};
+            }
+          },
           callback: {
             onClick: a.onClick,
             onExpand: a.onExpand,

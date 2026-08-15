@@ -88,9 +88,12 @@ class Recharge implements \App\Service\Recharge
             if (file_exists($autoload)) {
                 require($autoload);
             }
-            //增加接口手续费：0.9.6-beta
-            $order->amount = $order->amount + ($pay->cost_type == 0 ? $pay->cost : $order->amount * $pay->cost);
-            $order->amount = (float)sprintf("%.2f", (int)(string)($order->amount * 100) / 100);
+            //增加接口手续费：0.9.6-beta。手续费单独记入 pay_cost（与商品订单一致），
+            //到账时用 amount - pay_cost 还原充值面额，否则手续费会被一并充进余额（issue #783）
+            $order->pay_cost = (float)($pay->cost_type == 0
+                ? (new \Kernel\Util\Decimal((string)$pay->cost, 2))->getAmount()
+                : (new \Kernel\Util\Decimal((string)$order->amount, 2))->mul((string)$pay->cost)->getAmount());
+            $order->amount = (float)(new \Kernel\Util\Decimal((string)$order->amount, 2))->add((string)$order->pay_cost)->getAmount();
 
             $payObject = new $class;
             $payObject->amount = $order->amount;
@@ -208,12 +211,13 @@ class Recharge implements \App\Service\Recharge
         $recharge->pay_time = Date::current();
         $recharge->option = null;
 
-        //充值
+        //充值：到账金额 = 支付金额 - 接口手续费（手续费由用户承担，但不应充进余额）
         $user = $recharge->user;
 
         if ($user) {
-            $rechargeWelfareAmount = $this->calcAmount($recharge->amount);
-            Bill::create($user, $recharge->amount, Bill::TYPE_ADD, "充值", 0); //用户余额
+            $credit = (float)(new \Kernel\Util\Decimal((string)$recharge->amount, 2))->sub((string)($recharge->pay_cost ?? 0))->getAmount();
+            $rechargeWelfareAmount = $this->calcAmount($credit);
+            Bill::create($user, $credit, Bill::TYPE_ADD, "充值", 0); //用户余额
             if ($rechargeWelfareAmount > 0) {
                 Bill::create($user, $rechargeWelfareAmount, Bill::TYPE_ADD, "充值赠送", 0); //用户余额
             }

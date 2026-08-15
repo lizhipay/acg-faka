@@ -191,7 +191,7 @@ class Card extends Manage
                 continue;
             }
             $skuKey = substr((string)$key, strlen('equal-sku-'));
-            if (!preg_match('/^[A-Za-z0-9_\x{4e00}-\x{9fff}]{1,32}$/u', $skuKey)) {
+            if (!\App\Util\Sku::isValidKey($skuKey)) {
                 throw new JSONException('SKU 筛选条件不正确');
             }
             $hasFilter = true;
@@ -271,6 +271,38 @@ class Card extends Manage
         $config = Ini::toArray($commodity->config ?: "");
 
         return $this->json(data: $config);
+    }
+
+    /**
+     * 按 类别/SKU 组合统计卡密库存(未售/锁定/已售)
+     * @param int $commodityId
+     * @return array
+     * @throws JSONException
+     */
+    public function skuStock(int $commodityId): array
+    {
+        $commodity = \App\Model\Commodity::query()->find($commodityId);
+        if (!$commodity) {
+            throw new JSONException("商品不存在");
+        }
+
+        $list = \App\Model\Card::query()
+            ->where("commodity_id", $commodityId)
+            ->selectRaw("race, sku, sum(case when status = 0 then 1 else 0 end) as unsold, sum(case when status = 2 then 1 else 0 end) as locked, sum(case when status = 1 then 1 else 0 end) as sold, count(*) as total")
+            ->groupBy(["race", "sku"])
+            ->orderBy("race")
+            ->get()
+            ->map(fn($item) => [
+                "race" => $item->race,
+                "sku" => $item->sku,
+                "unsold" => (int)$item->unsold,
+                "locked" => (int)$item->locked,
+                "sold" => (int)$item->sold,
+                "total" => (int)$item->total,
+            ])
+            ->toArray();
+
+        return $this->json(data: ["name" => strip_tags((string)$commodity->name), "list" => $list]);
     }
 
 

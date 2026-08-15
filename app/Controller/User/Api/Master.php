@@ -169,8 +169,17 @@ class Master extends User
             throw new JSONException("加价百分比，无法低于0");
         }
 
+        if (isset($map['rounding'])) {
+            $map['rounding'] = (int)$map['rounding'];
+            if (!in_array($map['rounding'], [UserCommodity::ROUNDING_NONE, UserCommodity::ROUNDING_ROUND, UserCommodity::ROUNDING_CEIL], true)) {
+                throw new JSONException("价格取整方式不正确");
+            }
+        }
+
         $save = new Save(UserCommodity::class);
-        $save->setMap($map, ['name', 'premium', 'status']);
+        //description 走的是普通 post()，WAF 已经用 HTMLPurifier 过滤过一遍，
+        //分站主是普通用户不是管理员，这里刻意不像后台那样取 unsafePost 原文(#805)
+        $save->setMap($map, ['name', 'description', 'premium', 'status', 'rounding']);
 
         $save = $this->query->save($save);
         if (!$save) {
@@ -241,9 +250,14 @@ class Master extends User
     {
         $categoryId = (int)$_POST['category_id'];
         $premium = (int)$_POST['premium'];
+        $rounding = (int)($_POST['rounding'] ?? UserCommodity::ROUNDING_NONE);
 
         if ($premium < 0) {
             throw new JSONException("加价百分比，无法低于0");
+        }
+
+        if (!in_array($rounding, [UserCommodity::ROUNDING_NONE, UserCommodity::ROUNDING_ROUND, UserCommodity::ROUNDING_CEIL], true)) {
+            throw new JSONException("价格取整方式不正确");
         }
 
         $commodity = \App\Model\Commodity::query()->where("owner", 0)->where("status", 1);
@@ -263,6 +277,7 @@ class Master extends User
             }
 
             $userCommodity->premium = $premium;
+            $userCommodity->rounding = $rounding;
             $userCommodity->save();
         }
 

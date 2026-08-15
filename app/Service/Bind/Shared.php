@@ -5,6 +5,7 @@ namespace App\Service\Bind;
 
 
 use App\Model\Commodity;
+use App\Model\PriceTemplate;
 use App\Util\Http;
 use App\Util\Ini;
 use App\Util\Str;
@@ -249,9 +250,17 @@ class Shared implements \App\Service\Shared
 
             return $b;
         }
-        return $this->post($shared->domain . "/shared/commodity/item", $shared->app_id, $shared->app_key, [
+        $a = $this->post($shared->domain . "/shared/commodity/item", $shared->app_id, $shared->app_key, [
             "code" => $code
         ]);
+
+        //原生店铺返回的config是INI字符串，统一转成数组与type 1/2保持一致：
+        //下游同步处会把config传给Ini::toConfig(array)，传字符串会直接TypeError
+        if (isset($a['config']) && !is_array($a['config'])) {
+            $a['config'] = Ini::toArray((string)$a['config']);
+        }
+
+        return $a;
     }
 
 
@@ -533,6 +542,7 @@ class Shared implements \App\Service\Shared
      */
     public function AdjustmentPrice(string $config, string $price, string $userPrice, int $type, float $premium): array
     {
+        $this->assertPlainPremiumType($type);
         $_config = Ini::toArray($config);
         //race
         if (array_key_exists("category", $_config) && is_array($_config['category'])) {
@@ -584,6 +594,31 @@ class Shared implements \App\Service\Shared
 
 
     /**
+     * 按加价模板计算接入商品的整套价格。
+     *
+     * 返回结构刻意与 AdjustmentPrice 对齐（config 同样是数组），调用方两种加价模式可以共用同一段代码；
+     * 多出来的 level_price 是模板独有的能力——普通加价没法给每个会员等级单独定价。
+     *
+     * @param PriceTemplate $template
+     * @param string $config
+     * @param string $price
+     * @param string $userPrice
+     * @param string $levelPrice
+     * @return array{config: array, price: string, user_price: string, level_price: string}
+     */
+    public function AdjustmentTemplate(PriceTemplate $template, string $config, string $price, string $userPrice, string $levelPrice = ''): array
+    {
+        $result = $template->forShared($config, $price, $userPrice, $levelPrice);
+        return [
+            "config" => Ini::toArray($result['config']),
+            "price" => $result['price'],
+            "user_price" => $result['user_price'],
+            "level_price" => $result['level_price'],
+        ];
+    }
+
+
+    /**
      * @param int $type
      * @param float $premium
      * @param float|int|string $amount
@@ -591,10 +626,71 @@ class Shared implements \App\Service\Shared
      */
     public function AdjustmentAmount(int $type, float $premium, float|int|string $amount): string
     {
+        $this->assertPlainPremiumType($type);
         $_tmp = new Decimal($amount, 2);
-        return $type == 0 ? $_tmp->add($premium)->getAmount() : $_tmp->add((new Decimal($premium, 3))->mul($amount)->getAmount())->getAmount();
+        return $type == PriceTemplate::TYPE_FIXED ? $_tmp->add($premium)->getAmount() : $_tmp->add((new Decimal($premium, 3))->mul($amount)->getAmount())->getAmount();
     }
 
+    /**
+     * 这两个方法只会算「固定金额」和「百分比」两种加价。
+     *
+     * 它们原来的写法是 `$type == 0 ? 加固定值 : 加百分比` —— 任何不认识的 type
+     * 都会被当成百分比。加价模板（type=2）的 premium 恒为 0，于是
+     * `价格 + 0 × 价格 = 价格`，加价被静默抹平，商品按进货价卖出去。
+     * 这个 bug 藏了很久才被发现（表现是首页价格来回跳），所以这里改成显式白名单：
+     * 不认识的加价模式当场抛错，让它在第一次调用时就暴露，而不是变成收入损失。
+     *
+     * 模板模式请走 AdjustmentTemplate() 或 AdjustmentExtra()。
+     *
+     * @throws JSONException
+     */
+    private function assertPlainPremiumType(int $type): void
+    {
+        if ($type === PriceTemplate::TYPE_FIXED || $type === PriceTemplate::TYPE_PERCENT) {
+            return;
+        }
+        if ($type === PriceTemplate::SHARED_PREMIUM_TYPE) {
+            throw new JSONException('加价模板不能用固定/百分比的算法计算，请改用 AdjustmentTemplate 或 AdjustmentExtra');
+        }
+        throw new JSONException("未知的加价模式({$type})");
+    }
+
+
+    /**
+     * 取商品的加价模板。只有加价模式确实是「模板」时才认，
+     * 避免旧数据里残留的 template_id 在其他模式下意外生效。
+     */
+    private function resolvePremiumTemplate(Commodity $commodity): ?PriceTemplate
+    {
+        if ((int)$commodity->shared_premium_type !== PriceTemplate::SHARED_PREMIUM_TYPE) {
+            return null;
+        }
+        $templateId = (int)($commodity->shared_premium_template ?? 0);
+        return $templateId > 0 ? PriceTemplate::query()->find($templateId) : null;
+    }
+
+    public function AdjustmentExtra(Commodity|int $commodity, string|int|float $amount): string
+    {
+        if (is_int($commodity)) {
+            $commodity = Commodity::query()->find($commodity);
+        }
+        if (!$commodity) {
+            return (string)$amount;
+        }
+
+        $template = $this->resolvePremiumTemplate($commodity);
+        if ($template) {
+            return $template->markupExtra((float)$amount);
+        }
+
+        if ((int)$commodity->shared_premium_type === PriceTemplate::SHARED_PREMIUM_TYPE) {
+            //选了模板却取不到，按原价返回并留下痕迹，绝不用错误的公式硬算
+            \Kernel\Util\Log::inst()->error("商品[{$commodity->id}]的加价模板不可用，附加金额未加价");
+            return (string)$amount;
+        }
+
+        return $this->AdjustmentAmount((int)$commodity->shared_premium_type, (float)$commodity->shared_premium, $amount);
+    }
 
     /**
      * @param Commodity|int $commodity
@@ -619,7 +715,35 @@ class Shared implements \App\Service\Shared
         }
 
         $remoteItem = $this->item($shared, $commodity->shared_code);
-        $base = $this->AdjustmentPrice(Ini::toConfig($remoteItem['config'] ?: []), (string)$remoteItem['price'], (string)$remoteItem['user_price'], $commodity->shared_premium_type, $commodity->shared_premium);
+        $remoteConfig = Ini::toConfig($remoteItem['config'] ?: []);
+
+        //入库时选了加价模板的商品，每次同步都要按模板重算，否则价格会退回"平进平出"
+        $template = $this->resolvePremiumTemplate($commodity);
+        $usesTemplate = (int)$commodity->shared_premium_type === PriceTemplate::SHARED_PREMIUM_TYPE;
+        $priceSyncable = !($usesTemplate && !$template);
+        if (!$priceSyncable) {
+            //模板没了：宁可这次不同步价格，也不能退回无加价把售价刷成进货价
+            \Kernel\Util\Log::inst()->error("商品[{$commodity->id}]的加价模板不可用，本次跳过价格与配置同步");
+        }
+
+        $base = ['price' => null, 'user_price' => null, 'config' => []];
+        if ($priceSyncable) {
+            $base = $template
+                ? $this->AdjustmentTemplate(
+                    $template,
+                    $remoteConfig,
+                    (string)$remoteItem['price'],
+                    (string)$remoteItem['user_price'],
+                    (string)$commodity->getRawOriginal('level_price')
+                )
+                : $this->AdjustmentPrice(
+                    $remoteConfig,
+                    (string)$remoteItem['price'],
+                    (string)$remoteItem['user_price'],
+                    $commodity->shared_premium_type,
+                    $commodity->shared_premium
+                );
+        }
 
 
         $_config = $remoteItem['config'] ?: [];
@@ -632,17 +756,25 @@ class Shared implements \App\Service\Shared
             $base['config']['category_cost'] = $_config['category'];
         }
 
-        if ($commodity->shared_amount_sync === 1) {
+        if ($priceSyncable && $commodity->shared_amount_sync === 1) {
             $commodity->price = $base['price'];
             $commodity->user_price = $base['user_price'];
+            //模板还负责各会员等级的价格，同步价格时一并按模板重算
+            if ($template && ($base['level_price'] ?? '') !== '') {
+                $commodity->level_price = $base['level_price'];
+            }
         }
 
-        if ($commodity->shared_config_sync === 1) {
+        if ($priceSyncable && $commodity->shared_config_sync === 1) {
             $commodity->config = Ini::toConfig($base['config']);
         }
 
         $commodity->draft_status = $remoteItem['draft_status'];
-        $commodity->draft_premium = $remoteItem['draft_premium'] > 0 ? $this->AdjustmentAmount($commodity->shared_premium_type, $commodity->shared_premium, $remoteItem['draft_premium']) : 0;
+        if ($priceSyncable) {
+            $commodity->draft_premium = $remoteItem['draft_premium'] > 0
+                ? $this->AdjustmentExtra($commodity, $remoteItem['draft_premium'])
+                : 0;
+        }
         $commodity->seckill_status = $remoteItem['seckill_status'];
         $commodity->seckill_start_time = $remoteItem['seckill_start_time'];
         $commodity->seckill_end_time = $remoteItem['seckill_end_time'];
@@ -651,6 +783,10 @@ class Shared implements \App\Service\Shared
         $commodity->maximum = $remoteItem['maximum'];
         $commodity->stock = $remoteItem['stock'];
         $commodity->contact_type = $remoteItem['contact_type'];
+        //详情页的库存走 shared_stock 缓存，而这份缓存此前只有「本站卖出一单」才会失效——
+        //上游补货或在别处卖光都刷不掉它，商品能一直显示售罄或一直显示有货。
+        //同步本来就是为了让接入商品跟上上游，顺手把它清掉，下次访问详情页重新拉。
+        $commodity->shared_stock = [];
         $commodity->save();
 
         return true;

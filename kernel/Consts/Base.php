@@ -11,4 +11,5 @@ interface Base
     const IS_INSTALL = "IS_INSTALL";
     const OPCACHE = "ZEND_OPCACHE";
     const STORE_STATUS = "STORE_STATUS";
+    const LANGUAGE = "LANGUAGE";
 }

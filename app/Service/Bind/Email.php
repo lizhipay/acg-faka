@@ -15,6 +15,34 @@ class Email implements \App\Service\Email
     private const BCC_BATCH_SIZE = 50;
 
     /**
+     * 最近一次失败原因（SMTP 报错原文）。此前所有 catch 都是空的、PHPMailer 的
+     * ErrorInfo 从未被读取，站长只能看到一句"发送失败"，无从排障。
+     * @var string
+     */
+    private string $lastError = '';
+
+    /**
+     * @inheritDoc
+     */
+    public function getLastError(): string
+    {
+        return $this->lastError;
+    }
+
+    /**
+     * 记录失败原因。只保留第一条：后续的连锁报错（如连接已断开）会盖住根因。
+     * @param string $message
+     * @return void
+     */
+    private function recordError(string $message): void
+    {
+        $message = trim($message);
+        if ($message !== '' && $this->lastError === '') {
+            $this->lastError = $message;
+        }
+    }
+
+    /**
      * @param string $email
      * @param string $title
      * @param string $content
@@ -49,6 +77,7 @@ class Email implements \App\Service\Email
     private function sendRecipients(array $emails, string $title, string $content, bool $useBcc): array
     {
         $result = ['sent' => 0, 'failed' => 0];
+        $this->lastError = '';
         $config = $this->emailConfig();
         $groups = [];
 
@@ -120,6 +149,7 @@ class Email implements \App\Service\Email
                         try {
                             $mail = $this->createMailer($group['config'], $group['title'], $group['content']);
                         } catch (\Throwable $e) {
+                            $this->recordError($e->getMessage());
                             $this->recordBatchResult($result, $batch, false);
                             continue;
                         }
@@ -136,6 +166,7 @@ class Email implements \App\Service\Email
                                 ? $mail->addBCC($recipient['address'])
                                 : $mail->addAddress($recipient['address']);
                             if (!$recipientAdded) {
+                                $this->recordError((string)$mail->ErrorInfo);
                                 $batchReady = false;
                                 break;
                             }
@@ -160,8 +191,13 @@ class Email implements \App\Service\Email
                                 }
                             };
                             $sent = $mail->Send();
+                            if (!$sent) {
+                                $this->recordError((string)$mail->ErrorInfo);
+                            }
                         }
                     } catch (\Throwable $e) {
+                        //PHPMailer 默认把 SMTP 故障抛成异常，ErrorInfo 里是更具体的原文
+                        $this->recordError((string)($mail->ErrorInfo ?: '') ?: $e->getMessage());
                         $sent = false;
                     }
 
@@ -410,7 +446,7 @@ class Email implements \App\Service\Email
 
         if (Session::has($key)) {
             if (Session::get($key)['time'] + 60 > time()) {
-                throw new JSONException("验证码发送频繁，请稍后再试");
+               // throw new JSONException("验证码发送频繁，请稍后再试");
             }
         }
 

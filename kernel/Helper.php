@@ -216,12 +216,87 @@ if (!function_exists("getLocalRouter")) {
     }
 }
 
+if (!function_exists("lang")) {
+    /**
+     * 翻译文本：当前语言=zh-cn 时零开销直返；miss 自动收集并回原文
+     */
+    function lang(?string $text, string $scene = "api"): string
+    {
+        if ($text === null || $text === "") {
+            return (string)$text;
+        }
+        return \Kernel\Util\Lang::trans($text, $scene);
+    }
+}
+
+if (!function_exists("t")) {
+    /**
+     * 模板翻译函数：#{t("中文")}
+     */
+    function t(?string $text): string
+    {
+        return lang($text, "tpl");
+    }
+}
+
+if (!function_exists("active")) {
+    /**
+     * 菜单高亮：按路由前缀匹配，替代模板里的中文 $title 比较（国际化前置改造）。
+     * $title 现在会被翻译，再拿它跟中文字面量比较，换语言后高亮就全失效了。
+     *
+     * @param string|string[] $prefix 路由前缀（如 /user/cash）；传数组表示任一命中即高亮，
+     *                                用于一个入口聚合多个页面的场景（底部导航的「经营」「钱包」等）
+     * @param string $class 命中时输出的内容，默认 active；各主题类名不同可自行传入
+     */
+    function active(string|array $prefix, string $class = "active"): string
+    {
+        $router = (string)getLocalRouter();
+        foreach ((array)$prefix as $item) {
+            if (str_starts_with($router, (string)$item)) {
+                return $class;
+            }
+        }
+        return "";
+    }
+}
+
+if (!function_exists("lang_dict_script")) {
+    /**
+     * 非源语言时输出字典脚本标签：URL 带版本号，浏览器 immutable 强缓存
+     */
+    function lang_dict_script(): string
+    {
+        $lang = \Kernel\Util\Lang::get();
+        if ($lang === \Kernel\Util\Lang::SOURCE) {
+            return "";
+        }
+        return '<script src="/user/api/lang/dict?lang=' . $lang . '&v=' . \Kernel\Util\Lang::version() . '"></script>';
+    }
+}
+
+if (!function_exists("lang_code")) {
+    /**
+     * 当前语言的 BCP-47 代码，供 <html lang="…"> 使用
+     */
+    function lang_code(): string
+    {
+        return [
+                "zh-cn" => "zh-CN",
+                "zh-tw" => "zh-TW",
+                "en" => "en",
+                "ja" => "ja",
+            ][\Kernel\Util\Lang::get()] ?? "zh-CN";
+    }
+}
+
 if (!function_exists("feedback")) {
     function feedback(string $value)
     {
         if ($value != "404 Not Found") {
             debug($value);
         }
+
+        $value = lang($value);
 
         if (!DEBUG) {
             return View::render("404.html", ["msg" => "404 Not Found"]);

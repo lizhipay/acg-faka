@@ -477,7 +477,7 @@
             if (title && !title.querySelector('.admin-mobile-unsaved-indicator')) {
                 var badge = document.createElement('span');
                 badge.className = 'admin-mobile-unsaved-indicator';
-                badge.textContent = '未保存';
+                badge.textContent = i18n('未保存');
                 title.appendChild(badge);
             }
         }
@@ -541,15 +541,15 @@
                 text: '当前表单还有未保存的内容。',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: '放弃修改',
-                cancelButtonText: '继续编辑',
+                confirmButtonText: i18n('放弃修改'),
+                cancelButtonText: i18n('继续编辑'),
                 reverseButtons: true,
                 focusCancel: true,
                 allowOutsideClick: false,
                 allowEscapeKey: false
             }).then(function (answer) { return answer.isConfirmed === true || answer.value === true; });
         } else {
-            result = Promise.resolve(window.confirm('当前表单还有未保存的内容，确定放弃修改吗？'));
+            result = Promise.resolve(window.confirm(i18n('当前表单还有未保存的内容，确定放弃修改吗？')));
         }
         entry.confirmPromise = result.then(function (confirmed) {
             entry.confirming = false;
@@ -821,9 +821,9 @@
         overlay.setAttribute('aria-labelledby', overlayToken + '-title');
         overlay.setAttribute('tabindex', '-1');
         overlay.innerHTML = '<div class="admin-mobile-overlay__handle" aria-hidden="true"></div>' +
-            '<header class="admin-mobile-overlay__head"><div><strong id="' + overlayToken + '-title">' + escapeHtml(options.title || '操作') + '</strong>' +
+            '<header class="admin-mobile-overlay__head"><div><strong id="' + overlayToken + '-title">' + escapeHtml(options.title || i18n('操作')) + '</strong>' +
             (options.subtitle ? '<small>' + escapeHtml(options.subtitle) + '</small>' : '') + '</div>' +
-            '<button type="button" data-admin-mobile-overlay-close aria-label="关闭"><span class="material-icons-outlined" aria-hidden="true">close</span></button></header>' +
+            '<button type="button" data-admin-mobile-overlay-close aria-label="' + i18n('关闭') + '"><span class="material-icons-outlined" aria-hidden="true">close</span></button></header>' +
             '<div class="admin-mobile-overlay__body"></div><footer class="admin-mobile-overlay__foot" hidden></footer>';
         if (options.headerContent) {
             var headerContent = overlay.querySelector('.admin-mobile-overlay__head > div');
@@ -882,7 +882,7 @@
         list.className = 'admin-mobile-action-list';
         (options.actions || []).forEach(function (action) {
             var control = document.createElement(action.href && action.disabled !== true ? 'a' : 'button');
-            var actionLabel = plainText(action.label || action.title || '操作');
+            var actionLabel = plainText(action.label || action.title || i18n('操作'));
             var fallbackIcon = action.danger
                 ? (/(?:永久删除|删除|卸载|清空|清理)/.test(actionLabel) ? 'delete_forever' : 'warning')
                 : 'arrow_forward';
@@ -897,7 +897,7 @@
             });
             list.appendChild(control);
         });
-        return openSheet({id: options.id || 'actions', title: options.title || '选择操作', subtitle: options.subtitle, content: list, className: 'admin-mobile-overlay--actions'});
+        return openSheet({id: options.id || 'actions', title: options.title || i18n('选择操作'), subtitle: options.subtitle, content: list, className: 'admin-mobile-overlay--actions'});
     }
 
     function activatePopupTab(wrapper, index, focusTab) {
@@ -969,7 +969,7 @@
                 var tabId = 'admin-mobile-popup-tab-' + popupToken + '-' + originalIndex;
                 var panelId = 'admin-mobile-popup-panel-' + popupToken + '-' + originalIndex;
                 button.type = 'button';
-                button.textContent = plainText(tab.title || ('第 ' + (visibleIndex + 1) + ' 项'));
+                button.textContent = plainText(tab.title || (i18n('第 ') + (visibleIndex + 1) + i18n(' 项')));
                 button.id = tabId;
                 button.setAttribute('role', 'tab');
                 button.setAttribute('data-admin-mobile-popup-tab', String(originalIndex));
@@ -1088,7 +1088,7 @@
         if (!element) return;
         element.querySelectorAll('.admin-mobile-popup-form .photo-album, .admin-mobile-popup-form .external-input').forEach(function (button) {
             if (!button.hasAttribute('aria-label')) {
-                button.setAttribute('aria-label', button.classList.contains('photo-album') ? '打开相册' : '设置外部图片链接');
+                button.setAttribute('aria-label', button.classList.contains('photo-album') ? i18n('打开相册') : i18n('设置外部图片链接'));
             }
             if (button.matches('button, a[href]') || button.dataset.adminMobileInlineAction === 'true') return;
             button.dataset.adminMobileInlineAction = 'true';
@@ -1143,7 +1143,7 @@
         try {
             index = window.layer.open({
             type: 1,
-            title: plainText(options.mobileTitle || (visibleTabs[0] && visibleTabs[0].rendered.title) || '操作'),
+            title: plainText(options.mobileTitle || (visibleTabs[0] && visibleTabs[0].rendered.title) || i18n('操作')),
             content: window.jQuery ? window.jQuery(content) : content,
             area: complex || count > 5 ? ['100%', '100%'] : ['100%', 'auto'],
             offset: complex || count > 5 ? 'auto' : 'b',
@@ -1155,7 +1155,7 @@
             resize: false,
             move: false,
             anim: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? -1 : 2,
-            btn: options.submit ? [plainText(options.confirmText || '保存'), '取消'] : false,
+            btn: options.submit ? [plainText(options.confirmText || i18n('保存')), i18n('取消')] : false,
             yes: function (layerIndex) {
                 var submitted = context.submit(layerIndex);
                 if (submitted === false) focusInvalid(popupEntry);
@@ -1191,7 +1191,7 @@
                         element.setAttribute('aria-labelledby', title.id);
                     }
                     var close = element.querySelector('.layui-layer-close');
-                    if (close) close.setAttribute('aria-label', '关闭');
+                    if (close) close.setAttribute('aria-label', i18n('关闭'));
                     element.querySelectorAll('.layui-layer-btn a').forEach(function (button) {
                         button.setAttribute('role', 'button');
                         button.setAttribute('tabindex', '0');

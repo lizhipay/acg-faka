@@ -98,14 +98,14 @@
     function groupTitle(value) {
         var title = String(value || '').trim();
         var names = {
-            Main: '主要功能',
-            User: '会员运营',
-            Trade: '商品与交易',
-            Shared: '共享服务',
-            Config: '系统设置',
-            Plugin: '插件与扩展',
-            Store: '应用服务',
-            System: '系统管理'
+            Main: i18n('主要功能'),
+            User: i18n('会员运营'),
+            Trade: i18n('商品与交易'),
+            Shared: i18n('共享服务'),
+            Config: i18n('系统设置'),
+            Plugin: i18n('插件与扩展'),
+            Store: i18n('应用服务'),
+            System: i18n('系统管理')
         };
         return names[title] || title;
     }
@@ -127,12 +127,12 @@
         var container = document.createElement('div');
         container.className = 'admin-mobile-all-menu';
         if (!source) {
-            container.innerHTML = '<div class="admin-mobile-empty"><span class="material-icons-outlined" aria-hidden="true">menu_open</span><strong>菜单正在加载</strong><small>请稍后重试</small></div>';
+            container.innerHTML = '<div class="admin-mobile-empty"><span class="material-icons-outlined" aria-hidden="true">menu_open</span><strong>' + i18n('菜单正在加载') + '</strong><small>' + i18n('请稍后重试') + '</small></div>';
             return container;
         }
         var search = document.createElement('label');
         search.className = 'admin-mobile-menu-search';
-        search.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">search</span><input type="search" inputmode="search" autocomplete="off" placeholder="搜索后台功能" aria-label="搜索后台功能"><button type="button" aria-label="清除搜索" hidden><span class="material-icons-outlined" aria-hidden="true">cancel</span></button>';
+        search.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">search</span><input type="search" inputmode="search" autocomplete="off" placeholder="' + i18n('搜索后台功能') + '" aria-label="' + i18n('搜索后台功能') + '"><button type="button" aria-label="' + i18n('清除搜索') + '" hidden><span class="material-icons-outlined" aria-hidden="true">cancel</span></button>';
         container.appendChild(search);
         var input = search.querySelector('input');
         var clear = search.querySelector('button');
@@ -179,31 +179,31 @@
         }
         var account = document.createElement('section');
         account.className = 'admin-mobile-menu-group admin-mobile-menu-group--account';
-        account.innerHTML = '<h3>账户与系统</h3>';
+        account.innerHTML = '<h3>' + i18n('账户与系统') + '</h3>';
         var store = document.querySelector('#kt_header a[href="/admin/store/home"]');
         if (store && isSourceMenuLinkAllowed(store, document.getElementById('kt_header'))) {
             var storeLink = document.createElement('a');
             storeLink.className = 'admin-mobile-menu-link'; storeLink.href = '/admin/store/home';
-            storeLink.innerHTML = '<span class="menu-icon material-icons-outlined" aria-hidden="true">storefront</span><span class="menu-title">应用商店</span>';
+            storeLink.innerHTML = '<span class="menu-icon material-icons-outlined" aria-hidden="true">storefront</span><span class="menu-title">' + i18n('应用商店') + '</span>';
             account.appendChild(storeLink);
         }
         var personal = document.querySelector('#kt_header a[href="/admin/manage/set"]');
         if (personal && isSourceMenuLinkAllowed(personal, document.getElementById('kt_header'))) {
             var personalLink = document.createElement('a');
             personalLink.className = 'admin-mobile-menu-link'; personalLink.href = '/admin/manage/set';
-            personalLink.innerHTML = '<span class="menu-icon material-icons-outlined" aria-hidden="true">manage_accounts</span><span class="menu-title">个人设置</span>';
+            personalLink.innerHTML = '<span class="menu-icon material-icons-outlined" aria-hidden="true">manage_accounts</span><span class="menu-title">' + i18n('个人设置') + '</span>';
             account.appendChild(personalLink);
         }
         var logout = document.createElement('a');
         logout.className = 'admin-mobile-menu-link is-danger'; logout.href = '/admin/authentication/logout'; logout.setAttribute('data-admin-mobile-logout', '');
-        logout.innerHTML = '<span class="menu-icon material-icons-outlined" aria-hidden="true">logout</span><span class="menu-title">退出登录</span>';
+        logout.innerHTML = '<span class="menu-icon material-icons-outlined" aria-hidden="true">logout</span><span class="menu-title">' + i18n('退出登录') + '</span>';
         account.appendChild(logout);
         container.appendChild(account);
         var empty = document.createElement('div');
         empty.className = 'admin-mobile-empty admin-mobile-menu-empty';
         empty.setAttribute('data-admin-mobile-menu-empty', '');
         empty.hidden = true;
-        empty.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">search_off</span><strong>没有匹配的功能</strong><small>换个关键词试试</small>';
+        empty.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">search_off</span><strong>' + i18n('没有匹配的功能') + '</strong><small>' + i18n('换个关键词试试') + '</small>';
         container.appendChild(empty);
         return container;
     }
@@ -215,7 +215,7 @@
         var sheet = api.openSheet({
             id: 'all-menu',
             title: '全部功能',
-            subtitle: '仅显示当前账号可使用的功能',
+            subtitle: i18n('仅显示当前账号可使用的功能'),
             content: content,
             className: 'admin-mobile-sheet--menu',
             onClose: function () { setAllExpanded(false); }
@@ -239,8 +239,8 @@
                 if (api.pageWorkflows && typeof api.pageWorkflows.requestLeave === 'function') api.pageWorkflows.requestLeave(navigate);
                 else navigate();
             };
-            if (messageApi && typeof messageApi.ask === 'function') messageApi.ask('确定要退出当前后台账号吗？', leave);
-            else if (window.confirm('确定要退出当前后台账号吗？')) leave();
+            if (messageApi && typeof messageApi.ask === 'function') messageApi.ask(i18n('确定要退出当前后台账号吗？'), leave);
+            else if (window.confirm(i18n('确定要退出当前后台账号吗？'))) leave();
             return;
         }
         if (primaryNavigation) {

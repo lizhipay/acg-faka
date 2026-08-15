@@ -103,6 +103,8 @@ interface Hook
     const USER_VIEW_AUTH_LOGIN_BUTTON = 0x41;
     //注册页面，第三方登录按钮扩展
     const USER_VIEW_AUTH_REGISTER_BUTTON = 0x42;
+    //挂载点 app\View\Admin\Authentication\Login.html -> 后台登录表单内、提交按钮上方（验证码/人机验证等扩展）
+    const ADMIN_VIEW_AUTH_LOGIN_FORM = 0x60;
     //安全中心NAV SecurityNav.html
     const USER_VIEW_SECURITY_NAV = 0x43;
     //个人资料选项
@@ -188,4 +190,7 @@ interface Hook
 
     //Commodity $commodity, ?string $race, ?array $sku  :: Stock
     public const SERVICE_SHOP_GET_ITEM_STOCK = 0x8000;
+
+    //国际化：翻译库未命中，请求尾批量触发。HOOK时传参：string[] $sources 中文原文列表, string[] $targetLangs 目标语言列表
+    public const LANG_MISS = 0x9100;
 }

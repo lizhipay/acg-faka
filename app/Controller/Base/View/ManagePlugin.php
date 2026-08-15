@@ -27,6 +27,10 @@ abstract class ManagePlugin extends \App\Controller\Base\Manage
     protected function render(?string $title, string $template, array $data = [], bool $controller = false): string
     {
         try {
+            //后台模板函数（admin_var 等）：主后台 Manage::render 会加载，
+            //插件面板模板同样嵌入 Admin/Header.html，缺了它 Smarty 直接编译报错
+            require(BASE_PATH . "/app/View/Admin/Helper.php");
+
             $data['title'] = $title;
             $data['app']['version'] = \config("app")['version'];
 

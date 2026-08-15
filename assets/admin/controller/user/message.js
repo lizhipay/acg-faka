@@ -38,8 +38,8 @@
 
     const audienceName = row => {
         const type = Number(row?.audience_type);
-        if (type === 0) return '全部正常会员';
-        return String(row?.audience_name || (type === 1 ? '指定会员等级' : '指定会员'));
+        if (type === 0) return i18n('全部正常会员');
+        return String(row?.audience_name || (type === 1 ? i18n('指定会员等级') : i18n('指定会员')));
     };
 
     const detailObject = payload => {
@@ -94,7 +94,7 @@
         return source.reduce((items, user) => {
             const id = positiveInt(user?.id);
             if (!id) return items;
-            const username = String(user?.username || ('用户 #' + id));
+            const username = String(user?.username || (i18n('用户 #') + id));
             const group = String(user?.group_name || '').trim();
             items.push({
                 value: id,
@@ -112,13 +112,13 @@
         const $container = form.getCustomDom('audience_preview');
         if (!$container.length) return;
 
-        let countText = '请选择接收范围';
+        let countText = i18n('请选择接收范围');
         let countClass = '';
         if (state.loading) {
-            countText = '正在统计…';
+            countText = i18n('正在统计…');
             countClass = ' is-loading';
         } else if (state.count !== null) {
-            countText = Number(state.count).toLocaleString('zh-CN') + ' 人';
+            countText = Number(state.count).toLocaleString('zh-CN') + i18n(' 人');
             countClass = state.count > 0 ? ' is-ready' : ' is-empty';
         } else if (state.error) {
             countText = state.error;
@@ -127,15 +127,15 @@
 
         const type = Number(state.type);
         const description = type === 0
-            ? '发送时快照全部正常会员，后续新注册会员不会收到。'
+            ? i18n('发送时快照全部正常会员，后续新注册会员不会收到。')
             : (type === 1
-                ? '发送时快照该等级的正常会员，后续等级变化不会补发。'
-                : '仅发送给当前选中的单一正常会员。');
+                ? i18n('发送时快照该等级的正常会员，后续等级变化不会补发。')
+                : i18n('仅发送给当前选中的单一正常会员。'));
 
         $container.html(
             '<div class="md-message-audience-summary' + countClass + '">' +
             '<span class="md-message-audience-summary__icon"><i class="fa-duotone fa-regular fa-users"></i></span>' +
-            '<div><span>预计接收</span><strong>' + escapeHtml(countText) + '</strong><p>' + escapeHtml(description) + '</p></div>' +
+            '<div><span>' + i18n('预计接收') + '</span><strong>' + escapeHtml(countText) + '</strong><p>' + escapeHtml(description) + '</p></div>' +
             '</div>'
         );
     };
@@ -181,14 +181,14 @@
                 if (!pageActive || !state.active || requestNumber !== state.countRequest) return;
                 state.loading = false;
                 state.count = null;
-                state.error = response?.msg || '统计失败，请重试';
+                state.error = response?.msg || i18n('统计失败，请重试');
                 renderAudienceSummary(form, state);
             },
             fail: () => {
                 if (!pageActive || !state.active || requestNumber !== state.countRequest) return;
                 state.loading = false;
                 state.count = null;
-                state.error = '网络异常，请重试';
+                state.error = i18n('网络异常，请重试');
                 renderAudienceSummary(form, state);
             }
         });
@@ -216,7 +216,7 @@
 
     const registerUserPicker = (form, state, $container) => {
         if (!window.xmSelect) {
-            $container.html('<div class="md-message-picker-error">会员选择组件加载失败</div>');
+            $container.html('<div class="md-message-picker-error">' + i18n('会员选择组件加载失败') + '</div>');
             return;
         }
 
@@ -232,8 +232,8 @@
             autoRow: true,
             language: 'zn',
             tips: '输入会员名或 ID 搜索',
-            searchTips: '输入会员名或 ID 搜索',
-            empty: '没有匹配的正常会员',
+            searchTips: i18n('输入会员名或 ID 搜索'),
+            empty: i18n('没有匹配的正常会员'),
             remoteMethod: (keyword, callback) => {
                 keyword = String(keyword || '').trim();
                 const currentRequest = ++searchRequest;
@@ -252,7 +252,7 @@
                     error: response => {
                         if (!pageActive || !state.active || currentRequest !== searchRequest) return;
                         callback([]);
-                        message.error(response?.msg || '会员搜索失败');
+                        message.error(response?.msg || i18n('会员搜索失败'));
                     },
                     fail: () => {
                         if (!pageActive || !state.active || currentRequest !== searchRequest) return;
@@ -278,30 +278,30 @@
         const jumpUrl = String(formData.jump_url || '').trim();
 
         if (!title) {
-            layer.msg('请输入消息标题');
+            layer.msg(i18n('请输入消息标题'));
             return null;
         }
         if (Array.from(title).length > 100) {
-            layer.msg('消息标题不能超过 100 个字');
+            layer.msg(i18n('消息标题不能超过 100 个字'));
             return null;
         }
         if (contentIsEmpty(content)) {
-            layer.msg('请输入消息内容');
+            layer.msg(i18n('请输入消息内容'));
             return null;
         }
         if (utf8Length(content) > 100 * 1024) {
-            layer.msg('消息内容不能超过 100KB');
+            layer.msg(i18n('消息内容不能超过 100KB'));
             return null;
         }
 
         const contentTemplate = document.createElement('template');
         contentTemplate.innerHTML = content;
         if (contentTemplate.content.querySelectorAll('img').length > 8) {
-            layer.msg('一条消息最多插入 8 张图片');
+            layer.msg(i18n('一条消息最多插入 8 张图片'));
             return null;
         }
         if (!validJumpUrl(jumpUrl)) {
-            layer.msg('跳转地址只支持站内 / 开头地址或 HTTP(S) 地址');
+            layer.msg(i18n('跳转地址只支持站内 / 开头地址或 HTTP(S) 地址'));
             return null;
         }
 
@@ -317,7 +317,7 @@
 
         const type = Number(formData.audience_type);
         if (![0, 1, 2].includes(type)) {
-            layer.msg('请选择接收范围');
+            layer.msg(i18n('请选择接收范围'));
             return null;
         }
 
@@ -325,23 +325,23 @@
         if (type === 1) audienceId = positiveInt(formData.audience_group_id);
         if (type === 2) audienceId = positiveInt(formData.audience_user_id || state.userId);
         if (type > 0 && !audienceId) {
-            layer.msg(type === 1 ? '请选择会员等级' : '请选择指定会员');
+            layer.msg(type === 1 ? i18n('请选择会员等级') : i18n('请选择指定会员'));
             return null;
         }
         if (state.loading) {
-            layer.msg('正在统计接收人数，请稍候');
+            layer.msg(i18n('正在统计接收人数，请稍候'));
             return null;
         }
         if (state.count === null) {
-            layer.msg('请先确认接收人数');
+            layer.msg(i18n('请先确认接收人数'));
             return null;
         }
         if (state.count < 1) {
-            layer.msg('当前接收范围内没有可发送的正常会员');
+            layer.msg(i18n('当前接收范围内没有可发送的正常会员'));
             return null;
         }
         if (Number(state.type) !== type || positiveInt(state.audienceId) !== audienceId) {
-            layer.msg('接收范围已变化，请等待人数重新统计');
+            layer.msg(i18n('接收范围已变化，请等待人数重新统计'));
             return null;
         }
 
@@ -384,7 +384,7 @@
                         '<div class="md-message-audience-readonly">' +
                         '<span class="md-message-audience-readonly__icon"><i class="fa-duotone fa-regular fa-lock"></i></span>' +
                         '<div><strong>' + escapeHtml(audienceTypeName(type)) + ' · ' + escapeHtml(audienceName(item)) + '</strong>' +
-                        '<span>已投递 ' + recipientCount(item).toLocaleString('zh-CN') + ' 人，编辑不会改变接收人和已读状态。</span></div>' +
+                        '<span>' + i18n('已投递') + ' ' + recipientCount(item).toLocaleString('zh-CN') + ' ' + i18n('人，编辑不会改变接收人和已读状态。') + '</span></div>' +
                         '</div>'
                     );
                 }
@@ -449,7 +449,7 @@
             {
                 title: false, name: 'compose_tip', type: 'custom', submit: false,
                 complete: (form, $container) => {
-                    $container.html('<div class="md-message-compose-tip"><i class="fa-duotone fa-regular fa-shield-check"></i><span>内容会在服务端再次安全过滤；设置跳转地址后，消息弹窗才会显示“前往地址”。</span></div>');
+                    $container.html('<div class="md-message-compose-tip"><i class="fa-duotone fa-regular fa-shield-check"></i><span>' + i18n('内容会在服务端再次安全过滤；设置跳转地址后，消息弹窗才会显示“前往地址”。') + '</span></div>');
                 }
             }
         );
@@ -468,11 +468,11 @@
             height: 'min(980px, calc(100vh - 48px))',
             autoPosition: false,
             maxmin: false,
-            confirmText: editing ? '保存修改' : sendMessageIcon + '确认发送',
+            confirmText: editing ? i18n('保存修改') : sendMessageIcon + i18n('确认发送'),
             tab: [{
                 name: editing
-                    ? util.icon('fa-duotone fa-regular fa-pen-to-square me-1') + '编辑消息'
-                    : sendMessageIcon + '创建消息',
+                    ? util.icon('fa-duotone fa-regular fa-pen-to-square me-1') + i18n('编辑消息')
+                    : sendMessageIcon + i18n('创建消息'),
                 form: formFields
             }],
             assign: assign,
@@ -496,9 +496,9 @@
                                 const sent = Math.max(0, Number(email.sent) || 0);
                                 const failed = Math.max(0, Number(email.failed) || 0);
                                 const skipped = Math.max(0, Number(email.skipped) || 0);
-                                message.success('站内消息已发送；邮件成功 ' + sent + ' 封、失败 ' + failed + ' 封，' + skipped + ' 人未绑定有效邮箱');
+                                message.success('站内消息已发送；邮件成功 ' + sent + i18n(' 封、失败 ') + failed + i18n(' 封，') + skipped + i18n(' 人未绑定有效邮箱'));
                             } else {
-                                message.success(response.msg || (editing ? '消息已更新' : '消息已发送'));
+                                message.success(response.msg || (editing ? i18n('消息已更新') : i18n('消息已发送')));
                             }
                             table.refresh(false);
                         },
@@ -506,7 +506,7 @@
                             if (!pageActive) return;
                             state.saving = false;
                             setSubmitBusy(layerIndex, false);
-                            message.error(response?.msg || '保存失败');
+                            message.error(response?.msg || i18n('保存失败'));
                         },
                         fail: () => {
                             if (!pageActive) return;
@@ -523,12 +523,12 @@
                     setSubmitBusy(layerIndex, true);
                     Swal.fire({
                         title: '确认发送消息？',
-                        html: '将向当前范围内的 <b>' + Number(state.count).toLocaleString('zh-CN') + '</b> 名会员发送，发送后接收范围不可修改。' +
-                            (Number(payload.send_email) === 1 ? '<br><span style="display:inline-block;margin-top:8px">同时向其中已绑定有效邮箱的会员发送邮件通知。</span>' : ''),
+                        html: i18n('将向当前范围内的') + ' <b>' + Number(state.count).toLocaleString('zh-CN') + '</b> ' + i18n('名会员发送，发送后接收范围不可修改。') +
+                            (Number(payload.send_email) === 1 ? '<br><span style="display:inline-block;margin-top:8px">' + i18n('同时向其中已绑定有效邮箱的会员发送邮件通知。') + '</span>' : ''),
                         icon: 'warning',
                         showCancelButton: true,
-                        cancelButtonText: '取消',
-                        confirmButtonText: sendMessageIcon + '确认发送'
+                        cancelButtonText: i18n('取消'),
+                        confirmButtonText: sendMessageIcon + i18n('确认发送')
                     }).then(result => {
                         state.confirming = false;
                         if (result.isConfirmed || result.value) {
@@ -573,7 +573,7 @@
             if (!pageActive) return;
             util.post('/admin/api/message/del', {id: id}, response => {
                 if (!pageActive) return;
-                message.success(response.msg || '消息已永久删除');
+                message.success(response.msg || i18n('消息已永久删除'));
                 table.refresh(false);
             });
         });
@@ -585,9 +585,9 @@
         {
             field: 'title', title: '消息', formatter: (value, row) => {
                 const id = positiveInt(row.id);
-                const summary = String(row.summary || '').trim() || '暂无消息摘要';
-                return '<div class="md-message-title-cell" role="button" tabindex="0" data-message-id="' + id + '" aria-label="查看消息">' +
-                    '<strong>' + escapeHtml(value || '未命名消息') + '</strong>' +
+                const summary = String(row.summary || '').trim() || i18n('暂无消息摘要');
+                return '<div class="md-message-title-cell" role="button" tabindex="0" data-message-id="' + id + '" aria-label="' + i18n('查看消息') + '">' +
+                    '<strong>' + escapeHtml(value || i18n('未命名消息')) + '</strong>' +
                     '<span>' + escapeHtml(summary) + '</span></div>';
             },
             events: {
@@ -610,13 +610,13 @@
         },
         {
             field: 'recipient_count', title: '接收人数', formatter: (value, row) => {
-                return '<span class="md-message-count"><strong>' + recipientCount(row).toLocaleString('zh-CN') + '</strong> 人</span>';
+                return '<span class="md-message-count"><strong>' + recipientCount(row).toLocaleString('zh-CN') + '</strong> ' + i18n('人') + '</span>';
             }
         },
         {
             field: 'jump_url', title: '跳转', formatter: value => value
-                ? '<span class="md-message-jump is-set"><i class="fa-duotone fa-regular fa-arrow-up-right-from-square"></i>已设置</span>'
-                : '<span class="md-message-jump"><i class="fa-duotone fa-regular fa-minus"></i>无跳转</span>'
+                ? '<span class="md-message-jump is-set"><i class="fa-duotone fa-regular fa-arrow-up-right-from-square"></i>' + i18n('已设置') + '</span>'
+                : '<span class="md-message-jump"><i class="fa-duotone fa-regular fa-minus"></i>' + i18n('无跳转') + '</span>'
         },
         {
             field: 'create_time', title: '发送与更新', formatter: (value, row) => {

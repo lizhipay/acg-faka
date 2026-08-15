@@ -76,12 +76,12 @@
                 return;
             }
             const tradeNo = escapeHtml(order.trade_no || '-');
-            const commodityName = escapeHtml(order?.commodity?.name || '未命名商品');
+            const commodityName = escapeHtml(order?.commodity?.name || i18n('未命名商品'));
             const orderAmount = escapeHtml(order.amount ?? '0');
             const commodityPrice = order?.commodity?.price;
             const commodityPriceRow = commodityPrice === undefined || commodityPrice === null || commodityPrice === ''
                 ? ''
-                : `<div><b>商品标价：</b>¥${escapeHtml(commodityPrice)}</div>`;
+                : `<div><b>${i18n('商品标价：')}</b>¥${escapeHtml(commodityPrice)}</div>`;
             const secretLength = Array.from(secret).length;
             const overwrites = Number(order.delivery_status) === 1 || String(order.secret ?? '').trim() !== '';
             confirming = true;
@@ -89,18 +89,18 @@
             Swal.fire({
                 title: '确认手动发货',
                 html: `<div style="text-align:left;line-height:1.8;">
-                    <div><b>订单号：</b>${tradeNo}</div>
-                    <div><b>商品：</b>${commodityName}</div>
-                    <div><b>支付状态：</b><span style="color:#15803d;font-weight:600;">已支付</span></div>
+                    <div><b>${i18n('订单号：')}</b>${tradeNo}</div>
+                    <div><b>${i18n('商品：')}</b>${commodityName}</div>
+                    <div><b>${i18n('支付状态：')}</b><span style="color:#15803d;font-weight:600;">${i18n('已支付')}</span></div>
                     ${commodityPriceRow}
-                    <div><b>订单金额：</b>¥${orderAmount}</div>
-                    <div><b>发货内容：</b>已填写 ${secretLength} 个字符</div>
-                    <div style="margin-top:10px;color:#d14343;">${overwrites ? '此订单已有发货记录，本次提交会覆盖现有发货内容。' : '提交后订单会立即进入已发货状态，无法在本页面一键撤销。'}</div>
+                    <div><b>${i18n('订单金额：')}</b>¥${orderAmount}</div>
+                    <div><b>${i18n('发货内容：')}</b>${i18n('已填写')} ${secretLength} ${i18n('个字符')}</div>
+                    <div style="margin-top:10px;color:#d14343;">${overwrites ? i18n('此订单已有发货记录，本次提交会覆盖现有发货内容。') : i18n('提交后订单会立即进入已发货状态，无法在本页面一键撤销。')}</div>
                 </div>`,
                 icon: 'warning',
                 showCancelButton: true,
-                cancelButtonText: '返回检查',
-                confirmButtonText: '确认发货'
+                cancelButtonText: i18n('返回检查'),
+                confirmButtonText: i18n('确认发货')
             }).then(result => {
                 confirming = false;
                 deliveryConfirmationOpen = false;
@@ -113,12 +113,12 @@
                         requesting = false;
                         if (!controllerActive) return;
                         layer.close(popupIndex);
-                        message.alert(!res.msg || res.msg === 'success' ? '订单发货信息已保存。' : res.msg, 'success');
+                        message.alert(!res.msg || res.msg === 'success' ? i18n('订单发货信息已保存。') : res.msg, 'success');
                         table.refresh();
                     },
                     error: res => {
                         requesting = false;
-                        if (controllerActive) message.alert(res?.msg || '订单发货信息未能保存。', 'error');
+                        if (controllerActive) message.alert(res?.msg || i18n('订单发货信息未能保存。'), 'error');
                     },
                     fail: () => {
                         requesting = false;
@@ -152,7 +152,7 @@
             autoPosition: true,
             height: "auto",
             width: "580px",
-            confirmText: '核对并发货',
+            confirmText: i18n('核对并发货'),
             done: () => {
                 if (controllerActive && table) table.refresh();
             }
@@ -165,10 +165,15 @@
         , {
             field: 'trade_no',
             title: '订单号',
-            formatter: value => {
+            formatter: (value, row) => {
                 const tradeNo = String(value ?? '').trim();
                 if (!tradeNo) return '-';
-                return `<span class="md-order-trade-no"><span class="md-order-trade-no__value">${escapeHtml(tradeNo)}</span><button type="button" class="md-order-trade-no__copy" aria-label="复制订单号" title="复制订单号">${util.icon("fa-duotone fa-regular fa-copy")}</button></span>`;
+                //下单时间跟在订单号下面，对账当日销量时不用再一列列横着找（#795）
+                const createTime = String(row?.create_time ?? '').trim();
+                const time = createTime
+                    ? `<span class="md-order-id__time" title="${i18n('下单时间')}">${escapeHtml(createTime)}</span>`
+                    : '';
+                return `<div class="md-order-id"><span class="md-order-trade-no"><span class="md-order-trade-no__value">${escapeHtml(tradeNo)}</span><button type="button" class="md-order-trade-no__copy" aria-label="${i18n('复制订单号')}" title="${i18n('复制订单号')}">${util.icon("fa-duotone fa-regular fa-copy")}</button></span>${time}</div>`;
             },
             events: {
                 'click .md-order-trade-no__copy': (event, value) => {
@@ -196,7 +201,7 @@
                     ? `<img src="${c.cover}" class="md-commodity-cell__cover" alt="">`
                     : `<span class="md-commodity-cell__cover md-commodity-cell__cover--ph"><i class="fa-duotone fa-regular fa-image"></i></span>`;
                 const ownerObj = __.user || __.substation_user;
-                const owner = (ownerObj && ownerObj.username) ? ownerObj.username : '主站';
+                const owner = (ownerObj && ownerObj.username) ? ownerObj.username : i18n('主站');
                 return `<div class="md-commodity-cell md-commodity-cell--sm">${cover}<div class="md-commodity-cell__text"><span class="md-commodity-cell__name">${c.name || ''}</span><span class="md-commodity-cell__sub">${owner}</span></div></div>`;
             }
         }
@@ -205,10 +210,10 @@
                 const race = (__.race && __.race !== '-') ? __.race : '';
                 const hasSku = !util.isEmptyOrNotJson(__.sku);
                 if (!race && !hasSku) return '-';
-                let rows = `<div class="md-pair__row"><span class="md-pair__k">类别</span><span class="md-pair__v">${race || '-'}</span></div>`;
+                let rows = `<div class="md-pair__row"><span class="md-pair__k">${i18n('类别')}</span><span class="md-pair__v">${i18n(race) || '-'}</span></div>`;
                 if (hasSku) {
                     let badges = '';
-                    for (const x in __.sku) badges += format.badge(`${x}: ${__.sku[x]}`, "a-badge-info");
+                    for (const x in __.sku) badges += format.badge(`${i18n(x)}: ${i18n(__.sku[x])}`, "a-badge-info");
                     rows += `<div class="md-pair__row"><span class="md-pair__k">SKU</span><span class="md-pair__v">${format.badgeGroup(badges)}</span></div>`;
                 }
                 return `<div class="md-pair">${rows}</div>`;
@@ -220,7 +225,7 @@
                 const amountHtml = amt > 0
                     ? `<span class="md-pair__v" style="color:var(--md-success);font-weight:600">¥${format.amountRemoveTrailingZeros(amt)}</span>`
                     : `<span class="md-pair__v md-pair__v--muted">¥0</span>`;
-                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">数量</span><span class="md-pair__v">${__.card_num ?? '-'}</span></div><div class="md-pair__row"><span class="md-pair__k">金额</span>${amountHtml}</div></div>`;
+                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">${i18n('数量')}</span><span class="md-pair__v">${__.card_num ?? '-'}</span></div><div class="md-pair__row"><span class="md-pair__k">${i18n('金额')}</span>${amountHtml}</div></div>`;
             }
         }
         , {
@@ -241,7 +246,7 @@
                 const rebate = parseFloat(__.rebate) || 0;
                 if (fee <= 0 && rebate <= 0) return '-';
                 const fmt = v => '¥' + format.amountRemoveTrailingZeros(v);
-                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">手续费</span><span class="md-pair__v" style="color:var(--md-info)">${fmt(fee)}</span></div><div class="md-pair__row"><span class="md-pair__k">佣金</span><span class="md-pair__v md-pair__v--muted">${fmt(rebate)}</span></div></div>`;
+                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">${i18n('手续费')}</span><span class="md-pair__v" style="color:var(--md-info)">${fmt(fee)}</span></div><div class="md-pair__row"><span class="md-pair__k">${i18n('佣金')}</span><span class="md-pair__v md-pair__v--muted">${fmt(rebate)}</span></div></div>`;
             }
         }
         , {
@@ -256,8 +261,8 @@
                     : `<span class="md-user-cell__avatar md-user-cell__avatar--ph">${(name.charAt(0) || '?').toUpperCase()}</span>`;
                 const divide = parseFloat(__.divide_amount) || 0;
                 const sub = divide > 0
-                    ? `<span class="md-user-cell__sub" style="color:var(--md-success);font-weight:600">分成 ¥${format.amountRemoveTrailingZeros(divide)}</span>`
-                    : `<span class="md-user-cell__sub">分成 ¥0</span>`;
+                    ? `<span class="md-user-cell__sub" style="color:var(--md-success);font-weight:600">${i18n('分成')} ¥${format.amountRemoveTrailingZeros(divide)}</span>`
+                    : `<span class="md-user-cell__sub">${i18n('分成')} ¥0</span>`;
                 return `<div class="md-user-cell">${avatar}<div class="md-user-cell__text"><span class="md-user-cell__name">${name}</span>${sub}</div></div>`;
             }
         }
@@ -275,9 +280,9 @@
                         openControllerLayer({
                             ...(mobile ? mobileSheetOptions('md-order-secret-layer') : {area: '480px'}),
                             type: 1,
-                            title: `${util.icon("fa-duotone fa-regular fa-eye")} 查看卡密`,
+                            title: `${util.icon("fa-duotone fa-regular fa-eye")} ${i18n('查看卡密')}`,
                             shadeClose: true,
-                            content: `<div class="md-secret"><div class="md-secret__code">${escaped}</div><div class="md-secret__bar"><button type="button" class="md-secret__btn" data-act="copy">${util.icon("fa-duotone fa-regular fa-copy")} 复制</button><button type="button" class="md-secret__btn md-secret__btn--primary" data-act="download">${util.icon("fa-duotone fa-regular fa-download")} 下载</button></div></div>`,
+                            content: `<div class="md-secret"><div class="md-secret__code">${escaped}</div><div class="md-secret__bar"><button type="button" class="md-secret__btn" data-act="copy">${util.icon("fa-duotone fa-regular fa-copy")} ${i18n('复制')}</button><button type="button" class="md-secret__btn md-secret__btn--primary" data-act="download">${util.icon("fa-duotone fa-regular fa-download")} ${i18n('下载')}</button></div></div>`,
                             success: (layero) => {
                                 layero.find('[data-act="copy"]').on('click', () => {
                                     util.copyTextToClipboard(secret, () => message.success('卡密已复制'));
@@ -287,7 +292,7 @@
                                     const url = URL.createObjectURL(blob);
                                     const a = document.createElement('a');
                                     a.href = url;
-                                    a.download = `卡密_${map.trade_no || 'export'}.txt`;
+                                    a.download = `${i18n('卡密')}_${map.trade_no || 'export'}.txt`;
                                     document.body.appendChild(a);
                                     a.click();
                                     a.remove();
@@ -303,7 +308,7 @@
                     title: "手动发货",
                     show: _ => _?.commodity?.delivery_way === 1 && Number(_.status) === 1,
                     click: (event, value, map, index) => {
-                        modal(`${util.icon("fa-duotone fa-regular fa-truck-ramp-box")} 发货内容`, map);
+                        modal(`${util.icon("fa-duotone fa-regular fa-truck-ramp-box")} ${i18n('发货内容')}`, map);
                     }
                 },
 
@@ -329,7 +334,7 @@
                             ...(mobile ? mobileSheetOptions('md-order-widget-layer') : {area: '460px'}),
                             type: 1,
                             shadeClose: true,
-                            title: `${util.icon("fa-duotone fa-regular fa-diamonds-4")} 控件信息`,
+                            title: `${util.icon("fa-duotone fa-regular fa-diamonds-4")} ${i18n('控件信息')}`,
                             content: mobile
                                 ? `<div class="md-detail md-order-widget-detail"><div class="md-detail__body">${rows}</div></div>`
                                 : `<div class="md-detail" style="padding:6px 14px 14px;"><div class="md-detail__body">${rows}</div></div>`
@@ -421,12 +426,12 @@
         const contentType = response.headers.get('content-type') || '';
         if (contentType.includes('application/json')) {
             const json = await response.json();
-            if (!response.ok || json.code !== 200) throw new Error(json.msg || '请求失败');
+            if (!response.ok || json.code !== 200) throw new Error(json.msg || i18n('请求失败'));
             return {json: json};
         }
-        if (!response.ok) throw new Error('服务器无法完成订单导出');
+        if (!response.ok) throw new Error(i18n('服务器无法完成订单导出'));
         if (!contentType.includes('text/csv') && !contentType.includes('application/octet-stream')) {
-            throw new Error('服务器返回的订单导出文件格式不正确');
+            throw new Error(i18n('服务器返回的订单导出文件格式不正确'));
         }
         return {blob: await response.blob()};
     };
@@ -434,24 +439,24 @@
         Loading.show();
         try {
             const result = await postOrderExportRequest('/admin/api/order/export', payload);
-            if (!result.blob) throw new Error('服务器没有返回订单导出文件');
+            if (!result.blob) throw new Error(i18n('服务器没有返回订单导出文件'));
             if (!controllerActive) return;
             const count = Number(impact.count || 0);
             const url = URL.createObjectURL(result.blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `订单导出-${count}-${new Date().toISOString().slice(0, 10)}.csv`;
+            link.download = `${i18n('订单导出')}-${count}-${new Date().toISOString().slice(0, 10)}.csv`;
             document.body.appendChild(link);
             link.click();
             link.remove();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
             message.success(Number(impact.export_status) === 1
-                ? `已导出并永久删除 ${count} 笔订单`
-                : `已安全导出 ${count} 笔订单`);
+                ? `${i18n('已导出并永久删除')} ${count} ${i18n('笔订单')}`
+                : `${i18n('已安全导出')} ${count} ${i18n('笔订单')}`);
         } catch (error) {
             if (controllerActive) {
                 message.alert(
-                    error.message || '订单导出请求失败；若选择了永久删除，请刷新订单列表确认结果',
+                    error.message || i18n('订单导出请求失败；若选择了永久删除，请刷新订单列表确认结果'),
                     'error'
                 );
             }
@@ -467,13 +472,13 @@
         component.popup({
             tab: [
                 {
-                    name: util.icon("fa-duotone fa-regular fa-file-export") + " 导出订单",
+                    name: util.icon("fa-duotone fa-regular fa-file-export") + i18n(" 导出订单"),
                     form: [
                         {
                             name: "custom",
                             type: "custom",
                             complete: (obj, dom) => {
-                                dom.html('<div class="alert alert-warning mb-4"><b>订单导出</b><br>系统会先通过 POST 精确预览当前筛选范围，再生成文件。单次最多 5000 笔；选择“永久删除”后还必须完成高危确认。</div>');
+                                dom.html('<div class="alert alert-warning mb-4"><b>' + i18n('订单导出') + '</b><br>' + i18n('系统会先通过 POST 精确预览当前筛选范围，再生成文件。单次最多 5000 笔；选择“永久删除”后还必须完成高危确认。') + '</div>');
                             }
                         },
                         {
@@ -499,7 +504,7 @@
             height: "auto",
             width: "580px",
             assign: {export_num: 0, export_status: 0},
-            confirmText: "预览导出范围",
+            confirmText: i18n("预览导出范围"),
             maxmin: false,
             autoPosition: true,
             submit: async (data, index) => {
@@ -535,16 +540,16 @@
                     const total = Number(impact.total || 0);
                     const previewToken = String(impact.preview_token || '');
                     if (!Number.isInteger(count) || count < 1 || !previewToken.includes('.')) {
-                        throw new Error('服务器没有返回有效的订单导出范围');
+                        throw new Error(i18n('服务器没有返回有效的订单导出范围'));
                     }
 
                     const scope = impact.has_filter
-                        ? '当前筛选条件'
-                        : '<span style="color:#d32f2f;font-weight:700">未设置筛选条件</span>';
+                        ? i18n('当前筛选条件')
+                        : '<span style="color:#d32f2f;font-weight:700">' + i18n('未设置筛选条件') + '</span>';
                     const limitText = count < total
-                        ? `，按订单 ID 从新到旧导出其中 <b>${count} 笔</b>`
-                        : `，本次导出 <b>${count} 笔</b>`;
-                    const detail = `${scope}共命中 ${total} 笔${limitText}。<br><br>本次范围内：已支付 ${Number(impact.paid_count || 0)} 笔、未支付 ${Number(impact.unpaid_count || 0)} 笔；已发货 ${Number(impact.delivered_count || 0)} 笔、未发货 ${Number(impact.undelivered_count || 0)} 笔。`;
+                        ? `，${i18n('按订单')} ID ${i18n('从新到旧导出其中')} <b>${count} ${i18n('笔')}</b>`
+                        : `，${i18n('本次导出')} <b>${count} ${i18n('笔')}</b>`;
+                    const detail = `${scope}${i18n('共命中')} ${total} ${i18n('笔')}${limitText}。<br><br>${i18n('本次范围内：已支付')} ${Number(impact.paid_count || 0)} ${i18n('笔、未支付')} ${Number(impact.unpaid_count || 0)} ${i18n('笔；已发货')} ${Number(impact.delivered_count || 0)} ${i18n('笔、未发货')} ${Number(impact.undelivered_count || 0)} ${i18n('笔。')}`;
                     const proceed = deleteConfirmation => {
                         if (downloadPending || !controllerActive) return;
                         downloadPending = true;
@@ -560,22 +565,22 @@
                     };
 
                     if (exportStatus === 1) {
-                        const phrase = `确认永久删除${count}笔订单`;
+                        const phrase = `${i18n('确认永久删除')}${count}${i18n('笔订单')}`;
                         message.dangerPrompt(
-                            `${detail}<br><br><b style="color:#d32f2f">下载请求成功后，系统会物理删除上述 ${count} 笔订单及其历史记录，无法恢复。</b><br>删除失败时不会生成下载文件；但服务端确认成功后即完成删除，即使浏览器未保存文件也无法撤销。`,
+                            `${detail}<br><br><b style="color:#d32f2f">${i18n('下载请求成功后，系统会物理删除上述')} ${count} ${i18n('笔订单及其历史记录，无法恢复。')}</b><br>${i18n('删除失败时不会生成下载文件；但服务端确认成功后即完成删除，即使浏览器未保存文件也无法撤销。')}`,
                             phrase,
                             () => proceed(phrase)
                         );
                     } else {
                         message.ask(
-                            `${detail}<br><br>本次只下载 CSV，不修改或删除订单。`,
+                            `${detail}<br><br>${i18n('本次只下载')} CSV，${i18n('不修改或删除订单。')}`,
                             () => proceed(''),
-                            '确认导出订单',
-                            '确认下载'
+                            i18n('确认导出订单'),
+                            i18n('确认下载')
                         );
                     }
                 } catch (error) {
-                    if (controllerActive) message.alert(error.message || '无法预览订单导出范围', 'error');
+                    if (controllerActive) message.alert(error.message || i18n('无法预览订单导出范围'), 'error');
                 } finally {
                     previewPending = false;
                     Loading.hide();

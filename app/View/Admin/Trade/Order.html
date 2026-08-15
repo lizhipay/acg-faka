@@ -41,8 +41,8 @@
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
             <!--begin::Row-->
-            <h2 class="admin-mobile-only-section">订单概览</h2>
-            <div class="md-stat-grid" data-admin-mobile-stats="mini" role="region" aria-label="订单数据概览">
+            <h2 class="admin-mobile-only-section">#{t("订单概览")}</h2>
+            <div class="md-stat-grid" data-admin-mobile-stats="mini" role="region" aria-label="#{t('订单数据概览')}">
                 #{include file="../Component/StatCard.html" accent="primary" icon="fa-receipt" label="订单数量" vclass="order_count" value="—"}
                 #{include file="../Component/StatCard.html" accent="success" icon="fa-circle-dollar" label="订单金额" vclass="order_amount" value="—"}
                 #{include file="../Component/StatCard.html" accent="danger" icon="fa-filter-circle-dollar" label="手续费" vclass="order_cost" value="—"}
@@ -50,21 +50,21 @@
             <!--end::Row-->
 
             <!--begin::Tables Widget 9-->
-            <h2 class="admin-mobile-only-section">订单列表</h2>
+            <h2 class="admin-mobile-only-section">#{t("订单列表")}</h2>
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->
                 <div class="card-header border-0">
                     <div class="card-toolbar">
                         <button class="btn btn-sm btn-light-primary clear me-3"><i class="fa-duotone fa-regular fa-trash-can-clock"></i>
-                            一键清理无用订单
+                            #{t("一键清理无用订单")}
                         </button>
                         <button class="btn btn-sm btn-light-success btn-app-export me-3"><i class="fa-duotone fa-regular fa-down-to-line"></i>
-                            导出筛选订单
+                            #{t("导出筛选订单")}
                         </button>
                         <!--start::HOOK-->
                         #{hook(\App\Consts\Hook::ADMIN_VIEW_ORDER_TOOLBAR)}
                         <!--end::HOOK-->
-                        <span class="badge badge-light-primary fs-8">Tips：上方订单数据显示会根据下方的查询条件进行筛选显示。</span>
+                        <span class="badge badge-light-primary fs-8">#{t("Tips：上方订单数据显示会根据下方的查询条件进行筛选显示。")}</span>
                     </div>
                 </div>
                 <!--end::Header-->

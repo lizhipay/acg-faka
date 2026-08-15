@@ -36,6 +36,8 @@ class Recharge extends User
 
         $let = "(`equipment`=0 or `equipment`={$equipment})";
         $pay = Pay::query()->orderBy("sort", "asc")->where("recharge", 1)->whereRaw($let)->get(['id', 'name', 'icon', 'handle'])->toArray();
+        //支付方式名是站长自定义的动态文案，出口统一走 dyn 翻译
+        $pay = \Kernel\Util\Lang::transList($pay, ['name']);
         return $this->json(200, 'success', $pay);
     }
 

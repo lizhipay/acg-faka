@@ -154,7 +154,8 @@ CREATE TABLE `__PREFIX__commodity`  (
                                         `shared_premium` float(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '商品加价',
                                         `shared_stock` json DEFAULT NULL COMMENT '库存信息',
                                         `stock` int(11) DEFAULT NULL COMMENT '库存',
-                                        `shared_premium_type` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '加价模式',
+                                        `shared_premium_type` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '加价模式：0=固定金额，1=百分比，2=加价模板',
+                                        `shared_premium_template` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '加价模板ID：0=未使用模板',
                                         `seckill_status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '商品秒杀：0=关闭，1=开启',
                                         `seckill_start_time` datetime NULL DEFAULT NULL COMMENT '秒杀开始时间',
                                         `seckill_end_time` datetime NULL DEFAULT NULL COMMENT '秒杀结束时间',
@@ -167,6 +168,7 @@ CREATE TABLE `__PREFIX__commodity`  (
                                         `only_user` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '限制登录购买：0=否，1=是',
                                         `purchase_count` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '限制购买数量：0=无限制',
                                         `widget` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '控件',
+                                        `tags` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '商品标签：JSON [{text,color}]',
                                         `level_price` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '会员等级-定制价格',
                                         `level_disable` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '禁用会员等级折扣，0=关闭，1=启用',
                                         `minimum` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '最低购买数量，0=无限制',
@@ -189,7 +191,7 @@ CREATE TABLE `__PREFIX__commodity`  (
                                         INDEX `recommend`(`recommend` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
-INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 1, 1, NULL, '', 0.00 , NULL,999999, 0, 0, NULL, NULL, 0, 0.00, 0, NULL, 0, 0, 0, 0, NULL, NULL, 0, 0, 0, 0, NULL, 0, 0 ,0 ,0);
+INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 1, 1, NULL, '', 0.00, NULL, 999999, 0, 0, 0, NULL, NULL, 0, 0.00, 0, NULL, 0, 0, 0, 0, NULL, NULL, NULL, 0, 0, 0, 0, NULL, 0, 0, 0, 0);
 
 
 
@@ -200,7 +202,7 @@ CREATE TABLE `__PREFIX__config`  (
                                      `value` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '配置内容',
                                      PRIMARY KEY (`id`) USING BTREE,
                                      UNIQUE INDEX `key`(`key`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 52 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = MyISAM AUTO_INCREMENT = 57 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
 
 INSERT INTO `__PREFIX__config` VALUES (1, 'shop_name', '异次元店铺');
@@ -253,6 +255,11 @@ INSERT INTO `__PREFIX__config` VALUES (48, 'user_center_theme', 'MountFuji');
 INSERT INTO `__PREFIX__config` VALUES (49, 'user_center_mobile_theme', '0');
 INSERT INTO `__PREFIX__config` VALUES (50, 'callback_ip_whitelist', '0');
 INSERT INTO `__PREFIX__config` VALUES (51, 'callback_ip_whitelist_rules', '');
+INSERT INTO `__PREFIX__config` VALUES (52, 'force_login', '0');
+INSERT INTO `__PREFIX__config` VALUES (53, 'admin_login_verification', '1');
+INSERT INTO `__PREFIX__config` VALUES (54, 'request_log', '0');
+INSERT INTO `__PREFIX__config` VALUES (55, 'admin_entrance', '');
+INSERT INTO `__PREFIX__config` VALUES (56, 'lang_version', '0');
 
 
 DROP TABLE IF EXISTS `__PREFIX__coupon`;
@@ -398,6 +405,22 @@ CREATE TABLE `__PREFIX__order_option`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 
+DROP TABLE IF EXISTS `__PREFIX__price_template`;
+CREATE TABLE `__PREFIX__price_template`  (
+                                             `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
+                                             `name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '模板名称',
+                                             `base` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '加价基准：0=成本价，1=当前售价',
+                                             `guest_type` tinyint UNSIGNED NOT NULL DEFAULT 1 COMMENT '游客价加价方式：0=固定金额，1=百分比',
+                                             `guest_value` decimal(10, 2) NOT NULL DEFAULT 0.00 COMMENT '游客价加价值',
+                                             `user_type` tinyint UNSIGNED NOT NULL DEFAULT 1 COMMENT '会员价加价方式：0=固定金额，1=百分比',
+                                             `user_value` decimal(10, 2) NOT NULL DEFAULT 0.00 COMMENT '会员价加价值',
+                                             `level_config` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '各会员等级加价规则：{等级id:{type,value}}',
+                                             `rounding` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '价格取整：0=不取整，1=四舍五入到整元，2=向上取整到整元',
+                                             `create_time` datetime NOT NULL COMMENT '创建时间',
+                                             PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
+
+
 DROP TABLE IF EXISTS `__PREFIX__pay`;
 CREATE TABLE `__PREFIX__pay`  (
                                   `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
@@ -412,6 +435,7 @@ CREATE TABLE `__PREFIX__pay`  (
                                   `equipment` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '设备：0=通用，1=手机，2=电脑',
                                   `cost` decimal(10, 3) UNSIGNED NULL DEFAULT 0.000 COMMENT '手续费',
                                   `cost_type` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '手续费模式：0=单笔固定，1=百分比',
+                                  `archived` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '归档：0=正常，1=归档(仅保留供历史订单显示)',
                                   PRIMARY KEY (`id`) USING BTREE,
                                   INDEX `commodity`(`commodity` ASC) USING BTREE,
                                   INDEX `recharge`(`recharge` ASC) USING BTREE,
@@ -420,8 +444,8 @@ CREATE TABLE `__PREFIX__pay`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 
-INSERT INTO `__PREFIX__pay` VALUES (1, '余额', '/assets/static/images/wallet.png', '#system', 1, 0, '1997-01-01 00:00:00', '#system', 999, 0, 0.000, 0);
-INSERT INTO `__PREFIX__pay` VALUES (2, '支付宝', '/assets/user/images/cash/alipay.png', 'alipay', 1, 1, '1997-01-01 00:00:00', 'Epay', 1, 0, 0.000, 0);
+INSERT INTO `__PREFIX__pay` VALUES (1, '余额', '/assets/static/images/wallet.png', '#system', 1, 0, '1997-01-01 00:00:00', '#system', 999, 0, 0.000, 0, 0);
+INSERT INTO `__PREFIX__pay` VALUES (2, '支付宝', '/assets/user/images/cash/alipay.png', 'alipay', 1, 1, '1997-01-01 00:00:00', 'Epay', 1, 0, 0.000, 0, 0);
 
 
 DROP TABLE IF EXISTS `__PREFIX__shared`;
@@ -501,7 +525,9 @@ CREATE TABLE `__PREFIX__user_commodity`  (
                                              `user_id` int UNSIGNED NOT NULL COMMENT '商家id',
                                              `commodity_id` int UNSIGNED NOT NULL COMMENT '商品id',
                                              `premium` float(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '商品加价',
+  `rounding` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '价格取整：0=不取整，1=四舍五入到整元，2=向上取整到整元',
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '自定义名称',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '自定义商品介绍，NULL/空=沿用主站',
   `status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '状态：0=隐藏，1=显示',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `user_id`(`user_id` ASC, `commodity_id` ASC) USING BTREE,
@@ -539,6 +565,7 @@ CREATE TABLE `__PREFIX__user_recharge`  (
                                             `trade_no` char(22) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '订单号',
                                             `user_id` int UNSIGNED NOT NULL COMMENT '用户id',
                                             `amount` decimal(10, 2) UNSIGNED NOT NULL COMMENT '充值金额',
+                                            `pay_cost` decimal(10, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '支付接口手续费',
                                             `pay_id` int UNSIGNED NOT NULL COMMENT '支付id',
                                             `status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '状态：0=未支付，1=已支付',
                                             `create_time` datetime NOT NULL COMMENT '创建时间',
@@ -697,6 +724,21 @@ CREATE TABLE `__PREFIX__user_message` (
                                         INDEX `user_read_message`(`user_id` ASC, `read_time` ASC, `id` ASC) USING BTREE,
                                         CONSTRAINT `__PREFIX__user_message_ibfk_1` FOREIGN KEY (`message_id`) REFERENCES `__PREFIX__system_message` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
                                         CONSTRAINT `__PREFIX__user_message_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `__PREFIX__user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
+
+CREATE TABLE `__PREFIX__lang` (
+                                  `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
+                                  `hash` char(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'md5(source)',
+                                  `source` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '中文原文',
+                                  `lang` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '目标语言:zh-tw/en/ja',
+                                  `text` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '译文,NULL=待翻译',
+                                  `scene` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '来源场景:tpl/js/api/dyn/ext:{扩展名}',
+                                  `status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '0=待翻译 1=机器翻译 2=人工确认',
+                                  `create_time` datetime NULL DEFAULT NULL,
+                                  `update_time` datetime NULL DEFAULT NULL,
+                                  PRIMARY KEY (`id`) USING BTREE,
+                                  UNIQUE INDEX `uk_hash_lang`(`hash` ASC, `lang` ASC) USING BTREE,
+                                  INDEX `idx_lang_status`(`lang` ASC, `status` ASC) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
 
 SET FOREIGN_KEY_CHECKS = 1;

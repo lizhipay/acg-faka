@@ -9,12 +9,13 @@ if (!function_exists("index_var")) {
     {
         return set_script_var([
             "DEBUG" => DEBUG,
+            "LANG" => \Kernel\Util\Lang::get(),
             "CAT_ID" => (int)$_GET['cid'],
             "HACK_ROUTE_TABLE_COLUMNS" => hook(Hook::HACK_ROUTE_TABLE_COLUMNS),
             "HACK_SUBMIT_FORM" => hook(Hook::HACK_SUBMIT_FORM),
             "HACK_SUBMIT_TAB" => hook(Hook::HACK_SUBMIT_TAB),
             "HACK_ROUTE_TABLE_SEARCH" => hook(Hook::HACK_ROUTE_TABLE_SEARCH)
-        ]);
+        ]) . lang_dict_script();
     }
 }
 
@@ -23,12 +24,12 @@ if (!function_exists("contact_type_msg")) {
     function contact_type_msg(int $type): string
     {
         //联系方式：0=任意，1=手机，2=邮箱，3=QQ
-        return match ($type) {
+        return lang(match ($type) {
             0 => "联系方式",
             1 => "手机号",
             2 => "邮箱地址",
             3 => "QQ号"
-        };
+        }, "tpl");
     }
 }
 
@@ -43,6 +44,17 @@ if (!function_exists("widget_render")) {
         $html = "";
 
         foreach ($widgets as $widget) {
+            //custom：由 JS 接管渲染的自定义组件容器（如插件注入的人机验证），无标签、无输入项、不参与下单校验
+            if (($widget['type'] ?? '') == "custom") {
+                $customName = htmlspecialchars((string)($widget['name'] ?? ''), ENT_QUOTES);
+                if ($customName !== '') {
+                    $html .= <<<HTML
+<div class="acg-widget-custom acg-widget-custom-{$customName}" data-widget-custom="{$customName}"></div>
+HTML;
+                }
+                continue;
+            }
+
             $dict = [];
             if (!empty($widget['dict'])) {
                 foreach (explode(',', trim($widget['dict'])) as $pair) {

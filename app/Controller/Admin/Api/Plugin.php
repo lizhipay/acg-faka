@@ -74,6 +74,13 @@ class Plugin extends Manage
             return ($b['HAVE_UPDATE'] ?? false) <=> ($a['HAVE_UPDATE'] ?? false);
         });
 
+        //插件名/简介来自各插件的 Info.php，属动态文案：翻译放在关键字筛选之后，
+        //保证搜索仍按中文原文匹配
+        $plugins = \Kernel\Util\Lang::transList($plugins, [
+            \App\Consts\Plugin::NAME,
+            \App\Consts\Plugin::DESCRIPTION,
+        ]);
+
         return $this->json(200, 'success', ["list" => $plugins]);
     }
 

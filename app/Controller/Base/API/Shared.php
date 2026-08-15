@@ -22,7 +22,7 @@ abstract class Shared extends \App\Controller\Base\Shared
     protected function json(int $code = 200, ?string $message = null, ?array $data = []): array
     {
         $json['code'] = $code;
-        $message ? $json['msg'] = $message : null;
+        $message ? $json['msg'] = lang($message) : null;
         $json['data'] = $data;
         return $json;
     }

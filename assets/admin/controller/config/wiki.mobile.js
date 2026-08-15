@@ -25,7 +25,7 @@
     var docsifyPlugin = null;
     var resourceRewrite = window.AdminWikiResourceRewrite;
     var controller = null;
-    var pluginName = (document.title || '').split(' - ')[0].trim() || '插件';
+    var pluginName = (document.title || '').split(' - ')[0].trim() || i18n('插件');
 
     function adminMenu() {
         return document.getElementById('kt_aside_menu');
@@ -64,7 +64,7 @@
     }
 
     function loadAdminMenu() {
-        if (destroyed) return Promise.reject(new Error('Wiki 页面已销毁'));
+        if (destroyed) return Promise.reject(new Error(i18n('Wiki 页面已销毁')));
         if (adminMenu()) return Promise.resolve(adminMenu());
         if (menuPromise) return menuPromise;
         var abort = window.AbortController ? new window.AbortController() : null;
@@ -75,13 +75,13 @@
         };
         if (abort) request.signal = abort.signal;
         menuPromise = window.fetch('/admin/dashboard/index', request).then(function (response) {
-            if (!response.ok) throw new Error('后台菜单加载失败');
+            if (!response.ok) throw new Error(i18n('后台菜单加载失败'));
             return response.text();
         }).then(function (html) {
-            if (destroyed) throw new Error('Wiki 页面已销毁');
+            if (destroyed) throw new Error(i18n('Wiki 页面已销毁'));
             var page = new window.DOMParser().parseFromString(html, 'text/html');
             var source = page.getElementById('kt_aside_menu');
-            if (!source) throw new Error('后台菜单不可用');
+            if (!source) throw new Error(i18n('后台菜单不可用'));
             return installAdminMenu(source, page);
         }).catch(function (error) {
             menuPromise = null;
@@ -101,8 +101,8 @@
         var content = document.createElement('div');
         content.className = 'admin-wiki-menu-error';
         content.innerHTML = '<span class="material-icons-outlined" aria-hidden="true">cloud_off</span>' +
-            '<strong>暂时无法读取后台菜单</strong><small>可以返回后台后继续操作</small>' +
-            '<a href="/admin/dashboard/index">返回后台</a>';
+            '<strong>' + i18n('暂时无法读取后台菜单') + '</strong><small>' + i18n('可以返回后台后继续操作') + '</small>' +
+            '<a href="/admin/dashboard/index">' + i18n('返回后台') + '</a>';
         api.openSheet({id: 'wiki-menu-error', title: '全部功能', content: content});
     }
 
@@ -169,8 +169,8 @@
         sidebar.addEventListener('click', sidebarClickHandler, true);
         docsSheet = api.openSheet({
             id: 'wiki-documents',
-            title: pluginName + ' 文档',
-            subtitle: '搜索或选择帮助主题',
+            title: pluginName + i18n(' 文档'),
+            subtitle: i18n('搜索或选择帮助主题'),
             content: sidebar,
             fullScreen: true,
             className: 'admin-wiki-docs-sheet',
@@ -228,7 +228,7 @@
         if (!link) return;
         link.href = window.location.pathname + window.location.search + '#/';
         link.removeAttribute('target');
-        link.setAttribute('aria-label', pluginName + ' 文档首页');
+        link.setAttribute('aria-label', pluginName + i18n(' 文档首页'));
     }
 
     function configureSearchClear() {
@@ -238,7 +238,7 @@
         clear.setAttribute('data-admin-wiki-clear-ready', '');
         clear.setAttribute('role', 'button');
         clear.setAttribute('tabindex', '0');
-        clear.setAttribute('aria-label', '清除文档搜索');
+        clear.setAttribute('aria-label', i18n('清除文档搜索'));
         var handler = function (event) {
             if (event.key !== 'Enter' && event.key !== ' ') return;
             event.preventDefault();

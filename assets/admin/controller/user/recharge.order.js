@@ -41,12 +41,12 @@
             const contentType = response.headers.get('content-type') || '';
             if (contentType.includes('application/json')) {
                 const json = await response.json();
-                if (!response.ok || json.code !== 200) throw new Error(json.msg || '请求失败');
+                if (!response.ok || json.code !== 200) throw new Error(json.msg || i18n('请求失败'));
                 return {json: json};
             }
-            if (!response.ok) throw new Error('服务器无法完成充值订单导出');
+            if (!response.ok) throw new Error(i18n('服务器无法完成充值订单导出'));
             if (!contentType.includes('text/csv') && !contentType.includes('application/octet-stream')) {
-                throw new Error('服务器返回的充值订单导出文件格式不正确');
+                throw new Error(i18n('服务器返回的充值订单导出文件格式不正确'));
             }
             return {blob: await response.blob()};
         } finally {
@@ -58,25 +58,25 @@
         Loading.show();
         try {
             const result = await postExportRequest('/admin/api/rechargeOrder/export', payload);
-            if (!result.blob) throw new Error('服务器没有返回充值订单导出文件');
+            if (!result.blob) throw new Error(i18n('服务器没有返回充值订单导出文件'));
             if (!controllerActive) return;
             const count = Number(impact.count || 0);
             const url = URL.createObjectURL(result.blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `充值订单导出-${count}-${new Date().toISOString().slice(0, 10)}.csv`;
+            link.download = `${i18n('充值订单导出')}-${count}-${new Date().toISOString().slice(0, 10)}.csv`;
             document.body.appendChild(link);
             link.click();
             link.remove();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
             message.success(Number(impact.export_status) === 1
-                ? `已导出并永久删除 ${count} 笔充值订单`
-                : `已安全导出 ${count} 笔充值订单`);
+                ? `${i18n('已导出并永久删除')} ${count} ${i18n('笔充值订单')}`
+                : `${i18n('已安全导出')} ${count} ${i18n('笔充值订单')}`);
             table?.refresh();
         } catch (error) {
             if (controllerActive && error?.name !== 'AbortError') {
                 message.alert(
-                    error.message || '充值订单导出失败；若选择了永久删除，请刷新列表确认结果',
+                    error.message || i18n('充值订单导出失败；若选择了永久删除，请刷新列表确认结果'),
                     'error'
                 );
             }
@@ -93,7 +93,7 @@
             formatter: value => {
                 const tradeNo = String(value ?? '');
                 if (!tradeNo) return '-';
-                return `<span class="md-copyable-cell"><span class="md-copyable-cell__value">${escapeHtml(tradeNo)}</span><button type="button" class="md-copyable-cell__copy" aria-label="复制订单号" title="复制订单号">${util.icon("fa-duotone fa-regular fa-copy")}</button></span>`;
+                return `<span class="md-copyable-cell"><span class="md-copyable-cell__value">${escapeHtml(tradeNo)}</span><button type="button" class="md-copyable-cell__copy" aria-label="${i18n('复制订单号')}" title="${i18n('复制订单号')}">${util.icon("fa-duotone fa-regular fa-copy")}</button></span>`;
             },
             events: {
                 'click .md-copyable-cell__copy': (event, value) => {
@@ -135,12 +135,12 @@
                     const userLabel = user.username || user.name || (user.id ? `ID ${user.id}` : row.user || '-');
                     const payName = row.pay && typeof row.pay === 'object' ? row.pay.name : row.pay;
                     const prompt = '<div style="text-align:left;line-height:1.8">' +
-                        '<p style="margin:0 0 8px">补单会把充值订单标记为已支付，并立即增加会员余额。</p>' +
-                        '<div><b>订单号：</b>' + escapeHtml(row.trade_no) + '</div>' +
-                        '<div><b>会员：</b>' + escapeHtml(userLabel) + '</div>' +
-                        '<div><b>充值金额：</b>¥' + escapeHtml(row.amount) + '</div>' +
-                        '<div><b>支付方式：</b>' + escapeHtml(payName) + '</div>' +
-                        '<p style="margin:8px 0 0;color:#d63b3b;font-weight:700">该操作会真实入账且无法在本页面撤销，请核对无误。</p></div>';
+                        '<p style="margin:0 0 8px">' + i18n('补单会把充值订单标记为已支付，并立即增加会员余额。') + '</p>' +
+                        '<div><b>' + i18n('订单号：') + '</b>' + escapeHtml(row.trade_no) + '</div>' +
+                        '<div><b>' + i18n('会员：') + '</b>' + escapeHtml(userLabel) + '</div>' +
+                        '<div><b>' + i18n('充值金额：') + '</b>¥' + escapeHtml(row.amount) + '</div>' +
+                        '<div><b>' + i18n('支付方式：') + '</b>' + escapeHtml(payName) + '</div>' +
+                        '<p style="margin:8px 0 0;color:#d63b3b;font-weight:700">' + i18n('该操作会真实入账且无法在本页面撤销，请核对无误。') + '</p></div>';
                     message.ask(prompt, () => {
                         if (supplementPending || !controllerActive) return;
                         supplementPending = true;
@@ -150,19 +150,19 @@
                             done: response => {
                                 supplementPending = false;
                                 if (!controllerActive) return;
-                                message.success(response?.msg || '补单成功');
+                                message.success(response?.msg || i18n('补单成功'));
                                 table.refresh();
                             },
                             error: response => {
                                 supplementPending = false;
-                                if (controllerActive) message.error(response?.msg || '补单失败');
+                                if (controllerActive) message.error(response?.msg || i18n('补单失败'));
                             },
                             fail: () => {
                                 supplementPending = false;
                                 if (controllerActive) message.error('网络异常，补单未提交');
                             }
                         });
-                    }, '确认充值补单', '确认补单');
+                    }, i18n('确认充值补单'), i18n('确认补单'));
                 }
             }]
         }
@@ -201,12 +201,12 @@
                         clearPending = false;
                         if (!controllerActive) return;
                         const count = Math.max(0, Number(response?.data?.count || 0));
-                        message.success(`已清理 ${count} 笔未支付充值订单`);
+                        message.success(`${i18n('已清理')} ${count} ${i18n('笔未支付充值订单')}`);
                         table.refresh();
                     },
                     error: response => {
                         clearPending = false;
-                        if (controllerActive) message.error(response?.msg || '清理失败');
+                        if (controllerActive) message.error(response?.msg || i18n('清理失败'));
                     },
                     fail: () => {
                         clearPending = false;
@@ -214,8 +214,8 @@
                     }
                 });
             },
-            '清理未支付充值订单？',
-            '确认清理'
+            i18n('清理未支付充值订单？'),
+            i18n('确认清理')
         );
     });
 
@@ -225,13 +225,13 @@
 
         component.popup({
             tab: [{
-                name: util.icon('fa-duotone fa-regular fa-file-export') + ' 导出充值订单',
+                name: util.icon('fa-duotone fa-regular fa-file-export') + i18n(' 导出充值订单'),
                 form: [
                     {
                         name: 'custom',
                         type: 'custom',
                         complete: (form, dom) => {
-                            dom.html('<div class="alert alert-warning mb-4"><b>充值订单导出</b><br>系统会先通过 POST 精确预览当前筛选范围，再生成文件。导出数量必须填写 1–5000；选择“永久删除”后还必须完成高危确认。</div>');
+                            dom.html('<div class="alert alert-warning mb-4"><b>' + i18n('充值订单导出') + '</b><br>' + i18n('系统会先通过 POST 精确预览当前筛选范围，再生成文件。导出数量必须填写 1–5000；选择“永久删除”后还必须完成高危确认。') + '</div>');
                         }
                     },
                     {
@@ -265,7 +265,7 @@
             height: 'auto',
             width: '580px',
             assign: {export_status: 0},
-            confirmText: '预览导出范围',
+            confirmText: i18n('预览导出范围'),
             maxmin: false,
             autoPosition: true,
             submit: async (data, index) => {
@@ -301,16 +301,16 @@
                     const total = Number(impact.total || 0);
                     const previewToken = String(impact.preview_token || '');
                     if (!Number.isInteger(count) || count < 1 || !previewToken.includes('.')) {
-                        throw new Error('服务器没有返回有效的充值订单导出范围');
+                        throw new Error(i18n('服务器没有返回有效的充值订单导出范围'));
                     }
 
                     const scope = impact.has_filter
-                        ? '当前筛选条件'
-                        : '<span style="color:#d32f2f;font-weight:700">未设置筛选条件</span>';
+                        ? i18n('当前筛选条件')
+                        : '<span style="color:#d32f2f;font-weight:700">' + i18n('未设置筛选条件') + '</span>';
                     const limitText = count < total
-                        ? `，按订单 ID 从新到旧导出其中 <b>${count} 笔</b>`
-                        : `，本次导出 <b>${count} 笔</b>`;
-                    const detail = `${scope}共命中 ${total} 笔${limitText}。<br><br>本次范围内：已支付 ${Number(impact.paid_count || 0)} 笔、未支付 ${Number(impact.unpaid_count || 0)} 笔。`;
+                        ? `，${i18n('按订单')} ID ${i18n('从新到旧导出其中')} <b>${count} ${i18n('笔')}</b>`
+                        : `，${i18n('本次导出')} <b>${count} ${i18n('笔')}</b>`;
+                    const detail = `${scope}${i18n('共命中')} ${total} ${i18n('笔')}${limitText}。<br><br>${i18n('本次范围内：已支付')} ${Number(impact.paid_count || 0)} ${i18n('笔、未支付')} ${Number(impact.unpaid_count || 0)} ${i18n('笔。')}`;
                     const proceed = deleteConfirmation => {
                         if (downloadPending || !controllerActive) return;
                         downloadPending = true;
@@ -326,23 +326,23 @@
                     };
 
                     if (exportStatus === 1) {
-                        const phrase = `确认永久删除${count}笔充值订单`;
+                        const phrase = `${i18n('确认永久删除')}${count}${i18n('笔充值订单')}`;
                         message.dangerPrompt(
-                            `${detail}<br><br><b style="color:#d32f2f">服务器成功生成文件后会物理删除上述 ${count} 笔充值订单，无法恢复。</b><br>删除失败时不会生成下载文件；服务端确认成功后即完成删除，即使浏览器未保存文件也无法撤销。`,
+                            `${detail}<br><br><b style="color:#d32f2f">${i18n('服务器成功生成文件后会物理删除上述')} ${count} ${i18n('笔充值订单，无法恢复。')}</b><br>${i18n('删除失败时不会生成下载文件；服务端确认成功后即完成删除，即使浏览器未保存文件也无法撤销。')}`,
                             phrase,
                             () => proceed(phrase)
                         );
                     } else {
                         message.ask(
-                            `${detail}<br><br>本次只下载 CSV，不修改或删除充值订单。`,
+                            `${detail}<br><br>${i18n('本次只下载')} CSV，${i18n('不修改或删除充值订单。')}`,
                             () => proceed(''),
-                            '确认导出充值订单',
-                            '确认下载'
+                            i18n('确认导出充值订单'),
+                            i18n('确认下载')
                         );
                     }
                 } catch (error) {
                     if (controllerActive && error?.name !== 'AbortError') {
-                        message.alert(error.message || '无法预览充值订单导出范围', 'error');
+                        message.alert(error.message || i18n('无法预览充值订单导出范围'), 'error');
                     }
                 } finally {
                     previewPending = false;

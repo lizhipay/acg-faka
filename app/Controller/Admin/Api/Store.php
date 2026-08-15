@@ -8,6 +8,7 @@ use App\Controller\Base\API\Manage;
 use App\Entity\Query\Get;
 use App\Interceptor\ManageSession;
 use App\Model\ManageLog;
+use App\Model\PriceTemplate;
 use App\Model\Shared;
 use App\Service\Image;
 use App\Service\Query;
@@ -1001,17 +1002,33 @@ class Store extends Manage
         }
         $itemCodes = array_values($itemCodes);
 
-        if (!is_scalar($map['premium'] ?? null) || !is_numeric($map['premium'])) {
+        $premiumRaw = $map['premium'] ?? '';
+        if (is_scalar($premiumRaw) && trim((string)$premiumRaw) === '') {
+            //加价留空视为不加价(#776)
+            $premiumRaw = '0';
+        }
+        if (!is_scalar($premiumRaw) || !is_numeric((string)$premiumRaw)) {
             throw new JSONException('加价数额必须是数字');
         }
-        $premium = (float)$map['premium'];
+        $premium = (float)$premiumRaw;
         if (!is_finite($premium) || $premium < 0 || $premium > 99999999.99) {
             throw new JSONException('加价数额超出有效范围');
         }
-        if (!is_scalar($map['premium_type'] ?? null) || !in_array((string)$map['premium_type'], ['0', '1'], true)) {
+        if (!is_scalar($map['premium_type'] ?? null) || !in_array((string)$map['premium_type'], ['0', '1', '2'], true)) {
             throw new JSONException('加价模式不正确');
         }
         $premiumType = (int)$map['premium_type'];
+
+        //加价模板模式：加价规则整套来自模板，premium/premium_type 只作为占位落库
+        $template = null;
+        if ($premiumType === PriceTemplate::SHARED_PREMIUM_TYPE) {
+            $templateId = (int)($map['premium_template'] ?? 0);
+            $template = $templateId > 0 ? PriceTemplate::query()->find($templateId) : null;
+            if (!$template) {
+                throw new JSONException('请选择一个有效的加价模板');
+            }
+            $premium = 0.0;
+        }
         $imageDownload = $this->binaryFlag($map['image_download'] ?? 0, '远端图片本地化') === 1;
         $shelves = $this->binaryFlag($map['shelves'] ?? 0, '立即上架');
         $sharedSync = $this->binaryFlag($map['shared_sync'] ?? 0, '远端信息同步');
@@ -1066,6 +1083,7 @@ class Store extends Manage
                 $commodity->shared_code = $item['code'];
                 $commodity->shared_premium = $premium;
                 $commodity->shared_premium_type = $premiumType;
+                $commodity->shared_premium_template = $template ? (int)$template->id : 0;
                 $commodity->seckill_status = $item['seckill_status'];
                 $commodity->shared_sync = $sharedSync;
                 $commodity->shared_amount_sync = $sharedAmountSync;
@@ -1079,7 +1097,9 @@ class Store extends Manage
                 $commodity->draft_status = $item['draft_status'];
 
                 if ($commodity->draft_status) {
-                    $commodity->draft_premium = $this->shared->AdjustmentAmount($premiumType, $premium, $item['draft_premium']);
+                    $commodity->draft_premium = $template
+                        ? $template->markupExtra((float)$item['draft_premium'])
+                        : $this->shared->AdjustmentAmount($premiumType, $premium, $item['draft_premium']);
                 }
 
                 //2022/01/05新增
@@ -1091,13 +1111,20 @@ class Store extends Manage
                 $commodity->stock = $item['stock'];
 
                 //自动加价
-                $config = $this->shared->AdjustmentPrice(
-                    (string)$item['config'],
-                    (string)$item['price'],
-                    (string)$item['user_price'],
-                    $premiumType,
-                    $premium
-                );
+                $config = $template
+                    ? $this->shared->AdjustmentTemplate(
+                        $template,
+                        (string)$item['config'],
+                        (string)$item['price'],
+                        (string)$item['user_price']
+                    )
+                    : $this->shared->AdjustmentPrice(
+                        (string)$item['config'],
+                        (string)$item['price'],
+                        (string)$item['user_price'],
+                        $premiumType,
+                        $premium
+                    );
 
                 $_config = Ini::toArray((string)$item['config']);
 
@@ -1113,6 +1140,10 @@ class Store extends Manage
                 $commodity->price = $config['price'];
                 $commodity->factory_price = 0;
                 $commodity->user_price = $config['user_price'];
+                //模板可以顺带把各会员等级的价格一次配好，这是普通加价做不到的
+                if (($config['level_price'] ?? '') !== '') {
+                    $commodity->level_price = $config['level_price'];
+                }
 
                 $alreadyImported = false;
                 $categoryCreated = false;
