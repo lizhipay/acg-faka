@@ -1773,10 +1773,25 @@ class Form {
     }
 
 
+    /* 输入清洗层修正(#833)前的一小段版本窗口里，widget/attribute 的 JSON 可能以
+     * URL 编码态入库（%5B%7B 开头）。读到这种形态先解一层再 parse，老数据不炸弹窗。 */
+    decodeEncodedJson(raw) {
+        return typeof raw === 'string' && /^%(?:5B|7B)/i.test(raw) ? decodeURIComponent(raw) : raw;
+    }
+
     widgetRegister(form) {
         this.clearComponent(form.name);
         let name = util.replaceDotWithHyphen(form.name);
-        let preset = form.default ? JSON.parse(form.default) : [];
+        let preset = [];
+        try {
+            preset = form.default ? JSON.parse(this.decodeEncodedJson(form.default)) : [];
+        } catch (e) {
+            //脏数据只当没有控件，绝不能让整个编辑弹窗装配中断
+            preset = [];
+        }
+        if (!Array.isArray(preset)) {
+            preset = [];
+        }
         if (preset.length <= 0) {
             this.addWidget(form.name);
         } else {
@@ -1810,7 +1825,7 @@ class Form {
 
         let preset = [];
         try {
-            preset = form.default ? JSON.parse(form.default) : [];
+            preset = form.default ? JSON.parse(this.decodeEncodedJson(form.default)) : [];
         } catch (e) {
             preset = [];
         }

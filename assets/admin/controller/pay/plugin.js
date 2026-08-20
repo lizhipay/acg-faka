@@ -98,7 +98,8 @@
 
     //这几个插件的验签密钥归属于 app/Plugin 那一侧的通用插件（手机App配对、自己的表和队列都在那边），
     //pay 这一侧配多套也只能换验签用的 key，换不了收款的那台设备，界面上要说清楚免得站长白配。
-    const SHARED_KEY_PLUGINS = ['AlipayPersonalPay', 'WeChatPersonalPay', 'UsdtPay', 'BuiltPayExtend'];
+    //UsdtPay 2.0 起多套配置就是多个收款钱包，已经不是"只能区分验签密钥"的形态，从名单里摘掉
+    const SHARED_KEY_PLUGINS = ['AlipayPersonalPay', 'WeChatPersonalPay', 'BuiltPayExtend'];
 
     const enc = value => encodeURIComponent(String(value ?? ''));
 

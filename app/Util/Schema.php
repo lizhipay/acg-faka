@@ -62,4 +62,48 @@ final class Schema
             $table->string('tags', 1000)->nullable()->comment('商品标签：JSON [{text,color}]');
         });
     }
+
+    /** @var array<string, bool> 本次请求内已确认过的表 */
+    private static array $tableKnown = [];
+
+    /**
+     * 表是否存在（带缓存）。
+     *
+     * 给「新版本引入的整张表」用：老站升级只覆盖文件，工单（3.5.1）、商品分组（3.1.3）
+     * 这类表在升级不完整的库里可能整个缺失，业务查询前先问一声，缺了就按零引用降级，
+     * 别让整个功能 500（issue #837）。
+     *
+     * 「存在」永久缓存（表建出来就不会消失）；「不存在」只缓存在请求内，
+     * 升级补表后下一个请求立即生效。
+     *
+     * @param string $table 不带前缀的表名
+     * @return bool
+     */
+    public static function tableExists(string $table): bool
+    {
+        if (isset(self::$tableKnown[$table])) {
+            return self::$tableKnown[$table];
+        }
+
+        $mark = self::MARK_DIR . '/table_' . $table;
+        if (is_file($mark)) {
+            return self::$tableKnown[$table] = true;
+        }
+
+        try {
+            $exists = Manager::schema()->hasTable($table);
+        } catch (\Throwable $e) {
+            //探测本身失败（权限等）按存在处理：真正的报错让业务查询自己抛，别在这里吞掉线索
+            $exists = true;
+        }
+
+        if ($exists) {
+            if (!is_dir(self::MARK_DIR)) {
+                @mkdir(self::MARK_DIR, 0755, true);
+            }
+            @file_put_contents($mark, (string)time());
+        }
+
+        return self::$tableKnown[$table] = $exists;
+    }
 }

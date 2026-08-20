@@ -148,31 +148,41 @@ class Commodity extends Manage
      */
     private function cascadeDeleteCommodityRelations(array $commodityIds): void
     {
+        //与 commodityDeleteImpact 同一套缺表降级：老库缺哪张就跳过哪张（issue #837）
         $orderIds = \App\Model\Order::query()
             ->whereIn('commodity_id', $commodityIds)
             ->pluck('id')
             ->map(static fn($id): int => (int)$id)
             ->all();
-        if ($orderIds !== []) {
+        if ($orderIds !== [] && \App\Util\Schema::tableExists('order_option')) {
             \App\Model\OrderOption::query()->whereIn('order_id', $orderIds)->delete();
         }
 
-        $ticketIds = \App\Model\Ticket::query()
-            ->whereIn('commodity_id', $commodityIds)
-            ->pluck('id')
-            ->map(static fn($id): int => (int)$id)
-            ->all();
-        if ($ticketIds !== []) {
-            \App\Model\TicketMessage::query()->whereIn('ticket_id', $ticketIds)->delete();
+        $hasTicket = \App\Util\Schema::tableExists('ticket');
+        if ($hasTicket) {
+            $ticketIds = \App\Model\Ticket::query()
+                ->whereIn('commodity_id', $commodityIds)
+                ->pluck('id')
+                ->map(static fn($id): int => (int)$id)
+                ->all();
+            if ($ticketIds !== [] && \App\Util\Schema::tableExists('ticket_message')) {
+                \App\Model\TicketMessage::query()->whereIn('ticket_id', $ticketIds)->delete();
+            }
         }
 
         \App\Model\Order::query()->whereIn('commodity_id', $commodityIds)->delete();
-        \App\Model\Ticket::query()->whereIn('commodity_id', $commodityIds)->delete();
+        if ($hasTicket) {
+            \App\Model\Ticket::query()->whereIn('commodity_id', $commodityIds)->delete();
+        }
         \App\Model\Card::query()->whereIn('commodity_id', $commodityIds)->delete();
         \App\Model\Coupon::query()->whereIn('commodity_id', $commodityIds)->delete();
-        \App\Model\UserCommodity::query()->whereIn('commodity_id', $commodityIds)->delete();
+        if (\App\Util\Schema::tableExists('user_commodity')) {
+            \App\Model\UserCommodity::query()->whereIn('commodity_id', $commodityIds)->delete();
+        }
 
-        $this->detachFromCommodityGroups($commodityIds);
+        if (\App\Util\Schema::tableExists('commodity_group')) {
+            $this->detachFromCommodityGroups($commodityIds);
+        }
     }
 
     /**
@@ -259,12 +269,18 @@ class Commodity extends Manage
             $couponCounts = $this->groupedCommodityReferenceCounts(
                 \App\Model\Coupon::query()->whereIn('commodity_id', $commodityIds)
             );
-            $merchantMappingCounts = $this->groupedCommodityReferenceCounts(
-                \App\Model\UserCommodity::query()->whereIn('commodity_id', $commodityIds)
-            );
-            $ticketCounts = $this->groupedCommodityReferenceCounts(
-                \App\Model\Ticket::query()->whereIn('commodity_id', $commodityIds)
-            );
+            //商户映射、工单、商品分组都是后来版本引入的表（3.1.3~3.5.1），
+            //升级不完整的老库可能整张缺失——缺表按零引用降级，别让删除功能整个 500（issue #837）
+            $merchantMappingCounts = \App\Util\Schema::tableExists('user_commodity')
+                ? $this->groupedCommodityReferenceCounts(
+                    \App\Model\UserCommodity::query()->whereIn('commodity_id', $commodityIds)
+                )
+                : [];
+            $ticketCounts = \App\Util\Schema::tableExists('ticket')
+                ? $this->groupedCommodityReferenceCounts(
+                    \App\Model\Ticket::query()->whereIn('commodity_id', $commodityIds)
+                )
+                : [];
 
             // CommodityGroup stores references in JSON and therefore has no
             // database foreign key. The final delete path locks the complete,
@@ -278,7 +294,10 @@ class Commodity extends Manage
                 $commodityGroupQuery->lockForUpdate();
             }
             $commodityIdLookup = array_fill_keys($commodityIds, true);
-            foreach ($commodityGroupQuery->get() as $commodityGroup) {
+            $commodityGroupRows = \App\Util\Schema::tableExists('commodity_group')
+                ? $commodityGroupQuery->get()
+                : collect();
+            foreach ($commodityGroupRows as $commodityGroup) {
                 $references = $commodityGroup->commodity_list;
                 if (!is_array($references)) {
                     $references = [$references];
@@ -448,6 +467,16 @@ class Commodity extends Manage
         ];
         $map = array_intersect_key($raw, array_flip($allowed));
 
+        // widget/tags 来自表单的 widget/attribute 组件，提交前恒做 encodeURIComponent
+        //（防输入清洗层伤 JSON）。旧版靠清洗层的隐式二次 urldecode 还原成明文入库，
+        // 清洗层修正（#833）后必须在消费点显式解码——与插件/主题配置保存（Plugin.php）的惯例一致，
+        // 否则编码态入库会炸掉编辑弹窗和买家侧的控件渲染。
+        foreach (['widget', 'tags'] as $encodedKey) {
+            if (isset($map[$encodedKey]) && is_string($map[$encodedKey])) {
+                $map[$encodedKey] = urldecode($map[$encodedKey]);
+            }
+        }
+
         // 标签（#807）：表单提交的是 attribute 组件的 [{name,value}]，
         // 这里归一化成 [{text,color}] 并做数量/长度/颜色白名单裁剪
         if (array_key_exists('tags', $map)) {
@@ -607,26 +636,34 @@ class Commodity extends Manage
     public function del(): array
     {
         $requestedIds = $this->commodityIds($_POST['list'] ?? []);
-        $impact = DB::transaction(function () use ($requestedIds): array {
-            $impact = $this->commodityDeleteImpact($requestedIds, true);
-            if (count($requestedIds) === 1 && $impact['missing_count'] > 0) {
-                throw new JSONException('商品不存在，请刷新后重试');
-            }
+        try {
+            $impact = DB::transaction(function () use ($requestedIds): array {
+                $impact = $this->commodityDeleteImpact($requestedIds, true);
+                if (count($requestedIds) === 1 && $impact['missing_count'] > 0) {
+                    throw new JSONException('商品不存在，请刷新后重试');
+                }
 
-            $ids = $impact['commodity_ids'];
-            if ($ids !== []) {
-                $this->cascadeDeleteCommodityRelations($ids);
-            }
+                $ids = $impact['commodity_ids'];
+                if ($ids !== []) {
+                    $this->cascadeDeleteCommodityRelations($ids);
+                }
 
-            $expectedDeleteCount = count($ids);
-            $deleted = $expectedDeleteCount > 0
-                ? \App\Model\Commodity::query()->whereIn('id', $ids)->delete()
-                : 0;
-            if ($deleted !== $expectedDeleteCount) {
-                throw new JSONException('商品删除数量异常，操作已回滚，请刷新后重试');
-            }
-            return $impact;
-        });
+                $expectedDeleteCount = count($ids);
+                $deleted = $expectedDeleteCount > 0
+                    ? \App\Model\Commodity::query()->whereIn('id', $ids)->delete()
+                    : 0;
+                if ($deleted !== $expectedDeleteCount) {
+                    throw new JSONException('商品删除数量异常，操作已回滚，请刷新后重试');
+                }
+                return $impact;
+            });
+        } catch (JSONException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            //与 deleteImpact 同理：事务已回滚，把真实原因透出去并落日志（issue #837）
+            \Kernel\Util\Log::inst()->error("[商品删除] " . $e->getFile() . ":" . $e->getLine() . " " . $e->getMessage());
+            throw new JSONException("商品删除失败，操作已回滚：" . mb_substr($e->getMessage(), 0, 160));
+        }
 
         $deletedCount = $impact['deletable_count'];
         $skippedCount = $impact['skipped_count'];
@@ -661,7 +698,17 @@ class Commodity extends Manage
      */
     public function deleteImpact(): array
     {
-        $impact = $this->commodityDeleteImpact($this->commodityIds($_POST['list'] ?? []));
+        try {
+            $impact = $this->commodityDeleteImpact($this->commodityIds($_POST['list'] ?? []));
+        } catch (JSONException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            //底层异常（缺表/缺列、SQL 报错等）原样透给前端并落日志。
+            //以前这里会冒泡成 HTML 错误页，前端只能报一句「无法计算商品删除影响」，
+            //站长与我们都拿不到任何线索（issue #837）
+            \Kernel\Util\Log::inst()->error("[商品删除影响] " . $e->getFile() . ":" . $e->getLine() . " " . $e->getMessage());
+            throw new JSONException("删除影响计算失败：" . mb_substr($e->getMessage(), 0, 160));
+        }
         unset($impact['commodity_ids'], $impact['deletable_ids'], $impact['missing_ids']);
         return $this->json(data: $impact);
     }

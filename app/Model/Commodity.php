@@ -111,6 +111,23 @@ class Commodity extends Model
         'shared_stock' => 'json'
     ];
 
+    /**
+     * 3.5.9 存在一个回归窗口：后台保存商品时，自定义控件的 JSON 会以 URL 编码态
+     * 入库（%5B%7B 开头），买家页控件渲染、下单校验、后台编辑弹窗全部失效。
+     * 3.6.0 已修正保存链路；这里对读取做透明还原，让 3.5.9 期间保存过的存量数据
+     * 立即恢复可用，站长无需手工修库——下次保存商品时即以明文回写。
+     */
+    public function getWidgetAttribute(?string $value): ?string
+    {
+        if (is_string($value) && preg_match('/^%(?:5B|7B)/i', $value)) {
+            $decoded = urldecode($value);
+            if (json_decode($decoded) !== null) {
+                return $decoded;
+            }
+        }
+        return $value;
+    }
+
     public function owner(): ?HasOne
     {
         return $this->hasOne(User::class, "id", "owner");
