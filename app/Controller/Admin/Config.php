@@ -67,10 +67,19 @@ class Config extends Manage
 
                 if (isset($appStore[$key])) {
                     $plugin = $appStore[$key];
+                    //图标只有商店缓存里有（本地主题目录不带图），拼上商店域名给前端直接用；
+                    //没缓存到的主题前端会退回占位图标，不会出现裂图
+                    if (!empty($plugin['icon'])) {
+                        $theme['icon'] = \App\Service\App::APP_URL . '/' . ltrim((string)$plugin['icon'], '/');
+                    }
                     if ($theme['info']['VERSION'] !== $plugin['version']) {
                         $theme['have_update'] = true;
                         $theme['update_content'] = $plugin['update_content'];
                         $theme['update_version'] = $plugin['version'];
+                        //升级接口要 plugin_id + type，缺一个就发不出请求；
+                        //这两个值只有商店缓存里有，前端拿不到别处去取
+                        $theme['plugin_id'] = $plugin['id'] ?? 0;
+                        $theme['plugin_type'] = $plugin['type'] ?? 2;
                     }
                 }
             }

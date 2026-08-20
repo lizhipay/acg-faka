@@ -160,7 +160,8 @@ class Security extends User
         $password = (string)$_POST['password'];
         $rePassword = (string)$_POST['re_password'];
         $user = $this->getUser();
-        if (Str::generatePassword($oldPassword, $user->salt) != $user->password) {
+        //兼容旧清洗管线时代哈希的特殊字符密码（#833），改密成功后即升级为新形态
+        if (!Str::verifyPassword((string)$user->password, (string)$user->salt, $oldPassword, (string)$this->request->unsafePost('old_password'))) {
             throw new JSONException("旧密码输入不正确");
         }
         if ($password != $rePassword) {

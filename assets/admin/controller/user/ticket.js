@@ -747,6 +747,32 @@
         }, 120);
     };
 
+    /* 删除工单：连同客户上传的凭证/图片一并清掉。
+       文件管理对"还被工单引用"的上传文件是拒绝删除的（这是对的，删了工单里就是裂图），
+       所以工单结束后那些图一直卡在文件管理里删不掉 —— 这里就是那个出口。见 issue #828 */
+    const removeTicket = row => {
+        const id = parseInt(row?.id, 10);
+        if (!id || pageDestroyed) return;
+        const no = esc(String(row.ticket_no || id));
+        message.ask(
+            `<div style="text-align:left;line-height:1.9">
+                <div>${i18n('即将删除工单')} <b class="text-danger">${no}</b></div>
+                <div style="margin-top:6px">${i18n('该工单的全部对话记录，以及客户上传的凭证、图片附件都会被一并永久删除。')}</div>
+                <div style="margin-top:6px;color:#d14343">${i18n('此操作不可恢复，请确认已无需留存。')}</div>
+            </div>`,
+            () => {
+                if (pageDestroyed) return;
+                util.post('/admin/api/ticket/del', {list: [id]}, response => {
+                    if (pageDestroyed) return;
+                    message.success(response.msg || i18n('工单已删除'));
+                    table.refresh(false);
+                });
+            },
+            i18n('删除工单'),
+            i18n('确认删除')
+        );
+    };
+
     table = new Table('/admin/api/ticket/data', '#ticket-table');
     table.setPagination(15, [15, 30, 50, 100]);
     table.setColumns([
@@ -762,6 +788,11 @@
                 class: 'text-primary',
                 tips: '查看工单',
                 click: (event, value, row) => openDrawer(row.id, event?.currentTarget || null)
+            }, {
+                icon: 'fa-duotone fa-regular fa-trash-can',
+                class: 'text-danger',
+                tips: '删除工单',
+                click: (event, value, row) => removeTicket(row)
             }]
         }
     ]);

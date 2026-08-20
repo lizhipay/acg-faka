@@ -300,7 +300,8 @@ class Authentication extends User
             throw new JSONException("用户不存在");
         }
 
-        if (Str::generatePassword($_POST['password'], $user->salt) != $user->password) {
+        //verifyPassword 内含旧清洗管线的兼容比对：老账号的特殊字符密码当年哈希的是转义形态（#833）
+        if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)$_POST['password'], (string)$this->request->unsafePost('password'))) {
             $this->loginFail((string)$_POST['username'], "password");
             throw new JSONException("密码错误");
         }

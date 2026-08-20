@@ -15,7 +15,8 @@ use App\Model\UserRecharge;
 use App\Service\Order;
 use App\Util\Client;
 use App\Util\Date;
-use App\Util\PayConfig;
+use App\Util\PayFactory;
+use App\Util\PayProfile;
 use App\Util\Str;
 use Illuminate\Database\Capsule\Manager as DB;
 use Kernel\Annotation\Inject;
@@ -80,14 +81,6 @@ class Recharge implements \App\Service\Recharge
             $order->create_time = Date::current();
             $order->create_ip = Client::getAddress();
 
-            $class = "\\App\\Pay\\{$pay->handle}\\Impl\\Pay";
-            if (!class_exists($class)) {
-                throw new JSONException("该支付方式未实现接口，无法使用");
-            }
-            $autoload = BASE_PATH . '/app/Pay/' . $pay->handle . "/Vendor/autoload.php";
-            if (file_exists($autoload)) {
-                require($autoload);
-            }
             //增加接口手续费：0.9.6-beta。手续费单独记入 pay_cost（与商品订单一致），
             //到账时用 amount - pay_cost 还原充值面额，否则手续费会被一并充进余额（issue #783）
             $order->pay_cost = (float)($pay->cost_type == 0
@@ -95,15 +88,14 @@ class Recharge implements \App\Service\Recharge
                 : (new \Kernel\Util\Decimal((string)$order->amount, 2))->mul((string)$pay->cost)->getAmount());
             $order->amount = (float)(new \Kernel\Util\Decimal((string)$order->amount, 2))->add((string)$order->pay_cost)->getAmount();
 
-            $payObject = new $class;
-            $payObject->amount = $order->amount;
-            $payObject->tradeNo = $order->trade_no;
-            $payObject->config = PayConfig::config($pay->handle);
-            $payObject->callbackUrl = $callbackDomain . '/user/api/rechargeNotification/callback.' . $pay->handle;
-            $payObject->returnUrl = $clientDomain . '/user/recharge/index';
-            $payObject->clientIp = $order->create_ip;
-            $payObject->code = $pay->code;
-            $payObject->handle = $pay->handle;
+            $payObject = PayFactory::make(
+                $pay,
+                (string)$order->trade_no,
+                (float)$order->amount,
+                $callbackDomain . '/user/api/rechargeNotification/callback.' . $order->trade_no,
+                $clientDomain . '/user/recharge/index',
+                (string)$order->create_ip
+            );
             $trade = $payObject->trade();
 
             if ($trade instanceof PayEntity) {
@@ -138,7 +130,7 @@ class Recharge implements \App\Service\Recharge
     }
 
     /**
-     * @param string $handle
+     * @param string $tradeNo 回调URL上带的订单号
      * @param array $map
      * @return string
      * @throws JSONException
@@ -146,47 +138,66 @@ class Recharge implements \App\Service\Recharge
      * @throws \HTMLPurifier_Exception
      * @throws \ReflectionException
      */
-    public function callback(string $handle, array $map): string
+    public function callback(string $tradeNo, array $map): string
     {
-        $handle = Firewall::inst()->xssKiller($handle);
-        if (!Str::isValid($handle) || !PayConfig::isValid($handle)) {
-            \App\Service\Bind\Order::callbackFail((string)$handle, "handle", "handle not found", null, $map, null, "CALLBACK-RECHARGE");
-        }
+        $reject = \App\Service\Bind\Order::CALLBACK_REJECT;
+        $tradeNo = Firewall::inst()->xssKiller($tradeNo);
 
-        $tradeNo = $this->order->getCallbackTradeNo($handle, $map);
-
-        if (!$tradeNo) {
-            \App\Service\Bind\Order::callbackFail($handle, "not_found", "order number not found", null, $map, null, "CALLBACK-RECHARGE");
+        //与商品订单回调完全同构：URL带的就是订单号，按插件名寻址已彻底移除
+        if (!\App\Service\Bind\Order::isCallbackTradeNo($tradeNo)) {
+            \App\Service\Bind\Order::callbackFail('', "handle", $reject, null, $map, null, "CALLBACK-RECHARGE");
         }
 
         $order = UserRecharge::with(['pay'])->where("trade_no", $tradeNo)->first();
 
         if (!$order || !$order->pay) {
-            \App\Service\Bind\Order::callbackFail($handle, "handle", "pay not found", $tradeNo, $map, null, "CALLBACK-RECHARGE");
+            \App\Service\Bind\Order::callbackFail('', "not_found", $reject, $tradeNo, $map, null, "CALLBACK-RECHARGE");
         }
 
-        if ($order->pay->handle !== $handle) {
-            \App\Service\Bind\Order::callbackFail($handle, "handle", "pay handle not found", $tradeNo, $map, null, "CALLBACK-RECHARGE");
+        $handle = (string)$order->pay->handle;
+
+        //这笔充值当初用的是哪套配置，就用哪套验签
+        try {
+            $payConfig = PayProfile::config($order->pay);
+        } catch (JSONException $e) {
+            \App\Service\Bind\Order::callbackFail($handle, "config", $reject, $tradeNo, $map, "支付配置不存在，无法验签：" . $e->getMessage(), "CALLBACK-RECHARGE");
+            return $reject; //callbackFail 必然抛出，这行只为静态分析
         }
 
-        $callback = $this->order->callbackInitialize($handle, $map);
+        $callback = $this->order->callbackInitialize($order->pay, $map, $payConfig);
+
+        //★ 与商品订单同理，这一步防的是「拿一份合法签名的回调去刷别人的充值单」。
+        //充值金额是用户自己填的，缺了这个校验等于可以无限刷余额。
+        $verifiedTradeNo = (string)($callback['trade_no'] ?? '');
+        if ($verifiedTradeNo === '' || !hash_equals((string)$order->trade_no, $verifiedTradeNo)) {
+            \App\Service\Bind\Order::callbackFail($handle, "mismatch", $reject, (string)$order->trade_no, $map, "报文中取不到订单号、或与回调地址的订单号不一致，无法确认这笔回调属于本单，已拒绝", "CALLBACK-RECHARGE");
+        }
+
+        $tradeNo = (string)$order->trade_no;
 
         //与订单回调一致：串行化隔离，防并发重复通知造成重复入账
         DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
-        DB::transaction(function () use ($handle, $map, $callback) {
+        DB::transaction(function () use ($handle, $map, $callback, $tradeNo, $reject) {
             //获取订单
-            $order = UserRecharge::query()->where("trade_no", $callback['trade_no'])->first();
+            $order = UserRecharge::query()->where("trade_no", $tradeNo)->first();
 
             if (!$order) {
-                \App\Service\Bind\Order::callbackFail($handle, "not_found", "order not found", (string)$callback['trade_no'], $map, "订单不存在", "CALLBACK-RECHARGE");
+                \App\Service\Bind\Order::callbackFail($handle, "not_found", $reject, $tradeNo, $map, "订单不存在", "CALLBACK-RECHARGE");
             }
 
             if ((int)$order->status !== 0) {
-                \App\Service\Bind\Order::callbackFail($handle, "duplicate", "order status error", (string)$callback['trade_no'], $map, "重复通知，当前订单已支付", "CALLBACK-RECHARGE");
+                \App\Service\Bind\Order::callbackFail($handle, "duplicate", $reject, $tradeNo, $map, "重复通知，当前订单已支付", "CALLBACK-RECHARGE");
             }
 
-            if ($order->amount !== (float)$callback['amount']) {
-                \App\Service\Bind\Order::callbackFail($handle, "amount", "amount error", (string)$callback['trade_no'], $map, "订单金额不匹配", "CALLBACK-RECHARGE");
+            //同商品订单：先卡类型再用 bcmath 精确比对，(float)数组==1.0 的坑不能踩
+            $paidAmount = $callback['amount'] ?? null;
+            if (!is_scalar($paidAmount) || !is_numeric((string)$paidAmount)) {
+                \App\Service\Bind\Order::callbackFail($handle, "amount", $reject, $tradeNo, $map, "回调金额不是合法数字", "CALLBACK-RECHARGE");
+            }
+            $expectAmount = (new \Kernel\Util\Decimal((string)$order->amount, 2))->getAmount();
+            $actualAmount = (new \Kernel\Util\Decimal((string)$paidAmount, 2))->getAmount();
+            if (!hash_equals($expectAmount, $actualAmount)) {
+                \App\Service\Bind\Order::callbackFail($handle, "amount", $reject, $tradeNo, $map, "订单金额不匹配", "CALLBACK-RECHARGE");
             }
 
             //订单更新

@@ -192,7 +192,10 @@
             }
         }
         , {
-            field: 'owner', title: '客户', formatter: (_, __) => mdUserCell(_)
+            //游客单（owner 为空）把联系方式顶到这一列外显：以前只埋在双击订单号的详情里，
+            //管理员想按联系方式对单得一条条点开，用户填错空格/字母时搜索也搜不到。见 issue #814。
+            //只对游客显示——登录下单的 contact 是系统生成的随机串，摆出来没意义。
+            field: 'owner', title: '客户', formatter: (_, __) => _ ? mdUserCell(_) : mdGuestCell(__ && __.contact)
         }
         , {
             field: 'commodity', title: '商品', formatter: (_, __) => {

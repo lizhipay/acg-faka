@@ -12,6 +12,7 @@ use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
 use Kernel\Exception\ViewException;
 use Kernel\Util\View;
+use App\Util\PayConfig;
 
 #[Interceptor(Waf::class)]
 class Pay extends User
@@ -52,9 +53,10 @@ class Pay extends User
             ]);
         }
 
-        $html = "{$order->pay->handle}/View/{$order->pay->code}.html";
+        //路径安全在 renderTemplate 里把关：code 是站长可填的值，不能直接拼进文件路径
+        $html = PayConfig::renderTemplate((string)$order->pay->handle, (string)$order->pay->code);
 
-        if (!is_file(BASE_PATH . '/app/Pay/' . $html)) {
+        if ($html === null) {
             throw new JSONException("视图不存在");
         }
 

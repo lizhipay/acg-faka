@@ -51,16 +51,22 @@ class Install extends User
         $data['ext']['json'] = extension_loaded("json");
         $data['ext']['session'] = extension_loaded("session");
         $data['ext']['zip'] = extension_loaded("zip");
+        //bcmath：Kernel\Util\Decimal 全靠它做金额运算，订单/充值/分站/商品都在用，缺了会直接致命错误
+        $data['ext']['bcmath'] = extension_loaded("bcmath") && function_exists("bcadd");
 
 
         $data['install'] = true;
+        $data['missing'] = [];
+
         if ($data['php_version'] < 8) {
             $data['install'] = false;
-        } else {
-            foreach ($data['ext'] as $ext) {
-                if (!$ext) {
-                    $data['install'] = false;
-                }
+        }
+
+        //不因为 PHP 版本不达标就跳过扩展检查，一次把所有缺的都列出来，免得站长改完版本再回来发现还缺扩展
+        foreach ($data['ext'] as $name => $ext) {
+            if (!$ext) {
+                $data['install'] = false;
+                $data['missing'][] = $name;
             }
         }
 

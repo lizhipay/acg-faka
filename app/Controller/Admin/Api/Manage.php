@@ -439,8 +439,8 @@ class Manage extends \App\Controller\Base\API\Manage
             }
 
             if ($newPassword !== '') {
-                $currentPassword = Str::generatePassword($oldPassword, (string)$manage->salt);
-                if (!hash_equals((string)$manage->password, $currentPassword)) {
+                //verifyPassword 内含旧清洗管线的兼容比对（#833），改密成功后即升级为新形态
+                if (!Str::verifyPassword((string)$manage->password, (string)$manage->salt, $oldPassword, (string)$this->request->unsafePost('old_password'))) {
                     throw new JSONException('原密码输入不正确');
                 }
                 $manage->password = Str::generatePassword($newPassword, (string)$manage->salt);

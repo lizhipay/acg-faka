@@ -438,6 +438,7 @@ const component = new class Component {
         const useAdminMobileFallback = window.AdminMobile?.isEnabled?.() === true;
         let legacyPopupIndex = null;
         let legacyResizeObserver = null;
+        let legacySelectFloater = null;
         let legacyPopupDestroyed = false;
         let legacyEndCalled = false;
         const legacyLifecycleEvent = 'pjax:beforeReplace.componentPopup' + form.getUnique();
@@ -449,6 +450,10 @@ const component = new class Component {
             document.body.style.paddingRight = '';
         };
         const destroyLegacyPopup = () => {
+            if (legacySelectFloater) {
+                legacySelectFloater();
+                legacySelectFloater = null;
+            }
             if (legacyResizeObserver) {
                 try {
                     legacyResizeObserver.disconnect();
@@ -501,6 +506,14 @@ const component = new class Component {
             area = [drawerWidth, '100%'];
         }
 
+        // fitTabs:true — widen the popup so every tab header fits on one row (opt.width is the
+        // minimum, ~92vw the maximum); tab-heavy plugin/theme configs no longer wrap their tabs.
+        // Drawers are included: their title bar wraps exactly the same way, and the extra width
+        // is taken from the empty screen to their left, so nothing else has to move.
+        if (opt.fitTabs === true && !useAdminMobileFallback && util.isPc() && tab.length > 1) {
+            area = this.fitTabsArea(tab, area, isDrawer);
+        }
+
         if (useAdminMobileFallback || !util.isPc()) {
             area = ["100%", "100%"];
         }
@@ -523,6 +536,9 @@ const component = new class Component {
                 legacyPopupIndex = layIndex;
                 form.setIndex(layIndex);
                 form.registerEvent();
+                // Select dropdowns must float above the popup instead of being clipped by
+                // the scrollable content box.
+                legacySelectFloater = this.floatSelectDropdowns(lay);
                 // Drawer: lock background scroll (also removes the page scrollbar so the
                 // drawer sits flush to the viewport edge); pad the body to avoid a reflow shift.
                 if (isDrawer) {
@@ -650,6 +666,116 @@ const component = new class Component {
         }
     }
 
+
+    /**
+     * Measure how wide a tabbed popup must be for all tab headers to sit on one row and
+     * return the adjusted layer `area` (string or [width, height]); never narrower than the
+     * requested width, never wider than ~92% of the viewport.
+     */
+    fitTabsArea(tab = [], area = '680px', isDrawer = false) {
+        try {
+            const base = parseInt(Array.isArray(area) ? area[0] : area, 10) || 680;
+            // The probe must carry the same classes as the real popup, otherwise skin rules that
+            // only match `.component-drawer` (e.g. the 40px gutter reserved for the close button)
+            // are missed and the measured width comes out too small.
+            const probe = $('<div class="layui-layer layui-layer-page layui-layer-tab component-popup' + (isDrawer ? ' component-drawer' : '') + '"></div>')
+                .css({position: 'fixed', left: '-99999px', top: 0, width: 'auto', height: 'auto', visibility: 'hidden', pointerEvents: 'none'});
+            const title = $('<div class="layui-layer-title"></div>')
+                .css({display: 'inline-flex', flexWrap: 'nowrap', width: 'auto', maxWidth: 'none', whiteSpace: 'nowrap'});
+            tab.forEach(item => title.append($('<span></span>').html(item?.title ?? '')));
+            probe.append(title).appendTo(document.body);
+            let need = 0;
+            title.children('span').each(function () {
+                need += this.getBoundingClientRect().width;
+            });
+            const cs = window.getComputedStyle(title.get(0));
+            need += (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0) + 24;
+            probe.remove();
+            const cap = Math.max(base, Math.floor(window.innerWidth * 0.92));
+            const width = Math.min(Math.max(base, Math.ceil(need)), cap);
+            if (width <= base) {
+                return area;
+            }
+            return Array.isArray(area) ? [width + 'px', area[1]] : width + 'px';
+        } catch (error) {
+            return area;
+        }
+    }
+
+    /**
+     * layui selects render their option list as an absolutely positioned <dl> inside the
+     * field, so inside a scrolling popup body the list gets clipped. While a select inside
+     * `root` is open, pin its <dl> to the viewport (position:fixed, sized to the field,
+     * flipped upwards when there is no room below) and follow scrolling / resizing.
+     * Returns a disposer.
+     */
+    floatSelectDropdowns(root) {
+        const node = root?.jquery ? root.get(0) : root;
+        if (!node || !('MutationObserver' in window)) {
+            return null;
+        }
+        const GAP = 4, PAD = 8, MAX = 300, MIN = 120;
+        const opened = new Set();
+        const dlOf = sel => Array.prototype.find.call(sel.children, child => child.tagName === 'DL');
+        const place = sel => {
+            const dl = dlOf(sel), title = sel.querySelector('.layui-select-title');
+            if (!dl || !title) {
+                return;
+            }
+            const rect = title.getBoundingClientRect(), vh = window.innerHeight;
+            dl.style.position = 'fixed';
+            dl.style.left = rect.left + 'px';
+            dl.style.width = rect.width + 'px';
+            dl.style.minWidth = '0';
+            dl.style.maxHeight = MAX + 'px';
+            const height = dl.offsetHeight;
+            const below = vh - rect.bottom - GAP - PAD;
+            const above = rect.top - GAP - PAD;
+            // NB: never touch classes in here — the observer below watches class changes and
+            // would re-enter endlessly; inline top/bottom already override .layui-form-selectup.
+            const flip = height > below && above > below;
+            if (flip) {
+                dl.style.top = 'auto';
+                dl.style.bottom = (vh - rect.top + GAP) + 'px';
+            } else {
+                dl.style.bottom = 'auto';
+                dl.style.top = (rect.bottom + GAP) + 'px';
+            }
+            dl.style.maxHeight = Math.max(MIN, Math.min(MAX, flip ? above : below)) + 'px';
+        };
+        const reset = sel => {
+            const dl = dlOf(sel);
+            if (dl) {
+                ['position', 'left', 'top', 'bottom', 'width', 'minWidth', 'maxHeight'].forEach(key => dl.style[key] = '');
+            }
+        };
+        const observer = new MutationObserver(records => {
+            records.forEach(record => {
+                const el = record.target;
+                if (!(el instanceof Element) || !el.classList.contains('layui-form-select')) {
+                    return;
+                }
+                if (el.classList.contains('layui-form-selected')) {
+                    opened.add(el);
+                    place(el);
+                } else if (opened.has(el)) {
+                    opened.delete(el);
+                    reset(el);
+                }
+            });
+        });
+        observer.observe(node, {attributes: true, attributeFilter: ['class'], subtree: true});
+        const follow = () => opened.forEach(place);
+        node.addEventListener('scroll', follow, true);
+        window.addEventListener('resize', follow);
+        return () => {
+            observer.disconnect();
+            node.removeEventListener('scroll', follow, true);
+            window.removeEventListener('resize', follow);
+            opened.forEach(reset);
+            opened.clear();
+        };
+    }
 
     idObjToList(array = []) {
         let list = [];

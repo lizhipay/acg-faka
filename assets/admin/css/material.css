@@ -1288,25 +1288,319 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
 }
 :root[data-theme] .md-settings .card-body .row.mb-6 .select2-selection--single .select2-selection__arrow { height: 44px; right: 8px; }
 
+/* ---- select2 下拉面板与搜索框：面板挂在 body 下、不在 .md-settings 作用域内，
+       所以这里按 :root[data-theme] 定位。模板等长列表启用搜索后才会出现搜索框，
+       不套 MUI 样式的话是 select2 的裸控件，和后台风格割裂。 ---- */
+:root[data-theme] .select2-container--default .select2-dropdown {
+  background: var(--md-surface);
+  border: 1px solid var(--md-divider);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px -10px rgba(15, 23, 42, .28);
+  overflow: hidden;
+}
+:root[data-theme] .select2-container--default .select2-search--dropdown { padding: 8px; }
+:root[data-theme] .select2-container--default .select2-search--dropdown .select2-search__field {
+  height: 38px; padding: 0 12px;
+  border: 1px solid var(--md-outline);
+  border-radius: 8px;
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  outline: none;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+:root[data-theme] .select2-container--default .select2-search--dropdown .select2-search__field:focus {
+  border-color: var(--md-primary);
+  box-shadow: 0 0 0 3px rgba(var(--md-primary-rgb, 25, 118, 210), .16);
+}
+:root[data-theme] .select2-container--default .select2-results__option {
+  padding: 9px 12px; color: var(--md-on-surface); font-size: 14px;
+}
+:root[data-theme] .select2-container--default .select2-results__option--highlighted[aria-selected] {
+  background: var(--md-primary); color: var(--md-on-primary);
+}
+:root[data-theme] .select2-container--default .select2-results__option[aria-selected="true"] {
+  background: var(--md-hover-overlay); color: var(--md-on-surface);
+}
+:root[data-theme] .select2-container--default .select2-results__message {
+  padding: 12px; color: var(--md-on-surface-med); font-size: 13px;
+}
+
+/* ---- 模板更新提示条 ----------------------------------------------
+   要显眼但不刺眼：不用整块高饱和填色，改为浅主色底 + 左侧一道主色脊线，
+   信息层级靠排版拉开，右侧放一个实心主按钮承接动作。 */
+:root[data-theme] .md-theme-alert {
+  grid-column: 1 / -1;
+  position: relative;
+  display: flex; align-items: center; gap: 16px;
+  margin: 0 0 4px;
+  padding: 16px 18px 16px 20px;
+  border: 1px solid color-mix(in srgb, var(--md-primary) 22%, transparent);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--md-primary) 7%, var(--md-surface)),
+      var(--md-surface) 62%);
+  overflow: hidden;
+  animation: mdThemeAlertIn .5s cubic-bezier(.16, 1, .3, 1) both;
+}
+/* 左侧脊线 */
+:root[data-theme] .md-theme-alert::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--md-primary), color-mix(in srgb, var(--md-primary) 45%, #26c6da));
+}
+@keyframes mdThemeAlertIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+:root[data-theme] .md-theme-alert__glyph {
+  flex: none; width: 38px; height: 38px; border-radius: 11px;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--md-primary) 12%, transparent);
+  color: var(--md-primary); font-size: 15px;
+}
+:root[data-theme] .md-theme-alert__body { flex: 1 1 auto; min-width: 0; }
+:root[data-theme] .md-theme-alert__title {
+  margin: 0 0 7px; font-size: 14.5px; font-weight: 600;
+  color: var(--md-on-surface); letter-spacing: -.01em;
+}
+:root[data-theme] .md-theme-alert__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+:root[data-theme] .md-theme-alert__chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px 3px 4px; border-radius: 999px;
+  border: 1px solid var(--md-divider); background: var(--md-surface);
+  font-size: 12px; color: var(--md-on-surface); max-width: 100%;
+}
+:root[data-theme] .md-theme-alert__chip .md-theme-opt__icon { width: 18px; height: 18px; border-radius: 5px; }
+:root[data-theme] .md-theme-alert__chip i {
+  font-style: normal; color: var(--md-on-surface-med); font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+:root[data-theme] .md-theme-alert__btn {
+  flex: none; height: 38px; padding: 0 18px; border: 0; border-radius: 10px;
+  background: var(--md-primary); color: var(--md-on-primary);
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  box-shadow: 0 8px 20px -10px rgba(var(--md-primary-rgb, 25, 118, 210), .7);
+  transition: transform .12s ease, filter .2s ease, box-shadow .2s ease;
+}
+:root[data-theme] .md-theme-alert__btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
+:root[data-theme] .md-theme-alert__btn:active { transform: none; }
+:root[data-theme] .md-theme-alert__btn:disabled { cursor: default; opacity: .9; transform: none; }
+/* 更新中：按钮左侧转轮 */
+:root[data-theme] .md-theme-alert__btn.is-busy::before {
+  content: ""; display: inline-block; width: 13px; height: 13px;
+  margin-right: 8px; vertical-align: -2px;
+  border: 2px solid rgba(255, 255, 255, .45); border-top-color: #fff;
+  border-radius: 50%; animation: mdThemeAlertSpin .8s linear infinite;
+}
+@keyframes mdThemeAlertSpin { to { transform: rotate(360deg); } }
+
+@media (max-width: 767.98px) {
+  :root[data-theme] .md-theme-alert { flex-wrap: wrap; gap: 12px; }
+  :root[data-theme] .md-theme-alert__btn { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme] .md-theme-alert { animation: none; }
+  :root[data-theme] .md-theme-alert__btn.is-busy::before { animation-duration: 2.4s; }
+}
+
+/* ---- 模板下拉项：图标 + 名称占满 + 右侧「更新 / 设置」按钮 ---- */
+:root[data-theme] .md-theme-opt {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+}
+/* 选中后显示在输入框里的样子（无按钮） */
+:root[data-theme] .md-theme-sel { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+:root[data-theme] .md-theme-opt__icon {
+  flex: none; width: 26px; height: 26px; border-radius: 7px;
+  object-fit: cover; background: var(--md-hover-overlay);
+  border: 1px solid var(--md-divider);
+}
+/* 商店缓存里没有图标的主题：用首字母色块占位，不留裂图 */
+:root[data-theme] .md-theme-opt__icon--ph {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; line-height: 1;
+  color: var(--md-on-surface-med); text-transform: uppercase;
+}
+/* 下拉项更舒展：加大行高与内边距、圆角悬停块 */
+:root[data-theme] .select2-container--default .select2-results__options {
+  padding: 6px;
+  /* 默认只有 200px，装十几个模板时一屏看不到几个；按视口高度自适应，最多 60vh */
+  max-height: min(60vh, 460px);
+}
+:root[data-theme] .select2-container--default .select2-results__option {
+  border-radius: 8px; margin: 1px 0;
+}
+/* 带文字的按钮：纯灰图标辨识度太低，加文字并给主/次语义色区分 */
+:root[data-theme] .md-theme-opt__btn > span { font-size: 12px; line-height: 1; }
+:root[data-theme] .md-theme-opt__btn > i { font-size: 12px; }
+
+:root[data-theme] .md-theme-opt__name {
+  flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* 名称 + 简介竖排：简介用小一号的次级灰字，只占一行，超出省略（全文在 title 里）。
+   名称在这一栏里不能再 grow，否则会被拉开和简介之间的行距 */
+:root[data-theme] .md-theme-opt__text {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; flex-direction: column; justify-content: center; gap: 1px;
+}
+:root[data-theme] .md-theme-opt__head {
+  display: flex; align-items: baseline; min-width: 0;
+}
+:root[data-theme] .md-theme-opt__head > .md-theme-opt__name { flex: 0 1 auto; line-height: 1.3; }
+/* 作者比名称轻，但不能再往下压了：.65 是四种底色（亮/暗 × 普通/高亮）下
+   仍能全部满足 WCAG AA 4.5:1 的最轻一档，实测最低 4.72；再淡一点（.62）
+   高亮行就掉到 4.32，11px 的小字读起来就吃力了。层级差交给字号、位置和
+   前面那枚小图标去表达，不靠继续调灰。
+   不参与收缩——作者名都很短，宽度不够时先让模板名出省略号；
+   max-width 只是给异常长的作者名兜个底 */
+:root[data-theme] .md-theme-opt__author {
+  flex: 0 0 auto; max-width: 45%; margin-left: 10px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 11px; line-height: 1.3; color: inherit; opacity: .65;
+}
+/* 图标取 .9em：和 11px 的中文并排时，等号大小反而显得图标偏大 */
+:root[data-theme] .md-theme-opt__author > i { margin-right: 4px; font-size: 10px; }
+/* 颜色不写死：行底色有三种（默认透明 / 选中 primary 10% / 高亮 primary 18%，
+   后两条在 md-components.css 里带 !important，这边覆盖不掉），写死一个灰值
+   总有一种底不合适。跟着行自己的 color 走再降透明度，三种底都成立；
+   .7 × on-surface(.87) ≈ on-surface-med(.6)，和别处的次级文字一个观感 */
+:root[data-theme] .md-theme-opt__desc {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 11px; line-height: 1.4; font-weight: 400; color: inherit; opacity: .7;
+}
+:root[data-theme] .md-theme-opt__acts { flex: none; display: inline-flex; align-items: center; gap: 6px; }
+:root[data-theme] .md-theme-opt__btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 26px; padding: 0 9px; border-radius: 999px;
+  border: 1px solid var(--md-outline);
+  background: var(--md-surface); color: var(--md-on-surface-med);
+  font-size: 12px; line-height: 1; cursor: pointer;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+:root[data-theme] .md-theme-opt__btn:hover {
+  background: var(--md-hover-overlay); color: var(--md-on-surface); border-color: var(--md-on-surface-med);
+}
+/* 有更新的按钮用主色实心，一眼能从列表里认出来 */
+:root[data-theme] .md-theme-opt__btn--up {
+  background: var(--md-primary); border-color: var(--md-primary); color: var(--md-on-primary);
+}
+:root[data-theme] .md-theme-opt__btn--up:hover { filter: brightness(1.06); color: var(--md-on-primary); }
+/* 选项高亮时按钮仍要看得清 */
+:root[data-theme] .select2-results__option--highlighted .md-theme-opt__btn {
+  background: transparent; color: var(--md-on-primary); border-color: rgba(255, 255, 255, .55);
+}
+:root[data-theme] .select2-results__option--highlighted .md-theme-opt__btn--up {
+  background: var(--md-on-primary); color: var(--md-primary); border-color: var(--md-on-primary);
+}
+
+/* 语义色必须排在通用 .md-theme-opt__btn 之后：同特异性下后写的胜出，
+   放在前面会被通用规则的 color 覆盖掉，按钮就又变回灰的了 */
+:root[data-theme] .md-theme-opt__btn--cfg {
+  color: var(--md-primary);
+  border-color: color-mix(in srgb, var(--md-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--md-primary) 7%, var(--md-surface));
+}
+:root[data-theme] .md-theme-opt__btn--cfg:hover {
+  background: var(--md-primary); border-color: var(--md-primary); color: var(--md-on-primary);
+}
+:root[data-theme] .md-theme-opt__btn--del:hover {
+  background: var(--md-error, #d32f2f); border-color: var(--md-error, #d32f2f); color: #fff;
+}
+:root[data-theme] .select2-results__option--highlighted .md-theme-opt__btn--cfg {
+  background: var(--md-on-primary); color: var(--md-primary); border-color: var(--md-on-primary);
+}
+:root[data-theme] .select2-results__option--highlighted .md-theme-opt__btn--del:hover {
+  background: var(--md-error, #d32f2f); border-color: var(--md-error, #d32f2f); color: #fff;
+}
+
+/* ---- 下拉展开 / 收起动画 ----------------------------------------
+   select2 打开时把容器插进 body、关闭时立刻摘除，所以「收起」没有天然的
+   动画时机：这里由 material.js 在 select2:closing 时给容器加 is-closing，
+   放完退场动画再让它消失。 */
+:root[data-theme] .select2-container--open .select2-dropdown {
+  transform-origin: top center;
+  animation: mdSelectIn .24s cubic-bezier(.2, .8, .2, 1) both;
+  will-change: transform, opacity;
+}
+/* 向上弹出时，缩放锚点要跟着换到底部，否则会从错误方向展开 */
+:root[data-theme] .select2-container--open .select2-dropdown--above {
+  transform-origin: bottom center;
+}
+@keyframes mdSelectIn {
+  from { opacity: 0; transform: translateY(-8px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+/* 逐行错峰入场：容器铺开的同时选项依次跟上，展开才有层次而不是整块跳出来。
+   延迟只排到第 8 行，再往后一起进场，否则长列表尾部要等太久。 */
+:root[data-theme] .select2-container--open .select2-results__option {
+  animation: mdSelectRow .26s cubic-bezier(.2, .8, .2, 1) both;
+  animation-delay: .13s;
+}
+:root[data-theme] .select2-container--open .select2-results__option:nth-child(1) { animation-delay: .03s; }
+:root[data-theme] .select2-container--open .select2-results__option:nth-child(2) { animation-delay: .05s; }
+:root[data-theme] .select2-container--open .select2-results__option:nth-child(3) { animation-delay: .07s; }
+:root[data-theme] .select2-container--open .select2-results__option:nth-child(4) { animation-delay: .085s; }
+:root[data-theme] .select2-container--open .select2-results__option:nth-child(5) { animation-delay: .1s; }
+:root[data-theme] .select2-container--open .select2-results__option:nth-child(6) { animation-delay: .11s; }
+:root[data-theme] .select2-container--open .select2-results__option:nth-child(7) { animation-delay: .12s; }
+@keyframes mdSelectRow {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+:root[data-theme] .select2-container.is-closing .select2-dropdown {
+  animation: mdSelectOut .15s cubic-bezier(.4, 0, .9, .6) both;
+}
+/* 退场必须整块走：副本是新节点，行动画会从头再放一遍，
+   变成「一边淡出一边逐行淡入」，所以这里要摁掉。 */
+:root[data-theme] .select2-container.is-closing .select2-results__option { animation: none; }
+@keyframes mdSelectOut {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-5px) scale(.99); }
+}
+/* 箭头跟着转，开合有呼应 */
+:root[data-theme] .select2-container--default .select2-selection--single .select2-selection__arrow b {
+  transition: transform .24s cubic-bezier(.2, .8, .2, 1);
+}
+:root[data-theme] .select2-container--open .select2-selection--single .select2-selection__arrow b {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme] .select2-container--open .select2-dropdown,
+  :root[data-theme] .select2-container--open .select2-results__option,
+  :root[data-theme] .select2-container.is-closing .select2-dropdown { animation: none; }
+  :root[data-theme] .select2-container--default .select2-selection--single .select2-selection__arrow b { transition: none; }
+}
+
+/* 模板选择行独占一整行：下拉里要放图标和「更新/设置」按钮，挤在半栏里放不下，
+   而且四个模板并排两列时，视觉上容易看错哪个下拉对应哪个位置 */
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_theme]),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_mobile_theme]),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_center_theme]),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_center_mobile_theme]) {
+  grid-column: 1 / -1;
+}
+
 /* select/input + button rows → flex row (label still floats over the input) */
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-setting),
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-mobile-setting),
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-user-setting),
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-user-mobile-setting),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_theme]),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_mobile_theme]),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_center_theme]),
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_center_mobile_theme]),
 :root[data-theme] .md-settings .card-body > .row.mb-6:has(.background-upload),
 :root[data-theme] .md-settings .card-body > .row.mb-6:has(.background-mb-upload) {
   display: flex !important; align-items: center; gap: 10px;
 }
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-setting) > .col-lg-6,
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-mobile-setting) > .col-lg-6,
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-user-setting) > .col-lg-6,
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-user-mobile-setting) > .col-lg-6,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_theme]) > .col-lg-6,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_mobile_theme]) > .col-lg-6,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_center_theme]) > .col-lg-6,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_center_mobile_theme]) > .col-lg-6,
 :root[data-theme] .md-settings .card-body > .row.mb-6:has(.background-upload) > .col-lg-6,
 :root[data-theme] .md-settings .card-body > .row.mb-6:has(.background-mb-upload) > .col-lg-6 { flex: 1 1 auto !important; width: auto !important; min-width: 0; }
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-setting) > .col-lg-2,
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-mobile-setting) > .col-lg-2,
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-user-setting) > .col-lg-2,
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(.theme-user-mobile-setting) > .col-lg-2,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_theme]) > .col-lg-2,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_mobile_theme]) > .col-lg-2,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_center_theme]) > .col-lg-2,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(select[name=user_center_mobile_theme]) > .col-lg-2,
 :root[data-theme] .md-settings .card-body > .row.mb-6:has(.background-upload) > .col-lg-2,
 :root[data-theme] .md-settings .card-body > .row.mb-6:has(.background-mb-upload) > .col-lg-2 { flex: 0 0 auto; width: auto !important; }
 
@@ -2760,4 +3054,372 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
 /* 让出的空位淡一点，视线跟着走 */
 :root[data-theme] .component-content.is-sorting .widget-block:not(.is-dragging) {
     opacity: .72;
+}
+
+
+/* ===== 支付插件：商户配置切换条 =====
+   配置表单顶部的一条切换器。一个插件可以有多套商户配置，但大多数站点只有一套——
+   所以入口仍是原来那个「配置」按钮，点开直接是表单，多配置只是表单顶上多一排 chip。
+
+   这里刻意不做成卡片：弹窗本身已经是个圆角容器，再套一层带圆角的框就是"卡片套卡片"，
+   两圈圆角互相打架。改成一条齐平的顶部区域 + 一根分隔线，视觉重量交给 chip 和徽标。 */
+.md-payprofile {
+    margin: 0 0 20px;
+    /* 左右 24px 是对齐弹窗表单的缩进（表单在 .layui-card-body 里，padding-left:24px）。
+       这个条子是 .layui-layer-content 的直接子元素，本身没有内边距，不补就会贴着弹窗边缘。
+       分隔线留在元素外沿，所以它仍然是通栏的，视觉上像一条顶部功能区。 */
+    padding: 18px 24px 16px;
+    border-bottom: 1px solid var(--md-divider);
+}
+
+.md-payprofile__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.md-payprofile__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--md-on-surface);
+}
+
+.md-payprofile__title i {
+    color: var(--md-primary);
+}
+
+.md-payprofile__ops {
+    display: inline-flex;
+    gap: 2px;
+}
+
+.md-payprofile__op {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: var(--md-radius-pill);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--md-on-surface-med);
+    cursor: pointer;
+    user-select: none;
+    transition: background var(--md-dur) var(--md-ease-out), color var(--md-dur) var(--md-ease-out);
+}
+
+.md-payprofile__op:hover {
+    background: var(--md-hover-overlay);
+    color: var(--md-on-surface);
+}
+
+.md-payprofile__op--danger:hover {
+    background: rgba(var(--md-error-rgb), .1);
+    color: var(--md-error);
+}
+
+.md-payprofile__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.md-payprofile__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 240px;
+    padding: 7px 14px;
+    border: 1px solid var(--md-divider);
+    border-radius: var(--md-radius-pill);
+    background: var(--md-surface);
+    color: var(--md-on-surface-med);
+    font-size: 13px;
+    line-height: 1.5;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color var(--md-dur) var(--md-ease-out), color var(--md-dur) var(--md-ease-out), background var(--md-dur) var(--md-ease-out), box-shadow var(--md-dur) var(--md-ease-out), transform var(--md-dur-fast) var(--md-ease-out);
+}
+
+.md-payprofile__chip:hover {
+    border-color: var(--md-primary);
+    color: var(--md-primary);
+    transform: translateY(-1px);
+}
+
+.md-payprofile__chip.is-active {
+    border-color: transparent;
+    background: var(--md-primary);
+    color: var(--md-on-primary);
+    box-shadow: var(--md-e2);
+    cursor: default;
+    transform: none;
+}
+
+.md-payprofile__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 这套配置被几个支付接口用着，直接标在 chip 上，删之前心里有数 */
+.md-payprofile__use {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--md-radius-pill);
+    background: rgba(var(--md-primary-rgb), .12);
+    color: var(--md-primary);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.md-payprofile__chip.is-active .md-payprofile__use {
+    background: rgba(255, 255, 255, .24);
+    color: var(--md-on-primary);
+}
+
+.md-payprofile__chip--add {
+    border-style: dashed;
+    padding: 7px 12px;
+    color: var(--md-primary);
+}
+
+.md-payprofile__chip--add:hover {
+    background: var(--md-primary-container);
+    transform: none;
+}
+
+.md-payprofile__foot {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--md-on-surface-med);
+}
+
+.md-payprofile__usage-label {
+    color: var(--md-on-surface-med);
+}
+
+.md-payprofile__usage-label b {
+    color: var(--md-on-surface);
+    font-weight: 600;
+    padding: 0 1px;
+}
+
+.md-payprofile__usage-label--free {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--md-success);
+}
+
+/* 用到这套配置的支付接口：带图标的徽标，比一串顿号分隔的名字好认 */
+.md-payprofile__used {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.md-payprofile__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 190px;
+    padding: 3px 11px 3px 4px;
+    border-radius: var(--md-radius-pill);
+    background: var(--md-primary-container);
+    /* 文字用中性色而不是主色：12px 的蓝字压在浅蓝底上只有 4.03 对比度，不到 AA 的 4.5。
+       颜色识别交给左边的接口图标，文字保证读得清。 */
+    color: var(--md-on-surface);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.6;
+}
+
+.md-payprofile__badge img {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--md-surface);
+}
+
+.md-payprofile__badge-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.md-payprofile__note {
+    flex-basis: 100%;
+    color: var(--md-warning);
+}
+
+@media (max-width: 575.98px) {
+    .md-payprofile {
+        padding: 14px 16px 12px;
+    }
+
+    .md-payprofile__head {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .md-payprofile__chip {
+        max-width: 100%;
+    }
+}
+
+/* ===== 支付接口拨测结果 ===== */
+.md-paytest {
+    padding: 16px 20px 18px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--md-on-surface);
+}
+
+.md-paytest__ok {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--md-success);
+}
+
+.md-paytest__row {
+    display: flex;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--md-divider);
+}
+
+.md-paytest__k {
+    flex: none;
+    width: 76px;
+    color: var(--md-on-surface-med);
+}
+
+.md-paytest__v {
+    flex: 1;
+    min-width: 0;
+    word-break: break-all;
+}
+
+.md-paytest__v code {
+    padding: 1px 6px;
+    border-radius: var(--md-radius);
+    background: var(--md-hover-overlay);
+    font-family: Consolas, Monaco, monospace;
+}
+
+/* 支付地址可能很长，给它自己的滚动区，别把弹窗撑爆 */
+.md-paytest__url {
+    display: block;
+    max-height: 76px;
+    overflow-y: auto;
+    user-select: all;
+}
+
+.md-paytest__qr {
+    margin-top: 14px;
+    text-align: center;
+}
+
+.md-paytest__qrbox {
+    display: inline-flex;
+    padding: 10px;
+    border: 1px solid var(--md-divider);
+    border-radius: var(--md-radius-lg);
+    background: #fff;
+}
+
+.md-paytest__qrtip {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--md-on-surface-med);
+}
+
+.md-paytest__warn {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin-top: 16px;
+    padding: 10px 12px;
+    border-radius: var(--md-radius);
+    background: rgba(var(--md-warning-rgb), .1);
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--md-warning);
+}
+
+.md-paytest__act {
+    margin-top: 14px;
+    text-align: center;
+}
+
+/* 拨测实时状态条 */
+.md-paytest__state {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: var(--md-radius);
+    font-size: 13px;
+    line-height: 1.6;
+    background: var(--md-hover-overlay);
+    color: var(--md-on-surface-med);
+}
+
+.md-paytest__state[data-state="paid"] {
+    background: rgba(var(--md-success-rgb), .12);
+    color: var(--md-success);
+    font-weight: 600;
+}
+
+.md-paytest__state[data-state="failed"],
+.md-paytest__state[data-state="trade_failed"] {
+    background: rgba(var(--md-error-rgb), .1);
+    color: var(--md-error);
+}
+
+.md-paytest__state[data-state="expired"] {
+    background: rgba(var(--md-warning-rgb), .1);
+    color: var(--md-warning);
+}
+
+.md-paytest__state-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.md-paytest__spin {
+    animation: md-paytest-spin 1s linear infinite;
+}
+
+@keyframes md-paytest-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 拨测里的红色警示（比如回调IP白名单挡路） */
+.md-paytest__warn--danger {
+    background: rgba(var(--md-error-rgb), .1);
+    color: var(--md-error);
 }

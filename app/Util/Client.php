@@ -404,7 +404,9 @@ class Client
             header('location:' . $url);
         } else {
             header("refresh:{$time},url={$url}");
-            echo View::render("404.html", ["msg" => $message]);
+            //把目标地址与等待秒数一并给到视图：跳转本身由 refresh 头完成，
+            //视图拿到这两个值才能让进度动画与真实等待时间同步，并提供"立即前往"
+            echo View::render("404.html", ["msg" => $message, "url" => $url, "time" => $time]);
         }
         exit;
     }

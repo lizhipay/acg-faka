@@ -29,6 +29,8 @@ use Kernel\Exception\JSONException;
 use Kernel\Exception\RuntimeException;
 use Kernel\Util\Decimal;
 use Kernel\Util\Log;
+use Kernel\Waf\Filter;
+use Kernel\Waf\Firewall;
 
 #[Interceptor([Waf::class, UserVisitor::class])]
 class Index extends User
@@ -135,7 +137,10 @@ class Index extends User
                 'status', 'delivery_way', 'price',
                 'user_price',
                 'level_disable', 'level_price', 'hide', 'owner', 'inventory_hidden', "recommend", 'category_id', 'stock', 'shared_id',
-                'tags'
+                'tags',
+                //下面几列只用于算出 seckill_active / has_wholesale 两个展示字段，
+                //算完就从响应里剔掉（config 里有成本价和定价结构，不能外泄）。见 issue #806
+                'seckill_status', 'seckill_start_time', 'seckill_end_time', 'config'
             ])
             ->withCount(['order as order_sold' => function (Builder $relation) {
                 $relation->where("delivery_status", 1);
@@ -196,9 +201,18 @@ class Index extends User
                 }
             }
 
+            //秒杀是否"正在进行"（开关开着还不够，得落在起止时间内）、是否配了批发价。
+            //让前端可以直接打标签，不用各家自己去解析 config。见 issue #806
+            $data[$key]['seckill_active'] = $commodity[$key]->isSeckillActive();
+            $data[$key]['has_wholesale'] = Commodity::hasWholesaleConfig($val['config'] ?? null);
+
             unset(
                 $data[$key]['level_price'],
-                $data[$key]['level_disable']
+                $data[$key]['level_disable'],
+                //原始配置不能给前端：里面有成本价、种类单价、SKU 加价等定价结构
+                $data[$key]['config'],
+                $data[$key]['seckill_start_time'],
+                $data[$key]['seckill_end_time']
             );
 
             if (!$val['cover']) {
@@ -229,6 +243,8 @@ class Index extends User
         hook(Hook::USER_API_INDEX_COMMODITY_LIST, $data);
         //商品名（含分站自定义名）是动态文案，最终出口统一走 dyn 翻译；下单按 id 提交不受影响
         $data = \Kernel\Util\Lang::transList($data, ['name', 'category.name']);
+        //卡片上还会露出标签，标签是对象数组，transList 覆盖不到
+        $data = \App\Util\CommodityLang::listTags($data);
         $json = $this->json(200, "success", $data);
         $json['total'] = $total;
         return $json;
@@ -248,11 +264,8 @@ class Index extends User
             $array['stock'] = $this->shop->getHideStock($array['stock']);
         }
 
-        //商品名与介绍是动态文案；介绍是富文本，dyn 场景由翻译插件的富文本模型成批处理
-        $array['name'] = lang((string)$array['name'], "dyn");
-        if (isset($array['description']) && is_string($array['description'])) {
-            $array['description'] = lang($array['description'], "dyn");
-        }
+        //商品展示文案统一在出口翻译（名称/详情/标签/自定义下单字段/各类提示），字段清单见 CommodityLang
+        $array = \App\Util\CommodityLang::detail($array);
 
         return $this->json(200, 'success', $array);
     }
@@ -412,17 +425,25 @@ class Index extends User
 
 
     /**
-     * @param string $keywords
      * @return array
      * @throws JSONException
      */
-    public function query(string $keywords): array
+    public function query(): array
     {
-        $keywords = trim($keywords);
+        //与下单侧同一条取参管线（Filter::NORMAL），保证入库值与检索值经历同样的转换（#833）
+        $keywords = trim((string)$this->request->post("keywords", flags: Filter::NORMAL));
 
         if ($keywords == "-") {
             throw new JSONException("无数据");
         }
+
+        //老订单兼容：历史联系方式入库自旧清洗管线（多一次 urldecode、裸 & 实体化），用旧管线重算一个候选值
+        $firewall = Firewall::inst();
+        $legacyKeywords = trim((string)$firewall->filterContent(
+            $firewall->xssKillerLegacy((string)$this->request->unsafePost("keywords")),
+            Filter::NORMAL
+        ));
+        $keywordsCandidates = array_values(array_unique(array_filter([$keywords, $legacyKeywords], fn($k) => $k !== "")));
 
         //限流：挡住按订单号/联系方式批量枚举订单卡密（本接口免登录）
         if (Throttle::tooMany("query:ip:" . Client::getAddress(), 30, 600)) {
@@ -433,7 +454,7 @@ class Index extends User
         $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
         $get->setColumn('id', 'trade_no', 'sku', 'secret', 'user_id', 'password', 'amount', 'pay_id', 'commodity_id', 'create_time', 'pay_time', 'delivery_status', 'status', 'card_num', 'contact', "race");
 
-        $data = $this->query->get($get, function (Builder $builder) use ($keywords) {
+        $data = $this->query->get($get, function (Builder $builder) use ($keywords, $keywordsCandidates) {
 
             $builder = $builder->with(['pay' => function (Relation $relation) {
                 $relation->select(['id', 'name', 'icon']);
@@ -444,14 +465,20 @@ class Index extends User
             if (preg_match('/^\d{18}$/', $keywords)) {
                 $builder = $builder->where("trade_no", $keywords);
             } else {
-                $builder = $builder->where("contact", $keywords);
+                $builder = $builder->whereIn("contact", $keywordsCandidates);
             }
             return $builder;
         });
 
         foreach ($data['list'] as &$item) {
+            //发货留言统一在这里定版：优先订单快照，老订单回退商品表（issue #813）。
+            //各主题读的都是 order.leave_message，这里给全了它们就都对
+            $item['leave_message'] = \App\Model\Order::resolveLeaveMessage(
+                $item['leave_message'] ?? null,
+                $item['commodity']['leave_message'] ?? null
+            );
             if ($item['status'] != 1) {
-                unset($item['commodity']['leave_message']);
+                unset($item['commodity']['leave_message'], $item['leave_message']);
                 unset($item['secret']);
             }
 
@@ -466,14 +493,15 @@ class Index extends User
     }
 
     /**
-     * @param string $tradeNo
-     * @param string $password
      * @return array
      * @throws JSONException
      */
-    public function secret(string $tradeNo, string $password): array
+    public function secret(): array
     {
-        $tradeNo = trim($tradeNo);
+        //与下单侧同一条取参管线（Filter::NORMAL）。旧版从 $_REQUEST 注入参数，
+        //多经历一层 htmlspecialchars/strip_tags，含 & < > " ' 的查单密码永远对不上（#833）
+        $tradeNo = trim((string)$this->request->post("tradeNo", flags: Filter::NORMAL));
+        $password = (string)$this->request->post("password", flags: Filter::NORMAL);
         $ip = Client::getAddress();
 
         //限流：挡住卡密查询密码爆破 / 订单号枚举（本接口免登录，曾被单次刷 1 万+）
@@ -489,8 +517,15 @@ class Index extends User
         }
 
         if (!empty($order->password)) {
-            //定时安全比较，避免按响应时间逐字符猜测查询密码
-            if (!hash_equals((string)$order->password, (string)$password)) {
+            //候选一：当前管线的值（新订单）；候选二：旧清洗管线重放值（3.5.8 及以前的订单，
+            //当年入库的是「二次 urldecode + & 实体化」后的形态）。定时安全比较防按响应时间逐字符猜测
+            $firewall = Firewall::inst();
+            $legacyPassword = (string)$firewall->filterContent(
+                $firewall->xssKillerLegacy((string)$this->request->unsafePost("password")),
+                Filter::NORMAL
+            );
+            if (!hash_equals((string)$order->password, $password)
+                && !hash_equals((string)$order->password, $legacyPassword)) {
                 throw new JSONException("密码错误");
             }
         }
@@ -511,7 +546,7 @@ class Index extends User
         return $this->json(data: [
             'secret' => $order->secret,
             'widget' => $widget,
-            'leave_message' => $order?->commodity?->leave_message
+            'leave_message' => \App\Model\Order::resolveLeaveMessage($order->leave_message, $order?->commodity?->leave_message)
         ]);
     }
 }

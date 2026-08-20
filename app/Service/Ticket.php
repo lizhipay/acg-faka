@@ -36,6 +36,14 @@ interface Ticket
 
     public function close(Manage $manage, int $id): array;
 
+    /**
+     * 删除工单并清理其附件
+     * @param Manage $manage
+     * @param array $ids
+     * @return array
+     */
+    public function delete(Manage $manage, array $ids): array;
+
     public function userBadge(User $user): array;
 
     public function adminBadge(): array;

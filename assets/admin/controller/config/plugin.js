@@ -222,6 +222,7 @@
             autoPosition: true,
             height: "auto",
             width: "680px",
+            fitTabs: true,      // widen with the tab count so plugin tabs stay on one row
             done: () => {
                 table.refresh();
             }

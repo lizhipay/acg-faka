@@ -5,14 +5,20 @@ namespace App\Controller\Admin\Api;
 
 
 use App\Controller\Base\API\Manage;
+use App\Entity\PayEntity;
 use App\Entity\Query\Get;
 use App\Interceptor\ManageSession;
+use App\Model\Config as ConfigModel;
 use App\Model\ManageLog;
 use App\Model\Order;
 use App\Model\Pay as PayModel;
 use App\Model\UserRecharge;
 use App\Service\Query;
+use App\Util\Client;
 use App\Util\Date;
+use App\Util\PayFactory;
+use App\Util\PayProfile;
+use App\Util\PayTest;
 use Illuminate\Database\Capsule\Manager as DB;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
@@ -31,8 +37,10 @@ class Pay extends Manage
     private Query $query;
 
     private const MAX_BATCH_COUNT = 100;
+    //拨测会在网关那边产生真实待支付订单，金额封顶
+    private const MAX_TEST_AMOUNT = 100;
     private const SAVE_FIELDS = [
-        'name', 'icon', 'code', 'commodity', 'recharge', 'handle', 'sort', 'equipment', 'cost', 'cost_type',
+        'name', 'icon', 'code', 'commodity', 'recharge', 'handle', 'pay_config_id', 'sort', 'equipment', 'cost', 'cost_type',
     ];
 
     /**
@@ -202,6 +210,10 @@ class Pay extends Manage
         if (array_key_exists('sort', $raw)) {
             $map['sort'] = $this->integerValue($raw['sort'], '显示排序', 0, 65535);
         }
+
+        if (array_key_exists('pay_config_id', $raw)) {
+            $map['pay_config_id'] = $this->integerValue($raw['pay_config_id'], '支付配置', 0, 4294967295);
+        }
         if (array_key_exists('cost', $raw)) {
             $cost = $this->scalarString($raw['cost'], '手续费');
             $cost = $cost === '' ? '0' : $cost;
@@ -217,7 +229,7 @@ class Pay extends Manage
                     throw new JSONException("请填写{$label}");
                 }
             }
-            $map += ['commodity' => 0, 'recharge' => 0, 'sort' => 0, 'equipment' => 0, 'cost' => '0', 'cost_type' => 0];
+            $map += ['commodity' => 0, 'recharge' => 0, 'sort' => 0, 'equipment' => 0, 'cost' => '0', 'cost_type' => 0, 'pay_config_id' => 0];
         }
 
         if (!$existing || array_key_exists('code', $map)) {
@@ -225,8 +237,25 @@ class Pay extends Manage
             $effectiveCode = (string)($map['code'] ?? $existing?->code ?? '');
             $plugin = $this->pay->getPluginInfo($effectiveHandle);
             $options = $plugin['info']['options'] ?? null;
-            if (!is_array($options) || !array_key_exists($effectiveCode, $options)) {
-                throw new JSONException('支付插件不存在或不支持所选支付方式');
+            if (!is_array($options)) {
+                throw new JSONException('支付插件不存在');
+            }
+
+            //允许填插件没声明的 code——有些网关的通道插件作者没列全，站长得能自己补。
+            //这里不再按"能不能当文件名"去卡它：自定义 code 走的是跳转支付，
+            //只是发给网关的一个参数。本地收银台那条路的路径安全由
+            //PayConfig::renderTemplate() 自己把关（它会拒掉一切不安全的 code）。
+        }
+
+        //支付配置：必须存在，且必须属于这个插件——否则就是拿别家的商户凭据去收款
+        if (array_key_exists('pay_config_id', $map)) {
+            $effectiveHandle = (string)($map['handle'] ?? $existing?->handle ?? '');
+            $configId = (int)$map['pay_config_id'];
+            if ($configId <= 0) {
+                throw new JSONException('请选择支付配置');
+            }
+            if (!PayProfile::exists($effectiveHandle, $configId)) {
+                throw new JSONException('支付配置不存在或不属于所选插件');
             }
         }
 
@@ -594,8 +623,214 @@ class Pay extends Manage
             unset($map['id']);
         }
 
-        $this->pay->savePluginConfig($id, $map);
-        ManageLog::log($this->getManage(), "修改了支付插件({$id})的配置信息");
+        //指定写哪一套配置；不传就写默认配置档，保持插件列表页那个「配置」按钮的老行为
+        $configId = $request->get("config_id") ?: $request->post("config_id");
+        $configId = is_scalar($configId) && preg_match('/^\d+$/D', trim((string)$configId))
+            ? (int)$configId
+            : null;
+        if (isset($map['config_id'])) {
+            unset($map['config_id']);
+        }
+
+        $this->pay->savePluginConfig($id, $map, $configId);
+        ManageLog::log($this->getManage(), "修改了支付插件({$id})的配置信息" . ($configId ? "[配置档#{$configId}]" : ''));
         return $this->json(200, '修改成功');
+    }
+
+    /**
+     * 支付接口拨测：拿一个虚构订单号去真正调一次插件的 trade()，看配置对不对、网关通不通。
+     *
+     * 刻意不写订单表——拨测单混进真实订单里会污染统计和商品订单列表。代价是这笔单在本站
+     * 没有对应订单，所以就算真付了钱，回调也会以"订单不存在"被拒，不会自动到账。
+     * 它验证的是"下单这一步能不能走通"：密钥对不对、签名算法对不对、网关能不能连上。
+     *
+     * @param Request $request
+     * @return array
+     * @throws JSONException
+     */
+    public function test(Request $request): array
+    {
+        $pay = PayModel::query()->find($this->paymentId($request->post("id")));
+
+        if (!$pay) {
+            throw new JSONException('支付接口不存在');
+        }
+        if ((int)$pay->id === 1 || (string)$pay->handle === '#system') {
+            throw new JSONException('余额支付不经过第三方网关，无需拨测');
+        }
+        if ((int)$pay->archived === 1) {
+            throw new JSONException('已归档的接口无法拨测，请先恢复');
+        }
+
+        $tradeNo = $this->scalarString($request->post("trade_no"), '订单号');
+        if (!preg_match('/^[A-Za-z0-9_-]{6,32}$/D', $tradeNo)) {
+            throw new JSONException('订单号请用 6-32 位的字母、数字、下划线或短横线');
+        }
+
+        $amount = $this->scalarString($request->post("amount"), '金额');
+        if (!preg_match('/^\d{1,6}(?:\.\d{1,2})?$/D', $amount) || (float)$amount <= 0) {
+            throw new JSONException('金额必须是大于 0、最多两位小数的数字');
+        }
+        //拨测会在网关那边生成一笔真实待支付订单，金额封顶，免得手滑打出个大数
+        if ((float)$amount > self::MAX_TEST_AMOUNT) {
+            throw new JSONException('拨测金额请控制在 ' . self::MAX_TEST_AMOUNT . ' 以内');
+        }
+
+        $clientDomain = Client::getUrl();
+        $callbackDomain = trim((string)ConfigModel::get("callback_domain"), "/") ?: $clientDomain;
+
+        //与真实下单同源：优先用后台配的自定义回调域名，没配才用当前访问域名
+        $callbackUrl = $callbackDomain . '/user/api/order/callbackTest.' . $tradeNo;
+
+        //先落一条待支付记录，回调回来才有地方落款、界面才能轮询到状态
+        PayTest::put($tradeNo, [
+            'pay_id' => (int)$pay->id,
+            'pay_name' => (string)$pay->name,
+            'handle' => (string)$pay->handle,
+            'amount' => $amount,
+            'status' => 'pending',
+            'create_time' => Date::current()
+        ]);
+
+        try {
+            $payObject = PayFactory::make(
+                $pay,
+                $tradeNo,
+                (float)$amount,
+                //拨测走自己的回调地址，绝不借用真实回调——那条路上挂着发货和加余额。
+                //取名 callbackTest 是为了让 Turnstile 的 'user/api/order/callback' 前缀豁免自动覆盖到它。
+                $callbackUrl,
+                $clientDomain . '/user/index/query?tradeNo=' . $tradeNo,
+                Client::getAddress()
+            );
+            $trade = $payObject->trade();
+        } catch (\Throwable $e) {
+            PayTest::patch($tradeNo, ['status' => 'trade_failed', 'message' => $e->getMessage()]);
+            //插件里什么异常都可能冒出来（网络超时、签名报错、SDK 抛错），
+            //统统转成能看懂的文案回给后台，这本来就是个诊断工具
+            ManageLog::log($this->getManage(), "拨测支付接口({$pay->name})失败：" . $e->getMessage());
+            throw new JSONException('拨测失败：' . $e->getMessage());
+        }
+
+        if (!$trade instanceof PayEntity) {
+            throw new JSONException('插件没有返回有效的支付信息，可能未正确实现接口');
+        }
+
+        PayTest::patch($tradeNo, ['status' => 'waiting', 'pay_url' => $trade->getUrl(), 'pay_type' => $trade->getType()]);
+        ManageLog::log($this->getManage(), "拨测了支付接口({$pay->name})，订单号 {$tradeNo}，金额 {$amount}");
+
+        return $this->json(200, '拨测成功', [
+            'trade_no' => $tradeNo,
+            'amount' => $amount,
+            'type' => $trade->getType(),
+            'url' => $trade->getUrl(),
+            'option' => $trade->getOption(),
+            'pay_name' => (string)$pay->name,
+            'callback_url' => $callbackUrl,
+            //回调 IP 白名单是"一直等待支付中"最常见的原因：网关的回调会在
+            //CallbackIpWhitelist::enforce() 那一步就被 403 掉，压根到不了业务代码。
+            //把它挑明在界面上，省得站长对着转圈的状态条干等。
+            'ip_whitelist' => (string)ConfigModel::get(\App\Util\CallbackIpWhitelist::ENABLED_CONFIG) === '1'
+        ]);
+    }
+
+    /**
+     * 拨测状态轮询：拨测单不进订单表，状态记在 runtime 下的临时文件里。
+     *
+     * @param Request $request
+     * @return array
+     * @throws JSONException
+     */
+    public function testState(Request $request): array
+    {
+        $tradeNo = $this->scalarString($request->post("trade_no"), '订单号');
+        if (!PayTest::isValidTradeNo($tradeNo)) {
+            throw new JSONException('订单号格式不正确');
+        }
+
+        $record = PayTest::get($tradeNo);
+        if ($record === null) {
+            //一小时后自动过期，前端据此停止轮询
+            return $this->json(200, 'success', ['status' => 'expired']);
+        }
+
+        return $this->json(200, 'success', [
+            'status' => (string)($record['status'] ?? 'pending'),
+            'message' => (string)($record['message'] ?? ''),
+            'paid_amount' => (string)($record['paid_amount'] ?? ''),
+            'pay_time' => (string)($record['pay_time'] ?? '')
+        ]);
+    }
+
+    /**
+     * 某支付插件的全部配置档
+     * @param Request $request
+     * @return array
+     * @throws JSONException
+     */
+    public function getPluginConfigs(Request $request): array
+    {
+        return $this->json(200, 'success', $this->pay->listPluginConfigs($this->pluginHandle($request)));
+    }
+
+    /**
+     * 新建一套配置
+     * @param Request $request
+     * @return array
+     * @throws JSONException
+     */
+    public function createPluginConfig(Request $request): array
+    {
+        $handle = $this->pluginHandle($request);
+        $name = $this->scalarString($request->post("name"), '配置名称');
+        $id = $this->pay->createPluginConfig($handle, $name);
+        ManageLog::log($this->getManage(), "为支付插件({$handle})新增了配置档[{$name}]");
+        return $this->json(200, '添加成功', ['id' => $id]);
+    }
+
+    /**
+     * 配置档改名
+     * @param Request $request
+     * @return array
+     * @throws JSONException
+     */
+    public function renamePluginConfig(Request $request): array
+    {
+        $handle = $this->pluginHandle($request);
+        $id = $this->integerValue($request->post("config_id"), '支付配置', 1, 4294967295);
+        $name = $this->scalarString($request->post("name"), '配置名称');
+        $this->pay->renamePluginConfig($handle, $id, $name);
+        ManageLog::log($this->getManage(), "把支付插件({$handle})的配置档#{$id}改名为[{$name}]");
+        return $this->json(200, '修改成功');
+    }
+
+    /**
+     * 删除一套配置
+     * @param Request $request
+     * @return array
+     * @throws JSONException
+     */
+    public function delPluginConfig(Request $request): array
+    {
+        $handle = $this->pluginHandle($request);
+        $id = $this->integerValue($request->post("config_id"), '支付配置', 1, 4294967295);
+        $this->pay->deletePluginConfig($handle, $id);
+        ManageLog::log($this->getManage(), "删除了支付插件({$handle})的配置档#{$id}");
+        return $this->json(200, '删除成功');
+    }
+
+    /**
+     * 从请求里取插件名
+     * @param Request $request
+     * @return string
+     * @throws JSONException
+     */
+    private function pluginHandle(Request $request): string
+    {
+        $handle = $request->post("handle") ?: $request->get("handle") ?: $request->get("id");
+        if (!is_scalar($handle) || trim((string)$handle) === '') {
+            throw new JSONException("插件不存在");
+        }
+        return trim((string)$handle);
     }
 }

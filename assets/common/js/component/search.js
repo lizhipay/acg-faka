@@ -120,9 +120,26 @@ class Search {
         return ['left', 'center', 'right', 'start', 'end'].includes(align) ? `text-${align}` : '';
     }
 
+    /**
+     * 搜索项声明的 inputmode/enterkeyhint，之前只有移动端的内联编辑器认，
+     * 桌面搜索表单直接丢掉了；而手机端的「搜索与筛选」面板是把这份表单原样
+     * 搬过去的，等于也一起丢了。按白名单透传出去，UID 这类纯数字字段在手机上
+     * 才会弹数字键盘。白名单跟 mobile/fallback.js 里那份保持一致。
+     */
+    getInputHints(item) {
+        const modes = ['none', 'text', 'decimal', 'numeric', 'tel', 'search', 'email', 'url'];
+        const hints = ['enter', 'done', 'go', 'next', 'previous', 'search', 'send'];
+        const mode = String(item.inputmode ?? item.inputMode ?? '').toLowerCase();
+        const hint = String(item.enterkeyhint ?? item.enterKeyHint ?? '').toLowerCase();
+        let html = '';
+        if (modes.includes(mode)) html += ` inputmode="${mode}"`;
+        if (hints.includes(hint)) html += ` enterkeyhint="${hint}"`;
+        return html;
+    }
+
     inputHtml(item) {
         return `<div class="layui-input-inline ${(item.hide ? 'hide' : '')} e-${this.escapeAttribute(item.name)} mui-sf" ${this.getWidth(item)}>
-                    <input type="text" class="layui-input ${this.getClass(item)}" ${this.getWidth(item)} placeholder=" " name="${this.escapeAttribute(item.name)}" value="${this.escapeAttribute(item.default)}">
+                    <input type="text" class="layui-input ${this.getClass(item)}" ${this.getWidth(item)} placeholder=" " name="${this.escapeAttribute(item.name)}" value="${this.escapeAttribute(item.default)}"${this.getInputHints(item)}>
                     <label class="mui-sf__label">${this.escapeAttribute(item.title)}</label>
                 </div>`;
     }

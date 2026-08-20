@@ -247,9 +247,79 @@
     if (!$ || !$.fn || !$.fn.select2) return;
     $('.md-settings select[data-control="select2"]').each(function () {
       if (this.classList.contains('select2-hidden-accessible')) return;
-      $(this).select2({ width: '100%', minimumResultsForSearch: Infinity });
+      // 原本对所有下拉硬编码 minimumResultsForSearch:Infinity，等于永久关掉搜索框，
+      // 连标了 data-hide-search="false" 的也搜不了。改为尊重该属性：
+      // 选项少的（如"是/否"）继续隐藏搜索，选项多的（模板、分类）超过 8 项自动给出搜索框。
+      var hide = this.getAttribute('data-hide-search') === 'true';
+      var opts = {
+        width: '100%',
+        minimumResultsForSearch: hide ? Infinity : 8,
+        language: {
+          noResults: function () { return window.i18n ? i18n('没有找到匹配项') : '没有找到匹配项'; },
+          searching: function () { return window.i18n ? i18n('搜索中…') : '搜索中…'; }
+        }
+      };
+      // 选项的自定义渲染由具体页面提供（模板下拉要在每项后面挂"设置/更新"按钮）。
+      // select2 在这里统一初始化，但主题数据和弹窗逻辑属于 config/index.js，
+      // 所以用这个全局钩子解耦，避免把业务塞进通用层。
+      if (typeof window.mdSettingsSelectOption === 'function') {
+        var rendered = window.mdSettingsSelectOption(this);
+        if (rendered) {
+          opts.templateResult = rendered;
+          opts.escapeMarkup = function (m) { return m; };
+        }
+      }
+      if (typeof window.mdSettingsSelectSelection === 'function') {
+        var selected = window.mdSettingsSelectSelection(this);
+        if (selected) {
+          opts.templateSelection = selected;
+          opts.escapeMarkup = function (m) { return m; };
+        }
+      }
+      $(this).select2(opts);
+    });
+    bindSelectCloseAnimation();
+  }
+
+  /* select2 关闭时是同步 detach 容器的，元素当场从 DOM 消失，CSS 退场动画根本没有
+     播放的机会。这里在 select2:closing（此刻容器还在）复制一份静态副本留在原位，
+     让它把收起动画放完再自己删掉——原件在同一 tick 内被 select2 移除，中间不会
+     发生绘制，所以看不到重影。 */
+  var closeAnimBound = false;
+  function bindSelectCloseAnimation() {
+    var $ = window.jQuery;
+    if (!$ || closeAnimBound) return;
+    closeAnimBound = true;
+    $(document).on('select2:closing', '.md-settings select[data-control="select2"]', function () {
+      var $open = $('body > .select2-container--open');
+      if (!$open.length) return;
+      var ghost = $open.get(0).cloneNode(true);
+      ghost.classList.add('is-closing');
+      ghost.setAttribute('aria-hidden', 'true');
+      ghost.style.pointerEvents = 'none';
+      // 副本里的 id 会和原件重复（搜索框带 id），清掉避免污染无障碍树与选择器
+      ghost.removeAttribute('id');
+      var dup = ghost.querySelectorAll('[id]');
+      for (var i = 0; i < dup.length; i++) dup[i].removeAttribute('id');
+      $open.get(0).parentNode.appendChild(ghost);
+      setTimeout(function () {
+        if (ghost.parentNode) ghost.parentNode.removeChild(ghost);
+      }, 200);
     });
   }
+
+  /* 页面控制器（config/index.js）晚于本文件执行：它注册 mdSettingsSelectOption 时
+     select2 已经初始化完了，而上面有 select2-hidden-accessible 守卫不会重跑。
+     暴露这个方法让控制器在注册钩子后主动重建，选项渲染才能生效。 */
+  window.mdReinitSettingsSelect2 = function (names) {
+    var $ = window.jQuery;
+    if (!$ || !$.fn || !$.fn.select2) return;
+    (names || []).forEach(function (name) {
+      var $sel = $('.md-settings select[name="' + name + '"][data-control="select2"]');
+      if ($sel.length && $sel.hasClass('select2-hidden-accessible')) $sel.select2('destroy');
+    });
+    initSettingsSelect2();
+  };
 
   /* reusable MUI user cell (avatar-left + name-top / id-below) for table columns.
    * Exposed globally so per-page controllers (loaded individually in prod) can use it
@@ -273,6 +343,23 @@
       return '<span class="text-success fw-bold">' + i18n('主站') + '</span>';
     }
     return mdUserCell(item);
+  };
+
+  /* 游客单元格：订单没有会员归属(owner 为空)时，把联系方式顶到「客户」列。
+   * 登录下单的 contact 是系统生成的随机串(如 5a6ee726498182ee)，没有展示价值，
+   * 所以只对游客用这个。观感刻意和 mdUserCell 拉开——虚线空心头像 + 「游客」胶囊，
+   * 免得管理员扫一眼以为这笔单是某个注册会员下的。 */
+  window.mdGuestCell = function (contact) {
+    var text = contact == null ? '' : String(contact).trim();
+    var esc = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    var value = text === ''
+      ? '<span class="md-guest-cell__empty">' + i18n('未留联系方式') + '</span>'
+      : '<span class="md-guest-cell__contact" title="' + esc + '">' + esc + '</span>';
+    return '<div class="md-user-cell md-guest-cell">' +
+      '<span class="md-guest-cell__avatar"><i class="fa-duotone fa-regular fa-user"></i></span>' +
+      '<div class="md-user-cell__text">' + value +
+      '<span class="md-guest-cell__tag">' + i18n('游客') + '</span></div></div>';
   };
   document.addEventListener('click', function () {
     document.querySelectorAll('.md-nodesel__menu.show').forEach(function (m) { m.classList.remove('show'); });

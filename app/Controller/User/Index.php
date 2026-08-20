@@ -40,7 +40,8 @@ class Index extends User
         $_GET['cid'] = $_GET['cid'] ?: Config::get("default_category");
 
         //获取所有分类
-        $category = Tree::generate($this->shop->getCategory($this->getUserGroup()));
+        //分类名同样是动态文案，与 API 侧 Api\Index::data() 的处理保持一致
+        $category = Tree::generate(\Kernel\Util\Lang::transList($this->shop->getCategory($this->getUserGroup()), ['name']));
         hook(Hook::USER_API_INDEX_CATEGORY_LIST, $category);
 
         return $this->theme("购物", "INDEX", "Index/Index.html", [
@@ -73,6 +74,10 @@ class Index extends User
                 default => "库存爆棚"
             }, "tpl");
         }
+
+        //商品展示文案统一在控制器出口翻译：主题各自记得加 lang() 是靠不住的，
+        //19 个主题里只有 Cartoon 加了一部分(issue #832)。字段清单见 CommodityLang。
+        $item = \App\Util\CommodityLang::detail($item);
 
         return $this->theme(strip_tags($item['name']), "ITEM", "Index/Item.html", [
             'user' => $this->getUser(),

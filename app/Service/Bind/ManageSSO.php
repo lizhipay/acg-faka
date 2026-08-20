@@ -31,10 +31,12 @@ class ManageSSO implements \App\Service\ManageSSO
      * @param string $username
      * @param string $password
      * @param bool $remember
+     * @param string $code
+     * @param string|null $rawPassword 未清洗的原始密码输入，用于旧清洗管线的兼容比对（#833）
      * @return array
      * @throws JSONException
      */
-    public function login(string $username, string $password, bool $remember = false, string $code = ''): array
+    public function login(string $username, string $password, bool $remember = false, string $code = '', ?string $rawPassword = null): array
     {
         $failedAudit = null;
         try {
@@ -43,6 +45,7 @@ class ManageSSO implements \App\Service\ManageSSO
                 $password,
                 $remember,
                 $code,
+                $rawPassword,
                 &$failedAudit
             ): array {
                 // Lock the account through verification and session creation. A
@@ -52,7 +55,8 @@ class ManageSSO implements \App\Service\ManageSSO
                 if (!$manage) {
                     throw new JSONException("该邮箱不存在");
                 }
-                if (!hash_equals((string)$manage->password, Str::generatePassword($password, $manage->salt))) {
+                //verifyPassword 内含旧清洗管线的兼容比对（#833）
+                if (!Str::verifyPassword((string)$manage->password, (string)$manage->salt, $password, $rawPassword)) {
                     $failedAudit = [$manage, "登录失败：密码错误"];
                     throw new JSONException("密码错误");
                 }

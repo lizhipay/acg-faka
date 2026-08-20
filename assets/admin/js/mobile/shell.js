@@ -28,6 +28,12 @@
             '<div class="admin-mobile-appbar__top"><div class="admin-mobile-appbar__heading"><strong data-admin-mobile-title>' + i18n('后台管理') + '</strong><span class="admin-mobile-enterprise-badge" data-admin-mobile-enterprise hidden>' + i18n('企业版') + '</span></div>' +
             '<button type="button" class="admin-mobile-icon-button" data-admin-mobile-appearance aria-label="' + i18n('外观模式') + '" aria-haspopup="dialog" aria-expanded="false" aria-controls="admin-mobile-appearance-sheet"><span class="material-icons-outlined" aria-hidden="true">contrast</span></button>' +
             '<a class="admin-mobile-icon-button admin-mobile-store-button" data-admin-mobile-store href="/admin/store/home" aria-label="' + i18n('应用商店') + '"><span class="material-icons-outlined" aria-hidden="true">storefront</span></a></div>' +
+            '<button type="button" class="admin-mobile-search" data-admin-mobile-search aria-haspopup="dialog" aria-expanded="false" aria-controls="admin-mobile-search-sheet" aria-label="' + i18n('搜索后台功能') + '">' +
+            '<span class="material-icons-outlined admin-mobile-search__lead" aria-hidden="true">search</span>' +
+            '<span class="admin-mobile-search__copy" data-admin-mobile-search-placeholder>' + i18n('搜索后台功能') + '</span>' +
+            '<span class="admin-mobile-search__count" data-admin-mobile-search-count hidden>0</span>' +
+            '<span class="material-icons-outlined admin-mobile-search__trail" data-admin-mobile-search-trail aria-hidden="true">apps</span>' +
+            '</button>' +
             '</header><nav class="admin-mobile-context-tabs" data-admin-mobile-context-tabs aria-label="' + i18n('当前功能导航') + '" hidden></nav><nav class="admin-mobile-bottom-nav" data-admin-mobile-bottom-nav aria-label="' + i18n('后台主要导航') + '">' +
             '<a href="/admin/dashboard/index" data-admin-mobile-nav="home"><span class="material-icons-outlined" aria-hidden="true">space_dashboard</span><span>' + i18n('首页') + '</span></a>' +
             '<a href="/admin/order/index" data-admin-mobile-nav="orders"><span class="material-icons-outlined" aria-hidden="true">receipt_long</span><span>' + i18n('订单') + '</span></a>' +

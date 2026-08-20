@@ -451,6 +451,15 @@ class App implements \App\Service\App
     }
 
     /**
+     * @throws GuzzleException
+     * @throws JSONException
+     */
+    public function authors(): array
+    {
+        return (array)$this->storeRequest("/store/authors");
+    }
+
+    /**
      * @param array $data
      * @return array
      * @throws GuzzleException

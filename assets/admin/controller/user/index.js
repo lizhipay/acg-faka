@@ -594,6 +594,9 @@
 
     table.setSearch([
         {title: "用户名", name: "search-username", type: "input", inputmode: 'search', enterkeyhint: 'search'},
+        //UID 精确匹配：列表里用户名下面显示的就是这个号，照着填能直接定位到人。
+        //用 equal 而不是 search，避免填 1 把 1/10/11/100 全捞出来
+        {title: "UID", name: "equal-id", type: "input", inputmode: 'numeric', enterkeyhint: 'search'},
         {title: "会员等级", name: "equal-group_id", type: "select", dict: "user_group,id,name"},
         {title: "邮箱", name: "equal-email", type: "input", inputmode: 'email', enterkeyhint: 'search'},
         {title: "手机号", name: "equal-phone", type: "input", inputmode: 'tel', enterkeyhint: 'search'},

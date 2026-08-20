@@ -55,16 +55,104 @@ body {
     font-weight: 600;
 }
 
-@media (max-width: 767.98px) {
-    .user-info-box {
-        position: absolute;
-        right: 64px;
-        top: 8px;
+/* 窄屏顶栏排布。
+   原来这里把 .user-info-box / .user-login-box 绝对定位到 right:64px —— 那是语言切换
+   按钮还没加进来之前的写法，靠一个写死的偏移量给汉堡键让位。语言按钮加进来之后，
+   用户框脱离文档流压在汉堡键上，屏幕越窄叠得越狠（头像和用户名直接盖住汉堡键）。
+   而且断点是 767.98px，跟导航自身的 navbar-expand-lg(992px) 对不上，
+   768~992 之间又是另一套表现。
+   现在改回正常 flex 排布，断点对齐 992px：品牌可收缩截断，右侧依次语言/用户/汉堡，
+   展开的折叠区靠 order 排到最后单独占一行。 */
+@media (max-width: 991.98px) {
+    .navbar-acg .container {
+        flex-wrap: wrap;
+        column-gap: .35rem;
     }
-    .user-login-box {
-        position: absolute;
-        right: 68px;
-        top: 14px;
+
+    /* 品牌吃掉剩余空间并把右侧那组顶到最右；店名过长时截断，不去挤压右边的按钮 */
+    .navbar-acg .navbar-brand {
+        flex: 0 1 auto;
+        min-width: 0;
+        margin-right: auto;
+        overflow: hidden;
+    }
+    .navbar-acg .navbar-brand > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* 折叠区展开时独占一行，收起时 Bootstrap 会 display:none，不影响首行 */
+    .navbar-acg .navbar-collapse {
+        order: 10;
+        flex-basis: 100%;
+    }
+
+    .navbar-acg .lang-switch { order: 4; }
+    .navbar-acg .user-info-box,
+    .navbar-acg .user-login-box {
+        position: static;
+        right: auto;
+        top: auto;
+        order: 5;
+        min-width: 0;
+    }
+    .navbar-acg .navbar-toggler {
+        order: 6;
+        flex: 0 0 auto;
+    }
+
+    /* 极窄屏：用户名/余额截断，保证汉堡键始终点得到 */
+    .user-info-box .dropdown-toggle {
+        max-width: 46vw;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .user-info-box .dropdown-toggle > .d-flex {
+        min-width: 0;
+    }
+    .user-info-box #username,
+    .user-info-box #user-balance {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+/* 更窄（手机竖屏，360/320 这类）：一行实在放不下四个控件就会折行。
+   用户框的宽度是被「余额: ¥xxx.xx」那一行撑开的（比用户名长），这里把余额收起来，
+   金额在下拉菜单和个人中心里都看得到，顶栏只留用户名。这样 320 也能保持单行。 */
+@media (max-width: 479.98px) {
+    .navbar-acg .navbar-brand > span {
+        max-width: 30vw;
+    }
+    .user-info-box .dropdown-toggle {
+        max-width: 38vw;
+    }
+    .user-info-box #user-balance {
+        display: none;
+    }
+    .user-info-box #username {
+        font-size: 13px;
+    }
+    .user-info-box .rounded-circle {
+        width: 28px !important;
+        height: 28px !important;
+        margin-right: .35rem !important;
+    }
+}
+
+/* 360/320 这档只差十几像素就能单行，再把店名压一档，避免顶栏白白占两行高度 */
+@media (max-width: 399.98px) {
+    .navbar-acg .container {
+        column-gap: .2rem;
+    }
+    .navbar-acg .navbar-brand > span {
+        max-width: 22vw;
+    }
+    .navbar-acg .navbar-brand {
+        font-size: 1.15rem;
     }
 }
 

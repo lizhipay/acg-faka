@@ -147,6 +147,7 @@
 
         component.popup({
             drawer: true,          // content-heavy product form → open as a right-side drawer
+            fitTabs: true,         // 标签页多到一行放不下时自动加宽（插件还会往这里塞标签页）
             submit: '/admin/api/commodity/save',
             tab: [
                 {

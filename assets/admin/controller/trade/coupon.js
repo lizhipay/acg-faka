@@ -290,7 +290,12 @@
                             title: "选择商品",
                             name: "commodity_id",
                             type: "select",
-                            dict: "commodity->owner=0 and delivery_way=0 and (shared_id is null or shared_id=0),id,name",
+                            //不能过滤 delivery_way：优惠券只是抵扣金额，和发货方式无关。
+                            //下单时的校验（Order::valuation）只看 owner / commodity_id / race / sku，
+                            //从来不看发货方式。这个 delivery_way=0 是从卡密管理那边照抄过来的 ——
+                            //卡密那边过滤是对的（手动发货商品不走卡密库存），抄到优惠券这儿就变成了
+                            //「手动/插件发货的商品永远选不到」。见 issue #830
+                            dict: "commodity->owner=0 and (shared_id is null or shared_id=0),id,name",
                             placeholder: "请选择商品",
                             search: true,
                             change: (_, __) => {

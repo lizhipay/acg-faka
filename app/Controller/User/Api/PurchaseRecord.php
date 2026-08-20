@@ -40,6 +40,19 @@ class PurchaseRecord extends User
                 }
             ]);
         });
+        //发货留言以下单时的快照为准，老订单（3.5.9 之前）回退到商品当前留言（issue #813）
+        foreach ($data['list'] as &$item) {
+            $resolved = \App\Model\Order::resolveLeaveMessage(
+                $item['leave_message'] ?? null,
+                $item['commodity']['leave_message'] ?? null
+            );
+            $item['leave_message'] = $resolved;
+            if (isset($item['commodity'])) {
+                $item['commodity']['leave_message'] = $resolved;
+            }
+        }
+        unset($item);
+
         hook(Hook::USER_API_PURCHASE_RECORD_LIST, $data);
         return $this->json(data: $data);
     }

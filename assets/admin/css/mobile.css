@@ -17,7 +17,10 @@
     --admin-mobile-card-shadow: 0 1px 2px rgba(15, 23, 42, .025), 0 10px 28px -20px rgba(15, 23, 42, .22);
     --admin-mobile-shadow: 0 18px 52px -16px rgba(12, 18, 24, .28);
     --admin-mobile-radius: 20px;
-    --admin-mobile-appbar-height: 50px;
+    /* 顶栏现在是两行：标题行 50 + 间距 6 + 搜索条 46 + 底部留白 8。
+       这个值被内容区 padding-top、二级标签页 top 等一堆偏移共用，
+       必须和顶栏实际高度对得上，否则列表会被压在顶栏底下 */
+    --admin-mobile-appbar-height: 110px;
     --admin-mobile-nav-height: 78px;
     --admin-mobile-nav-lift: 0px;
     --admin-mobile-tabs-height: 0px;
@@ -1002,8 +1005,8 @@
         display: flex;
         height: calc(var(--admin-mobile-appbar-height) + env(safe-area-inset-top));
         flex-direction: column;
-        gap: 0;
-        padding: env(safe-area-inset-top) calc(16px + env(safe-area-inset-right)) 0 calc(16px + env(safe-area-inset-left));
+        gap: 6px;
+        padding: env(safe-area-inset-top) calc(16px + env(safe-area-inset-right)) 8px calc(16px + env(safe-area-inset-left));
         border: 0;
         background: color-mix(in srgb, var(--admin-mobile-bg) 95%, transparent);
         box-shadow: none;
@@ -6087,7 +6090,7 @@
     }
 
     @media (orientation: landscape) and (max-height: 520px) {
-        :root { --admin-mobile-appbar-height: 44px; --admin-mobile-nav-height: 58px; }
+        :root { --admin-mobile-appbar-height: 104px; --admin-mobile-nav-height: 58px; }
         html[data-admin-mobile-has-tabs] { --admin-mobile-tabs-height: 44px; }
         html[data-admin-layout="mobile"][data-theme] .admin-mobile-appbar {
             display: grid;
@@ -6095,7 +6098,7 @@
             align-items: center;
             gap: 8px;
             padding-top: env(safe-area-inset-top);
-            padding-bottom: 0;
+            padding-bottom: 8px;
         }
         html[data-admin-layout="mobile"][data-theme][data-admin-mobile-keyboard-open] .admin-mobile-appbar {
             grid-template-columns: minmax(0, 1fr);

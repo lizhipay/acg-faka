@@ -136,6 +136,12 @@ class App extends Manage
             $data['keywords'] = urldecode($keywords);
         }
 
+        //按作者筛选：0/空表示不限，别塞进去白白改了签名参数
+        $authorId = (int)($_POST['author_id'] ?? 0);
+        if ($authorId > 0) {
+            $data['author_id'] = $authorId;
+        }
+
         $plugins = $this->app->plugins($data);
 
         //判断自己是否安装
@@ -186,6 +192,33 @@ class App extends Manage
         $json['user'] = $plugins['user'];
         $json['purchase'] = $plugins['purchase'];
         return $json;
+    }
+
+    /**
+     * 作者下拉框的数据源。商店那边只返回有已上架插件的作者（当前 11 个，不分页），
+     * 这里转成前端字典要的 {id, name} 结构，顺带挡掉字段缺失的脏数据。
+     * @return array
+     */
+    public function authors(): array
+    {
+        //这是个筛选框的数据源，不是主流程：商店没这个接口、或临时抽风时
+        //只当"没有作者可筛"处理，前端据此不显示下拉框，绝不能把应用商店页面带崩
+        try {
+            $authors = $this->app->authors();
+        } catch (\Throwable $e) {
+            return $this->json(200, "ok", []);
+        }
+
+        $list = [];
+        foreach ($authors as $author) {
+            $id = (int)($author['id'] ?? 0);
+            $username = trim((string)($author['username'] ?? ''));
+            if ($id <= 0 || $username === '') {
+                continue;
+            }
+            $list[] = ["id" => $id, "name" => $username];
+        }
+        return $this->json(200, "ok", $list);
     }
 
     /**
@@ -309,6 +342,22 @@ class App extends Manage
         $pluginKey = (string)$_POST['plugin_key'];
         $type = (int)$_POST['type'];
 
+        //正在使用的网站模板不能卸载：uninstallPlugin 是直接删目录，
+        //删掉当前启用的模板会让前台立刻白屏，且无法从后台恢复
+        if ($type == 2) {
+            $inUse = [
+                'user_theme' => 'PC模板',
+                'user_mobile_theme' => '手机模板',
+                'user_center_theme' => 'PC会员中心',
+                'user_center_mobile_theme' => '手机会员中心',
+            ];
+            foreach ($inUse as $configKey => $label) {
+                if ((string)\App\Model\Config::get($configKey) === $pluginKey) {
+                    throw new JSONException("该模板正被「{$label}」使用，请先切换到其它模板再卸载");
+                }
+            }
+        }
+
         if ($type == 0) {
             _plugin_stop($pluginKey);
         }
@@ -325,10 +374,24 @@ class App extends Manage
      */
     public function developerPlugins(): array
     {
-        $plugins = $this->app->developerPlugins([
+        $query = [
             "page" => (int)$_POST['page'],
             "limit" => (int)$_POST['limit']
-        ]);
+        ];
+
+        //搜索条件：keyword 模糊搜索，其余三项是枚举。空值不下发，避免把"不筛选"当成筛选 0
+        $keyword = trim((string)($_POST['keyword'] ?? ''));
+        if ($keyword !== '') {
+            $query['keyword'] = $keyword;
+        }
+        foreach (['status', 'type', 'audit_review_status'] as $field) {
+            $value = (string)($_POST[$field] ?? '');
+            if ($value !== '' && ctype_digit($value)) {
+                $query[$field] = (int)$value;
+            }
+        }
+
+        $plugins = $this->app->developerPlugins($query);
 
         foreach ($plugins['rows'] as &$plugin) {
             $plugin['icon'] = \App\Service\App::APP_URL . "/{$plugin['icon']}";

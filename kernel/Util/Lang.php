@@ -22,8 +22,10 @@ final class Lang
     public const LANGS = ["zh-cn", "zh-tw", "en", "ja"];
     public const TABLE = "lang";
 
-    //单条可入库文本的最大长度(字符)，超长的动态文本(如超大富文本)不进翻译库
+    //单条可入库文本的最大长度(字符)，超长的动态文本不进翻译库
     public const MAX_SOURCE_LEN = 500;
+    //富文本(商品详情/公告这类带标签的动态内容)单独放宽，与 TranslationBot 的 Queue::MAX_SOURCE_LEN 对齐
+    public const MAX_MARKUP_SOURCE_LEN = 8000;
     //每请求最多收集的 miss 条数，防动态变体爆炸
     public const MAX_MISS_PER_REQUEST = 100;
 
@@ -31,6 +33,10 @@ final class Lang
     private static ?array $dict = null;
     private static ?array $reverse = null;
     private static array $miss = [];
+    //长文本按需点查的请求内缓存：source hash => 译文或 null
+    private static array $longCache = [];
+    //本请求已返回过的长文本译文，防止「控制器翻过、模板再翻一次」把译文当新原文收集
+    private static array $longReverse = [];
     private static bool $shutdownRegistered = false;
 
     /**
@@ -157,6 +163,15 @@ final class Lang
 
         //带标签的文案（后台常把图标写进配置值，如 <i class="…"></i> 推荐）：整串查不到时，
         //先看文本片段是不是已有现成译文，能全部命中就直接复用，省掉一次翻译调用
+        //长文本(商品详情/公告这类富文本)不进 runtime 字典文件——否则文件体积随商品数增长，
+        //而它每请求都要 include。改为按 (hash,lang) 唯一索引点查，一个页面最多命中一两条。
+        if (mb_strlen($source) > self::MAX_SOURCE_LEN) {
+            $long = self::longText($source, self::get());
+            if ($long !== null) {
+                return $long;
+            }
+        }
+
         if (str_contains($source, "<")) {
             $translated = self::transMarkup($source);
             if ($translated !== null) {
@@ -166,6 +181,40 @@ final class Lang
 
         self::collect($source, $scene);
         return $source;
+    }
+
+    /**
+     * 长文本译文按需点查（走 uk_hash_lang 唯一索引），请求内缓存，任何异常降级为"没译文"。
+     * @param string $source
+     * @param string $lang
+     * @return string|null
+     */
+    private static function longText(string $source, string $lang): ?string
+    {
+        $key = $lang . ":" . md5($source);
+        if (array_key_exists($key, self::$longCache)) {
+            return self::$longCache[$key];
+        }
+        //正常页面只会命中一两条，设个上限纯粹是防御异常调用把内存吃满
+        if (count(self::$longCache) >= 50) {
+            return null;
+        }
+
+        $text = null;
+        try {
+            $value = DB::table(self::TABLE)
+                ->where("hash", md5($source))
+                ->where("lang", $lang)
+                ->value("text");
+            if (is_string($value) && $value !== "") {
+                $text = $value;
+                //记下译文：同一请求里模板可能对已翻好的内容再调一次 lang()
+                self::$longReverse[$value] = true;
+            }
+        } catch (\Throwable $e) {
+        }
+
+        return self::$longCache[$key] = $text;
     }
 
     /**
@@ -221,15 +270,22 @@ final class Lang
         if ($source === "" || isset(self::$miss[$source])) {
             return;
         }
+        //带真实标签的富文本(商品详情、公告)放宽到 MAX_MARKUP_SOURCE_LEN，普通文案仍是 500。
+        //前端上报(js)不享受放宽：/user/api/lang/report 是免登录端点，放宽等于让匿名访客
+        //按 50 条/次往词库和翻译队列灌超长文本，白烧翻译额度。
+        $isMarkup = $scene !== "js" && preg_match('/<[a-zA-Z\/!]/', $source) === 1;
         //只收集含汉字且长度可控的文本
-        if (mb_strlen($source) > self::MAX_SOURCE_LEN || !preg_match('/\p{Han}/u', $source)) {
+        if (mb_strlen($source) > ($isMarkup ? self::MAX_MARKUP_SOURCE_LEN : self::MAX_SOURCE_LEN)
+            || !preg_match('/\p{Han}/u', $source)) {
             return;
         }
 
         //只拦「被二次转义的 HTML 碎片」（如 &quot;&amp;gt;未启用）——这种翻不出有意义的
         //结果，只会污染词库。正常带标签的富文本（公告、商品详情）要放行，交给翻译插件的
         //富文本路径整段处理，标签会被原样保留。
-        if (preg_match('/&(?:amp|quot|lt|gt|#\d+);/', $source)) {
+        //富文本里出现 &amp; / &#39; 是编辑器的正常产物，不是二次转义；对它只认「标签定界符
+        //本身也被转义」这个真正的二次转义特征，否则站长写一句「A & B」整段详情就被静默丢掉。
+        if (preg_match($isMarkup ? '/&(?:lt|gt);/' : '/&(?:amp|quot|lt|gt|#\d+);/', $source)) {
             return;
         }
 
@@ -245,6 +301,11 @@ final class Lang
             if (isset(self::$reverse[$source])) {
                 return;
             }
+        }
+        //长文本的译文不在 $dict 里（见 longText），单独拦一道：默认主题 Cartoon 的模板会对
+        //控制器已翻好的商品详情再调一次 lang()，不拦就会把译文当成新原文入库并浪费翻译额度
+        if (isset(self::$longReverse[$source])) {
+            return;
         }
 
         self::$miss[$source] = $scene;
@@ -583,7 +644,13 @@ final class Lang
                     ->orderBy("id")
                     ->chunk(2000, function ($items) use (&$map) {
                         foreach ($items as $item) {
-                            $map[(string)$item->source] = (string)$item->text;
+                            $source = (string)$item->source;
+                            //长文本走 trans() 的按需点查，不进字典文件：既避免文件随商品数膨胀，
+                            //也避免被打进前端 i18n 包（浏览器根本用不到整段商品详情）
+                            if (mb_strlen($source) > self::MAX_SOURCE_LEN) {
+                                continue;
+                            }
+                            $map[$source] = (string)$item->text;
                         }
                     });
 
@@ -607,6 +674,8 @@ final class Lang
         //当前请求内的字典可能已过期
         self::$dict = null;
         self::$reverse = null;
+        self::$longCache = [];
+        self::$longReverse = [];
     }
 
     /**
@@ -670,6 +739,53 @@ final class Lang
     }
 
     /**
+     * 翻译「对象数组」里的指定键：商品 tags 的 text、widget 的 cn/placeholder/error 都是这种形状
+     * （[{"text":"限时特惠","color":"orange"}, ...]），transList/transPath 只能处理字符串数组，覆盖不到。
+     *
+     * 入参允许是数据库原样的 JSON 字符串或已解码数组，返回与入参同型，不改变调用方的数据契约。
+     * 只翻列出的键，name/color/regex/type 这类标识与样式值一概不动。
+     *
+     * @param mixed $value JSON 字符串或数组
+     * @param string[] $keys 要翻译的键
+     * @param string $scene
+     * @return mixed
+     */
+    public static function transObjectList(mixed $value, array $keys, string $scene = "dyn"): mixed
+    {
+        if (self::get() === self::SOURCE || $value === null || $value === "" || $keys === []) {
+            return $value;
+        }
+
+        $wasJson = is_string($value);
+        $list = $wasJson ? json_decode($value, true) : $value;
+        if (!is_array($list) || $list === []) {
+            return $value;
+        }
+
+        $changed = false;
+        foreach ($list as $i => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            foreach ($keys as $key) {
+                if (isset($row[$key]) && is_string($row[$key]) && $row[$key] !== "") {
+                    $translated = self::trans($row[$key], $scene);
+                    if ($translated !== $row[$key]) {
+                        $list[$i][$key] = $translated;
+                        $changed = true;
+                    }
+                }
+            }
+        }
+
+        if (!$changed) {
+            return $value;
+        }
+        //JSON 进 JSON 出：中文不转义，与 Commodity 模型写入时的编码保持一致
+        return $wasJson ? (string)json_encode($list, JSON_UNESCAPED_UNICODE) : $list;
+    }
+
+    /**
      * 字典版本号（用于 dict 端点缓存 bust）
      * @return string
      */
@@ -691,7 +807,16 @@ final class Lang
         if (!in_array($lang, self::LANGS, true) || $lang === self::SOURCE) {
             return [];
         }
-        return self::loadDict($lang);
+        //前端 i18n() 只翻短 UI 文案，从不整段翻商品详情/公告——那些富文本走服务端 trans()，
+        //浏览器根本用不到。放宽富文本上限(MAX_MARKUP_SOURCE_LEN)后若不在此拦一道，它们会被
+        //打进每个访客都要下载的 i18n 包(现已 450KB)。服务端热路径直连 loadDict()，不受影响。
+        $dict = [];
+        foreach (self::loadDict($lang) as $source => $text) {
+            if (mb_strlen((string)$source) <= self::MAX_SOURCE_LEN) {
+                $dict[$source] = $text;
+            }
+        }
+        return $dict;
     }
 
     /**

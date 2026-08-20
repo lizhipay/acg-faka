@@ -314,4 +314,73 @@ class Commodity extends Model
         }
         return $out;
     }
+
+    /**
+     * 秒杀是否正在进行中。
+     *
+     * 注意「开关打开」不等于「正在秒杀」——还没开始或已经结束都不算，
+     * 所以列表不能直接把 seckill_status 丢给前端当标签用。见 issue #806
+     *
+     * 下单流程（Order::valuation / trade）里有同样的时间判定，但它要区分
+     * 「还未开始」和「已结束」给出不同提示，语义比这里的布尔值更细，
+     * 故意没有合并——那条链路是支付前的校验，不宜为了展示功能去动。
+     *
+     * @param int|null $now 便于测试，默认取当前时间
+     * @return bool
+     */
+    public function isSeckillActive(?int $now = null): bool
+    {
+        if ((int)$this->seckill_status !== 1) {
+            return false;
+        }
+        $now ??= time();
+        $start = strtotime((string)$this->seckill_start_time);
+        $end = strtotime((string)$this->seckill_end_time);
+        if ($start !== false && $now < $start) {
+            return false;
+        }
+        if ($end !== false && $now > $end) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 商品是否配置了批发价（含按种类的批发价阶梯）。
+     *
+     * 批发价存在商品 config 的 [wholesale] / [category_wholesale] 段里。
+     * 这里只回答"有没有"，不把 config 本身吐给前端——那里面还有成本价、
+     * 种类单价、SKU 加价等不该外泄的定价结构。见 issue #806
+     *
+     * @param string|null $config 商品的 Ini 配置文本
+     * @return bool
+     */
+    public static function hasWholesaleConfig(?string $config): bool
+    {
+        $config = (string)$config;
+        if (trim($config) === '') {
+            return false;
+        }
+
+        try {
+            $parsed = \App\Util\Ini::toArray($config);
+        } catch (\Throwable $e) {
+            return false; //配置脏数据不该让整个列表报错，当作没配批发价
+        }
+
+        if (!empty($parsed['wholesale']) && is_array($parsed['wholesale'])) {
+            return true;
+        }
+
+        //种类批发价是两层结构：race -> 数量档位
+        if (!empty($parsed['category_wholesale']) && is_array($parsed['category_wholesale'])) {
+            foreach ($parsed['category_wholesale'] as $ladder) {
+                if (is_array($ladder) && $ladder !== []) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }

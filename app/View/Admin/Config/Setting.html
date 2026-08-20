@@ -149,24 +149,13 @@
                                 <div class="col-lg-6 fv-row">
                                     <!--begin::Input-->
                                     <select name="user_theme" class="form-select form-select-solid form-select-lg"
-                                            data-control="select2" data-hide-search="true">
+                                            data-control="select2" data-hide-search="false">
                                         #{foreach $themes as $theme}
                                             <option value="#{$theme.info.KEY|escape:'html'}" #{if $theme.info.KEY== $config.user_theme} selected #{/if}>
                                                 #{$theme.info.NAME|escape:'html'} (v#{$theme.info.VERSION|escape:'html'})
-                                                #{if $theme.have_update === true}
-                                                    -> #{t("有更新")}(v#{$theme.update_version|escape:'html'}) ‹ #{t("请前往应用商店更新")} ›
-                                                #{/if}
                                             </option>
                                         #{/foreach}
                                     </select>
-                                    <!--end::Input-->
-                                </div>
-                                <div class="col-lg-2 fv-row">
-                                    <!--begin::Input-->
-                                    <button type="button" class="btn btn-light theme-setting"
-                                            data-admin-mobile-action-placement="inline"
-                                            aria-label="#{t('配置 PC 网站模板')}" title="#{t('配置 PC 网站模板')}"><i class="fa-duotone fa-regular fa-folder-gear"></i> #{t("模板设置")}
-                                    </button>
                                     <!--end::Input-->
                                 </div>
                                 <!--end::Col-->
@@ -182,27 +171,15 @@
                                     <!--begin::Input-->
                                     <select name="user_mobile_theme"
                                             class="form-select form-select-solid form-select-lg"
-                                            data-control="select2" data-hide-search="true">
+                                            data-control="select2" data-hide-search="false">
                                         <option value="0" #{if "0" == $config.user_mobile_theme}selected #{/if}>#{t("跟随PC模板")}
                                         </option>
                                         #{foreach $themes as $theme}
                                             <option value="#{$theme.info.KEY|escape:'html'}" #{if $theme.info.KEY== $config.user_mobile_theme}
                                             selected #{/if}>#{$theme.info.NAME|escape:'html'} (v#{$theme.info.VERSION|escape:'html'})
-                                                #{if $theme.have_update === true}
-                                                    -> #{t("有更新")}(v#{$theme.update_version|escape:'html'}) ‹ #{t("请前往应用商店更新")} ›
-                                                #{/if}
                                             </option>
                                         #{/foreach}
                                     </select>
-                                    <!--end::Input-->
-                                </div>
-                                <div class="col-lg-2 fv-row">
-                                    <!--begin::Input-->
-                                    <button type="button" class="btn btn-light theme-mobile-setting"
-                                            data-admin-mobile-action-placement="inline"
-                                            aria-label="#{t('配置手机网站模板')}" title="#{t('配置手机网站模板')}"><i
-                                                class="fa-duotone fa-regular fa-folder-gear"></i> #{t("模板设置")}
-                                    </button>
                                     <!--end::Input-->
                                 </div>
                                 <!--end::Col-->
@@ -217,24 +194,13 @@
                                 <div class="col-lg-6 fv-row">
                                     <!--begin::Input-->
                                     <select name="user_center_theme" class="form-select form-select-solid form-select-lg"
-                                            data-control="select2" data-hide-search="true">
+                                            data-control="select2" data-hide-search="false">
                                         #{foreach $themes as $theme}
                                             <option value="#{$theme.info.KEY|escape:'html'}" #{if $theme.info.KEY== $config.user_center_theme} selected #{/if}>
                                                 #{$theme.info.NAME|escape:'html'} (v#{$theme.info.VERSION|escape:'html'})
-                                                #{if $theme.have_update === true}
-                                                    -> #{t("有更新")}(v#{$theme.update_version|escape:'html'}) ‹ #{t("请前往应用商店更新")} ›
-                                                #{/if}
                                             </option>
                                         #{/foreach}
                                     </select>
-                                    <!--end::Input-->
-                                </div>
-                                <div class="col-lg-2 fv-row">
-                                    <!--begin::Input-->
-                                    <button type="button" class="btn btn-light theme-user-setting"
-                                            data-admin-mobile-action-placement="inline"
-                                            aria-label="#{t('配置 PC 会员中心模板')}" title="#{t('配置 PC 会员中心模板')}"><i class="fa-duotone fa-regular fa-folder-gear"></i> #{t("模板设置")}
-                                    </button>
                                     <!--end::Input-->
                                 </div>
                                 <!--end::Col-->
@@ -251,25 +217,14 @@
                                     <!--begin::Input-->
                                     <select name="user_center_mobile_theme"
                                             class="form-select form-select-solid form-select-lg"
-                                            data-control="select2" data-hide-search="true">
+                                            data-control="select2" data-hide-search="false">
                                         <option value="0" #{if "0" == $user_center_mobile_theme} selected #{/if}>#{t("跟随PC会员中心模版")}</option>
                                         #{foreach $themes as $theme}
                                             <option value="#{$theme.info.KEY|escape:'html'}" #{if $theme.info.KEY == $user_center_mobile_theme} selected #{/if}>
                                                 #{$theme.info.NAME|escape:'html'} (v#{$theme.info.VERSION|escape:'html'})
-                                                #{if $theme.have_update === true}
-                                                    -> #{t("有更新")}(v#{$theme.update_version|escape:'html'}) ‹ #{t("请前往应用商店更新")} ›
-                                                #{/if}
                                             </option>
                                         #{/foreach}
                                     </select>
-                                    <!--end::Input-->
-                                </div>
-                                <div class="col-lg-2 fv-row">
-                                    <!--begin::Input-->
-                                    <button type="button" class="btn btn-light theme-user-mobile-setting"
-                                            data-admin-mobile-action-placement="inline"
-                                            aria-label="#{t('配置手机会员中心模板')}" title="#{t('配置手机会员中心模板')}"><i class="fa-duotone fa-regular fa-folder-gear"></i> #{t("模板设置")}
-                                    </button>
                                     <!--end::Input-->
                                 </div>
                                 <!--end::Col-->

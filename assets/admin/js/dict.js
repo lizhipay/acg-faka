@@ -199,6 +199,13 @@ const _Dict = new class _Dict extends _DictUtil {
                     id: 3,
                     name: `<span class="a-badge a-badge-danger"><i class="fa-duotone fa-regular fa-badge-check"></i> ${i18n('审核中')}</span>`
                 }
+            ],
+            //更新包审核状态：已上架插件提交更新后的审核进度（开发者中心搜索用）
+            "_developer_plugin_audit_review_status": [
+                {id: 0, name: `${i18n('暂未提交')}`},
+                {id: 1, name: `${i18n('审核中')}`},
+                {id: 2, name: `${i18n('审核通过')}`},
+                {id: 3, name: `${i18n('驳回申请')}`}
             ]
         };
     }

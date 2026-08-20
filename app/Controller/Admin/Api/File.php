@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
+use App\Util\UploadPurge;
 use Kernel\Exception\JSONException;
 use Kernel\Util\File as FileUtil;
 
@@ -30,10 +31,7 @@ class File extends Manage
      * the allow-list explicit so a database path can never escape into another
      * public directory, while preserving management of the complete table.
      */
-    private const UPLOAD_ROOTS = [
-        '/assets/cache/general',
-        '/assets/cache/user',
-    ];
+    //允许删除的上传根目录已随路径校验一起移到 App\Util\UploadPurge::UPLOAD_ROOTS
     private const MAX_DELETE_COUNT = 200;
 
     #[Inject]
@@ -530,148 +528,32 @@ class File extends Manage
         array $expectedThumbnailInspections
     ): array
     {
-        $quarantine = BASE_PATH . '/runtime/file-delete-quarantine';
-        if (!is_dir($quarantine) && !mkdir($quarantine, 0700, true) && !is_dir($quarantine)) {
-            throw new JSONException('无法创建非公开文件隔离区，已阻止删除');
-        }
-        @chmod($quarantine, 0700);
-
-        $targets = [];
-        foreach ($rows as $row) {
-            $id = (int)$row->id;
-            $current = $this->inspectUploadPath((string)$row->path);
-            $expected = $expectedInspections[$id] ?? null;
-            if (!$current['safe'] || !$expected || !$expected['safe']
-                || $current['url'] !== $expected['url']
-                || $current['exists'] !== $expected['exists']
-                || $current['identity'] !== $expected['identity']) {
-                throw new JSONException('文件路径或状态已变化，未执行删除，请重新预览');
-            }
-            if ($current['exists']) {
-                $targets[$current['real_path']] = $current['real_path'];
-            }
-            $thumb = $this->inspectUploadPath($this->thumbnailPath($current['url']));
-            $expectedThumb = $expectedThumbnailInspections[$id] ?? null;
-            if (!$thumb['safe'] || !$expectedThumb || !$expectedThumb['safe']
-                || $thumb['url'] !== $expectedThumb['url']
-                || $thumb['exists'] !== $expectedThumb['exists']
-                || $thumb['identity'] !== $expectedThumb['identity']) {
-                throw new JSONException('缩略图路径或状态已变化，已阻止删除，请重新预览');
-            }
-            if ($thumb['exists']) {
-                $targets[$thumb['real_path']] = $thumb['real_path'];
-            }
-        }
-
-        $staged = [];
-        try {
-            foreach ($targets as $source) {
-                $target = $quarantine . '/' . bin2hex(random_bytes(16)) . '.delete';
-                if (!@rename($source, $target)) {
-                    throw new JSONException('文件无法原子移入隔离区，整批删除已取消');
-                }
-                @chmod($target, 0600);
-                $staged[] = ['source' => $source, 'target' => $target];
-            }
-        } catch (\Throwable $throwable) {
-            $restoreFailures = $this->restoreStagedFiles($staged);
-            if ($restoreFailures > 0) {
-                throw new JSONException("文件隔离失败，且有 {$restoreFailures} 个文件无法恢复，请立即联系运维处理");
-            }
-            if ($throwable instanceof JSONException) {
-                throw $throwable;
-            }
-            throw new JSONException('无法安全隔离待删除文件，整批删除已取消');
-        }
-        return $staged;
+        return UploadPurge::stageForDeletion($rows, $expectedInspections, $expectedThumbnailInspections);
     }
 
     private function restoreStagedFiles(array $staged): int
     {
-        $failures = 0;
-        foreach (array_reverse($staged) as $item) {
-            if (!is_file($item['target'])) {
-                continue;
-            }
-            if (file_exists($item['source']) || !@rename($item['target'], $item['source'])) {
-                $failures++;
-            }
-        }
-        return $failures;
+        return UploadPurge::restoreStagedFiles($staged);
     }
 
     private function purgeStagedFiles(array $staged): int
     {
-        $failures = 0;
-        foreach ($staged as $item) {
-            if (is_file($item['target']) && !@unlink($item['target'])) {
-                $failures++;
-            }
-        }
-        return $failures;
+        return UploadPurge::purgeStagedFiles($staged);
     }
 
     private function thumbnailPath(string $path): string
     {
-        return dirname($path) . '/thumb/' . basename($path);
+        return UploadPurge::thumbnailPath($path);
     }
 
     private function inspectUploadPath(string $path): array
     {
-        $allowedRoot = null;
-        foreach (self::UPLOAD_ROOTS as $candidateRoot) {
-            if (str_starts_with($path, $candidateRoot . '/')) {
-                $allowedRoot = $candidateRoot;
-                break;
-            }
-        }
-        $root = $allowedRoot === null ? false : realpath(BASE_PATH . $allowedRoot);
-        $safe = $allowedRoot !== null
-            && $root !== false
-            && strlen($path) <= 255
-            && preg_match('#^' . preg_quote($allowedRoot, '#') . '/(?:[A-Za-z0-9][A-Za-z0-9._-]*/)*[A-Za-z0-9][A-Za-z0-9._-]*$#D', $path) === 1;
-        $candidate = $safe ? BASE_PATH . $path : '';
-        if ($safe) {
-            // inspectUploadPath can run twice in one delete request. Do not let
-            // PHP's per-request stat/realpath caches hide a concurrent change.
-            clearstatcache(true, $candidate);
-        }
-        if (!$safe || is_link($candidate)) {
-            return ['safe' => false, 'exists' => false, 'url' => null, 'real_path' => null, 'identity' => null];
-        }
-
-        $real = realpath($candidate);
-        if ($real !== false) {
-            if (!$this->pathInsideRoot($real, $root) || !is_file($real)) {
-                return ['safe' => false, 'exists' => false, 'url' => null, 'real_path' => null, 'identity' => null];
-            }
-            $stat = @stat($real);
-            if (!is_array($stat)) {
-                return ['safe' => false, 'exists' => false, 'url' => null, 'real_path' => null, 'identity' => null];
-            }
-            $identity = implode(':', [
-                (string)($stat['dev'] ?? ''),
-                (string)($stat['ino'] ?? ''),
-                (string)($stat['size'] ?? ''),
-                (string)($stat['mtime'] ?? ''),
-            ]);
-            return ['safe' => true, 'exists' => true, 'url' => $path, 'real_path' => $real, 'identity' => $identity];
-        }
-
-        $parent = dirname($candidate);
-        while (!file_exists($parent) && $parent !== dirname($parent)) {
-            $parent = dirname($parent);
-        }
-        $realParent = realpath($parent);
-        if ($realParent === false || !$this->pathInsideRoot($realParent, $root)) {
-            return ['safe' => false, 'exists' => false, 'url' => null, 'real_path' => null, 'identity' => null];
-        }
-        return ['safe' => true, 'exists' => false, 'url' => $path, 'real_path' => null, 'identity' => null];
+        return UploadPurge::inspectUploadPath($path);
     }
 
     private function pathInsideRoot(string $path, string $root): bool
     {
-        return $path === $root || str_starts_with($path, $root . DIRECTORY_SEPARATOR);
+        return UploadPurge::pathInsideRoot($path, $root);
     }
 
     private function downloadError(string $message): void

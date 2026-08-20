@@ -56,12 +56,16 @@ class Mcp implements \App\Service\Mcp
         return [
             [
                 "name" => "list_plugins",
-                "description" => "列出当前开发者账号名下的所有插件及其状态。返回每个插件的 id、plugin_key、plugin_name、type、version、price、group、status。其它工具需要的 plugin_id 从这里获取。status：0=开发中，1=已上架，2=驳回，3=审核中。type：0=通用扩展，1=支付扩展，2=网站模版。",
+                "description" => "列出当前开发者账号名下的插件及其状态，支持按关键词搜索、按上架状态/插件类型/审核状态筛选（插件多时先筛再翻页，别一页页找）。返回每个插件的 id、plugin_key、plugin_name、type、version、price、group、status、audit_review_status、error_reason。其它工具需要的 plugin_id 从这里获取。status 是插件的上架状态：0=开发中，1=已上架，2=驳回，3=审核中。type：0=通用扩展，1=支付扩展，2=网站模版。audit_review_status 是最近一次提交的审核状态：0=暂未提交，1=审核中，2=审核通过，3=驳回申请——被驳回(3)时 error_reason 里是驳回原因，按它改好后重新提交即可，不需要新建插件：status=2 用 upload_install_kit，status=1（插件仍在售、只是这次更新被驳）用 submit_update。重新提交后 audit_review_status 会变回 1，驳回原因自动清空。",
                 "inputSchema" => [
                     "type" => "object",
                     "properties" => [
                         "page" => ["type" => "integer", "minimum" => 1, "default" => 1, "description" => "页码，从 1 开始"],
                         "limit" => ["type" => "integer", "minimum" => 1, "maximum" => 100, "default" => 20, "description" => "每页数量，最多 100"],
+                        "keyword" => ["type" => "string", "description" => "按插件名或插件标识模糊搜索。输入纯英文数字时搜 plugin_key，否则搜 plugin_name"],
+                        "status" => ["type" => "integer", "enum" => [0, 1, 2, 3], "description" => "按上架状态筛选：0=开发中，1=已上架，2=驳回，3=审核中"],
+                        "type" => ["type" => "integer", "enum" => [0, 1, 2], "description" => "按插件类型筛选：0=通用扩展，1=支付扩展，2=网站模版"],
+                        "audit_review_status" => ["type" => "integer", "enum" => [0, 1, 2, 3], "description" => "按审核状态筛选：0=暂未提交，1=审核中，2=审核通过，3=驳回申请"],
                     ],
                 ],
             ],
@@ -86,7 +90,7 @@ class Mcp implements \App\Service\Mcp
             ],
             [
                 "name" => "upload_install_kit",
-                "description" => "为一个处于「开发中」(status=0) 的插件上传安装包并提交审核，提交后状态变为审核中(3)。默认由服务端直接从本机插件目录自动打包，不需要你自己压缩、更不需要传 base64——只给 plugin_id 即可。打包时会自动排除日志等运行态文件，并把 Config.php 写成空的 return []; （绝不会带上本站的密钥和启用状态，也不会改动本机那份配置）。填了 version 就会先把该版本号写回插件自己的 Info，保证包内版本与商店一致。",
+                "description" => "为一个处于「开发中」(status=0) 或「审核驳回」(status=2) 的插件上传安装包并提交审核，提交后状态变为审核中(3)。插件被驳回后，按 error_reason 里的原因改好，用这个工具直接重新提交即可，不需要新建插件（重新提交会自动清掉上次的驳回原因）。默认由服务端直接从本机插件目录自动打包，不需要你自己压缩、更不需要传 base64——只给 plugin_id 即可。打包时会自动排除日志等运行态文件，并把 Config.php 写成空的 return []; （绝不会带上本站的密钥和启用状态，也不会改动本机那份配置）。填了 version 就会先把该版本号写回插件自己的 Info，保证包内版本与商店一致。",
                 "inputSchema" => [
                     "type" => "object",
                     "properties" => [
@@ -255,7 +259,18 @@ class Mcp implements \App\Service\Mcp
         $limit = (int)($args['limit'] ?? 20);
         $limit = min(100, max(1, $limit));
 
-        $result = $this->app->developerPlugins(["page" => $page, "limit" => $limit]);
+        $query = ["page" => $page, "limit" => $limit];
+        $keyword = trim((string)($args['keyword'] ?? ""));
+        if ($keyword !== "") {
+            $query['keyword'] = $keyword;
+        }
+        foreach (["status", "type", "audit_review_status"] as $filter) {
+            if (isset($args[$filter]) && $args[$filter] !== "") {
+                $query[$filter] = (int)$args[$filter];
+            }
+        }
+
+        $result = $this->app->developerPlugins($query);
         $rows = [];
         foreach ((array)($result['rows'] ?? []) as $row) {
             //只回传对开发者有意义、且不含内部路径的字段
@@ -268,6 +283,7 @@ class Mcp implements \App\Service\Mcp
                 "price" => $row['price'] ?? "0",
                 "group" => (int)($row['group'] ?? 0),
                 "status" => (int)($row['status'] ?? 0),
+                "audit_review_status" => (int)($row['audit_review_status'] ?? 0),
                 "description" => (string)($row['description'] ?? ""),
                 "web_site" => (string)($row['web_site'] ?? ""),
                 "error_reason" => (string)($row['error_reason'] ?? ""),

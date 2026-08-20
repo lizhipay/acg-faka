@@ -256,16 +256,7 @@ let acg = {
                     if (res.secret == null) {
                         window.location.href = res.url;
                     } else {
-                        layer.open({
-                            type: 1,
-                            title: acgT("您购买的卡密如下："),
-                            area: acg.Util.isMobile() ? ["100%", "100%"] : ['420px', '420px'],
-                            content: '<textarea class="layui-input" style="padding: 15px;height: 98%;width: 100%;border: none;overflow-x: hidden;">' + res.secret + '</textarea>',
-                            btn: ['<span style="color:white;">' + acgT("查看更多信息/下载") + '</span>'],
-                            yes: function () {
-                                window.open('/user/personal/purchaseRecord?tradeNo=' + res.tradeNo);
-                            }
-                        });
+                        acgSecretPopup(res);
                     }
                     acg.API.captcha(".captcha");
                 }, error: () => {
@@ -859,3 +850,100 @@ let acg = {
         }
     },
 }
+
+/* 购买成功弹窗（自带样式，不依赖模板 CSS）。
+   原来是一个 420x420 的死高度 + 裸 textarea：卡密只有一行时下面空一大片，
+   而且长得像个输入框；买家想复制只能自己拖选。这里重做成：
+   等宽代码块 + 复制/下载按钮 + 独立的「使用说明」区块，高度自适应。
+   配色全部用 currentColor 和中性灰 rgba(127,127,127,x)，明暗两种模板皮肤下都成立。 */
+function acgSecretPopup(res) {
+    if (!document.getElementById('acg-secret-style')) {
+        var st = document.createElement('style');
+        st.id = 'acg-secret-style';
+        st.textContent =
+            '.acg-secret{display:flex;flex-direction:column;gap:14px;padding:18px 20px 20px;box-sizing:border-box;font-size:14px;}' +
+            '.acg-secret__code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.75;' +
+            'white-space:pre-wrap;word-break:break-all;padding:14px 16px;border-radius:10px;' +
+            'background:rgba(127,127,127,.12);border:1px solid rgba(127,127,127,.22);' +
+            'max-height:300px;overflow:auto;user-select:text;-webkit-user-select:text;}' +
+            '.acg-secret__bar{display:flex;justify-content:flex-end;gap:10px;}' +
+            '.acg-secret__btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:9px;cursor:pointer;' +
+            'font-size:13px;line-height:1.4;color:inherit;background:transparent;border:1px solid rgba(127,127,127,.38);' +
+            'transition:background .15s ease,border-color .15s ease;}' +
+            '.acg-secret__btn:hover{background:rgba(127,127,127,.16);border-color:rgba(127,127,127,.6);}' +
+            '.acg-secret__btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;' +
+            'stroke-linecap:round;stroke-linejoin:round;}' +
+            '.acg-secret__note{border-radius:10px;padding:12px 14px;background:rgba(127,127,127,.10);' +
+            'border-left:3px solid rgba(127,127,127,.45);}' +
+            '.acg-secret__note-title{display:flex;align-items:center;gap:6px;font-size:12px;opacity:.7;margin-bottom:6px;}' +
+            '.acg-secret__note-title svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;' +
+            'stroke-linecap:round;stroke-linejoin:round;}' +
+            '.acg-secret__note-body{font-size:13px;line-height:1.75;word-break:break-word;max-height:180px;overflow:auto;}' +
+            '.acg-secret__note-body p:last-child{margin-bottom:0;}';
+        document.head.appendChild(st);
+    }
+
+    var secret = res.secret == null ? '' : String(res.secret);
+    var esc = secret.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    var ICON_COPY = '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+    var ICON_DOWN = '<svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
+    var ICON_INFO = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>';
+
+    //发货留言是商家富文本，与购买记录页/查询页一致原样渲染；没配就整块不出现
+    var note = res.leave_message
+        ? '<div class="acg-secret__note"><div class="acg-secret__note-title">' + ICON_INFO + '<span>' +
+          acgT('使用说明') + '</span></div><div class="acg-secret__note-body">' + res.leave_message + '</div></div>'
+        : '';
+
+    layer.open({
+        type: 1,
+        title: acgT('您购买的卡密如下：'),
+        //高度一律交给内容自己撑：卡密只有一行时不再留一大片空白。
+        //手机端原本是 100%x100% 铺满全屏，一行卡密配一整屏空白，更难看
+        area: [Math.min((window.innerWidth || 460) - 32, 460) + 'px', 'auto'],
+        shadeClose: false,
+        content: '<div class="acg-secret">' +
+            '<div class="acg-secret__code">' + esc + '</div>' +
+            '<div class="acg-secret__bar">' +
+                '<button type="button" class="acg-secret__btn" data-acg-act="copy">' + ICON_COPY + '<span>' + acgT('复制') + '</span></button>' +
+                '<button type="button" class="acg-secret__btn" data-acg-act="download">' + ICON_DOWN + '<span>' + acgT('下载') + '</span></button>' +
+            '</div>' + note + '</div>',
+        btn: ['<span style="color:white;">' + acgT('查看更多信息/下载') + '</span>'],
+        success: function (layero) {
+            layero.find('[data-acg-act="copy"]').on('click', function () {
+                var done = function () { layer.msg(acgT('卡密已复制')); };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(secret).then(done, function () { fallbackCopy(secret, done); });
+                } else {
+                    fallbackCopy(secret, done);
+                }
+            });
+            layero.find('[data-acg-act="download"]').on('click', function () {
+                var blob = new Blob([secret], {type: 'text/plain;charset=utf-8'});
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = (res.tradeNo || 'card') + '.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+            });
+        },
+        yes: function () {
+            window.open('/user/personal/purchaseRecord?tradeNo=' + res.tradeNo);
+        }
+    });
+}
+
+//clipboard API 在 http 站点下不可用，退回选中+execCommand
+function fallbackCopy(text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) {}
+    document.body.removeChild(ta);
+}
+

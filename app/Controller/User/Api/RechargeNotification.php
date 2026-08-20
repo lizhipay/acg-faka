@@ -28,7 +28,8 @@ class RechargeNotification extends User
     public function callback(Request $request): string
     {
         CallbackIpWhitelist::enforce();
-        $handle = $_GET['_PARAMETER'][0];
+        //回调URL带的就是订单号
+        $tradeNo = (string)($_GET['_PARAMETER'][0] ?? '');
         foreach (['unsafePost', 'unsafeJson', 'unsafeGet'] as $method) {
             $data = $request->$method();
             if (isset($data['s'])) unset($data['s']);
@@ -58,6 +59,6 @@ class RechargeNotification extends User
             throw new JSONException("非法签名");
         }
 
-        return $this->recharge->callback($handle, $data);
+        return $this->recharge->callback($tradeNo, $data);
     }
 }

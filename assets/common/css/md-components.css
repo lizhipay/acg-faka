@@ -275,6 +275,9 @@
   overflow: visible !important;
 }
 :root[data-theme] .component-drawer.layui-layer-tab .layui-layer-title span { float: none !important; }
+/* 标签平分整条标题栏：抽屉宽度由表单决定，标签少时右边不留一截死白。
+   放不下时 component.js 的 fitTabs 会把抽屉加宽，实在加不动（窄屏撞到 92vw 上限）才换行 */
+:root[data-theme] .component-drawer.layui-layer-tab .layui-layer-title span { flex: 1 1 auto; }
 /* slide in / out from the right (layer's own anim disabled via anim:-1 in JS) */
 @keyframes md-drawer-in  { from { transform: translateX(100%); } to { transform: translateX(0); } }
 @keyframes md-drawer-out { from { transform: translateX(0); } to { transform: translateX(100%); } }
@@ -555,7 +558,8 @@
 :root[data-theme] .component-popup .layui-form-item:has(.layui-form-switch) > .layui-form-label:not(.hide),
 :root[data-theme] .component-popup .layui-form-item:has(.layui-form-checkbox) > .layui-form-label:not(.hide),
 :root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > .ev2-editor) > .layui-form-label:not(.hide),
-:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > .editor-wrapper) > .layui-form-label:not(.hide) {
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > .editor-wrapper) > .layui-form-label:not(.hide),
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > .ace_editor) > .layui-form-label:not(.hide) {
   display: block; float: none; text-align: left;
   width: auto; max-width: 100%; height: auto;
   margin: 0; padding: 0 0 8px 1px;
@@ -571,8 +575,17 @@
 :root[data-theme] .component-popup .layui-form-item:has(.layui-form-checkbox) > .layui-input-block,
 :root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > .ev2-editor) > .layui-input-block,
 :root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > .editor-wrapper) > .layui-input-block,
+:root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > .ace_editor) > .layui-input-block,
 :root[data-theme] .component-popup .layui-form-item:has(> .layui-input-block > xm-select) > .layui-input-block {
   margin-left: 0 !important; min-height: 0;
+}
+/* type:"html" (ACE code field) — outlined frame + focus ring, same states as the other MUI fields */
+:root[data-theme] .component-popup .layui-input-block > .ace_editor {
+  border: 1px solid var(--md-divider); border-radius: var(--md-radius-lg);
+  transition: border-color var(--md-dur-fast) var(--md-ease), box-shadow var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] .component-popup .layui-input-block > .ace_editor:focus-within {
+  border-color: var(--md-primary); box-shadow: 0 0 0 1px var(--md-primary);
 }
 /* radio group items sit in a tidy row */
 :root[data-theme] .component-popup .layui-form-item:has(.layui-form-radio) > .layui-input-block { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; }
@@ -735,11 +748,53 @@
 /* the album content is overflow:auto with radius 0 → its square bottom corners poked
    inside the layer's 12px corners; round them (scoped to the album popup only). */
 :root[data-theme] .component-popup:has(.photo-album-selected) .layui-layer-content { border-radius: 0 0 var(--md-radius-lg) var(--md-radius-lg); }
-/* centre the thumbnail grid (was flex-start → left-aligned with a right gap) */
-:root[data-theme] #photo-album-table,
-:root[data-theme] #photo-album-table tbody { justify-content: center !important; }
-:root[data-theme] #photo-album-table img { border-radius: var(--md-radius); }
-:root[data-theme] #photo-album-table img:hover { transform: scale(1.06); }
+/* uniform square tiles in a responsive grid: component.css sizes the <img> itself
+   (100x100 + object-fit:cover), but `.component-content img{max-width:100%}` plus the
+   theme's td padding shrank it to 64x100 — portrait tiles with cropped logos. Size the
+   TILE instead and let the image sit inside it untouched (contain, never upscaled). */
+:root[data-theme] #photo-album-table { display: block !important; width: 100%; }
+:root[data-theme] #photo-album-table tbody {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 12px;
+  padding: 4px 2px 2px !important;
+  justify-content: initial !important;
+}
+:root[data-theme] #photo-album-table tr {
+  display: block !important; flex: none !important; margin: 0 !important;
+  aspect-ratio: 1 / 1; overflow: hidden;
+  border: 1px solid var(--md-divider); border-radius: var(--md-radius-lg);
+  background: var(--md-surface-2);
+  transition: border-color var(--md-dur-fast) var(--md-ease),
+              box-shadow var(--md-dur-fast) var(--md-ease),
+              transform var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] #photo-album-table tr:hover {
+  border-color: var(--md-primary);
+  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, .38);
+  transform: translateY(-1px);
+}
+:root[data-theme] #photo-album-table td {
+  display: flex !important; align-items: center; justify-content: center;
+  width: 100%; height: 100%; padding: 8px !important; border: none !important;
+}
+:root[data-theme] #photo-album-table img {
+  width: auto !important; height: auto !important;
+  max-width: 100% !important; max-height: 100% !important;
+  object-fit: contain; border-radius: var(--md-radius);
+  transition: transform var(--md-dur-fast) var(--md-ease);
+}
+:root[data-theme] #photo-album-table tr:hover img { transform: scale(1.04); }
+/* phones / admin-mobile full-screen popup: smaller minimum so it still shows 3 per row */
+@media (max-width: 560px) {
+  :root[data-theme] #photo-album-table tbody {
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 10px;
+  }
+}
+/* empty state / loading row must not become a square tile */
+:root[data-theme] #photo-album-table tr.no-records-found {
+  grid-column: 1 / -1; aspect-ratio: auto; border: none; background: transparent; box-shadow: none; transform: none;
+}
 
 /* ---- treeSelect (layui.treeSelect + zTree) → MUI dropdown ---- */
 /* panel: kill the glass/blur skin (component.css `#e2e2e266` + blur) → solid MUI surface */
@@ -1390,6 +1445,31 @@
 :root[data-theme] .md-user-cell__id { font-size: 12px; color: var(--md-on-surface-med); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* 第二行为普通文本(如邮箱)时用 __sub —— 同 __id 但非等宽字体 */
 :root[data-theme] .md-user-cell__sub { font-size: 12px; color: var(--md-on-surface-med); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 游客单元格 (md-guest-cell) — 订单没有会员归属时，「客户」列改显示联系方式。
+   刻意和 md-user-cell 拉开观感：实心头像 → 虚线空心圈，UID → 「游客」胶囊标签，
+   避免管理员扫一眼把游客单误认成某个注册会员下的单。 */
+:root[data-theme] .md-guest-cell__avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%;
+  border: 1px dashed var(--md-outline); background: transparent;
+  color: var(--md-on-surface-dis); font-size: 15px;
+}
+/* user-select:all —— 管理员常要把联系方式抠出来丢进搜索框，点一下即可整段选中 */
+:root[data-theme] .md-guest-cell__contact {
+  font-size: 14px; font-weight: 500; color: var(--md-on-surface);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  user-select: all;
+}
+:root[data-theme] .md-guest-cell__empty { font-size: 14px; color: var(--md-on-surface-dis); }
+:root[data-theme] .md-guest-cell__tag {
+  align-self: flex-start; margin-top: 3px;
+  padding: 0 7px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--md-on-surface) 14%, transparent);
+  background: var(--md-hover-overlay);
+  font-size: 11px; line-height: 17px; letter-spacing: .2px;
+  color: var(--md-on-surface-med);
+}
 
 /* MUI commodity cell: rounded-square 商品图标 (left) + 商品名称 (上) / 分类层级路径 (下) — 商品列表合并列 */
 :root[data-theme] .md-commodity-cell { display: flex; align-items: center; gap: 12px; text-align: left; }

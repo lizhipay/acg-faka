@@ -225,13 +225,13 @@
             util.post("/user/api/order/trade", post, res => {
                 if (post["pay_id"] == 1) {
                     //余额购买，直接反馈
-                    treasure.show(res.data.tradeNo, res.data.secret);
+                    treasure.show(res.data.tradeNo, res.data.secret, res.data.leave_message);
                     return;
                 }
 
                 //0元单(如100%优惠券抵扣)没有收银台，url为空时直接反馈结果，防止跳转到"null"
                 if (!res.data.url) {
-                    treasure.show(res.data.tradeNo, res.data.secret);
+                    treasure.show(res.data.tradeNo, res.data.secret, res.data.leave_message);
                     return;
                 }
 

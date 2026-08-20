@@ -368,6 +368,7 @@ CREATE TABLE `__PREFIX__order`  (
                                     `from` int UNSIGNED NULL DEFAULT NULL COMMENT '推广人id',
                                     `premium` decimal(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '加价',
                                     `widget` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '控件内容',
+                                    `leave_message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '发货留言快照：下单时从商品复制，商品后续改动不影响历史订单',
                                     `rent` decimal(10, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '成本价',
                                     `race` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '商品种类',
                                     `rebate` decimal(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '返利金额',
@@ -431,6 +432,7 @@ CREATE TABLE `__PREFIX__pay`  (
                                   `recharge` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '充值状态：0=停用，1=启用',
                                   `create_time` datetime NOT NULL COMMENT '添加时间',
                                   `handle` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '支付平台',
+                                  `pay_config_id` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '支付配置id(pay_config.id)：0=未选择配置',
                                   `sort` smallint UNSIGNED NOT NULL DEFAULT 0 COMMENT '排序',
                                   `equipment` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '设备：0=通用，1=手机，2=电脑',
                                   `cost` decimal(10, 3) UNSIGNED NULL DEFAULT 0.000 COMMENT '手续费',
@@ -444,8 +446,23 @@ CREATE TABLE `__PREFIX__pay`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 
-INSERT INTO `__PREFIX__pay` VALUES (1, '余额', '/assets/static/images/wallet.png', '#system', 1, 0, '1997-01-01 00:00:00', '#system', 999, 0, 0.000, 0, 0);
-INSERT INTO `__PREFIX__pay` VALUES (2, '支付宝', '/assets/user/images/cash/alipay.png', 'alipay', 1, 1, '1997-01-01 00:00:00', 'Epay', 1, 0, 0.000, 0, 0);
+INSERT INTO `__PREFIX__pay` VALUES (1, '余额', '/assets/static/images/wallet.png', '#system', 1, 0, '1997-01-01 00:00:00', '#system', 0, 999, 0, 0.000, 0, 0);
+INSERT INTO `__PREFIX__pay` VALUES (2, '支付宝', '/assets/user/images/cash/alipay.png', 'alipay', 1, 1, '1997-01-01 00:00:00', 'Epay', 0, 1, 0, 0.000, 0, 0);
+
+
+DROP TABLE IF EXISTS `__PREFIX__pay_config`;
+CREATE TABLE `__PREFIX__pay_config`  (
+                                         `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
+                                         `handle` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '所属支付插件目录名(app/Pay/{handle})',
+                                         `name` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '配置名称，站长自定义，如“主商户”“备用商户”',
+                                         `config` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '配置值：扁平JSON对象，键取自插件 Config/Submit 定义',
+                                         `sort` smallint UNSIGNED NOT NULL DEFAULT 0 COMMENT '排序',
+                                         `create_time` datetime NOT NULL COMMENT '创建时间',
+                                         `update_time` datetime NULL DEFAULT NULL COMMENT '最后修改时间',
+                                         PRIMARY KEY (`id`) USING BTREE,
+                                         UNIQUE INDEX `handle_name`(`handle` ASC, `name` ASC) USING BTREE,
+                                         INDEX `handle`(`handle` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 
 DROP TABLE IF EXISTS `__PREFIX__shared`;

@@ -27,6 +27,101 @@
             return null;
         }
     };
+    // 审核意见是审核员写的、渲染在开发者后台，属于跨用户内容：
+    // marked 输出后再过一遍白名单净化（同 editorv2 预览的标准），禁掉原生 HTML 与非 http 链接。
+    const sanitizeMarkdownHtml = html => {
+        const template = document.createElement('template');
+        template.innerHTML = html;
+        const allowTags = ['p', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'b', 'em', 'i', 'del', 's',
+            'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr'];
+        template.content.querySelectorAll('*').forEach(node => {
+            const tag = node.tagName.toLowerCase();
+            if (!allowTags.includes(tag)) {
+                node.replaceWith(document.createTextNode(node.textContent || ''));
+                return;
+            }
+            Array.from(node.attributes).forEach(attr => {
+                const name = attr.name.toLowerCase();
+                if (!['href', 'title'].includes(name) || name.startsWith('on')) node.removeAttribute(attr.name);
+            });
+            const href = node.getAttribute('href');
+            if (href !== null) {
+                try {
+                    const parsed = new URL(href.replace(/[\u0000-\u0020\u007f-\u009f]/g, ''), window.location.href);
+                    if (!['http:', 'https:'].includes(parsed.protocol)) node.removeAttribute('href');
+                } catch (e) {
+                    node.removeAttribute('href');
+                }
+            }
+            if (tag === 'a') {
+                node.setAttribute('rel', 'noopener noreferrer nofollow');
+                if (node.getAttribute('href')) node.setAttribute('target', '_blank');
+            }
+        });
+        return template.innerHTML;
+    };
+    const renderMarkdown = (src, done) => {
+        const parse = () => {
+            try {
+                const renderer = new marked.Renderer();
+                renderer.html = token => escapeHtml(typeof token === 'string' ? token : (token?.text ?? token?.raw ?? ''));
+                done(sanitizeMarkdownHtml(marked.parse(String(src ?? ''), {gfm: true, breaks: true, renderer})));
+            } catch (e) {
+                done(`<p>${escapeHtml(src)}</p>`);
+            }
+        };
+        if (typeof marked !== 'undefined') return parse();
+        util.loadScripts('/assets/common/js/editor/markdown/marked.min.js', parse);
+    };
+    // 弹窗内 Markdown 排版（作用域限定在 .md-reject-reason，注入一次）
+    const ensureRejectReasonStyle = () => {
+        if (document.getElementById('md-reject-reason-style')) return;
+        const style = document.createElement('style');
+        style.id = 'md-reject-reason-style';
+        style.textContent = `
+.md-reject-reason-body > :first-child { margin-top: 0; }
+.md-reject-reason-body > :last-child { margin-bottom: 0; }
+.md-reject-reason-body p { margin: 0 0 .6em; }
+.md-reject-reason-body h1,.md-reject-reason-body h2,.md-reject-reason-body h3,
+.md-reject-reason-body h4,.md-reject-reason-body h5,.md-reject-reason-body h6 { font-size: 15px; font-weight: 600; margin: .9em 0 .4em; }
+.md-reject-reason-body ul,.md-reject-reason-body ol { margin: 0 0 .6em; padding-left: 1.5em; }
+.md-reject-reason-body li { margin: .15em 0; }
+.md-reject-reason-body blockquote { margin: 0 0 .6em; padding: .4em .9em; border-left: 3px solid var(--md-primary,#1976d2); background: var(--md-hover-overlay,rgba(0,0,0,.04)); border-radius: 0 6px 6px 0; }
+.md-reject-reason-body code { padding: .1em .35em; border-radius: 4px; background: var(--md-hover-overlay,rgba(0,0,0,.06)); font-family: ui-monospace,Menlo,Consolas,monospace; font-size: 12.5px; }
+.md-reject-reason-body pre { margin: 0 0 .6em; padding: .7em .9em; border-radius: 8px; background: #0c0f14; color: #d7dee9; overflow-x: auto; }
+.md-reject-reason-body pre code { padding: 0; background: transparent; color: inherit; }
+.md-reject-reason-body table { border-collapse: collapse; margin: 0 0 .6em; font-size: 13px; }
+.md-reject-reason-body th,.md-reject-reason-body td { border: 1px solid var(--md-divider,#e6edf5); padding: .3em .6em; }
+.md-reject-reason-body th { background: var(--md-hover-overlay,rgba(0,0,0,.04)); font-weight: 600; }
+.md-reject-reason-body hr { border: 0; border-top: 1px solid var(--md-divider,#e6edf5); margin: .8em 0; }
+.md-reject-reason-body a { color: var(--md-primary,#1976d2); text-decoration: underline; text-underline-offset: 2px; }`;
+        document.head.appendChild(style);
+    };
+    // 驳回原因弹窗：表格里只放入口，完整意见（可能多条、带格式）在弹窗里读
+    const openRejectReason = row => {
+        ensureRejectReasonStyle();
+        const reason = String(row?.error_reason ?? '').trim();
+        // 已上架 + 更新被驳回：驳回的是更新包，指引要指向「更新插件」而不是「上传安装包」
+        const isUpdateReject = Number(row?.status) === 1 && Number(row?.audit_review_status) === 3;
+        const heading = isUpdateReject ? i18n('更新审核未通过') : i18n('审核未通过');
+        const advice = isUpdateReject
+            ? i18n('请按上述意见修改后，点击「更新插件」重新提交更新包审核；线上版本不受影响。')
+            : i18n('请按上述意见修改后，点击「上传安装包」重新提交审核。');
+        renderMarkdown(reason || i18n('审核未填写具体原因'), html => {
+            layer.open({
+                type: 1,
+                // 插件名是站长自定义的富文本（带颜色的 <b>/<span>），走与列表同一套白名单净化渲染，而不是转义成源码
+                title: `${util.icon('fa-duotone fa-regular fa-circle-xmark text-danger')} ${heading} · ${renderStoreInlineHtml(row?.plugin_name ?? '')}`,
+                area: [Math.min(560, window.innerWidth - 24) + 'px', 'auto'],
+                maxHeight: Math.floor(window.innerHeight * 0.8),
+                shadeClose: true,
+                content: `<div class="p-4 md-reject-reason" style="font-size:14px;line-height:1.75;word-break:break-word;">`
+                    + `<div class="md-reject-reason-body">${html}</div>`
+                    + `<div class="text-muted mt-3 pt-3" style="font-size:12px;border-top:1px solid var(--md-divider,#e6edf5);">`
+                    + `${util.icon('fa-duotone fa-regular fa-lightbulb me-1')}${advice}</div></div>`
+            });
+        });
+    };
     const openExternal = value => {
         const url = normalizeHttpUrl(value);
         if (!url) return false;
@@ -43,6 +138,14 @@
         return `<div class="md-plugin">${iconHtml}<span class="md-plugin__name">${renderStoreInlineHtml(item?.plugin_name || '')}</span></div>`;
     };
     table = new Table("/admin/api/app/developerPlugins", "#dev-plugin-table");
+    // 「查看原因」入口：表格行是动态渲染的，用委托绑定；按 data-id 从当前页数据里取整行
+    $(document).off('click' + namespace, '.dev-reject-reason').on('click' + namespace, '.dev-reject-reason', function (e) {
+        e.preventDefault();
+        const id = String($(this).data('id'));
+        const rows = (table && typeof table.getData === 'function') ? table.getData() : [];
+        const row = rows.find(r => String(r.id) === id);
+        if (row) openRejectReason(row);
+    });
     const $StoreRoot = $('.store-content').first();
     const $StoreContent = $StoreRoot.parent();
 
@@ -128,6 +231,11 @@
                 ? i18n('Config.php 整个剔除，不会覆盖用户站点的配置')
                 : i18n('Config.php 清空为 return []; 不会带上本站密钥'));
 
+        // 原本挂在「自带压缩包」上传框 tips 里的数据库说明；上传入口已移除，信息挪到这里
+        const sqlLine = isUpdate
+            ? i18n('需要改数据库时，把 update.sql 放在插件根目录（从最初版本累计、先检测再更改、不要写注释）')
+            : i18n('需要建表时，把 install.sql 放在插件根目录（sql 文件中不要带注释）');
+
         dom.html(`
             <style>
             .dev-auto{border:1px solid var(--md-divider,#e6edf5);border-radius:10px;padding:12px 14px;
@@ -144,6 +252,7 @@
                     <li>${configLine}</li>
                     <li>${i18n('自动排除 runtime.log 等日志与运行态文件')}</li>
                     <li>${i18n('填写的版本号会写回插件的 Info，保证包内版本与提交一致')}</li>
+                    <li>${sqlLine}</li>
                 </ul>
             </div>`);
     };
@@ -559,7 +668,32 @@
                     }
                 },
                 {
-                    field: 'status', title: '状态', dict: "_developer_plugin_status"
+                    // 不能同时写 dict 和 formatter：table.js 检测到 dict 会用自己的渲染器覆盖 formatter。
+                    // 这里手动查同一份字典，好在驳回态下挂一个「查看原因」入口——
+                    // 完整审核意见（多条、带 Markdown 格式）在弹窗里读，表格保持整洁。
+                    field: 'status', title: '状态',
+                    formatter: function (val, item) {
+                        const badge = _Dict.result("_developer_plugin_status", val);
+                        let html = badge !== undefined ? badge : escapeHtml(val);
+                        // 单独成行 + 自身不折断：状态列很窄，跟徽标挤在一行会被从词中间断开
+                        const reasonLink = `<div class="mt-1"><a href="javascript:void(0)" class="dev-reject-reason text-danger" data-id="${escapeHtml(item.id)}" style="font-size:12px;white-space:nowrap;">`
+                            + `<i class="fa-duotone fa-regular fa-circle-info me-1"></i>${i18n('查看原因')}</a></div>`;
+                        if (val == 2) {
+                            html += reasonLink;
+                        }
+                        // audit_review_status 是全局审核状态：首次上架和更新包共用一个字段。
+                        // 只有已上架(status=1)时它才表示"更新包"的审核进度，其它状态下与 status 同义，不重复展示。
+                        if (val == 1) {
+                            const review = Number(item.audit_review_status ?? 0);
+                            if (review === 1) {
+                                html += `<div class="mt-1">${format.badge(`${util.icon('fa-duotone fa-regular fa-hourglass-half')} ${i18n('更新审核中')}`, 'a-badge-warning')}</div>`;
+                            } else if (review === 3) {
+                                html += `<div class="mt-1">${format.badge(`${util.icon('fa-duotone fa-regular fa-circle-xmark')} ${i18n('更新被驳回')}`, 'a-badge-danger')}</div>` + reasonLink;
+                            }
+                            // review=2(更新已通过) 已合并进线上版本，无需额外标记；review=0 表示没有待审更新
+                        }
+                        return html;
+                    }
                 },
                 {
 
@@ -567,7 +701,8 @@
                         {
                             icon: 'fa-duotone fa-regular fa-circle-dollar',
                             title: "定价",
-                            show: item => item.status != 2,
+                            // 商店端 priceSet 不限制状态；驳回态也常需要顺手调价再重交
+                            show: item => true,
                             class: "text-success",
                             click: (event, value, row, index) => {
                                 component.popup({
@@ -604,15 +739,35 @@
                         {
                             icon: 'fa-duotone fa-regular fa-cloud-arrow-up',
                             title: "上传安装包",
-                            show: item => item.status == 0,
+                            // 0=开发中 2=审核驳回：驳回后改好了必须能重交，否则插件成死局，
+                            // 开发者只能删掉重建（plugin_key 还会被旧记录占着）。商店端 createKit 已放行 [0,2]
+                            show: item => item.status == 0 || item.status == 2,
                             class: "text-primary",
                             click: (event, value, row, index) => {
+                                const resubmit = row.status == 2;
+                                const actionTitle = resubmit ? i18n('重新提交审核') : i18n('上传安装包');
                                 component.popup({
-                                    submit: createSingleSubmit('/admin/api/app/developerCreateKit', i18n('上传安装包'), () => table.refresh()),
+                                    submit: createSingleSubmit('/admin/api/app/developerCreateKit', actionTitle, () => table.refresh()),
                                     tab: [
                                         {
-                                            name: `${util.icon("fa-duotone fa-regular fa-cloud-arrow-up")} ${i18n('上传安装包')}`,
+                                            name: `${util.icon("fa-duotone fa-regular fa-cloud-arrow-up")} ${actionTitle}`,
                                             form: [
+                                                {
+                                                    title: false,
+                                                    name: "reject_reason",
+                                                    type: "custom",
+                                                    hide: !resubmit,
+                                                    complete: (form, dom) => {
+                                                        if (!resubmit) return;
+                                                        ensureRejectReasonStyle();
+                                                        renderMarkdown(row.error_reason || i18n('未填写原因'), html => {
+                                                            dom.html(`<div class="alert alert-danger py-2 px-3 mb-2" style="font-size:13px;line-height:1.6;">`
+                                                                + `<b>${i18n('上次审核未通过')}</b>`
+                                                                + `<div class="md-reject-reason-body mt-1">${html}</div>`
+                                                                + `<span class="text-muted d-block mt-2">${i18n('请按上述意见修改后再提交，提交后将重新进入审核。')}</span></div>`);
+                                                        });
+                                                    }
+                                                },
                                                 {
                                                     title: false,
                                                     name: "auto_tips",
@@ -625,16 +780,6 @@
                                                     type: "input",
                                                     default: row?.version || "",
                                                     placeholder: "如 1.0.0，会自动写入插件的 Info"
-                                                },
-                                                {
-                                                    title: false,
-                                                    name: "resource",
-                                                    uploadUrl: '/admin/api/upload/send',
-                                                    type: "file",
-                                                    exts: "zip",
-                                                    acceptMime: ".zip",
-                                                    placeholder: "（可选）自带压缩包时点此上传",
-                                                    tips: "留空即由服务器自动打包，这是推荐做法。只有插件不在本机时才需要自己上传：请在插件根目录内打包（不要把插件文件夹一起打进去），仅支持zip且不要设密码；带数据库的把install.sql放在插件根目录(sql文件中不要带注释)"
                                                 },
                                             ]
                                         },
@@ -654,12 +799,35 @@
                             show: item => item.status == 1,
                             class: "text-primary",
                             click: (event, value, row, index) => {
+                                const review = Number(row?.audit_review_status ?? 0);
                                 component.popup({
                                     submit: createSingleSubmit('/admin/api/app/developerUpdatePlugin', i18n('上传更新包'), () => table.refresh()),
                                     tab: [
                                         {
                                             name: `${util.icon("fa-duotone fa-regular fa-cloud-arrow-up")} ${i18n('上传更新包')}`,
                                             form: [
+                                                {
+                                                    // 更新包审核状态提示：驳回时给出原因(Markdown)，审核中提醒再交会覆盖待审版本
+                                                    title: false,
+                                                    name: "review_notice",
+                                                    type: "custom",
+                                                    hide: review !== 1 && review !== 3,
+                                                    complete: (form, dom) => {
+                                                        if (review === 3) {
+                                                            ensureRejectReasonStyle();
+                                                            renderMarkdown(row.error_reason || i18n('未填写原因'), html => {
+                                                                dom.html(`<div class="alert alert-danger py-2 px-3 mb-2" style="font-size:13px;line-height:1.6;">`
+                                                                    + `<b>${i18n('上次更新审核未通过')}</b>`
+                                                                    + `<div class="md-reject-reason-body mt-1">${html}</div>`
+                                                                    + `<span class="text-muted d-block mt-2">${i18n('请按上述意见修改后再提交更新包；线上版本不受影响。')}</span></div>`);
+                                                            });
+                                                        } else if (review === 1) {
+                                                            dom.html(`<div class="alert alert-warning py-2 px-3 mb-2" style="font-size:13px;line-height:1.6;">`
+                                                                + `<b>${i18n('已有更新包正在审核中')}</b>`
+                                                                + `<span class="text-muted d-block mt-1">${i18n('现在再提交会覆盖待审的版本并重新排队；无需修改请等待审核结果。')}</span></div>`);
+                                                        }
+                                                    }
+                                                },
                                                 {
                                                     title: false,
                                                     name: "auto_tips",
@@ -673,17 +841,6 @@
                                                     default: row?.version || "",
                                                     placeholder: "如 1.0.4，会自动写入插件的 Info",
                                                     required: true
-                                                },
-                                                {
-                                                    title: false,
-
-                                                    name: "audit_resource",
-                                                    uploadUrl: '/admin/api/upload/send',
-                                                    type: "file",
-                                                    exts: "zip",
-                                                    acceptMime: ".zip",
-                                                    placeholder: "（可选）自带压缩包时点此上传",
-                                                    tips: '留空即由服务器自动打包（会自动剔除Config.php和日志，并把版本号写进Info）。只有插件不在本机时才需要自己上传：带更新数据库的请把update.sql放在插件根目录（用SQL命令先检测再更改，否则更新会失败；该update.sql应从最初始版本累计，sql文件中不要带注释），支付扩展和通用扩展务必删除Config.php'
                                                 },
                                                 {
                                                     title: "更新内容",
@@ -724,6 +881,20 @@
                 }
             ]);
 
+            // 开发者中心列表搜索。接口收的是裸参数名（keyword/status/type/audit_review_status），
+            // 不是本项目常见的 search-/equal- 前缀写法，所以这里直接用字段本名。
+            table.setSearch([
+                {
+                    title: "关键字",
+                    name: "keyword",
+                    type: "input",
+                    placeholder: "纯英文数字按标识搜索，否则按应用名称搜索"
+                },
+                {title: "上架状态", name: "status", type: "select", dict: "_developer_plugin_status"},
+                {title: "插件类型", name: "type", type: "select", dict: "_store_plugin_type"},
+                {title: "更新审核状态", name: "audit_review_status", type: "select", dict: "_developer_plugin_audit_review_status"}
+            ]);
+
             table.setPagination(20, [20, 50, 100, 200]);
             table.render();
 
@@ -752,6 +923,7 @@
         $('.developerCreatePlugin').off(namespace);
         $('#mcp-card').off(namespace);
         $('.admin-store-service-retry').off('click.mdStoreDeveloperRetry');
+        $(document).off('click' + namespace, '.dev-reject-reason');
         $(document).off('pjax:beforeReplace' + namespace);
         if (table && !table.isDestroyed && typeof table.destroy === 'function') table.destroy();
         table = null;

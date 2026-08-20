@@ -16,6 +16,7 @@ use App\Model\User;
 use App\Model\UserCommodity;
 use App\Model\UserGroup;
 use App\Util\Client;
+use App\Util\UploadPurge;
 use App\Util\Date;
 use App\Util\Throttle;
 use Illuminate\Database\Capsule\Manager as DB;
@@ -1123,6 +1124,170 @@ class Ticket implements \App\Service\Ticket
             'status' => (int)$ticket->status,
             'last_message_time' => $ticket->last_message_time,
         ];
+    }
+
+    /**
+     * 删除工单，并把工单里的附件一起清掉。
+     *
+     * 文件管理那边对「还被业务引用的上传文件」是拒绝删除的（会提示解除引用），
+     * 所以客户传的支付凭证在工单还在时永远删不掉 —— 这正是 issue #828 的现象。
+     * 那个拦截本身是对的（删了工单里就是一张裂图），缺的是这个出口：连工单带附件一起删。
+     *
+     * 附件有两处来源：工单自身的凭证(proof_path)，以及回复内容里内嵌的图片。
+     * 物理删除复用 UploadPurge —— 与文件管理同一套路径校验和隔离区暂存，
+     * 事务失败会把文件从隔离区恢复回去。
+     *
+     * @param Manage $manage
+     * @param array $ids
+     * @return array
+     * @throws JSONException
+     */
+    public function delete(Manage $manage, array $ids): array
+    {
+        $this->requireReady();
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn(int $v): bool => $v > 0)));
+        if ($ids === []) {
+            throw new JSONException('请选择要删除的工单');
+        }
+        if (count($ids) > 100) {
+            throw new JSONException('一次最多删除 100 个工单');
+        }
+
+        $staged = [];
+        $summary = ['ticket_count' => 0, 'message_count' => 0, 'file_count' => 0, 'kept_count' => 0];
+
+        try {
+            $summary = DB::transaction(function () use ($manage, $ids, &$staged): array {
+                $tickets = TicketModel::query()->whereIn('id', $ids)->lockForUpdate()->get();
+                if ($tickets->count() === 0) {
+                    throw new JSONException('工单不存在或已被删除');
+                }
+                $foundIds = $tickets->pluck('id')->map(static fn($v): int => (int)$v)->all();
+
+                //候选附件路径：凭证 + 回复内容里内嵌的图片
+                $paths = [];
+                foreach ($tickets as $ticket) {
+                    $proof = trim((string)$ticket->proof_path);
+                    if ($proof !== '') {
+                        $paths[$proof] = $proof;
+                    }
+                }
+                $messages = TicketMessage::query()->whereIn('ticket_id', $foundIds)->lockForUpdate()->get(['id', 'content']);
+                foreach ($messages as $message) {
+                    foreach (self::contentImageSources((string)$message->content) as $source) {
+                        if ($source !== '') {
+                            $paths[$source] = $source;
+                        }
+                    }
+                }
+                $paths = array_values($paths);
+
+                //先把工单和消息删掉，再判断这些附件是否还被别处引用 ——
+                //顺序反了的话，正在删的这批工单自己会把自己算成"仍被引用"
+                TicketMessage::query()->whereIn('ticket_id', $foundIds)->delete();
+                $ticketCount = TicketModel::query()->whereIn('id', $foundIds)->delete();
+
+                $rows = [];
+                $inspections = [];
+                $thumbInspections = [];
+                $kept = 0;
+                if ($paths !== []) {
+                    $uploads = UploadModel::query()->whereIn('path', $paths)->lockForUpdate()->get(['id', 'path']);
+                    foreach ($uploads as $upload) {
+                        $path = (string)$upload->path;
+                        if (self::pathStillReferenced($path)) {
+                            //还有别的业务在用同一张图（比如被引用到商品封面），只解绑不删文件
+                            $kept++;
+                            continue;
+                        }
+                        $inspection = UploadPurge::inspectUploadPath($path);
+                        if (!$inspection['safe']) {
+                            //危险路径一律不碰，与文件管理的判定保持一致
+                            $kept++;
+                            continue;
+                        }
+                        $rows[] = $upload;
+                        $inspections[(int)$upload->id] = $inspection;
+                        $thumbInspections[(int)$upload->id] = UploadPurge::inspectUploadPath(UploadPurge::thumbnailPath($inspection['url']));
+                    }
+                }
+
+                if ($rows !== []) {
+                    $staged = UploadPurge::stageForDeletion($rows, $inspections, $thumbInspections);
+                    UploadModel::query()->whereIn('id', array_map(static fn($r): int => (int)$r->id, $rows))->delete();
+                }
+
+                $numbers = $tickets->pluck('ticket_no')->implode(', ');
+                ManageLog::log($manage, "删除了工单({$numbers})，同时清理附件 " . count($rows) . " 个");
+
+                return [
+                    'ticket_count' => (int)$ticketCount,
+                    'message_count' => $messages->count(),
+                    'file_count' => count($rows),
+                    'kept_count' => $kept,
+                ];
+            });
+        } catch (\Throwable $throwable) {
+            $restoreFailures = UploadPurge::restoreStagedFiles($staged);
+            if ($restoreFailures > 0) {
+                ManageLog::log($manage, "[工单]删除事务失败，{$restoreFailures} 个隔离文件恢复失败");
+                throw new JSONException("数据库已回滚，但有 {$restoreFailures} 个附件无法从隔离区恢复，请联系运维处理");
+            }
+            if ($throwable instanceof JSONException) {
+                throw $throwable;
+            }
+            throw new JSONException('工单删除失败，数据与附件均未改变');
+        }
+
+        //事务已提交，隔离区里的文件才真正落地删除
+        $summary['unlink_failed'] = UploadPurge::purgeStagedFiles($staged);
+        return $summary;
+    }
+
+    /** 附件路径是否还被其它业务引用（工单/消息已在事务里删掉，这里查的是剩下的） */
+    private static function pathStillReferenced(string $path): bool
+    {
+        if (TicketModel::query()->where('proof_path', $path)->exists()) {
+            return true;
+        }
+        $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $path) . '%';
+        foreach ([TicketMessage::class, \App\Model\SystemMessage::class] as $model) {
+            foreach ($model::query()->where('content', 'like', $like)->get(['id', 'content']) as $row) {
+                if (in_array($path, self::contentImageSources((string)$row->content), true)) {
+                    return true;
+                }
+            }
+        }
+        $specifications = [
+            [Commodity::class, 'cover'], [\App\Model\Category::class, 'icon'],
+            [User::class, 'avatar'], [Manage::class, 'avatar'],
+            [UserGroup::class, 'icon'], [\App\Model\BusinessLevel::class, 'icon'],
+            [\App\Model\Pay::class, 'icon'], [Config::class, 'value'],
+        ];
+        foreach ($specifications as [$model, $field]) {
+            if ($model::query()->where($field, $path)->exists()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 从富文本里抠出 img 的 src，与文件管理的解析口径一致 */
+    private static function contentImageSources(string $content): array
+    {
+        preg_match_all(
+            '/<img\b[^>]*\bsrc\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s>]+))/i',
+            $content,
+            $matches,
+            PREG_SET_ORDER
+        );
+        $sources = [];
+        foreach ($matches as $match) {
+            $source = $match[1] !== '' ? $match[1] : ($match[2] !== '' ? $match[2] : ($match[3] ?? ''));
+            $sources[] = html_entity_decode(trim((string)$source), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+        return $sources;
     }
 
     public function close(Manage $manage, int $id): array

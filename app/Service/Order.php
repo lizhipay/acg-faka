@@ -93,18 +93,11 @@ interface Order
 
 
     /**
-     * @param string $handle
+     * @param string $tradeNo 回调URL上带的订单号
      * @param array $map
      * @return string
      */
-    public function callback(string $handle, array $map): string;
-
-    /**
-     * @param string $handle
-     * @param array $map
-     * @return string|null
-     */
-    public function getCallbackTradeNo(string $handle, array $map): ?string;
+    public function callback(string $tradeNo, array $map): string;
 
     /**
      * @param \App\Model\Order $order
@@ -117,7 +110,7 @@ interface Order
      * @param array $map
      * @return array
      */
-    public function callbackInitialize(string $handle, array $map): array;
+    public function callbackInitialize(\App\Model\Pay $pay, array $map, ?array $payConfig = null): array;
 
     /**
      * 赠送礼品

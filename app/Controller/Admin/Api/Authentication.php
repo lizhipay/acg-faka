@@ -49,7 +49,7 @@ class Authentication extends Manage
         $remember = (bool)$this->request->post("remember", Filter::BOOLEAN);
         $code = (string)$this->request->post("code");
         try {
-            $result = $this->sso->login($username, $password, $remember, $code);
+            $result = $this->sso->login($username, $password, $remember, $code, (string)$this->request->unsafePost('password'));
         } catch (JSONException $e) {
             //待输入两步验证码不算失败（密码已正确）
             if ($e->getCode() !== \App\Service\Bind\ManageSSO::CODE_NEED_TOTP) {

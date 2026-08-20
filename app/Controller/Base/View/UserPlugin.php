@@ -52,7 +52,13 @@ abstract class UserPlugin extends \App\Controller\Base\User
             $user = $this->getUser();
             if ($user) {
                 $data['user'] = $user;
-                $data['group'] = $this->getUserGroup()->toArray();
+                //getUserGroup() 声明就是 ?UserGroup：会员等级没覆盖到该用户的累计充值
+                //（比如站点压根没配等级、或最低等级门槛大于 0）时返回 null。
+                //这里少了个 ?->，一旦为 null 就是 Error，而它是在主题的输出缓冲里
+                //抛出来的 —— ob_end_clean() 没机会执行，PHP 结束时把半截缓冲区冲出去，
+                //页面看着正常、钩子之后的内容（在线客服按钮就在这儿）全没了。
+                //同一处在 View/User.php:146 早就是 ?-> 写法，这里是漏了。见 issue #818
+                $data['group'] = $this->getUserGroup()?->toArray();
             }
             $data['setting'] = Theme::getConfig("Cartoon")["setting"];
             $data['default_view_path'] = BASE_PATH . '/app/View/User/Theme/Cartoon/';
