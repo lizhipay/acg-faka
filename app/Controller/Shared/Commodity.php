@@ -284,6 +284,23 @@ class Commodity extends Shared
         if (!$commodity) {
             throw new JSONException("商品不存在");
         }
+
+        if ($commodity->status != 1) {
+            throw new JSONException("当前商品已停售");
+        }
+
+        $config = Ini::toArray((string)$commodity->config);
+        $race = (string)($map['race'] ?? '');
+
+        if (!empty($config['category']) && is_array($config['category'])) {
+            if (empty($race)) {
+                throw new JSONException("该商品需要选择分类");
+            }
+            if (!array_key_exists($race, $config['category'])) {
+                throw new JSONException("宝贝分类选择错误");
+            }
+        }
+
         $map['item_id'] = $commodity->id;
         return $this->json(200, 'success', $this->order->trade($this->getUser(), $this->getUserGroup(), $map));
     }
