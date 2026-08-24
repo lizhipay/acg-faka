@@ -37,14 +37,14 @@
             url: "/user/api/index/valuation",
             data: _getPostData(),
             done: res => {
-                $price.html(`<span class="unit">¥</span>${format.amountRemoveTrailingZeros(res.data.price)}`);
+                $price.html(`<span class="unit">${format.currencySymbol()}</span>${format.amountRemoveTrailingZeros(res.data.price)}`);
                 _price = res.data.price;
                 _available = true;
             },
             loader: false,
             error: d => {
                 typeof error === "function" && error(d);
-                $price.html(`<span class="unit">¥</span>${format.amountRemoveTrailingZeros(_price)}`);
+                $price.html(`<span class="unit">${format.currencySymbol()}</span>${format.amountRemoveTrailingZeros(_price)}`);
             }
         });
 
@@ -156,7 +156,7 @@
             if (_item?.config?.category_wholesale?.hasOwnProperty(sku)) {
                 let body = ``;
                 for (const k in _item.config.category_wholesale[sku]) {
-                    body += `<tr><td>${k}</td><td>¥${_item.config.category_wholesale[sku][k]}</td></tr>`;
+                    body += `<tr><td>${k}</td><td>${format.currencySymbol()}${_item.config.category_wholesale[sku][k]}</td></tr>`;
                 }
                 $qtyGroup.after(html.replace("[body]", body));
             }
@@ -166,7 +166,7 @@
         if (!util.isEmptyOrNotJson(_item?.config?.wholesale)) {
             let body = ``;
             for (const k in _item.config.wholesale) {
-                body += `<tr><td>${k}</td><td>¥${_item.config.wholesale[k]}</td></tr>`;
+                body += `<tr><td>${k}</td><td>${format.currencySymbol()}${_item.config.wholesale[k]}</td></tr>`;
             }
             $qtyGroup.after(html.replace("[body]", body));
         }
@@ -258,7 +258,7 @@
                     } else {
                         const draftPremium = selections[0].draft_premium > 0 ? selections[0].draft_premium : _item.draft_premium;
 
-                        $OptionalCard.html(`${draftPremium > 0 ? `<span class="text-primary me-1">« ¥${draftPremium} »</span> ` : ''}${selections[0].draft}`);
+                        $OptionalCard.html(`${draftPremium > 0 ? `<span class="text-primary me-1">« ${format.currencySymbol()}${draftPremium} »</span> ` : ''}${selections[0].draft}`);
                         $(`input[name=card_id]`).val(selections[0].id);
                     }
 
@@ -284,11 +284,11 @@
                                             field: 'draft_premium', title: '溢价', formatter: _ => {
                                                 if (_ == 0) {
                                                     if (_item.draft_premium > 0) {
-                                                        return format.badge("¥" + _item.draft_premium, "a-badge-primary");
+                                                        return format.badge(format.currencySymbol() + _item.draft_premium, "a-badge-primary");
                                                     }
                                                     return '-';
                                                 }
-                                                return format.badge("¥" + _, "a-badge-primary");
+                                                return format.badge(format.currencySymbol() + _, "a-badge-primary");
                                             }
                                         },
                                     ]);

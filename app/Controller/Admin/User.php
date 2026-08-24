@@ -29,9 +29,9 @@ class User extends Manage
         return $this->render("会员管理", "User/User.html", [
             "userCount" => number_format((int)$userCount),
             "businessCount" => number_format((int)$businessCount),
-            "balance" => "￥" . number_format((float)$balance, 2),
+            "balance" => \App\Util\Currency::symbol() . number_format((float)$balance, 2),
             "recharge" => number_format((float)$recharge, 2),
-            "coin" => "￥" . number_format((float)$coin, 2),
+            "coin" => \App\Util\Currency::symbol() . number_format((float)$coin, 2),
             "totalCoin" => number_format((float)$totalCoin, 2)
         ]);
     }

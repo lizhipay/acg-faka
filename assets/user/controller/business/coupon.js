@@ -222,7 +222,7 @@
                 if (__.mode == 1) {
                     return format.badge((_ * 10) + i18n("折"), "a-badge-success");
                 }
-                return format.badge(`￥${_}`, "a-badge-primary");
+                return format.badge(`${format.currencySymbol()}${_}`, "a-badge-primary");
             }
         }
         , {

@@ -67,7 +67,7 @@
         return `<div class="md-detail md-cash-payment-detail">
             <div class="md-detail__header">${mdUserCell({avatar: escapeHtml(user.avatar || '/favicon.ico'), username: escapeHtml(user.username || i18n('未知会员')), id: escapeHtml(user.id)})}</div>
             <div class="md-detail__body">
-                ${detailRow(i18n('提现金额'), `<strong class="text-success">¥ ${escapeHtml(map.amount)}</strong>`)}
+                ${detailRow(i18n('提现金额'), `<strong class="text-success">${format.currencySymbol()} ${escapeHtml(map.amount)}</strong>`)}
                 ${detailRow(i18n('收款方式'), escapeHtml(cashCardNames[Number(map.card)] || i18n('未知方式')))}
                 ${detailRow(i18n('收款人'), cashCopyableValue(escapeHtml(recipient || '-'), 'recipient', i18n('收款人'), recipient, mobile))}
                 ${detailRow(i18n('收款账号'), cashCopyableValue(accountHtml, 'account', i18n('收款账号'), accountCopyValue, mobile))}
@@ -181,7 +181,7 @@
                                     title: '确认已完成打款',
                                     html: `<div style="text-align:left;line-height:1.8;">
                                         <div><b>${i18n('会员：')}</b>${escapeHtml(user.username || i18n('未知会员'))}（ID ${escapeHtml(user.id ?? '-')}）</div>
-                                        <div><b>${i18n('申请金额：')}</b>¥${escapeHtml(map.amount ?? '0')}</div>
+                                        <div><b>${i18n('申请金额：')}</b>${format.currencySymbol()}${escapeHtml(map.amount ?? '0')}</div>
                                         <div><b>${i18n('收款方式：')}</b>${escapeHtml(cashCardNames[Number(map.card)] || i18n('未知方式'))}</div>
                                         <div><b>${i18n('收款人：')}</b>${escapeHtml(user.nicename || '-')}</div>
                                         <div><b>${i18n('收款账号：')}</b>${escapeHtml(cashAccountValue(map))}</div>
@@ -301,7 +301,7 @@
             Swal.fire({
                 title: '确认批量自动结算',
                 html: `<div style="text-align:left;line-height:1.8;">
-                    <div><b>${i18n('最低账户余额：')}</b>¥${escapeHtml(amount.toFixed(2))}</div>
+                    <div><b>${i18n('最低账户余额：')}</b>${format.currencySymbol()}${escapeHtml(amount.toFixed(2))}</div>
                     <div><b>${i18n('匹配范围：')}</b>${i18n('所有站内余额大于或等于该金额的会员')}</div>
                     <div style="margin-top:10px;color:#d14343;">${i18n('提交后会批量创建提现记录并扣减符合条件会员的余额，可能影响多名会员，无法在本页面一键撤销。')}</div>
                 </div>`,

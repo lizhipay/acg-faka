@@ -337,7 +337,8 @@
             <div class="md-paytest__ok"><i class="fa-duotone fa-regular fa-circle-check"></i>${i18n('下单成功，网关已受理')}</div>
             <div class="md-paytest__row"><span class="md-paytest__k">${i18n('支付接口')}</span><span class="md-paytest__v">${escapeHtml(String(data?.pay_name || row?.name || ''))}</span></div>
             <div class="md-paytest__row"><span class="md-paytest__k">${i18n('订单号')}</span><span class="md-paytest__v"><code>${escapeHtml(String(data?.trade_no || ''))}</code></span></div>
-            <div class="md-paytest__row"><span class="md-paytest__k">${i18n('金额')}</span><span class="md-paytest__v">￥${escapeHtml(String(data?.amount || ''))}</span></div>
+            <div class="md-paytest__row"><span class="md-paytest__k">${i18n('金额')}</span><span class="md-paytest__v">${format.currencySymbol()}${escapeHtml(String(data?.amount || ''))}</span></div>
+            ${data?.gateway_amount && String(data.gateway_amount) !== String(Number(data?.amount || 0).toFixed(2)) ? `<div class="md-paytest__row"><span class="md-paytest__k">${i18n('提交网关')}</span><span class="md-paytest__v">CNY ${escapeHtml(String(data.gateway_amount))}</span></div>` : ''}
             <div class="md-paytest__row"><span class="md-paytest__k">${i18n('返回类型')}</span><span class="md-paytest__v">${typeText}</span></div>
             ${urlBlock}
             <div class="md-paytest__row">
@@ -744,7 +745,7 @@
                     return '<span class="a-badge a-badge-danger" >' + i18n('未启用') + '</span>';
                 }
                 if (item.cost_type == 0) {
-                    return '<span class="a-badge a-badge-success" >￥' + escapeHtml(item.cost) + '</span>';
+                    return '<span class="a-badge a-badge-success" >' + format.currencySymbol() + escapeHtml(item.cost) + '</span>';
                 } else {
                     return '<span class="a-badge a-badge-primary" >' + (item.cost * 100) + '%</span>';
                 }

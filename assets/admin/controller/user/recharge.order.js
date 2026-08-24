@@ -138,7 +138,7 @@
                         '<p style="margin:0 0 8px">' + i18n('补单会把充值订单标记为已支付，并立即增加会员余额。') + '</p>' +
                         '<div><b>' + i18n('订单号：') + '</b>' + escapeHtml(row.trade_no) + '</div>' +
                         '<div><b>' + i18n('会员：') + '</b>' + escapeHtml(userLabel) + '</div>' +
-                        '<div><b>' + i18n('充值金额：') + '</b>¥' + escapeHtml(row.amount) + '</div>' +
+                        '<div><b>' + i18n('充值金额：') + '</b>' + format.currencySymbol() + escapeHtml(row.amount) + '</div>' +
                         '<div><b>' + i18n('支付方式：') + '</b>' + escapeHtml(payName) + '</div>' +
                         '<p style="margin:8px 0 0;color:#d63b3b;font-weight:700">' + i18n('该操作会真实入账且无法在本页面撤销，请核对无误。') + '</p></div>';
                     message.ask(prompt, () => {
@@ -171,7 +171,7 @@
     table.onResponse(response => {
         if (!controllerActive) return;
         $('.order_count').text(Number(response?.data?.total || 0).toLocaleString('zh-CN'));
-        $('.order_amount').text('￥' + Number(response?.data?.order_amount || 0).toLocaleString('zh-CN', {
+        $('.order_amount').text(format.currencySymbol() + Number(response?.data?.order_amount || 0).toLocaleString('zh-CN', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         }));

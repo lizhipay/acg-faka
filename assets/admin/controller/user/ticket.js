@@ -377,7 +377,7 @@
         const guest = Number(current.order_source) === 2 || current.order_source === 'guest';
         $drawer.find('.ticket-relation-context').html(
             `<div class="md-ticket-order-head"><span class="md-ticket-relation__icon md-ticket-relation__icon--order"><i class="fa-duotone fa-regular fa-receipt"></i></span><div><span>${guest ? i18n('游客订单') : i18n('账号订单')}</span><strong>${esc(order.trade_no || current.order_trade_no || i18n('未关联订单'))}</strong></div></div>`
-            + `<div class="md-ticket-context-rows">${contextRow(i18n('订单金额'), order.amount !== undefined ? `¥${order.amount}` : '-')}${contextRow(i18n('购买数量'), order.card_num)}${contextRow(i18n('下单时间'), order.create_time)}${contextRow(i18n('支付时间'), order.pay_time)}</div>`
+            + `<div class="md-ticket-context-rows">${contextRow(i18n('订单金额'), order.amount !== undefined ? `${format.currencySymbol()}${order.amount}` : '-')}${contextRow(i18n('购买数量'), order.card_num)}${contextRow(i18n('下单时间'), order.create_time)}${contextRow(i18n('支付时间'), order.pay_time)}</div>`
         );
     };
 

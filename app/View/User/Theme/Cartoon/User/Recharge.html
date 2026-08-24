@@ -9,7 +9,7 @@
                     <div class="uc-topup-balance__copy">
                         <span class="uc-topup-balance__eyebrow"><span class="material-icons-outlined">add_card</span>#{t("充值中心")}</span>
                         <span class="uc-topup-balance__label">#{t("账户余额")}</span>
-                        <div class="uc-topup-balance__value"><small>￥</small>#{$user.balance}</div>
+                        <div class="uc-topup-balance__value"><small>#{$config.currency_symbol}</small>#{$user.balance}</div>
                         <span class="uc-topup-balance__hint">#{t("充值成功后余额即时更新，可用于购买商品")}</span>
                     </div>
                 </div>
@@ -54,22 +54,22 @@
                             </div>
                             <div class="uc-topup-presets">
                                 #{foreach $presets as $p}
-                                <button type="button" class="uc-topup-preset" data-amount="#{$p}"><small>￥</small>#{$p}</button>
+                                <button type="button" class="uc-topup-preset" data-amount="#{$p}"><small>#{$config.currency_symbol}</small>#{$p}</button>
                                 #{/foreach}
                             </div>
                             <div class="uc-topup-amount">
-                                <span class="uc-topup-amount__cur">￥</span>
+                                <span class="uc-topup-amount__cur">#{$config.currency_symbol}</span>
                                 <input type="text" name="amount" required value="#{$presets[0]}" inputmode="decimal" autocomplete="off" aria-label="#{t('充值金额')}" class="layui-input">
                                 <span class="uc-topup-amount__unit">#{t("人民币")}</span>
                             </div>
                             <div class="uc-topup-limit">
                                 <span class="material-icons-outlined">info</span>
-                                #{t("单次最低")} <b>￥#{$presets[0]}</b>#{if $config.recharge_max > 0 && $config.recharge_max > $presets[0]}<span>·</span>#{t("单次最高")} <b>￥#{$config.recharge_max}</b>#{else}<span>·</span>#{t("充值金额不设上限")}#{/if}
+                                #{t("单次最低")} <b>#{$config.currency_symbol}#{$presets[0]}</b>#{if $config.recharge_max > 0 && $config.recharge_max > $presets[0]}<span>·</span>#{t("单次最高")} <b>#{$config.currency_symbol}#{$config.recharge_max}</b>#{else}<span>·</span>#{t("充值金额不设上限")}#{/if}
                             </div>
                             #{if $config.recharge_welfare == 1 && count($welfareConfig) > 0}
                             <div class="uc-topup-bonuses">
                                 #{foreach $welfareConfig as $wc}
-                                <span class="uc-topup-bonus" data-threshold="#{$wc.recharge}" data-bonus="#{$wc.amount}"><span class="material-icons-outlined">redeem</span>#{t("满")} <b>￥#{$wc.recharge}</b> #{t("赠")} <b>￥#{$wc.amount}</b></span>
+                                <span class="uc-topup-bonus" data-threshold="#{$wc.recharge}" data-bonus="#{$wc.amount}"><span class="material-icons-outlined">redeem</span>#{t("满")} <b>#{$config.currency_symbol}#{$wc.recharge}</b> #{t("赠")} <b>#{$config.currency_symbol}#{$wc.amount}</b></span>
                                 #{/foreach}
                             </div>
                             #{/if}
@@ -105,12 +105,12 @@
                 <div class="uc-card__body">
                     <div class="uc-topup-summary__hero">
                         <span>#{t("预计入账")}</span>
-                        <strong><small>￥</small><span class="uc-topup-total">#{$presets[0]}</span></strong>
+                        <strong><small>#{$config.currency_symbol}</small><span class="uc-topup-total">#{$presets[0]}</span></strong>
                         <em>#{t("含符合条件的活动赠送")}</em>
                     </div>
                     <div class="uc-topup-summary__rows">
-                        <div><span>#{t("充值金额")}</span><strong>￥<span class="uc-topup-principal">#{$presets[0]}</span></strong></div>
-                        <div><span>#{t("活动赠送")}</span><strong class="uc-topup-gift">+￥0</strong></div>
+                        <div><span>#{t("充值金额")}</span><strong>#{$config.currency_symbol}<span class="uc-topup-principal">#{$presets[0]}</span></strong></div>
+                        <div><span>#{t("活动赠送")}</span><strong class="uc-topup-gift">+#{$config.currency_symbol}0</strong></div>
                         <div><span>#{t("获得元气")}</span><strong><span class="uc-topup-energy">#{$presets[0]}</span> #{t("元气")}</strong></div>
                         <div><span>#{t("支付方式")}</span><strong class="uc-topup-method-name">#{t("待选择")}</strong></div>
                     </div>

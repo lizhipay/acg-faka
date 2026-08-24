@@ -202,7 +202,7 @@ CREATE TABLE `__PREFIX__config`  (
                                      `value` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '配置内容',
                                      PRIMARY KEY (`id`) USING BTREE,
                                      UNIQUE INDEX `key`(`key`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 57 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = MyISAM AUTO_INCREMENT = 61 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
 
 INSERT INTO `__PREFIX__config` VALUES (1, 'shop_name', '异次元店铺');
@@ -260,6 +260,10 @@ INSERT INTO `__PREFIX__config` VALUES (53, 'admin_login_verification', '1');
 INSERT INTO `__PREFIX__config` VALUES (54, 'request_log', '0');
 INSERT INTO `__PREFIX__config` VALUES (55, 'admin_entrance', '');
 INSERT INTO `__PREFIX__config` VALUES (56, 'lang_version', '0');
+INSERT INTO `__PREFIX__config` VALUES (57, 'currency_code', 'CNY');
+INSERT INTO `__PREFIX__config` VALUES (58, 'currency_symbol', '¥');
+INSERT INTO `__PREFIX__config` VALUES (59, 'currency_rate', '1');
+INSERT INTO `__PREFIX__config` VALUES (60, 'currency_decimals', '2');
 
 
 DROP TABLE IF EXISTS `__PREFIX__coupon`;
@@ -373,6 +377,7 @@ CREATE TABLE `__PREFIX__order`  (
                                     `race` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '商品种类',
                                     `rebate` decimal(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '返利金额',
                                     `pay_cost` decimal(10, 2) UNSIGNED NULL DEFAULT 0.00 COMMENT '支付接口手续费',
+                                    `gateway_amount` decimal(10, 2) UNSIGNED NULL DEFAULT NULL COMMENT '提交给支付网关的CNY金额快照（站点货币×汇率，回调按此比对）',
                                     `sku` json DEFAULT NULL COMMENT 'SKU',
                                     `divide_amount` decimal(10,2) unsigned DEFAULT NULL COMMENT '推广者分成金额',
                                     `substation_user_id` int(10) unsigned DEFAULT NULL COMMENT '子站ID',
@@ -475,6 +480,8 @@ CREATE TABLE `__PREFIX__shared`  (
                                      `app_key` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '密钥',
                                      `create_time` datetime NOT NULL COMMENT '创建时间',
                                      `balance` decimal(14, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '余额(缓存)',
+                                     `currency` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'CNY' COMMENT '上游站点货币代码',
+                                     `currency_rate` decimal(18, 6) NOT NULL DEFAULT 0.000000 COMMENT '结算汇率：1 上游货币 = ? 本站货币；0 = 按站点汇率自动',
                                      PRIMARY KEY (`id`) USING BTREE,
                                      UNIQUE INDEX `domain`(`domain` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
@@ -583,6 +590,7 @@ CREATE TABLE `__PREFIX__user_recharge`  (
                                             `user_id` int UNSIGNED NOT NULL COMMENT '用户id',
                                             `amount` decimal(10, 2) UNSIGNED NOT NULL COMMENT '充值金额',
                                             `pay_cost` decimal(10, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '支付接口手续费',
+                                            `gateway_amount` decimal(10, 2) UNSIGNED NULL DEFAULT NULL COMMENT '提交给支付网关的CNY金额快照（站点货币×汇率，回调按此比对）',
                                             `pay_id` int UNSIGNED NOT NULL COMMENT '支付id',
                                             `status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '状态：0=未支付，1=已支付',
                                             `create_time` datetime NOT NULL COMMENT '创建时间',

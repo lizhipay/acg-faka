@@ -29,10 +29,10 @@
             }
         }
         , {
-            field: 'guest_price', title: '游客成交价', formatter: _ => `￥${_}`
+            field: 'guest_price', title: '游客成交价', formatter: _ => `${format.currencySymbol()}${_}`
         }
         , {
-            field: 'my_price', title: '我的拿货价', formatter: _ => `￥${_}`
+            field: 'my_price', title: '我的拿货价', formatter: _ => `${format.currencySymbol()}${_}`
         }
         , {
             field: 'profit', title: '预计收益', formatter: _ => format.money(_, parseFloat(_) < 0 ? "red" : "green")
@@ -56,7 +56,7 @@
         util.post('/user/api/promote/sku', {commodityId: id, race: race}, res => {
             const data = res.data;
             let html = `<div class="uc-skupop">`;
-            html += `<div class="uc-skupop__meta">${i18n('基准')}${data.race ? `（${i18n('类别：')}${util.plainText(String(data.race))}）` : ''}${i18n('预计收益：')}<b>￥${data.base_profit}</b></div>`;
+            html += `<div class="uc-skupop__meta">${i18n('基准')}${data.race ? `（${i18n('类别：')}${util.plainText(String(data.race))}）` : ''}${i18n('预计收益：')}<b>${format.currencySymbol()}${data.base_profit}</b></div>`;
             html += `<table class="uc-skupop__table"><thead><tr><td>SKU</td><td>${i18n('选项')}</td><td>${i18n('加价')}</td><td>${i18n('游客价')}</td><td>${i18n('拿货价')}</td><td>${i18n('预计收益')}</td><td>${i18n('收益变化')}</td></tr></thead><tbody>`;
             data.list.forEach(row => {
                 const delta = parseFloat(row.delta);
@@ -64,10 +64,10 @@
                 html += `<tr>
                     <td>${util.plainText(row.group)}</td>
                     <td>${util.plainText(row.option)}</td>
-                    <td>+￥${row.premium}</td>
-                    <td>￥${row.guest_price}</td>
-                    <td>￥${row.my_price}</td>
-                    <td><b>￥${row.profit}</b></td>
+                    <td>+${format.currencySymbol()}${row.premium}</td>
+                    <td>${format.currencySymbol()}${row.guest_price}</td>
+                    <td>${format.currencySymbol()}${row.my_price}</td>
+                    <td><b>${format.currencySymbol()}${row.profit}</b></td>
                     <td><span class="uc-skupop__delta ${deltaClass}">${row.delta}</span></td>
                 </tr>`;
             });

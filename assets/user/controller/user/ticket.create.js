@@ -31,7 +31,7 @@
         if (kind === 'commodity') {
             $('<small>').text([item.category_name || item.category || i18n('未分类'), `${i18n('商品')} ID ${item.id}`].join(' · ')).appendTo($copy);
         } else {
-            const meta = [item.trade_no || '', item.amount != null ? `￥${item.amount}` : '', item.pay_time || item.create_time || ''].filter(Boolean).join(' · ');
+            const meta = [item.trade_no || '', item.amount != null ? `${format.currencySymbol()}${item.amount}` : '', item.pay_time || item.create_time || ''].filter(Boolean).join(' · ');
             $('<small>').text(meta).appendTo($copy);
         }
         return $row;
@@ -90,7 +90,7 @@
         }
         const cover = escapeHtml(state.order.cover || '/favicon.ico');
         const when = escapeHtml(state.order.pay_time || state.order.create_time || '');
-        $picked.html(`<img src="${cover}" alt=""><span><small>${i18n('已选择订单')}</small><strong>${escapeHtml(state.order.commodity_name || i18n('商品订单'))}</strong><em>${escapeHtml(state.order.trade_no || '')}${state.order.amount != null ? ` · ￥${escapeHtml(state.order.amount)}` : ''}${when ? ` · ${when}` : ''}</em></span><span class="material-icons-outlined">verified</span>`).prop('hidden', false);
+        $picked.html(`<img src="${cover}" alt=""><span><small>${i18n('已选择订单')}</small><strong>${escapeHtml(state.order.commodity_name || i18n('商品订单'))}</strong><em>${escapeHtml(state.order.trade_no || '')}${state.order.amount != null ? ` · ${format.currencySymbol()}${escapeHtml(state.order.amount)}` : ''}${when ? ` · ${when}` : ''}</em></span><span class="material-icons-outlined">verified</span>`).prop('hidden', false);
     }
 
     function updateSummary() {

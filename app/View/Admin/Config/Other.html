@@ -26,6 +26,7 @@
                     <form id="data-form" class="form" data-admin-mobile-settings-page="other">
                         <nav class="admin-mobile-settings-nav" aria-label="#{t('其他设置分区')}">
                             <a href="#mobile-other-domain">#{t("域名与主站")}</a>
+                            <a href="#mobile-other-currency">#{t("货币")}</a>
                             <a href="#mobile-other-recharge">#{t("充值")}</a>
                             <a href="#mobile-other-support">#{t("客服")}</a>
                             <a href="#mobile-other-cash">#{t("提现")}</a>
@@ -194,6 +195,119 @@
                             </div>
                             <!--end::Input group-->
 
+
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-other-currency"
+                                data-admin-mobile-description="设置站点货币、符号与对人民币的汇率，汇率只在提交支付时换算。">#{t("货币")}</h2>
+
+                            <div class="alert alert-primary d-flex align-items-center mb-5">
+                                <i class="fa-duotone fa-regular fa-circle-info fs-2 me-3"></i>
+                                <div>
+                                    <b>#{t("切换币种是纯重标注")}</b>
+                                    #{t("：不会换算商品价格、余额、历史订单里的任何数字，只是换个符号按新货币理解它们；商品定价请自行按新币种调整。汇率唯一的用途，是在提交给支付接口那一刻把订单金额换算成人民币（支付插件都按 CNY 结算），换算结果会快照到订单上，之后改汇率不影响已下单的订单。")}
+                                </div>
+                            </div>
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6" for="currency-preset">#{t("常用货币")}</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <!--无 name：仅前端联动回填下面三项，不随表单提交-->
+                                    <!--select2 与本页其它下拉一致：普通 select 不会触发浮动标签上浮，标签会压住选中项文字-->
+                                    <select id="currency-preset" class="form-select form-select-solid form-select-lg"
+                                            data-control="select2"></select>
+                                    <div class="form-text">#{t("选择预设自动填入代码、符号与小数位，也可以在下方完全自定义。")}</div>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">#{t("货币代码")}</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="currency_code"
+                                           pattern="[A-Za-z0-9]{1,8}"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="#{t('如 CNY、USD、JPY，1-8 位字母或数字')}" value="#{$config.currency_code|escape:'html'}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">#{t("货币符号")}</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="currency_symbol"
+                                           maxlength="8"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="#{t('全站显示在金额前的符号，如 ¥、$、€、円')}" value="#{$config.currency_symbol|escape:'html'}"/>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">#{t("汇率(1 站点货币 = ? 人民币)")}</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="currency_rate"
+                                           inputmode="decimal"
+                                           pattern="(?:0|[1-9][0-9]{0,5})(?:\.[0-9]{1,6})?"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="#{t('如美元填 7.25，日元填 0.05；人民币填 1')}" value="#{$config.currency_rate|escape:'html'}"/>
+                                    <div class="form-text">#{t("提交支付时：订单金额 × 汇率 = 传给支付接口的人民币金额。")}</div>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("显示小数位")}</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <select name="currency_decimals" class="form-select form-select-solid form-select-lg"
+                                            data-control="select2" data-hide-search="true">
+                                        <option value="2" #{if $config.currency_decimals != '0'}selected#{/if}>#{t("2 位小数（如 10.00）")}</option>
+                                        <option value="0" #{if $config.currency_decimals == '0'}selected#{/if}>#{t("无小数（日元、韩元等）")}</option>
+                                    </select>
+                                    <div class="form-text">#{t("只影响页面显示，不影响存储与计算精度。")}</div>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("全站数据换算")}</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8">
+                                    <button type="button" class="btn btn-light-danger text-nowrap" id="currency-convert-btn" data-current-code="#{$config.currency_code|escape:'html'}" data-current-rate="#{$config.currency_rate|escape:'html'}">
+                                        <i class="fa-duotone fa-regular fa-arrow-right-arrow-left"></i>
+                                        #{t("切换并按汇率换算全站金额")}
+                                    </button>
+                                    <div class="form-text mt-2">#{t("把余额、账单、历史订单、商品定价等全站金额按上方汇率一次性换算成新币种，已配置好的站点可直接迁移。不可逆，换算前请先备份数据库。")}</div>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
 
                             <h2 class="admin-mobile-settings-section-title" id="mobile-other-recharge"
                                 data-admin-mobile-description="设置单次充值金额范围和充值赠送规则。">#{t("充值")}</h2>

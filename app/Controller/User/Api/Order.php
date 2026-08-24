@@ -177,13 +177,15 @@ class Order extends User
         }
 
         $paid = (string)($callback['amount'] ?? '');
-        $matched = $paid !== '' && (float)$paid === (float)($record['amount'] ?? 0);
+        //比对基准是提交网关时的 CNY 金额快照；旧拨测记录没有该键时回退拨测面额
+        $expect = (float)($record['gateway_amount'] ?? $record['amount'] ?? 0);
+        $matched = $paid !== '' && (float)$paid === $expect;
 
         PayTest::patch($tradeNo, [
             'status' => 'paid',
             'paid_amount' => $paid,
             'pay_time' => Date::current(),
-            'message' => $matched ? '' : '金额与拨测金额不一致（真实订单会因此被拒）'
+            'message' => $matched ? '' : '金额与提交网关的金额不一致（真实订单会因此被拒）'
         ]);
 
         return (string)$callback['success'];

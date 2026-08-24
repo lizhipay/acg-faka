@@ -77,6 +77,16 @@
         const contentNode = $content.get(0);
         const bodyNode = $body.get(0);
 
+        // Measuring below temporarily expands the popup to its natural height
+        // (thousands of picker rows => the document briefly becomes huge). During
+        // that window the browser may scroll the page (focus-into-view of the row
+        // checkbox that was just clicked, scroll anchoring, ...) and leave it
+        // stuck at the bottom afterwards (#847). Snapshot the page scroll now and
+        // restore it once the final sizes are applied, so a fit pass can never
+        // move the page.
+        const pageScrollX = window.scrollX || 0;
+        const pageScrollY = window.scrollY || 0;
+
         const viewportHeight = Math.floor(
             window.visualViewport?.height
             || document.documentElement.clientHeight
@@ -125,8 +135,22 @@
             contentNode.scrollTop = Math.min(currentScrollTop, maxScrollTop);
         }
 
-        const top = Math.max(16, Math.floor((viewportHeight - $layer.outerHeight()) / 2));
-        $layer.css('top', `${top}px`);
+        // Selecting products fires the ResizeObserver (the "已选 N 件" header
+        // reflows), which used to re-center the popup on every tick — the dialog
+        // wandered away from under the cursor and follow-up clicks missed (#847).
+        // Only re-position when the height actually changed materially; anchor the
+        // top to the page scroll captured above so a scrolled page keeps the popup
+        // in view instead of pinning it near the document top.
+        const previousFitHeight = Number(layerNode.dataset.mdImportFitHeight || 0);
+        if (Math.abs(layerHeight - previousFitHeight) > 8 || !layerNode.style.top) {
+            const top = Math.max(16, Math.floor((viewportHeight - $layer.outerHeight()) / 2)) + pageScrollY;
+            $layer.css('top', `${top}px`);
+        }
+        layerNode.dataset.mdImportFitHeight = String(layerHeight);
+
+        if ((window.scrollX || 0) !== pageScrollX || (window.scrollY || 0) !== pageScrollY) {
+            window.scrollTo(pageScrollX, pageScrollY);
+        }
     };
     const controllerLayers = new Set();
     const controllerRequests = new Set();
@@ -627,6 +651,46 @@
             }
         };
 
+        // #847: 点击某一行的 label 会让浏览器把它关联的隐藏复选框「滚动进视野」。
+        // 复选框虽已用 material.css 的 position:relative 锚定在自己这一行，不再逃逸
+        // 到弹层顶端沿整列表堆叠，但当内层列表比外层弹窗内容区更高（双层滚动）时，
+        // 点击底部分类仍会把 .layui-layer-content 往下顶一截。这里在「指针点击」引发
+        // 聚焦的同一事件循环内把相关滚动容器复位——用户点的那一行本就在视野里，聚焦
+        // 不该移动任何东西。键盘 Tab 不经过 pointerdown，快照为空，浏览器的无障碍滚动
+        // 照常生效。
+        let pointerScrollSnapshot = null;
+        const collectScrollParents = node => {
+            const parents = [];
+            let el = node?.parentElement;
+            while (el && el !== document.body && el !== document.documentElement) {
+                const overflowY = window.getComputedStyle(el).overflowY;
+                if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+                    parents.push(el);
+                }
+                el = el.parentElement;
+            }
+            const scroller = document.scrollingElement || document.documentElement;
+            if (scroller) parents.push(scroller);
+            return parents;
+        };
+        const onPointerDown = event => {
+            const row = event.target?.closest?.('.md-remote-product-picker__item, .md-remote-product-picker__group-label');
+            pointerScrollSnapshot = row
+                ? collectScrollParents(row).map(el => [el, el.scrollTop, el.scrollLeft])
+                : null;
+        };
+        const onFocusIn = event => {
+            const snapshot = pointerScrollSnapshot;
+            pointerScrollSnapshot = null;
+            if (!snapshot) return;
+            if (!(event.target instanceof HTMLElement) || !event.target.classList.contains('md-remote-product-picker__checkbox')) return;
+            snapshot.forEach(([el, top, left]) => {
+                if (el.scrollTop !== top) el.scrollTop = top;
+                if (el.scrollLeft !== left) el.scrollLeft = left;
+            });
+        };
+        root.addEventListener('pointerdown', onPointerDown, true);
+        root.addEventListener('focusin', onFocusIn, true);
         root.addEventListener('input', onInput);
         root.addEventListener('change', onChange);
         root.addEventListener('click', onClick);
@@ -635,6 +699,8 @@
 
         return () => {
             if (searchFrame) cancelFrame(searchFrame);
+            root.removeEventListener('pointerdown', onPointerDown, true);
+            root.removeEventListener('focusin', onFocusIn, true);
             root.removeEventListener('input', onInput);
             root.removeEventListener('change', onChange);
             root.removeEventListener('click', onClick);
@@ -1163,6 +1229,9 @@
             return null;
         }
     };
+    //对方货币可选项：CNY 之外的组合若无法按站点汇率自动换算，保存时后端会要求填结算汇率
+    const CURRENCY_OPTIONS = ['CNY', 'USD', 'EUR', 'JPY', 'GBP', 'HKD', 'TWD', 'KRW', 'SGD', 'MYR', 'THB', 'VND', 'IDR', 'PHP', 'RUB', 'AUD', 'CAD', 'BRL', 'INR', 'TRY']
+        .map(code => ({id: code, name: code === 'CNY' ? `CNY（${i18n('人民币，默认')}）` : code}));
     const renderStoreName = (name, domain) => {
         const safeName = escapeHtml(name || '-');
         const base = normalizeHttpUrl(domain);
@@ -1209,7 +1278,10 @@
             id: Number(assign.id),
             type: Number(assign.type),
             domain: String(assign.domain || ''),
-            app_id: String(assign.app_id || '')
+            app_id: String(assign.app_id || ''),
+            currency: String(assign.currency || 'CNY').toUpperCase(),
+            //0 = 自动，回填成空串让占位提示可见
+            currency_rate: Number(assign.currency_rate) > 0 ? String(Number(assign.currency_rate)) : ''
         } : {};
         component.popup({
             submit: (data, index) => {
@@ -1273,6 +1345,25 @@
                                 message: i18n('商户密钥必须是 1–64 位且不能包含空白字符')
                             }
                         },
+                        {
+                            title: "对方货币",
+                            name: "currency",
+                            type: "select",
+                            dict: CURRENCY_OPTIONS,
+                            default: 'CNY',
+                            required: true
+                        },
+                        {
+                            title: "结算汇率",
+                            name: "currency_rate",
+                            type: "input",
+                            placeholder: i18n("1 对方货币 = ? 本站货币；留空按站点汇率自动换算"),
+                            required: false,
+                            regex: {
+                                value: '^$|^\\d{0,9}(\\.\\d{1,6})?$',
+                                message: i18n('结算汇率必须是数字，最多 6 位小数')
+                            }
+                        },
                     ]
                 },
             ],
@@ -1318,7 +1409,12 @@
         }, {
             field: 'domain', title: '店铺地址', formatter: renderStoreLink
         }, {
-            field: 'balance', title: '余额(缓存)', formatter: _ => format.money(_, "var(--md-success)")
+            field: 'balance', title: '余额(缓存)', formatter: (v, row) => {
+                const money = format.money(v, "var(--md-success)");
+                const code = String(row?.currency || 'CNY').toUpperCase();
+                //余额是上游账户的原币数字，标注币种避免误读成本站货币
+                return code === 'CNY' ? money : `${money} <span class="a-badge a-badge-primary">${escapeHtml(code)}</span>`;
+            }
         }, {
             field: 'status', title: '状态', formatter: function (val, item) {
                 if (item.__mobileConnectStatus) {
@@ -1491,11 +1587,7 @@
                             let resetImportPopupScroll = false;
                             const cancelImportPopupFrame = () => {
                                 if (!importPopupResizeFrame) return;
-                                if (typeof window.cancelAnimationFrame === 'function') {
-                                    window.cancelAnimationFrame(importPopupResizeFrame);
-                                } else {
-                                    window.clearTimeout(importPopupResizeFrame);
-                                }
+                                window.clearTimeout(importPopupResizeFrame);
                                 importPopupResizeFrame = 0;
                             };
                             const scheduleImportPopupFit = (resetScroll = false) => {
@@ -1507,9 +1599,12 @@
                                     resetImportPopupScroll = false;
                                     fitImportPopupHeight($importPopupLayer, shouldResetScroll);
                                 };
-                                importPopupResizeFrame = typeof window.requestAnimationFrame === 'function'
-                                    ? window.requestAnimationFrame(callback)
-                                    : window.setTimeout(callback, 16);
+                                // 不能用 requestAnimationFrame：窗口被遮挡/退到后台时 rAF 会被
+                                // 浏览器暂停，fit 一次都不会执行 —— 弹窗保持 1700px+ 的自然高度，
+                                // layui 按负 top 居中，表单整段被顶出屏幕，看起来就是「弹窗内容
+                                // 全部消失、页面被撑到底部、再也点不了」（#847）。setTimeout 在
+                                // 任何窗口状态下都保证执行，16ms 的节流效果与 rAF 相当。
+                                importPopupResizeFrame = window.setTimeout(callback, 16);
                             };
                             const destroyImportPopupSizing = () => {
                                 cancelImportPopupFrame();

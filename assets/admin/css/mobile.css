@@ -1881,6 +1881,15 @@
     .admin-mobile-menu-link .menu-bullet { display: none; }
     .admin-mobile-menu-empty { grid-column: 1 / -1; }
 
+    /* 「全部功能」面板收尾的版本行：当前版本一目了然，点击与「检查更新」磁贴同样进入版本弹窗 */
+    .admin-mobile-menu-version { grid-column: 1 / -1; display: flex; width: 100%; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; padding: 14px 8px calc(10px + env(safe-area-inset-bottom, 0px)); border: 0; background: transparent; color: var(--admin-mobile-tertiary); font-size: 12px; letter-spacing: .02em; }
+    .admin-mobile-menu-version:active { opacity: .62; }
+    .admin-mobile-menu-version .menu-version-state { color: var(--admin-mobile-tertiary); }
+    .admin-mobile-menu-version .menu-version-state.is-new { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--admin-mobile-danger) 10%, transparent); color: var(--admin-mobile-danger-ink); font-weight: 600; }
+
+    /* 检查更新磁贴：有新版时图标角上挂小红点 */
+    .admin-mobile-menu-link .menu-icon > .admin-mobile-update-dot { position: absolute; top: -2px; right: -2px; width: 9px; height: 9px; border-radius: 50%; background: var(--admin-mobile-danger); box-shadow: 0 0 0 2px var(--admin-mobile-surface); }
+
     html[data-admin-layout="mobile"][data-theme] .md-stat-grid {
         display: flex !important;
         gap: 10px !important;
@@ -2026,6 +2035,16 @@
         direction: ltr;
     }
     .admin-mobile-layer-popup .layui-layer-btn .md-message-send-icon { width: 17px; height: 17px; }
+
+    /* 页脚按钮的 material 图标（确认键按语义映射、取消键固定 close） */
+    .admin-mobile-layer-popup .layui-layer-btn a:has(> .admin-mobile-btn-icon) {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        direction: ltr;
+    }
+    .admin-mobile-layer-popup .layui-layer-btn .admin-mobile-btn-icon { font-size: 18px; }
     .admin-mobile-list-toolbar b { display: grid; min-width: 20px; height: 20px; place-items: center; border-radius: 999px; background: var(--admin-mobile-primary); color: var(--admin-mobile-on-primary); font-size: 10px; font-variant-numeric: tabular-nums; }
 
     .admin-mobile-data-card {

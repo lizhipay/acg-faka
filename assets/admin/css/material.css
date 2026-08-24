@@ -1610,7 +1610,8 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
 :root[data-theme] .md-settings .card-body > .row.mb-6:has(.image-input) > label.col-form-label,
 :root[data-theme] .md-settings .card-body > .row.mb-6:has(.notice-editor) > label.col-form-label,
 :root[data-theme] .md-settings .card-body > .row.mb-6:has(table) > label.col-form-label,
-:root[data-theme] .md-settings .card-body > .row.mb-6:has(#g2fa-status) > label.col-form-label {
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(#g2fa-status) > label.col-form-label,
+:root[data-theme] .md-settings .card-body > .row.mb-6:has(#currency-convert-btn) > label.col-form-label {
   position: static !important;
   transform: none !important;
   max-width: 100% !important;
@@ -2763,6 +2764,7 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
 :root[data-theme] .md-remote-product-picker__group-toggle .material-icons-outlined { font-size: 21px; }
 :root[data-theme] .md-remote-product-picker__group-label {
   display: flex;
+  position: relative; /* 承接内部 position:absolute 的隐藏复选框，避免它逃逸到弹层并沿全列表堆叠(#847) */
   min-width: 0;
   min-height: 52px;
   flex: 1 1 auto;
@@ -2858,6 +2860,7 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
 :root[data-theme] .md-remote-product-picker__group.is-expanded > .md-remote-product-picker__items { display: block; }
 :root[data-theme] .md-remote-product-picker__item {
   display: flex;
+  position: relative; /* 同 __group-label：把隐藏复选框锚定在自己这一行，避免逃逸撑爆滚动高度(#847) */
   min-width: 0;
   min-height: 44px;
   align-items: center;
@@ -3064,7 +3067,6 @@ html[data-theme-pref="auto"]  #md-theme-toggle .md-ico-auto { display: inline-bl
    这里刻意不做成卡片：弹窗本身已经是个圆角容器，再套一层带圆角的框就是"卡片套卡片"，
    两圈圆角互相打架。改成一条齐平的顶部区域 + 一根分隔线，视觉重量交给 chip 和徽标。 */
 .md-payprofile {
-    margin: 0 0 20px;
     /* 左右 24px 是对齐弹窗表单的缩进（表单在 .layui-card-body 里，padding-left:24px）。
        这个条子是 .layui-layer-content 的直接子元素，本身没有内边距，不补就会贴着弹窗边缘。
        分隔线留在元素外沿，所以它仍然是通栏的，视觉上像一条顶部功能区。 */

@@ -98,11 +98,20 @@ const format = new class Format {
         return list.join(symbol);
     }
 
+    /**
+     * 站点货币符号：读 Helper 注入的 CURRENCY 变量，插件页等没有注入时兜底 ¥。
+     * 全站 JS 拼金额都应该用它，不要再写死 ¥。
+     */
+    currencySymbol() {
+        const currency = typeof getVar === 'function' ? getVar('CURRENCY') : null;
+        return currency && currency.symbol ? currency.symbol : '¥';
+    }
+
     money(amount, color = "green", bold = true) {
         if (!amount || amount == "-") {
             return '-';
         }
-        return `<span style="color: ${color};${bold ? 'font-weight: bolder;' : ''}">¥${format.amountRemoveTrailingZeros(amount)}</span>`;
+        return `<span style="color: ${color};${bold ? 'font-weight: bolder;' : ''}">${format.currencySymbol()}${format.amountRemoveTrailingZeros(amount)}</span>`;
     }
 
     amount(amount) {

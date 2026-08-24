@@ -24,7 +24,7 @@
               </div>
               <p class="goods-title">${i18n(item.name)}</p>
               <div class="stat-row mb-1">
-                <div class="price"><span class="unit">¥</span>${item.price}</div>
+                <div class="price"><span class="unit">${format.currencySymbol()}</span>${item.price}</div>
               </div>
               <div class="stat-bottom"><span>${i18n('库存：')}${item.stock}</span><span>${i18n('已售：')}${item.order_sold}</span></div>
             </div>

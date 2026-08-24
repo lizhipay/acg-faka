@@ -14,6 +14,7 @@ use App\Model\User;
 use App\Model\UserRecharge;
 use App\Service\Order;
 use App\Util\Client;
+use App\Util\Currency;
 use App\Util\Date;
 use App\Util\PayFactory;
 use App\Util\PayProfile;
@@ -46,11 +47,12 @@ class Recharge implements \App\Service\Recharge
         $rechargeMax = (float)Config::get("recharge_max");
 
         if ($amount < $rechargeMin) {
-            throw new JSONException("单次最低充值{$rechargeMin}元");
+            //稳定文案走翻译，金额带站点货币符号拼在后面（符号本身不进翻译）
+            throw new JSONException(lang("单次最低充值") . " " . Currency::symbol() . $rechargeMin);
         }
 
         if ($amount > $rechargeMax && $rechargeMax > 0 && $rechargeMax > $rechargeMin) {
-            throw new JSONException("单次最高充值{$rechargeMax}元");
+            throw new JSONException(lang("单次最高充值") . " " . Currency::symbol() . $rechargeMax);
         }
 
         $pay = Pay::query()->find($payId);
@@ -88,10 +90,13 @@ class Recharge implements \App\Service\Recharge
                 : (new \Kernel\Util\Decimal((string)$order->amount, 2))->mul((string)$pay->cost)->getAmount());
             $order->amount = (float)(new \Kernel\Util\Decimal((string)$order->amount, 2))->add((string)$order->pay_cost)->getAmount();
 
+            //站点货币 → CNY 快照（与商品订单同构）：传给插件与回调比对都认这份快照
+            $order->gateway_amount = Currency::toCny($order->amount);
+
             $payObject = PayFactory::make(
                 $pay,
                 (string)$order->trade_no,
-                (float)$order->amount,
+                (float)$order->gateway_amount,
                 $callbackDomain . '/user/api/rechargeNotification/callback.' . $order->trade_no,
                 $clientDomain . '/user/recharge/index',
                 (string)$order->create_ip
@@ -194,7 +199,9 @@ class Recharge implements \App\Service\Recharge
             if (!is_scalar($paidAmount) || !is_numeric((string)$paidAmount)) {
                 \App\Service\Bind\Order::callbackFail($handle, "amount", $reject, $tradeNo, $map, "回调金额不是合法数字", "CALLBACK-RECHARGE");
             }
-            $expectAmount = (new \Kernel\Util\Decimal((string)$order->amount, 2))->getAmount();
+            //比对基准是下单时的 CNY 快照（gateway_amount），NULL 仅出现在升级前的在途订单
+            $expectSource = $order->gateway_amount !== null ? (string)$order->gateway_amount : (string)$order->amount;
+            $expectAmount = (new \Kernel\Util\Decimal($expectSource, 2))->getAmount();
             $actualAmount = (new \Kernel\Util\Decimal((string)$paidAmount, 2))->getAmount();
             if (!hash_equals($expectAmount, $actualAmount)) {
                 \App\Service\Bind\Order::callbackFail($handle, "amount", $reject, $tradeNo, $map, "订单金额不匹配", "CALLBACK-RECHARGE");

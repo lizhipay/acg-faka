@@ -15,6 +15,7 @@ use App\Model\Pay as PayModel;
 use App\Model\UserRecharge;
 use App\Service\Query;
 use App\Util\Client;
+use App\Util\Currency;
 use App\Util\Date;
 use App\Util\PayFactory;
 use App\Util\PayProfile;
@@ -682,12 +683,16 @@ class Pay extends Manage
         //与真实下单同源：优先用后台配的自定义回调域名，没配才用当前访问域名
         $callbackUrl = $callbackDomain . '/user/api/order/callbackTest.' . $tradeNo;
 
+        //站点货币 → CNY：与真实下单同一套换算，拨测面板因此也是验证汇率换算的窗口
+        $gatewayAmount = sprintf('%.2f', Currency::toCny($amount));
+
         //先落一条待支付记录，回调回来才有地方落款、界面才能轮询到状态
         PayTest::put($tradeNo, [
             'pay_id' => (int)$pay->id,
             'pay_name' => (string)$pay->name,
             'handle' => (string)$pay->handle,
             'amount' => $amount,
+            'gateway_amount' => $gatewayAmount,
             'status' => 'pending',
             'create_time' => Date::current()
         ]);
@@ -696,7 +701,7 @@ class Pay extends Manage
             $payObject = PayFactory::make(
                 $pay,
                 $tradeNo,
-                (float)$amount,
+                (float)$gatewayAmount,
                 //拨测走自己的回调地址，绝不借用真实回调——那条路上挂着发货和加余额。
                 //取名 callbackTest 是为了让 Turnstile 的 'user/api/order/callback' 前缀豁免自动覆盖到它。
                 $callbackUrl,
@@ -717,11 +722,12 @@ class Pay extends Manage
         }
 
         PayTest::patch($tradeNo, ['status' => 'waiting', 'pay_url' => $trade->getUrl(), 'pay_type' => $trade->getType()]);
-        ManageLog::log($this->getManage(), "拨测了支付接口({$pay->name})，订单号 {$tradeNo}，金额 {$amount}");
+        ManageLog::log($this->getManage(), "拨测了支付接口({$pay->name})，订单号 {$tradeNo}，金额 {$amount}" . ($gatewayAmount !== sprintf('%.2f', (float)$amount) ? "（提交网关 CNY {$gatewayAmount}）" : ""));
 
         return $this->json(200, '拨测成功', [
             'trade_no' => $tradeNo,
             'amount' => $amount,
+            'gateway_amount' => $gatewayAmount,
             'type' => $trade->getType(),
             'url' => $trade->getUrl(),
             'option' => $trade->getOption(),

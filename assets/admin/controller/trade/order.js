@@ -81,7 +81,7 @@
             const commodityPrice = order?.commodity?.price;
             const commodityPriceRow = commodityPrice === undefined || commodityPrice === null || commodityPrice === ''
                 ? ''
-                : `<div><b>${i18n('商品标价：')}</b>¥${escapeHtml(commodityPrice)}</div>`;
+                : `<div><b>${i18n('商品标价：')}</b>${format.currencySymbol()}${escapeHtml(commodityPrice)}</div>`;
             const secretLength = Array.from(secret).length;
             const overwrites = Number(order.delivery_status) === 1 || String(order.secret ?? '').trim() !== '';
             confirming = true;
@@ -93,7 +93,7 @@
                     <div><b>${i18n('商品：')}</b>${commodityName}</div>
                     <div><b>${i18n('支付状态：')}</b><span style="color:#15803d;font-weight:600;">${i18n('已支付')}</span></div>
                     ${commodityPriceRow}
-                    <div><b>${i18n('订单金额：')}</b>¥${orderAmount}</div>
+                    <div><b>${i18n('订单金额：')}</b>${format.currencySymbol()}${orderAmount}</div>
                     <div><b>${i18n('发货内容：')}</b>${i18n('已填写')} ${secretLength} ${i18n('个字符')}</div>
                     <div style="margin-top:10px;color:#d14343;">${overwrites ? i18n('此订单已有发货记录，本次提交会覆盖现有发货内容。') : i18n('提交后订单会立即进入已发货状态，无法在本页面一键撤销。')}</div>
                 </div>`,
@@ -226,8 +226,8 @@
             field: 'card_num', title: '数量/金额', formatter: (_, __) => {
                 const amt = parseFloat(__.amount) || 0;
                 const amountHtml = amt > 0
-                    ? `<span class="md-pair__v" style="color:var(--md-success);font-weight:600">¥${format.amountRemoveTrailingZeros(amt)}</span>`
-                    : `<span class="md-pair__v md-pair__v--muted">¥0</span>`;
+                    ? `<span class="md-pair__v" style="color:var(--md-success);font-weight:600">${format.currencySymbol()}${format.amountRemoveTrailingZeros(amt)}</span>`
+                    : `<span class="md-pair__v md-pair__v--muted">${format.currencySymbol()}0</span>`;
                 return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">${i18n('数量')}</span><span class="md-pair__v">${__.card_num ?? '-'}</span></div><div class="md-pair__row"><span class="md-pair__k">${i18n('金额')}</span>${amountHtml}</div></div>`;
             }
         }
@@ -248,7 +248,7 @@
                 const fee = parseFloat(__.cost) || 0;
                 const rebate = parseFloat(__.rebate) || 0;
                 if (fee <= 0 && rebate <= 0) return '-';
-                const fmt = v => '¥' + format.amountRemoveTrailingZeros(v);
+                const fmt = v => format.currencySymbol() + format.amountRemoveTrailingZeros(v);
                 return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">${i18n('手续费')}</span><span class="md-pair__v" style="color:var(--md-info)">${fmt(fee)}</span></div><div class="md-pair__row"><span class="md-pair__k">${i18n('佣金')}</span><span class="md-pair__v md-pair__v--muted">${fmt(rebate)}</span></div></div>`;
             }
         }
@@ -264,8 +264,8 @@
                     : `<span class="md-user-cell__avatar md-user-cell__avatar--ph">${(name.charAt(0) || '?').toUpperCase()}</span>`;
                 const divide = parseFloat(__.divide_amount) || 0;
                 const sub = divide > 0
-                    ? `<span class="md-user-cell__sub" style="color:var(--md-success);font-weight:600">${i18n('分成')} ¥${format.amountRemoveTrailingZeros(divide)}</span>`
-                    : `<span class="md-user-cell__sub">${i18n('分成')} ¥0</span>`;
+                    ? `<span class="md-user-cell__sub" style="color:var(--md-success);font-weight:600">${i18n('分成')} ${format.currencySymbol()}${format.amountRemoveTrailingZeros(divide)}</span>`
+                    : `<span class="md-user-cell__sub">${i18n('分成')} ${format.currencySymbol()}0</span>`;
                 return `<div class="md-user-cell">${avatar}<div class="md-user-cell__text"><span class="md-user-cell__name">${name}</span>${sub}</div></div>`;
             }
         }
@@ -389,8 +389,8 @@
 
     table.onResponse(res => {
         $('.order_count').html(Number(res.data.total || 0).toLocaleString('en-US'));
-        $('.order_amount').html('￥' + Number(res.data.order_amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
-        $('.order_cost').html('￥' + Number(res.data.order_cost || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+        $('.order_amount').html(format.currencySymbol() + Number(res.data.order_amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+        $('.order_cost').html(format.currencySymbol() + Number(res.data.order_cost || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
     });
 
     table.render();

@@ -39,11 +39,11 @@
         </div>
         <div class="uc-stat uc-stat--warning">
             <div class="uc-stat__label"><span class="material-icons-outlined">calendar_month</span>#{t("本月收益")}</div>
-            <div class="uc-stat__value"><span class="cur">￥</span>#{$promote_month}</div>
+            <div class="uc-stat__value"><span class="cur">#{$config.currency_symbol}</span>#{$promote_month}</div>
         </div>
         <div class="uc-stat uc-stat--success">
             <div class="uc-stat__label"><span class="material-icons-outlined">savings</span>#{t("累计收益")}</div>
-            <div class="uc-stat__value"><span class="cur">￥</span>#{$promote_total}</div>
+            <div class="uc-stat__value"><span class="cur">#{$config.currency_symbol}</span>#{$promote_total}</div>
         </div>
     </div>
 
@@ -76,8 +76,8 @@
                         <div class="uc-list__time">#{$o.create_time}</div>
                     </div>
                     <div class="uc-list__end">
-                        <div class="uc-list__amount">￥#{$o.amount}</div>
-                        #{if $o.divide_amount > 0}<div class="uc-list__gain">#{t("分成")} ￥#{$o.divide_amount}</div>#{/if}
+                        <div class="uc-list__amount">#{$config.currency_symbol}#{$o.amount}</div>
+                        #{if $o.divide_amount > 0}<div class="uc-list__gain">#{t("分成")} #{$config.currency_symbol}#{$o.divide_amount}</div>#{/if}
                     </div>
                 </div>
                 #{/foreach}

@@ -8,6 +8,7 @@ use App\Model\Commodity;
 use App\Model\PriceTemplate;
 use App\Util\Http;
 use App\Util\Ini;
+use App\Util\SharedCurrency;
 use App\Util\Str;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
@@ -189,6 +190,10 @@ class Shared implements \App\Service\Shared
      */
     public function items(\App\Model\Shared $shared): ?array
     {
+        //跨币种换算系数在拉取前解析：配置不完整（选了无法自动换算的货币又没填汇率）
+        //要在这里就报错，绝不能把未换算的价格当本站货币放出去
+        $factor = SharedCurrency::factor($shared);
+
         if ($shared->type == 1) {
             $data = $this->mcyRequest($shared->domain . "/plugin/open-api/items", $shared->app_id, $shared->app_key);
 
@@ -205,12 +210,12 @@ class Shared implements \App\Service\Shared
                 $category[$cateName]['children'][] = $this->createV4Item($item);
             }
 
-            return array_values($category);
+            return SharedCurrency::tree(array_values($category), $factor);
         } elseif ($shared->type == 2) {
-            return $this->post($shared->domain . "/plugin/SharedStock/api/items", $shared->app_id, $shared->app_key);
+            return SharedCurrency::tree((array)$this->post($shared->domain . "/plugin/SharedStock/api/items", $shared->app_id, $shared->app_key), $factor);
         }
 
-        return $this->post($shared->domain . "/shared/commodity/items", $shared->app_id, $shared->app_key);
+        return SharedCurrency::tree((array)$this->post($shared->domain . "/shared/commodity/items", $shared->app_id, $shared->app_key), $factor);
     }
 
     /**
@@ -222,6 +227,7 @@ class Shared implements \App\Service\Shared
      */
     public function item(\App\Model\Shared $shared, string $code): array
     {
+        $factor = SharedCurrency::factor($shared);
         if ($shared->type == 1) {
             $data = $this->mcyRequest($shared->domain . "/plugin/open-api/item", $shared->app_id, $shared->app_key, [
                 "id" => $code
@@ -232,7 +238,7 @@ class Shared implements \App\Service\Shared
                 $a['config'] = Ini::toArray((string)$a['config']);
             }
 
-            return $a;
+            return SharedCurrency::item($a, $factor);
         } elseif ($shared->type == 2) {
             $a = $this->post($shared->domain . "/plugin/SharedStock/api/item", $shared->app_id, $shared->app_key, [
                 "code" => $code
@@ -248,7 +254,7 @@ class Shared implements \App\Service\Shared
                 $b['config'] = Ini::toArray((string)$b['config']);
             }
 
-            return $b;
+            return SharedCurrency::item($b, $factor);
         }
         $a = $this->post($shared->domain . "/shared/commodity/item", $shared->app_id, $shared->app_key, [
             "code" => $code
@@ -260,7 +266,7 @@ class Shared implements \App\Service\Shared
             $a['config'] = Ini::toArray((string)$a['config']);
         }
 
-        return $a;
+        return SharedCurrency::item($a, $factor);
     }
 
 
@@ -376,7 +382,8 @@ class Shared implements \App\Service\Shared
         $card = $this->post($shared->domain . "/shared/commodity/draftCard", $shared->app_id, $shared->app_key, array_merge([
             "code" => $code
         ], $map));
-        return (array)$card;
+        //预选卡列表带每张卡的 draft_premium（上游货币），一并换算
+        return SharedCurrency::draftPremiums((array)$card, SharedCurrency::factor($shared));
     }
 
 
@@ -390,10 +397,11 @@ class Shared implements \App\Service\Shared
      */
     public function getDraft(\App\Model\Shared $shared, string $code, int $cardId): array
     {
-        return $this->post($shared->domain . "/shared/commodity/draft", $shared->app_id, $shared->app_key, [
+        $draft = $this->post($shared->domain . "/shared/commodity/draft", $shared->app_id, $shared->app_key, [
             "code" => $code,
             "card_id" => $cardId
         ]);
+        return SharedCurrency::draftPremiums((array)$draft, SharedCurrency::factor($shared));
     }
 
     /**
@@ -406,6 +414,7 @@ class Shared implements \App\Service\Shared
      */
     public function inventory(\App\Model\Shared $shared, Commodity $commodity, string $race = ""): array
     {
+        $factor = SharedCurrency::factor($shared);
         if ($shared->type == 1) {
             $config = Ini::toArray($commodity->config);
 
@@ -444,7 +453,7 @@ class Shared implements \App\Service\Shared
                 }
             }
 
-            return $result;
+            return SharedCurrency::item($result, $factor);
         }
 
         $inventory = $this->post($shared->domain . "/shared/commodity/inventory", $shared->app_id, $shared->app_key, [
@@ -452,7 +461,7 @@ class Shared implements \App\Service\Shared
             "race" => $race
         ]);
 
-        return (array)$inventory;
+        return SharedCurrency::item((array)$inventory, $factor);
     }
 
     /**
@@ -498,6 +507,8 @@ class Shared implements \App\Service\Shared
      */
     public function getValuation(Commodity $commodity, \App\Model\Shared $shared, string $code, int $num, ?string $race = null, ?array $sku = [], ?int $cardId = 0): string|float|int
     {
+        //汇率配置错误必须抛出去（下面的 catch 会把一切吞成 0，成本为 0 的报价比报错危险得多）
+        $factor = SharedCurrency::factor($shared);
         try {
             $config = is_array($commodity->config) ? $commodity->config : Ini::toArray($commodity->config);
             if ($shared->type == 1) { //V4
@@ -505,7 +516,7 @@ class Shared implements \App\Service\Shared
                     'sku_id' => (int)$config['shared_mapping'][$race],
                     "quantity" => $num
                 ]);
-                return $data['amount'] ?? 0;
+                return SharedCurrency::amount($data['amount'] ?? 0, $factor);
             } elseif ($shared->type == 2) {
                 $data = $this->post($shared->domain . "/plugin/SharedStock/api/valuation", $shared->app_id, $shared->app_key, [
                     'code' => $code,
@@ -513,7 +524,7 @@ class Shared implements \App\Service\Shared
                     'race' => $race,
                     'card_id' => $cardId
                 ]);
-                return $data['price'] ?? 0;
+                return SharedCurrency::amount($data['price'] ?? 0, $factor);
             }
 
             $data = $this->post($shared->domain . "/shared/commodity/valuation", $shared->app_id, $shared->app_key, [
@@ -524,7 +535,15 @@ class Shared implements \App\Service\Shared
                 'card_id' => $cardId
             ]);
 
-            return $data['price'] ?? 0;
+            //跨站货币守卫：上游会回报自己的币种，和店铺配置的「对方货币」对不上就告警——
+            //说明店铺档案里选错了货币，换算用的是错误汇率
+            $remoteCurrency = strtoupper(trim((string)($data['currency_code'] ?? '')));
+            $configured = strtoupper(trim((string)($shared->currency ?? ''))) ?: \App\Util\Currency::DEFAULT_CODE;
+            if ($remoteCurrency !== '' && $remoteCurrency !== $configured) {
+                \Kernel\Util\Log::inst()->error("店铺对接[{$shared->domain}]实际货币为 {$remoteCurrency}，但店铺档案配置的对方货币是 {$configured}，换算可能用错汇率，请到「店铺共享」修正");
+            }
+
+            return SharedCurrency::amount($data['price'] ?? 0, $factor);
         } catch (\Throwable $e) {
             return 0;
         }

@@ -366,10 +366,14 @@ const util = new class Util {
                 }
                 paramsToJSONObject[name].push(item.value);
             } else {
-                const value = String(item.value ?? '');
-                paramsToJSONObject[item.name] = literalFieldSet.has(item.name)
-                    ? value
-                    : value.replace(/\+/g, "%2B").replace(/\&/g, "%26");
+                //不再预编码 + 和 &（#852）：那是给旧清洗管线（≤3.5.8 会对已解码输入再
+                //urldecode 一次、把裸 & 实体化）的补偿。#833 修正管线后服务端只解一层，
+                //预编码会原样落库成 %2B/%26（商品标题就是这么脏的）。jQuery 表单序列化
+                //本身就会正确转义传输层，字面值直接交给它即可；数组字段（xx[]）从来
+                //没做过预编码、一直入库正常，就是单层解码健康的现成证据。
+                //literalFields 豁免钩子保留（preserveLiteral 字段配置无害），行为上已与
+                //普通字段一致。
+                paramsToJSONObject[item.name] = String(item.value ?? '');
             }
         });
         return paramsToJSONObject;

@@ -56,7 +56,7 @@ class Order extends Model
     /**
      * @var array
      */
-    protected $casts = ['amount' => 'float', 'cost' => 'float', 'rebate' => 'float', 'divide_amount' => 'float', 'rent' => 'float', 'premium' => 'float', 'user_id' => 'integer', 'substation_user_id' => 'integer', 'from' => 'integer', 'commodity_id' => 'integer', 'card_id' => 'integer', 'card_num' => 'integer', 'create_device' => 'integer', 'delivery_status' => 'integer', 'id' => 'integer', 'owner' => 'integer', 'pay_id' => 'integer', 'status' => 'integer', 'sku' => 'json'];
+    protected $casts = ['amount' => 'float', 'gateway_amount' => 'float', 'cost' => 'float', 'rebate' => 'float', 'divide_amount' => 'float', 'rent' => 'float', 'premium' => 'float', 'user_id' => 'integer', 'substation_user_id' => 'integer', 'from' => 'integer', 'commodity_id' => 'integer', 'card_id' => 'integer', 'card_num' => 'integer', 'create_device' => 'integer', 'delivery_status' => 'integer', 'id' => 'integer', 'owner' => 'integer', 'pay_id' => 'integer', 'status' => 'integer', 'sku' => 'json'];
 
     /**
      * 当前商户作为供货方或实际销售分站时可见。

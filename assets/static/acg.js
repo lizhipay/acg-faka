@@ -1,3 +1,9 @@
+//站点货币符号：读 Helper 注入的 CURRENCY（部分旧主题不加载 ready.js，探测兜底 ¥）
+function acgCurrencySymbol() {
+    var currency = typeof getVar === 'function' ? getVar('CURRENCY') : null;
+    return (currency && currency.symbol) || '¥';
+}
+
 //这套 acg.js 被 10 套旧版 PHP 引擎主题共用，其中只有部分主题会加载 ready.js。
 //所以不能直接调 i18n()——没加载的主题会 ReferenceError 整个挂掉。
 //acgT() 在 i18n 不存在时原样返回，等于零影响。
@@ -154,7 +160,9 @@ let acg = {
                     }
                     paramsToJSONObject[name].push(item.value);
                 } else {
-                    paramsToJSONObject[item.name] = item.value.replace(/\+/g, "%2B").replace(/\&/g, "%26");
+                    //不再预编码 + 和 &（#852）：旧清洗管线的补偿，#833 后服务端只解一层，
+                    //预编码会把 %2B/%26 原样落库
+                    paramsToJSONObject[item.name] = item.value;
                 }
             });
             return paramsToJSONObject;
@@ -316,8 +324,8 @@ let acg = {
 
             acg.API.tradeAmount({
                 success: res => {
-                    $(instance).html("¥" + (res.price * $("input[name=num]").val()));
-                    $('.price').html("¥" + res.price);
+                    $(instance).html(acgCurrencySymbol() + (res.price * $("input[name=num]").val()));
+                    $('.price').html(acgCurrencySymbol() + res.price);
                     if (res.hasOwnProperty("card_count")) {
                         let instance = $('.card_count');
                         if (acg.property.cache.inventoryHidden == 1) {
@@ -394,7 +402,7 @@ let acg = {
                         premium = item.draft_premium;
                     }
 
-                    $(instance).find(".draftCard").append('<tr><td><label><input type="checkbox" onchange="acg.API.draftCardCheckbox(this)" name="card_id" value="' + item.id + '"> ' + item.draft + (premium > 0 ? `<span class="card-premium">+¥${premium}</span>` : '') + '</label></td></tr>');
+                    $(instance).find(".draftCard").append('<tr><td><label><input type="checkbox" onchange="acg.API.draftCardCheckbox(this)" name="card_id" value="' + item.id + '"> ' + item.draft + (premium > 0 ? `<span class="card-premium">+${acgCurrencySymbol()}${premium}</span>` : '') + '</label></td></tr>');
                 }
             });
         }, draftCardCheckbox(obj) {
@@ -489,7 +497,7 @@ let acg = {
                                         acg.property.cache.raceId = key;
                                     }
                                     const price = res?.config?.category[key];
-                                    content.append(`<span data-id="${key}" class="race-click button-click sku-race ${raceIndex == 0 ? 'checked' : ''}">${acgT(key)}${price > 0 ? `<span class="badge-money">¥${price}</span>` : ''}</span>`);
+                                    content.append(`<span data-id="${key}" class="race-click button-click sku-race ${raceIndex == 0 ? 'checked' : ''}">${acgT(key)}${price > 0 ? `<span class="badge-money">${acgCurrencySymbol()}${price}</span>` : ''}</span>`);
                                     raceIndex++;
                                 }
                                 let categoryWholesale = function () {
@@ -504,7 +512,7 @@ let acg = {
                                         let x = '';
                                         ws.forEach((money, num) => {
                                             x += '<div class="lot_string">' + acgT("一次性购买 {num} 张，单价自动调整为：{price}")
-                                                .replace("{num}", num).replace("{price}", '<b>¥' + money + '</b>') + '</div>';
+                                                .replace("{num}", num).replace("{price}", '<b>' + acgCurrencySymbol() + money + '</b>') + '</div>';
                                         });
                                         if (ws.length > 0) {
                                             lotHtml.html(x);
@@ -538,7 +546,7 @@ let acg = {
                                     let x = '';
                                     ws.forEach((money, num) => {
                                         x += '<div class="lot_string">' + acgT("一次性购买 {num} 张，单价自动调整为：{price}")
-                                                .replace("{num}", num).replace("{price}", '<b>¥' + money + '</b>') + '</div>';
+                                                .replace("{num}", num).replace("{price}", '<b>' + acgCurrencySymbol() + money + '</b>') + '</div>';
                                     });
                                     if (ws.length > 0) {
                                         lotHtml.show();
@@ -560,7 +568,7 @@ let acg = {
                                     let skuHtml = ``, i = 0;
                                     for (const typeKey in res?.config?.sku[skuKey]) {
                                         const price = res?.config?.sku[skuKey][typeKey];
-                                        skuHtml += `<span data-sku="${skuKey}" data-value="${typeKey}" data-price="${price}" class="race-click button-click sku ${i == 0 ? 'checked' : ''}">${acgT(typeKey)}${price > 0 ? `<span class="badge-money">+¥${price}</span>` : ''}</span>`;
+                                        skuHtml += `<span data-sku="${skuKey}" data-value="${typeKey}" data-price="${price}" class="race-click button-click sku ${i == 0 ? 'checked' : ''}">${acgT(typeKey)}${price > 0 ? `<span class="badge-money">+${acgCurrencySymbol()}${price}</span>` : ''}</span>`;
                                         i++;
                                     }
                                     instance.append(`<p class="general">${acgT(skuKey)}：<span>${skuHtml}</span></p>`);
@@ -688,20 +696,20 @@ let acg = {
                             continue;
                         } else if (autoKey == "price") {
                             if (res.login) {
-                                instance.html("¥" + res.user_price);
+                                instance.html(acgCurrencySymbol() + res.user_price);
                             } else {
                                 let user = "";
                                 if (res.user_price < res.price) {
-                                    user = '<span class="price_tips">(' + acgT("会员价") + ':¥' + res.user_price + ') <a style="color: #6d97d5;" href="/user/authentication/login?goto=' + encodeURIComponent(res.share_url) + '" target="_blank">' + acgT("现在就去登录!") + '</a></span>';
+                                    user = '<span class="price_tips">(' + acgT("会员价") + ':' + acgCurrencySymbol() + res.user_price + ') <a style="color: #6d97d5;" href="/user/authentication/login?goto=' + encodeURIComponent(res.share_url) + '" target="_blank">' + acgT("现在就去登录!") + '</a></span>';
                                 }
-                                instance.html('¥' + res.price + ' ' + user);
+                                instance.html(acgCurrencySymbol() + res.price + ' ' + user);
                             }
                             continue;
                         } else if (autoKey == "trade_amount") {
                             if (res.login) {
-                                instance.html("¥" + res.user_price);
+                                instance.html(acgCurrencySymbol() + res.user_price);
                             } else {
-                                instance.html('¥' + res.price);
+                                instance.html(acgCurrencySymbol() + res.price);
                             }
                             continue;
                         } else if (autoKey == "widget") {

@@ -237,7 +237,7 @@
                 title: `${i18n('确认生成')} ${num} ${i18n('张优惠券')}`,
                 html: `<div style="text-align:left;line-height:1.8;">
                     <div><b>${i18n('抵扣范围：')}</b>${escapeHtml(scope)}</div>
-                    <div><b>${i18n('抵扣方式：')}</b>${mode === 1 ? `${couponZhe(money)} ${i18n('折')}` : `¥${money}`}</div>
+                    <div><b>${i18n('抵扣方式：')}</b>${mode === 1 ? `${couponZhe(money)} ${i18n('折')}` : `${format.currencySymbol()}${money}`}</div>
                     <div><b>${i18n('每张可用：')}</b>${life} ${i18n('次')}</div>
                     <div><b>${i18n('有效期：')}</b>${escapeHtml(data.expire_time || i18n('永久有效'))}</div>
                     <div><b>${i18n('券码前缀：')}</b>${escapeHtml(prefix || i18n('无前缀'))}</div>
@@ -489,7 +489,7 @@
                 if (__.mode == 1) {
                     return format.badge(escapeHtml((Number.isFinite(money) ? couponZhe(money) : 0) + i18n("折")), "a-badge-success");
                 }
-                return format.badge(escapeHtml(`￥${Number.isFinite(money) ? money : 0}`), "a-badge-primary");
+                return format.badge(escapeHtml(`${format.currencySymbol()}${Number.isFinite(money) ? money : 0}`), "a-badge-primary");
             }
         }
         , {

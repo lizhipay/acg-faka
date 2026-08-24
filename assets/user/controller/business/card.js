@@ -239,8 +239,8 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
                 if (!draft && premium <= 0) return '-';
                 let rows = `<div class="md-pair__row"><span class="md-pair__k">${i18n('预告')}</span><span class="md-pair__v${draft ? '' : ' md-pair__v--muted'}">${escapeHtml(draft || i18n('无'))}</span></div>`;
                 rows += `<div class="md-pair__row"><span class="md-pair__k">${i18n('加价')}</span>${premium > 0
-                    ? `<span class="md-pair__v text-success fw-semibold">¥${format.amountRemoveTrailingZeros(premium)}</span>`
-                    : `<span class="md-pair__v md-pair__v--muted">¥0</span>`}</div>`;
+                    ? `<span class="md-pair__v text-success fw-semibold">${format.currencySymbol()}${format.amountRemoveTrailingZeros(premium)}</span>`
+                    : `<span class="md-pair__v md-pair__v--muted">${format.currencySymbol()}0</span>`}</div>`;
                 return `<div class="md-pair">${rows}</div>`;
             }
         }

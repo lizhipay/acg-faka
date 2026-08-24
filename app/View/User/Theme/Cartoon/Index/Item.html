@@ -40,7 +40,7 @@
                                                data-sku="#{$race}"
                                                data-price="#{$price}"
                                                href="javascript:void(0);">#{lang($race)}<span
-                                                        class="badge-money">¥#{$price}</span></a>
+                                                        class="badge-money">#{$config.currency_symbol}#{$price}</span></a>
                                         #{/foreach}
                                     </div>
                                 </div>
@@ -58,7 +58,7 @@
                                                    data-value="#{$key}" data-price="#{$price}"
                                                    href="javascript:void(0);">#{lang($key)}#{if $price > 0}<span
                                                             class="badge-money">
-                                                        +¥#{$price}</span>#{/if}</a>
+                                                        +#{$config.currency_symbol}#{$price}</span>#{/if}</a>
                                             #{/foreach}
                                         </div>
                                     </div>

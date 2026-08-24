@@ -24,7 +24,7 @@
                                 <span class="uc-plan__name">#{lang($le.name)}</span>
                                 #{if $le@last && $le@total > 1}<span class="uc-plan__badge">#{t("推荐")}</span>#{/if}
                             </div>
-                            <div class="uc-plan__price"><span class="uc-plan__cur">¥</span>#{$le.price}</div>
+                            <div class="uc-plan__price"><span class="uc-plan__cur">#{$config.currency_symbol}</span>#{$le.price}</div>
                             <div class="uc-plan__sub">#{t("一次性开通 · 永久有效")}</div>
                             <div class="uc-plan__feats">
                                 <div class="uc-plan__feat #{if $le.substation != 1}off#{/if}"><span class="material-icons-outlined">#{if $le.substation == 1}check_circle#{else}cancel#{/if}</span>#{t("分站功能")}</div>

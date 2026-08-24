@@ -99,7 +99,7 @@
 
     function formatMoney(value) {
         const result = Number(value);
-        return Number.isFinite(result) ? `￥${result.toLocaleString('zh-CN', {maximumFractionDigits: 2})}` : '';
+        return Number.isFinite(result) ? `${format.currencySymbol()}${result.toLocaleString('zh-CN', {maximumFractionDigits: 2})}` : '';
     }
 
     function messageHtml(item) {

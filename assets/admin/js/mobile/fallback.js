@@ -399,8 +399,25 @@
         }) || null;
     }
 
+    //「值是否已带货币前缀」守卫：历史 ¥/￥/$/€/£ 之外，还要认站点配置的符号与代码
+    var referenceCurrencyPattern = (function () {
+        var escapeText = function (text) {
+            return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        };
+        var currency = typeof getVar === 'function' ? getVar('CURRENCY') : null;
+        var symbolPart = '[￥¥$€£]';
+        if (currency && currency.symbol) {
+            symbolPart = '(?:' + escapeText(String(currency.symbol)) + '|[￥¥$€£])';
+        }
+        var codePart = 'cny|rmb|usd|usdt';
+        if (currency && currency.code && !/^(?:cny|rmb|usd|usdt)$/i.test(String(currency.code))) {
+            codePart += '|' + escapeText(String(currency.code).toLowerCase());
+        }
+        return new RegExp('^(?:[+\\-]?\\s*' + symbolPart + '|(?:' + codePart + ')\\b)', 'i');
+    })();
+
     function referenceValueNeedsLabel(value) {
-        return !/^(?:[+\-]?\s*[￥¥$€£]|(?:cny|rmb|usd|usdt)\b)/i.test(String(value || '').trim());
+        return !referenceCurrencyPattern.test(String(value || '').trim());
     }
 
     function disambiguateReferenceBadges(status) {

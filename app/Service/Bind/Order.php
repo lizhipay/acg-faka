@@ -22,6 +22,7 @@ use App\Model\UserGroup;
 use App\Service\Email;
 use App\Service\Shared;
 use App\Util\Client;
+use App\Util\Currency;
 use App\Util\Date;
 use App\Util\Ini;
 use App\Util\PayConfig;
@@ -1016,10 +1017,14 @@ class Order implements \App\Service\Order
                         $returnUrl = $clientDomain . '/user/personal/purchaseRecord?tradeNo=' . $order->trade_no;
                     }
 
+                    //站点货币 → CNY 快照：支付插件全是 CNY 语义，按此刻汇率换算并落列，
+                    //回调比对认这份快照，中途改汇率/币种不影响在途订单。默认 CNY 时等于 amount。
+                    $order->gateway_amount = Currency::toCny($order->amount);
+
                     $payObject = PayFactory::make(
                         $pay,
                         (string)$order->trade_no,
-                        (float)$order->amount,
+                        (float)$order->gateway_amount,
                         $callbackDomain . '/user/api/order/callback.' . $order->trade_no,
                         $returnUrl,
                         Client::getAddress()
@@ -1407,8 +1412,11 @@ class Order implements \App\Service\Order
             if (!is_scalar($paidAmount) || !is_numeric((string)$paidAmount)) {
                 self::callbackFail($handle, "amount", self::CALLBACK_REJECT, $tradeNo, $map, "回调金额不是合法数字");
             }
-            //用 bcmath 定标到两位小数做精确比较，避开浮点等值判断
-            $expectAmount = (new Decimal((string)$order->amount, 2))->getAmount();
+            //用 bcmath 定标到两位小数做精确比较，避开浮点等值判断。
+            //比对基准是下单时的 CNY 快照（gateway_amount）——网关收付的是 CNY；
+            //快照为 NULL 只有一种情况：升级前下的在途订单，它当时提交的就是 amount 本身。
+            $expectSource = $order->gateway_amount !== null ? (string)$order->gateway_amount : (string)$order->amount;
+            $expectAmount = (new Decimal($expectSource, 2))->getAmount();
             $actualAmount = (new Decimal((string)$paidAmount, 2))->getAmount();
             if (!hash_equals($expectAmount, $actualAmount)) {
                 self::callbackFail($handle, "amount", self::CALLBACK_REJECT, $tradeNo, $map, "订单金额不匹配");

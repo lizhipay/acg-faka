@@ -43,9 +43,9 @@
         if (!Number.isFinite(amount) || amount <= 0) {
             error = i18n('请输入有效的充值金额');
         } else if (amount < minimum) {
-            error = `${i18n('单次最低充值')} ￥${formatAmount(minimum)}`;
+            error = `${i18n('单次最低充值')} ${format.currencySymbol()}${formatAmount(minimum)}`;
         } else if (maximum > 0 && amount > maximum) {
-            error = `${i18n('单次最高充值')} ￥${formatAmount(maximum)}`;
+            error = `${i18n('单次最高充值')} ${format.currencySymbol()}${formatAmount(maximum)}`;
         } else if (!paymentLoaded) {
             error = i18n('正在加载支付方式');
         } else if (_PayId === undefined) {
@@ -53,7 +53,7 @@
         }
 
         $('.uc-topup-principal').text(formatAmount(safeAmount));
-        $('.uc-topup-gift').text(`+￥${formatAmount(gift)}`);
+        $('.uc-topup-gift').text(`+${format.currencySymbol()}${formatAmount(gift)}`);
         $('.uc-topup-energy').text(formatAmount(total));
         $('.uc-topup-total').text(formatAmount(total));
 

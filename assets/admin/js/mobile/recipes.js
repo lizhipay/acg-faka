@@ -3,6 +3,23 @@
 
     var recipes = [];
 
+    //站点货币符号：读 Helper 注入的 CURRENCY 变量，缺席时兜底 ¥（应用商店的 ￥ 是真实 CNY 计价，不走这里）
+    function currencySymbol() {
+        var currency = typeof getVar === 'function' ? getVar('CURRENCY') : null;
+        return currency && currency.symbol ? String(currency.symbol) : '¥';
+    }
+
+    function escapeRegExpText(text) {
+        return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    //剥掉金额字符串上的货币前缀：历史 ¥/￥ 与当前配置符号都要认
+    function stripLeadingCurrency(text) {
+        return String(text)
+            .replace(new RegExp('^(?:' + escapeRegExpText(currencySymbol()) + '|[￥¥])\\s*'), '')
+            .trim();
+    }
+
     function field(name, label, tone) {
         var descriptor = { field: name, label: label };
         if (tone) {
@@ -288,7 +305,7 @@
             var amount = Number(source);
             if (!Number.isFinite(amount)) return String(source);
             var display = amount.toLocaleString('zh-CN', {maximumFractionDigits: 2});
-            return name === 'recharge' ? display : '¥' + display;
+            return name === 'recharge' ? display : currencySymbol() + display;
         };
         return descriptor;
     }
@@ -323,6 +340,7 @@
             var sign = Number(row && row.type) === 0 ? '-' : '+';
             if (!Number.isFinite(amount)) {
                 var fallback = String(source == null ? '' : source)
+                    .replace(new RegExp(escapeRegExpText(currencySymbol()), 'g'), '')
                     .replace(/[￥¥]/g, '')
                     .replace(/^[+\-]\s*/, '')
                     .trim();
@@ -360,8 +378,8 @@
         descriptor.format = function (value, row) {
             var source = row && row.amount !== undefined ? row.amount : value;
             var amount = Number(source);
-            if (!Number.isFinite(amount)) return value || '¥0.00';
-            return '¥' + amount.toLocaleString('zh-CN', {
+            if (!Number.isFinite(amount)) return value || currencySymbol() + '0.00';
+            return currencySymbol() + amount.toLocaleString('zh-CN', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
@@ -540,10 +558,10 @@
             if (source === undefined || source === null || source === '') return '-';
             var amount = Number(source);
             if (!Number.isFinite(amount)) {
-                var display = String(source).replace(/^[￥¥]\s*/, '').trim();
-                return display ? '￥' + display : '-';
+                var display = stripLeadingCurrency(source);
+                return display ? currencySymbol() + display : '-';
             }
-            return '￥' + amount.toLocaleString('zh-CN', {maximumFractionDigits: 2});
+            return currencySymbol() + amount.toLocaleString('zh-CN', {maximumFractionDigits: 2});
         };
         return descriptor;
     }
@@ -620,8 +638,8 @@
         descriptor.dot = false;
         descriptor.format = function (value) {
             var amount = Number(value);
-            if (!Number.isFinite(amount)) return value || '￥0';
-            return '￥' + amount.toLocaleString('zh-CN', {maximumFractionDigits: 2});
+            if (!Number.isFinite(amount)) return value || currencySymbol() + '0';
+            return currencySymbol() + amount.toLocaleString('zh-CN', {maximumFractionDigits: 2});
         };
         return descriptor;
     }
@@ -641,7 +659,7 @@
             var source = row && row[name] !== undefined ? row[name] : value;
             var display = String(source == null ? '' : source).trim();
             if (!display || display === '-') return '-';
-            return '￥' + display.replace(/^[￥¥]\s*/, '');
+            return currencySymbol() + stripLeadingCurrency(display);
         };
         return descriptor;
     }

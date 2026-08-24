@@ -141,7 +141,7 @@
       <div class="order-right">
         <div class="order-amount">
           <span class="amount-label">${i18n('订单金额')}</span>
-          <span class="amount-value">¥<span class="amount-number">${order.amount}</span></span>
+          <span class="amount-value">${format.currencySymbol()}<span class="amount-number">${order.amount}</span></span>
         </div>
        
       </div>

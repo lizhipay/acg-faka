@@ -266,6 +266,13 @@ class Config extends Model
         foreach ($cfg as $item) {
             $list[$item->key] = $item->value;
         }
+        //货币键缺省回填：老站升级后没保存过货币设置时，模板 $config.currency_* 也要能直接用
+        $list += [
+            'currency_code' => \App\Util\Currency::DEFAULT_CODE,
+            'currency_symbol' => \App\Util\Currency::DEFAULT_SYMBOL,
+            'currency_rate' => \App\Util\Currency::DEFAULT_RATE,
+            'currency_decimals' => (string)\App\Util\Currency::DEFAULT_DECIMALS,
+        ];
         return $list;
     }
 

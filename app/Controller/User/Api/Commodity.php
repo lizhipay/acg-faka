@@ -111,7 +111,7 @@ class Commodity extends User
 
         if ((isset($map['price']) && (float)$map['price'] < 0)
             || (isset($map['user_price']) && (float)$map['user_price'] < 0)) {
-            throw new JSONException("商品单价不能低于0元哦(｡￫‿￩｡)");
+            throw new JSONException("商品单价不能低于0哦(｡￫‿￩｡)");
         }
 
         // widget 来自表单的 widget 组件，提交前恒做 encodeURIComponent（防输入清洗层伤 JSON）。

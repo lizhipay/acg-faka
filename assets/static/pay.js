@@ -245,7 +245,9 @@ var Pay = {
                 }
                 paramsToJSONObject[name].push(item.value);
             } else {
-                paramsToJSONObject[item.name] = item.value.replace(/\+/g, "%2B").replace(/\&/g, "%26");
+                //不再预编码 + 和 &（#852）：旧清洗管线的补偿，#833 后服务端只解一层，
+                //预编码会把 %2B/%26 原样落库
+                paramsToJSONObject[item.name] = item.value;
             }
         });
         return paramsToJSONObject;

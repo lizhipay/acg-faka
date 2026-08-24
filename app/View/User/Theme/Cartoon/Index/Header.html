@@ -46,11 +46,10 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto mb-lg-0">
-                <li class="nav-item"><a class="nav-link #{if active('/user/index/index')}active#{/if}" href="/"><i
-                                class="fa-duotone fa-regular fa-cart-shopping nav-icon"></i>#{t("购物")}</a></li>
-                <li class="nav-item"><a class="nav-link #{if active('/user/index/query')}active#{/if}"
-                                        href="/user/index/query"><i
-                                class="fa-duotone fa-regular fa-folders nav-icon"></i>#{t("订单查询")}</a></li>
+                #{foreach user_header_nav() as $nav}
+                    <li class="nav-item"><a class="nav-link #{if $nav.match}#{active($nav.match)}#{/if}"
+                                            href="#{$nav.url}" target="#{$nav.target}">#{user_nav_icon($nav, 'nav-icon')}#{$nav.name}</a></li>
+                #{/foreach}
             </ul>
             <div class="d-none d-lg-flex search-input" role="search">
                 <div class="input-group">
@@ -90,7 +89,7 @@
                                 <span id="username" class="fw-bold text-dark"
                                       style="font-size: 14px; line-height: 1.2;">#{$user.username}</span>
                             <span id="user-balance" class="text-muted" style="font-size: 12px; line-height: 1.2;">#{t("余额:")} <span
-                                        class="text-success">¥#{$user.balance}</span></span>
+                                        class="text-success">#{$config.currency_symbol}#{$user.balance}</span></span>
                         </div>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">

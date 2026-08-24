@@ -63,6 +63,17 @@ final class Schema
         });
     }
 
+    /** 店铺共享的对方货币与结算汇率：非 CNY 站点接入 CNY 货源时按此换算金额 */
+    public static function ensureSharedCurrency(): void
+    {
+        self::ensureColumn('shared', 'currency', static function (Blueprint $table): void {
+            $table->string('currency', 8)->default('CNY')->comment('上游站点货币代码');
+        });
+        self::ensureColumn('shared', 'currency_rate', static function (Blueprint $table): void {
+            $table->decimal('currency_rate', 18, 6)->default(0)->comment('结算汇率：1 上游货币 = ? 本站货币；0 = 按站点汇率自动');
+        });
+    }
+
     /** @var array<string, bool> 本次请求内已确认过的表 */
     private static array $tableKnown = [];
 

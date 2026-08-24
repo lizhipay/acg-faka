@@ -6,11 +6,11 @@
     <div class="uc-stats">
         <div class="uc-stat uc-stat--primary">
             <div class="uc-stat__label"><span class="material-icons-outlined">account_balance_wallet</span>#{t("余额")}</div>
-            <div class="uc-stat__value"><span class="cur">￥</span>#{$user.balance}</div>
+            <div class="uc-stat__value"><span class="cur">#{$config.currency_symbol}</span>#{$user.balance}</div>
         </div>
         <div class="uc-stat uc-stat--coin">
             <div class="uc-stat__label"><span class="material-icons-outlined">paid</span>#{t("硬币")}</div>
-            <div class="uc-stat__value"><span class="cur">￥</span>#{$user.coin}</div>
+            <div class="uc-stat__value"><span class="cur">#{$config.currency_symbol}</span>#{$user.coin}</div>
         </div>
         <div class="uc-stat uc-stat--info">
             <div class="uc-stat__label"><span class="material-icons-outlined">savings</span>#{t("元气（总充值）")}</div>
@@ -18,7 +18,7 @@
         </div>
         <div class="uc-stat uc-stat--success">
             <div class="uc-stat__label"><span class="material-icons-outlined">trending_up</span>#{t("总收入（硬币）")}</div>
-            <div class="uc-stat__value"><span class="cur">￥</span>#{$user.total_coin}</div>
+            <div class="uc-stat__value"><span class="cur">#{$config.currency_symbol}</span>#{$user.total_coin}</div>
         </div>
     </div>
 
@@ -28,19 +28,19 @@
     <div class="uc-stats">
         <div class="uc-stat uc-stat--success">
             <div class="uc-stat__label"><span class="material-icons-outlined">today</span>#{t("今日收入")}</div>
-            <div class="uc-stat__value"><span class="cur">￥</span>#{$today_income}</div>
+            <div class="uc-stat__value"><span class="cur">#{$config.currency_symbol}</span>#{$today_income}</div>
         </div>
         <div class="uc-stat uc-stat--info">
             <div class="uc-stat__label"><span class="material-icons-outlined">event</span>#{t("昨日收入")}</div>
-            <div class="uc-stat__value"><span class="cur">￥</span>#{$yesterday_income}</div>
+            <div class="uc-stat__value"><span class="cur">#{$config.currency_symbol}</span>#{$yesterday_income}</div>
         </div>
         <div class="uc-stat uc-stat--warning">
             <div class="uc-stat__label"><span class="material-icons-outlined">date_range</span>#{t("本月收入")}</div>
-            <div class="uc-stat__value"><span class="cur">￥</span>#{$month_income}</div>
+            <div class="uc-stat__value"><span class="cur">#{$config.currency_symbol}</span>#{$month_income}</div>
         </div>
         <div class="uc-stat uc-stat--primary">
             <div class="uc-stat__label"><span class="material-icons-outlined">insights</span>#{t("总交易")}</div>
-            <div class="uc-stat__value"><span class="cur">￥</span>#{$trade}</div>
+            <div class="uc-stat__value"><span class="cur">#{$config.currency_symbol}</span>#{$trade}</div>
         </div>
     </div>
     <div class="uc-strip">
@@ -71,12 +71,12 @@
             <div class="uc-card__head">
                 <span class="material-icons-outlined">bar_chart</span>
                 <span class="uc-card__title">#{t("近 7 日收入")}</span>
-                <span class="uc-card__tools uc-hint">#{t("峰值")} ￥#{$week_series_max}</span>
+                <span class="uc-card__tools uc-hint">#{t("峰值")} #{$config.currency_symbol}#{$week_series_max}</span>
             </div>
             <div class="uc-card__body">
                 <div class="uc-spark">
                     #{foreach $week_series as $d}
-                    <div class="uc-spark__col" title="#{$d.label}：￥#{$d.amount}">
+                    <div class="uc-spark__col" title="#{$d.label}：#{$config.currency_symbol}#{$d.amount}">
                         <div class="uc-spark__bar" style="height: #{$d.pct}%"></div>
                         <div class="uc-spark__label">#{$d.label}</div>
                     </div>
@@ -101,8 +101,8 @@
                             <div class="uc-list__time">#{$o.create_time}</div>
                         </div>
                         <div class="uc-list__end">
-                            <div class="uc-list__amount">￥#{$o.amount}</div>
-                            #{if $o.rebate > 0}<div class="uc-list__gain">#{t("赚")} ￥#{$o.rebate}</div>#{/if}
+                            <div class="uc-list__amount">#{$config.currency_symbol}#{$o.amount}</div>
+                            #{if $o.rebate > 0}<div class="uc-list__gain">#{t("赚")} #{$config.currency_symbol}#{$o.rebate}</div>#{/if}
                         </div>
                     </div>
                     #{/foreach}
@@ -125,11 +125,11 @@
     <div class="uc-stats uc-stats--3">
         <div class="uc-stat uc-stat--info">
             <div class="uc-stat__label"><span class="material-icons-outlined">calendar_month</span>#{t("本月购物")}</div>
-            <div class="uc-stat__value"><span class="cur">￥</span>#{$buy_month}</div>
+            <div class="uc-stat__value"><span class="cur">#{$config.currency_symbol}</span>#{$buy_month}</div>
         </div>
         <div class="uc-stat uc-stat--primary">
             <div class="uc-stat__label"><span class="material-icons-outlined">shopping_bag</span>#{t("累计购物")}</div>
-            <div class="uc-stat__value"><span class="cur">￥</span>#{$buy_total}</div>
+            <div class="uc-stat__value"><span class="cur">#{$config.currency_symbol}</span>#{$buy_total}</div>
         </div>
         <div class="uc-stat uc-stat--success">
             <div class="uc-stat__label"><span class="material-icons-outlined">receipt</span>#{t("累计订单")}</div>

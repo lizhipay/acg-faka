@@ -776,6 +776,7 @@ class Store extends Manage
      */
     public function data(): array
     {
+        \App\Util\Schema::ensureSharedCurrency();
         $map = array_intersect_key($_POST, array_flip([
             'search-name',
             'search-domain',
@@ -790,10 +791,51 @@ class Store extends Manage
         $get->setPaginate($page, $limit);
         // Explicit columns make app_key impossible to serialize into either the
         // desktop table or the mobile snapshot, regardless of request filters.
-        $get->setColumn('id', 'type', 'name', 'domain', 'app_id', 'create_time', 'balance');
+        $get->setColumn('id', 'type', 'name', 'domain', 'app_id', 'create_time', 'balance', 'currency', 'currency_rate');
         $get->setWhere($map);
         $data = $this->query->get($get);
         return $this->json(data: $data);
+    }
+
+    /**
+     * 对方货币代码（ISO 风格，1–8 位大写字母/数字），空按 CNY
+     * @throws JSONException
+     */
+    private function sharedCurrency(mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return \App\Util\Currency::DEFAULT_CODE;
+        }
+        if (!is_scalar($value)) {
+            throw new JSONException('对方货币格式不正确');
+        }
+        $currency = strtoupper(trim((string)$value));
+        if (!preg_match('/^[A-Z0-9]{1,8}$/D', $currency)) {
+            throw new JSONException('对方货币必须是 1–8 位字母或数字的货币代码');
+        }
+        return $currency;
+    }
+
+    /**
+     * 结算汇率：1 对方货币 = ? 本站货币；空/0 = 按站点汇率自动
+     * @throws JSONException
+     */
+    private function sharedCurrencyRate(mixed $value): string
+    {
+        if ($value === null || (is_scalar($value) && trim((string)$value) === '')) {
+            return '0';
+        }
+        if (!is_scalar($value) || !is_numeric((string)$value)) {
+            throw new JSONException('结算汇率必须是数字');
+        }
+        $rate = (float)$value;
+        if (!is_finite($rate) || $rate < 0 || $rate > 999999999) {
+            throw new JSONException('结算汇率超出有效范围');
+        }
+        if ($rate > 0 && $rate < 0.000001) {
+            throw new JSONException('结算汇率过小，最低 0.000001');
+        }
+        return sprintf('%.6f', $rate);
     }
 
 
@@ -803,8 +845,9 @@ class Store extends Manage
      */
     public function save(): array
     {
+        \App\Util\Schema::ensureSharedCurrency();
         $raw = $_POST;
-        $allowed = ['id', 'type', 'domain', 'app_id', 'app_key'];
+        $allowed = ['id', 'type', 'domain', 'app_id', 'app_key', 'currency', 'currency_rate'];
         foreach (array_keys($raw) as $field) {
             if (!is_string($field) || !in_array($field, $allowed, true)) {
                 throw new JSONException('共享店铺保存请求包含未授权字段');
@@ -824,6 +867,17 @@ class Store extends Manage
         $type = (int)$typeValue;
         $domain = $this->sharedDomain($raw['domain'] ?? $existing?->domain);
         $appId = $this->sharedAppId($raw['app_id'] ?? $existing?->app_id);
+
+        $currency = $this->sharedCurrency($raw['currency'] ?? $existing?->currency);
+        $currencyRate = $this->sharedCurrencyRate($raw['currency_rate'] ?? $existing?->currency_rate);
+        //选了无法按站点汇率自动换算的货币组合，必须现在就把结算汇率补上——
+        //否则拉商品/估价时才报错，页面上会显得莫名其妙
+        if (\App\Util\SharedCurrency::resolveFactor($currency, $currencyRate, \App\Util\Currency::code(), \App\Util\Currency::rate()) === null) {
+            throw new JSONException(
+                "对方货币 {$currency} 与本站 " . \App\Util\Currency::code()
+                . " 之间没有可用的自动汇率，请填写结算汇率（1 {$currency} = ? " . \App\Util\Currency::code() . '）'
+            );
+        }
 
         $newAppKey = $raw['app_key'] ?? '';
         if (!is_scalar($newAppKey)) {
@@ -860,6 +914,8 @@ class Store extends Manage
         $store->app_key = $appKey;
         $store->name = $identity['name'];
         $store->balance = $identity['balance'];
+        $store->currency = $currency;
+        $store->currency_rate = $currencyRate;
         if (!$existing) {
             $store->create_time = Date::current();
         }

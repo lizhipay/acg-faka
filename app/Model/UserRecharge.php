@@ -36,7 +36,7 @@ class UserRecharge extends Model
     /**
      * @var array
      */
-    protected $casts = ['amount' => 'float', 'pay_cost' => 'float', 'id' => 'integer', 'pay_id' => 'integer', 'status' => 'integer', 'user_id' => 'integer'];
+    protected $casts = ['amount' => 'float', 'gateway_amount' => 'float', 'pay_cost' => 'float', 'id' => 'integer', 'pay_id' => 'integer', 'status' => 'integer', 'user_id' => 'integer'];
 
     /**
      * @return HasOne|null

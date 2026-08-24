@@ -366,7 +366,7 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
                 const premium = parseFloat(__.draft_premium) || 0;
                 const cost = parseFloat(__.cost) || 0;
                 if (premium <= 0 && cost <= 0) return '-';
-                const fmt = v => '¥' + format.amountRemoveTrailingZeros(v);
+                const fmt = v => format.currencySymbol() + format.amountRemoveTrailingZeros(v);
                 return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">${i18n('加价')}</span><span class="md-pair__v" style="color:var(--md-success);font-weight:600">${fmt(premium)}</span></div><div class="md-pair__row"><span class="md-pair__k">${i18n('成本')}</span><span class="md-pair__v md-pair__v--muted">${fmt(cost)}</span></div></div>`;
             }
         }

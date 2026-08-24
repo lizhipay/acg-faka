@@ -162,7 +162,7 @@
                             ? '<div style="text-align:left;line-height:1.8">' +
                               '<p style="margin:0 0 8px">' + i18n('删除后该商户等级将永久消失，请先确认没有商户仍在使用此等级。') + '</p>' +
                               '<div><b>' + i18n('等级：') + '</b>' + escapeHtml(row.name) + '</div>' +
-                              '<div><b>' + i18n('购买价格：') + '</b>¥' + escapeHtml(row.price) + '</div>' +
+                              '<div><b>' + i18n('购买价格：') + '</b>' + format.currencySymbol() + escapeHtml(row.price) + '</div>' +
                               '<p style="margin:8px 0 0;color:#d63b3b;font-weight:700">' + i18n('该操作不可撤销。') + '</p></div>'
                             : i18n('是否删除该等级？');
                         message.ask(prompt, () => {

@@ -125,6 +125,10 @@ class Config extends Manage
         'default_category',
         'commodity_recommend',
         'commodity_name',
+        'currency_code',
+        'currency_symbol',
+        'currency_rate',
+        'currency_decimals',
     ];
 
     private const OTHER_BOOLEAN_FIELDS = [
@@ -147,6 +151,9 @@ class Config extends Manage
 
     #[Inject]
     private Email $email;
+
+    #[Inject]
+    private \App\Service\Currency $currency;
 
     /**
      * @throws JSONException
@@ -835,7 +842,29 @@ class Config extends Manage
             throw new JSONException('单次最低充值金额不能高于单次最高充值金额');
         }
 
-        $settings = [
+        //货币四件套与 Service API 共用同一套校验（单一事实源）。
+        //字段缺席时【整个不写】而不是回填当前值：没刷新的旧后台页面（还没有货币区块）一保存，
+        //绝不能顺手把货币设置也重写一遍——回填读的是 Config::get 的缓存，
+        //而表单是 Config::list 从库渲染的，两者一旦不一致就会把缓存值倒灌回库。
+        $currency = [];
+        if (array_key_exists('currency_code', $map)) {
+            $currency['currency_code'] = \App\Service\Bind\Currency::assertCode((string)$map['currency_code']);
+        }
+        if (array_key_exists('currency_symbol', $map)) {
+            $currency['currency_symbol'] = \App\Service\Bind\Currency::assertSymbol((string)$map['currency_symbol']);
+        }
+        if (array_key_exists('currency_rate', $map)) {
+            $currency['currency_rate'] = \App\Service\Bind\Currency::assertRate((string)$map['currency_rate']);
+        }
+        if (array_key_exists('currency_decimals', $map)) {
+            $currencyDecimals = trim((string)$map['currency_decimals']);
+            if ($currencyDecimals !== '0' && $currencyDecimals !== '2') {
+                throw new JSONException('显示小数位只支持 0 或 2');
+            }
+            $currency['currency_decimals'] = $currencyDecimals;
+        }
+
+        $settings = $currency + [
             'callback_domain' => $this->configHttpUrl($map, 'callback_domain', '自定义支付回调域名', false, true),
             CallbackIpWhitelist::RULES_CONFIG => $callbackIpWhitelistRules,
             'domain' => $this->configDomainList($map, 'domain', '主站域名', true),
@@ -872,6 +901,40 @@ class Config extends Manage
 
         ManageLog::log($this->getManage(), "修改了其他设置");
         return $this->json(200, '保存成功');
+    }
+
+
+    /**
+     * 切换币种并按汇率换算全站金额数据（一次性重定价，不可逆）。
+     *
+     * 与 other() 的纯重标注保存是两条路：这里会真的改写余额、账单、历史订单、商品定价等
+     * 所有站点货币金额。换算逻辑（含并发锁、事务、审计日志）都在 Service 里，
+     * 本入口只做参数收集与操作留痕。
+     *
+     * @return array
+     * @throws JSONException
+     * @throws \Throwable
+     */
+    public function currencyConvert(): array
+    {
+        $code = trim((string)($_POST['currency_code'] ?? ''));
+        $symbol = trim((string)($_POST['currency_symbol'] ?? ''));
+        $rate = trim((string)($_POST['currency_rate'] ?? ''));
+        $decimalsRaw = trim((string)($_POST['currency_decimals'] ?? ''));
+        $decimals = $decimalsRaw === '' ? null : (int)$decimalsRaw;
+
+        $fromCode = \App\Util\Currency::code();
+        $fromRate = \App\Util\Currency::rate();
+
+        $summary = $this->currency->convertAll($code, $symbol, $rate, $decimals);
+
+        $converted = array_sum(array_map('intval', $summary));
+        ManageLog::log(
+            $this->getManage(),
+            "切换站点货币 {$fromCode}(汇率{$fromRate}) → " . strtoupper($code) . "(汇率{$rate})，并按汇率换算了全站金额数据，共改写 {$converted} 行"
+        );
+
+        return $this->json(200, '换算完成', ['summary' => $summary, 'total' => $converted]);
     }
 
 

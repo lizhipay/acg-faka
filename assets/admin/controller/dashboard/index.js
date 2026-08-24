@@ -189,7 +189,7 @@
             if (res.code == 200) {
                 clearRequestState('.dashboard-data-feedback');
                 const n = v => Number(v || 0).toLocaleString('en-US');
-                const m = v => '￥' + Number(v || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                const m = v => format.currencySymbol() + Number(v || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 $('.turnover').text(m(res.data.turnover));
                 $('.order_num').text(n(res.data.order_num));
                 $('.business').text(n(res.data.business));

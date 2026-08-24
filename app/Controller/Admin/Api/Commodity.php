@@ -507,7 +507,7 @@ class Commodity extends Manage
                 throw new JSONException('请选择商品分类');
             }
             if (!isset($map['price'], $map['user_price']) || (float)$map['price'] < 0 || (float)$map['user_price'] < 0) {
-                throw new JSONException("商品单价不能低于0元哦(｡￫‿￩｡)");
+                throw new JSONException("商品单价不能低于0哦(｡￫‿￩｡)");
             }
         } elseif (array_key_exists('name', $map) && trim((string)$map['name']) === '') {
             throw new JSONException('商品名称不能为空');

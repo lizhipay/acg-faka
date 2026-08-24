@@ -61,6 +61,28 @@
         return svg.childNodes.length ? svg : null;
     }
 
+    /* 弹窗页脚按钮图标：桌面 confirmText 常内嵌 fa 图标，进手机弹窗会被 plainText 剥掉。
+     * 这里按 fa 类名与按钮文案映射成手机壳体系的 material 图标，取消键固定用 close。 */
+    function footIcon(name) {
+        var icon = document.createElement('span');
+        icon.className = 'material-icons-outlined admin-mobile-btn-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = name;
+        return icon;
+    }
+
+    function confirmButtonIcon(confirmText) {
+        var signature = String(confirmText == null ? i18n('保存') : confirmText).toLowerCase();
+        var name =
+            /(?:trash|delete|删除|清空|清理)/.test(signature) ? 'delete_forever' :
+                /(?:paper-plane|send|发送|提交)/.test(signature) ? 'send' :
+                    /(?:arrows-rotate|rotate|refresh|sync|update|更新|升级)/.test(signature) ? 'sync' :
+                        /(?:plus|add|新增|添加|创建)/.test(signature) ? 'add_circle' :
+                            /(?:floppy|save|保存|修改)/.test(signature) ? 'save' :
+                                'check_circle';
+        return footIcon(name);
+    }
+
     function ensure() {
         rootElement = api.shell && api.shell.ensure();
         if (!rootElement) return false;
@@ -1202,8 +1224,11 @@
                         });
                     });
                     var primaryButton = element.querySelector('.layui-layer-btn .layui-layer-btn0');
-                    var confirmIcon = allowedInlineIcon(options.confirmText);
-                    if (primaryButton && confirmIcon) primaryButton.prepend(confirmIcon);
+                    if (primaryButton) {
+                        primaryButton.prepend(allowedInlineIcon(options.confirmText) || confirmButtonIcon(options.confirmText));
+                    }
+                    var cancelButton = element.querySelector('.layui-layer-btn .layui-layer-btn1');
+                    if (cancelButton) cancelButton.prepend(footIcon('close'));
                     element.focus({preventScroll: true});
                 }
                 popupStack.push(popupEntry);
