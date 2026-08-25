@@ -63,7 +63,12 @@ class Upload extends User
             File::remove(BASE_PATH . $fileName);
             $fileName = $tmp;
         } else {
-            $this->upload->add($fileName, $type, $this->getUser()->id);
+            //落库失败只可能是撞了全局唯一键(同一张图别人传过)：复用那份文件，别把 500 抛给前端
+            $shared = $this->upload->add($fileName, $type, $this->getUser()->id);
+            if ($shared !== null && $shared !== $fileName) {
+                File::remove(BASE_PATH . $fileName);
+                $fileName = $shared;
+            }
         }
 
         $append = [];

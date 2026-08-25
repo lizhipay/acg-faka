@@ -680,11 +680,11 @@
         border-radius: 21px;
         padding: 8px !important;
         background: color-mix(in srgb, var(--admin-mobile-surface) 96%, transparent);
+        backdrop-filter: blur(24px) saturate(1.25);
+        -webkit-backdrop-filter: blur(24px) saturate(1.25);
         box-shadow: var(--admin-mobile-shadow);
         opacity: 1;
         visibility: visible;
-        backdrop-filter: blur(24px) saturate(1.25);
-        -webkit-backdrop-filter: blur(24px) saturate(1.25);
         transition: bottom .18s ease, opacity .15s ease, visibility .15s ease;
     }
     html[data-admin-layout="mobile"][data-theme] [data-admin-mobile-native-actions] > * {
@@ -1009,9 +1009,9 @@
         padding: env(safe-area-inset-top) calc(16px + env(safe-area-inset-right)) 8px calc(16px + env(safe-area-inset-left));
         border: 0;
         background: color-mix(in srgb, var(--admin-mobile-bg) 95%, transparent);
-        box-shadow: none;
         backdrop-filter: blur(24px) saturate(1.15);
         -webkit-backdrop-filter: blur(24px) saturate(1.15);
+        box-shadow: none;
     }
 
     .admin-mobile-appbar__top {
@@ -1154,9 +1154,9 @@
         padding: 6px calc(10px + env(safe-area-inset-right)) env(safe-area-inset-bottom) calc(10px + env(safe-area-inset-left));
         border: 0;
         background: color-mix(in srgb, var(--admin-mobile-surface) 96%, transparent);
-        box-shadow: 0 -8px 30px -22px rgba(15, 23, 42, .35);
         backdrop-filter: blur(24px) saturate(1.3);
         -webkit-backdrop-filter: blur(24px) saturate(1.3);
+        box-shadow: 0 -8px 30px -22px rgba(15, 23, 42, .35);
         transition: opacity .15s ease, visibility .15s ease, transform .18s ease;
     }
 
@@ -4556,9 +4556,9 @@
         border-radius: 24px;
         padding: 10px;
         background: color-mix(in srgb, var(--admin-mobile-surface) 97%, transparent);
-        box-shadow: 0 16px 38px rgba(16, 24, 40, .16), 0 2px 8px rgba(16, 24, 40, .08);
         backdrop-filter: blur(24px) saturate(1.2);
         -webkit-backdrop-filter: blur(24px) saturate(1.2);
+        box-shadow: 0 16px 38px rgba(16, 24, 40, .16), 0 2px 8px rgba(16, 24, 40, .08);
     }
     html[data-admin-layout="mobile"][data-theme] .admin-mobile-card-list.is-selecting { padding-bottom: 154px; }
     .admin-mobile-selection-dock__summary {
@@ -4815,6 +4815,34 @@
         overflow-x: hidden;
         overflow-y: auto;
         overscroll-behavior: contain;
+    }
+    /* 可搜索下拉（如「作者」）的选项列表：layui 按窗口剩余空间决定要不要上翻，
+       但这里的容器是可滚动的筛选面板——一旦上翻，列表就落到滚动起点之上，
+       那一截永远滚不出来，用户只看得到贴着输入框的最后几项（手机端实测被裁 202px）。
+       钉死向下展开：溢出的部分由面板自身滚动露出（绝对定位子元素会撑大滚动区）。 */
+    html[data-admin-layout="mobile"][data-theme] .admin-mobile-overlay .admin-mobile-native-search > .mui-sf > .layui-form-select dl {
+        box-sizing: border-box;
+        top: 100% !important;
+        right: 0 !important;
+        bottom: auto !important;
+        left: 0 !important;
+        width: auto !important;
+        max-width: 100% !important;
+        max-height: min(46vh, 320px);
+        margin-top: 6px;
+        border: 1px solid var(--admin-mobile-line) !important;
+        border-radius: 14px !important;
+        background: var(--admin-mobile-surface-2) !important;
+        box-shadow: 0 18px 42px color-mix(in srgb, #000 18%, transparent) !important;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+    html[data-admin-layout="mobile"][data-theme] .admin-mobile-overlay .admin-mobile-native-search > .mui-sf > .layui-form-select dl :is(dd, dt) {
+        padding-right: 14px;
+        padding-left: 14px;
+        white-space: normal;
+        overflow-wrap: anywhere;
     }
     html[data-admin-layout="mobile"][data-theme] .admin-mobile-overlay .admin-mobile-native-search > .mui-sf > span > .layui-treeSelect .ztree {
         box-sizing: border-box;

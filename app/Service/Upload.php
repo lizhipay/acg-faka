@@ -20,12 +20,19 @@ interface Upload
     public function handle($upload, $dir, $type, int $size = 10000, string $file_name = ''): mixed;
 
     /**
+     * 记录一条上传。
+     *
+     * acg_upload 的唯一索引只锁 hash(全局)，而去重是按用户隔离的(见 get 的 $userId)，
+     * 所以同一张图被别的账号传过时这里必然撞唯一键。返回值就是为这种情况准备的：
+     * 返回已有记录的路径 = 本次没能落库，调用方应复用那份文件并清掉自己刚落地的副本；
+     * 返回 null = 正常落库(或无从复用)，按原路径继续。
+     *
      * @param string $path
      * @param string $type
      * @param int|null $userId
-     * @return void
+     * @return string|null 撞全局唯一键时返回可复用的已有文件路径
      */
-    public function add(string $path, string $type, ?int $userId = null): void;
+    public function add(string $path, string $type, ?int $userId = null): ?string;
 
 
     /**

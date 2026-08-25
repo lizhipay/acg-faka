@@ -1380,8 +1380,10 @@
         referenceProminent: false,
         details: [field('plugin', i18n('所属插件')), field('equipment', i18n('设备范围')), field('create_time', i18n('创建时间'))],
         actions: {
-            primary: [action('operation:0', i18n('编辑支付方式'))],
-            more: [action('operation:1', i18n('删除支付方式'), { danger: true })],
+            //operation:N 是桌面 buttons 数组的声明下标（component/table.js getActions），
+            //拨测按钮插在了 index 0，这里必须跟着走：0=拨测 1=修改 2=删除 3=恢复(自带 title)
+            primary: [action('operation:1', i18n('编辑支付方式'))],
+            more: [action('operation:0', i18n('拨测支付接口')), action('operation:2', i18n('删除支付方式'), { danger: true })],
             batch: [selector('.btn-app-del', i18n('批量删除'), { role: 'batch', danger: true })],
             toolbar: [selector('.btn-app-create, .btn-app-add', i18n('新增支付方式'), { role: 'primary' })]
         },

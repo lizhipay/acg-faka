@@ -14,20 +14,47 @@ class Upload implements \App\Service\Upload
      * @param string $path
      * @param string $type
      * @param int|null $userId
-     * @return void
+     * @return string|null 撞全局唯一键(hash)时返回可复用的已有文件路径
      */
-    public function add(string $path, string $type, ?int $userId = null): void
+    public function add(string $path, string $type, ?int $userId = null): ?string
     {
         if (!is_file(BASE_PATH . $path)) {
-            return;
+            return null;
         }
+        $hash = md5_file(BASE_PATH . $path);
         $upload = new \App\Model\Upload();
-        $upload->hash = md5_file(BASE_PATH . $path);
+        $upload->hash = $hash;
         $upload->type = $type;
         $upload->path = $path;
         $upload->create_time = Date::current();
         $userId && ($upload->user_id = $userId);
-        $upload->save();
+
+        try {
+            $upload->save();
+        } catch (\Throwable $e) {
+            //唯一索引 `hash` 是全局的，去重却按用户隔离：别的账号(或管理员)传过同一张图时必撞 1062。
+            //这属于可预期冲突，不能让它冒成 500——前端只会显示一句“网络错误”(#头像上传)。
+            if (!self::isDuplicateHash($e)) {
+                throw $e;
+            }
+            $exists = \App\Model\Upload::query()->where("hash", $hash)->first()?->path;
+            //已有记录指向的文件还在，才值得复用；文件已被清掉时保留本次的副本(仅不入库)
+            return ($exists && $exists !== $path && is_file(BASE_PATH . $exists)) ? $exists : null;
+        }
+
+        return null;
+    }
+
+    /**
+     * 是否为 hash 唯一键冲突(SQLSTATE 23000 / 1062)，其余异常一律放行上抛
+     * @param \Throwable $e
+     * @return bool
+     */
+    private static function isDuplicateHash(\Throwable $e): bool
+    {
+        return $e instanceof \Illuminate\Database\QueryException
+            && (string)$e->getCode() === "23000"
+            && str_contains($e->getMessage(), "1062");
     }
 
 

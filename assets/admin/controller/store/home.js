@@ -844,7 +844,7 @@
                                                 <div data-id="${pluginId}" data-type="0" data-pay="0" class="pay-item online-pay-click"${pluginDisabled}><img class="item-icon" src="/assets/common/images/alipay.png"><span>${i18n('支付宝')}</span></div>
                                                 <div data-id="${pluginId}" data-type="0" data-pay="1" class="pay-item online-pay-click"${pluginDisabled}><img class="item-icon" src="/assets/common/images/wx.png"><span>${i18n('微信支付')}</span></div>
                                                 <div data-id="${pluginId}" data-type="0" data-pay="2" class="pay-item online-pay-click"${pluginDisabled}><img class="item-icon" src="/assets/common/images/usdt.png"><span>USDT(TRC20)</span></div>
-                                                <div data-id="0" data-type="0" data-pay="3" class="pay-item online-pay-click"${enterpriseDisabled}><img class="item-icon" src="/assets/common/images/okpay.png"><span>Okpay(${i18n('推荐')})</span></div>
+                                                <div data-id="${pluginId}" data-type="0" data-pay="3" class="pay-item online-pay-click"${pluginDisabled}><img class="item-icon" src="/assets/common/images/okpay.png"><span>Okpay(${i18n('推荐')})</span></div>
                                             </div>
    
                         </div> 

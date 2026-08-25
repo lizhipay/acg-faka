@@ -100,6 +100,15 @@
             focused.isContentEditable === true ||
             focused.getAttribute('role') === 'textbox'
         );
+        // iOS 截图（以及切后台/多任务抓快照）会让 visualViewport 瞬间报出半屏高度和
+        // 一个很大的 offsetTop，事后不保证再派发事件——照单全收就会把这组错误值固化进
+        // 下面的 CSS 变量，页面从此半屏、顶栏底栏悬在中间。没有输入框获得焦点时，
+        // 视觉视口不可能比布局视口矮这么多，据此判定为无效采样并回退到 innerHeight。
+        if (!editable && !keyboardOpen && (height < window.innerHeight * 0.7 || offsetTop > 40)) {
+            height = window.innerHeight;
+            offsetTop = 0;
+        }
+
         var visualKeyboard = Math.max(0, window.innerHeight - height - offsetTop);
         if (!editable && !keyboardOpen && visualKeyboard <= 80) {
             stableViewportHeight = window.innerHeight;
@@ -233,6 +242,11 @@
     window.addEventListener('orientationchange', scheduleViewportUpdate, {passive: true});
     document.addEventListener('focusin', keepPageFieldVisible, {passive: true});
     document.addEventListener('focusout', releasePageField, {passive: true});
+    // 截图/切后台回来时 visualViewport 未必再派发事件，这里主动补一次重算，
+    // 把上面可能残留的错误采样冲掉。
+    document.addEventListener('visibilitychange', scheduleViewportUpdate);
+    window.addEventListener('pageshow', scheduleViewportUpdate);
+    window.addEventListener('focus', scheduleViewportUpdate);
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', scheduleViewportUpdate, {passive: true});
         window.visualViewport.addEventListener('scroll', scheduleViewportUpdate, {passive: true});
