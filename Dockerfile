@@ -2,31 +2,28 @@ FROM php:8.2-apache
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
 
+# 安装系统基础工具
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         git \
         unzip \
-        libcurl4-openssl-dev \
-        libfreetype6-dev \
-        libjpeg62-turbo-dev \
-        libonig-dev \
-        libpng-dev \
-        libzip-dev \
-    && if ! php -m | grep -qi '^curl$'; then docker-php-ext-install curl; fi \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j"$(nproc)" \
-        gd \
-        mbstring \
-        opcache \
-        pdo_mysql \
-        zip \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
     && a2enmod rewrite headers \
     && sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf \
     && printf '%s\n' 'ServerName localhost' > /etc/apache2/conf-available/server-name.conf \
     && a2enconf server-name \
     && rm -rf /var/lib/apt/lists/*
+
+# 引入官方社区扩展安装工具
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+RUN install-php-extensions \
+    bcmath \
+    curl \
+    gd \
+    mbstring \
+    opcache \
+    pdo_mysql \
+    redis \
+    zip
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
