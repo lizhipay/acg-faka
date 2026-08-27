@@ -28,8 +28,8 @@
 
 
 ## 快速体验
-- 后台演示：[http://162.14.111.118:91/admin](http://162.14.111.118:91/admin)  账号：demo@demo.com 密码：123456
-- 前台演示：[http://162.14.111.118:91](http://162.14.111.118:91) 账号：为了明天美好而战斗 密码：123456
+- 后台演示：[https://demo.faka.wiki/admin](https://demo.faka.wiki/admin)  账号：demo@demo.com 密码：123456
+- 前台演示：[https://demo.faka.wiki](https://demo.faka.wiki) 账号：为了明天美好而战斗 密码：123456
 - 文档地址：[https://faka.wiki](https://faka.wiki)
 
 ## 功能简介
