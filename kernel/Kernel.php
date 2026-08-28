@@ -48,7 +48,14 @@ try {
     }
 
     //waf install -> 2025-07-26
-    $routePath = $_GET['s'] = $_GET['s'] ?? "/user/index/index";
+    //?? 只兜住「参数不存在」，兜不住空值：nginx 重写首页时常给出 s= 或 s=/
+    //（try_files $uri $uri/ /index.php?s=$uri 对 / 就是 s=/），这类合法的根路由
+    //会被拼成控制器 App\Controller、方法名为空，class_exists 失败直接 404。
+    $routePath = (string)($_GET['s'] ?? '');
+    if (trim($routePath, "/ \t\n\r\0\x0B") === '') {
+        $routePath = "/user/index/index";
+    }
+    $_GET['s'] = $routePath;
     Context::set(\Kernel\Context\Interface\Request::class, new Request());
     if (trim($routePath, "/") == 'admin') {
         header('location:' . "/admin/authentication/login");
@@ -107,7 +114,6 @@ try {
         AdminEntrance::guard();
     }
 
-
     //安全响应头
     if (!headers_sent()) {
         header("X-Content-Type-Options: nosniff");
@@ -118,6 +124,17 @@ try {
 
     //记录日志
     RequestLogger::logCurrentRequest(Context::get(\Kernel\Context\Interface\Request::class));
+
+
+    if (strtolower(trim((string)Context::get(Base::ROUTE), '/')) === '404.html') {
+        try {
+            $originUri = explode('?', (string)($_SERVER['REQUEST_URI'] ?? ''))[0];
+            $notFoundUri = $originUri !== '' ? $originUri : '/404.html';
+            hook(\App\Consts\Hook::HTTP_NOT_FOUND, $notFoundUri);
+        } catch (Throwable $ignored) {
+        }
+        exit(feedback("404 Not Found", 200));
+    }
 
     //检测类是否存在
     if (!class_exists($controller)) {
@@ -188,8 +205,8 @@ try {
         exit(json_encode(["code" => $e->getCode(), "msg" => lang($e->getMessage())], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     } elseif ($e instanceof \Kernel\Exception\ViewException) {
         header("Content-type: text/html; charset=utf-8");
-        exit(feedback($e->getFile() . "<br>" . $e->getMessage()));
+        exit(feedback($e->getFile() . "<br>" . $e->getMessage(), 500));
     } else {
-        exit(feedback($e->getFile() . ":" . $e->getLine() . "<br>" . $e->getMessage()));
+        exit(feedback($e->getFile() . ":" . $e->getLine() . "<br>" . $e->getMessage(), 500));
     }
 }

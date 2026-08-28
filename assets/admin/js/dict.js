@@ -174,6 +174,7 @@ const _Dict = new class _Dict extends _DictUtil {
                 },
             ],
             "_store_plugin_owner": [
+                {id: 8, name: `${i18n('已购买')}`},
                 {id: 7, name: `${i18n('企业版应用')}`},
                 {id: 1, name: `${i18n('官方应用')}`},
                 {id: 2, name: `${i18n('第三方应用')}`},

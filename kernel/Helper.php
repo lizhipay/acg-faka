@@ -290,10 +290,23 @@ if (!function_exists("lang_code")) {
 }
 
 if (!function_exists("feedback")) {
-    function feedback(string $value)
+    /**
+     * 统一错误出口。
+     *
+     * @param string $value 错误信息；"404 Not Found" 走标准找不到页面
+     * @param int $status 响应状态码：路由找不到是 404，其余未捕获异常是 500。
+     *                    此前一律隐式 200——错误页照常渲染，但搜索引擎会把不存在的
+     *                    地址当正常内容收录，健康检查与访问统计也永远看不到错误率。
+     * @return string
+     */
+    function feedback(string $value, int $status = 404)
     {
         if ($value != "404 Not Found") {
             debug($value);
+        }
+
+        if (!headers_sent()) {
+            http_response_code($status);
         }
 
         $value = lang($value);

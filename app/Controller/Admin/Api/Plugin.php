@@ -95,6 +95,11 @@ class Plugin extends Manage
     {
         $map = $request->post(flags: Filter::NORMAL);
 
+        // 安全加固：插件配置键名仅允许 [A-Za-z0-9_]。攻击者曾把 PHP 代码藏进数组"键名"，
+        // 经 var_export 落库、再由 _plugin_stop→_plugin_set_config 手写拼接重写时逃逸引号，
+        // 造成配置文件代码注入 RCE。全站插件配置键（STATUS/top/...）均在此字符集内，故直接丢弃非法键名。
+        $map = array_filter($map, static fn($k): bool => preg_match('/^[A-Za-z0-9_]+$/D', (string)$k) === 1, ARRAY_FILTER_USE_KEY);
+
         $id = $request->get("id") ?: $request->post("id");
 
         if (!$id) {
@@ -144,6 +149,8 @@ class Plugin extends Manage
     public function setThemeConfig(): array
     {
         $map = $this->request->post(flags: Filter::NORMAL);
+        // 安全加固：同 setConfig，主题配置键名仅允许 [A-Za-z0-9_]，拦截键名注入。
+        $map = array_filter($map, static fn($k): bool => preg_match('/^[A-Za-z0-9_]+$/D', (string)$k) === 1, ARRAY_FILTER_USE_KEY);
         $id = $this->request->get("id") ?: $this->request->post("id");
 
         if (!$id) {

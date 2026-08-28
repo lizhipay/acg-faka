@@ -283,6 +283,7 @@ class Firewall
         if (is_array($input)) {
             $cleanedArray = [];
             foreach ($input as $key => $value) {
+                $key = $this->sanitizeKey($key); // 架构级兜底：中和键名注入字符（RCE/XSS），不改任何插件
                 if (is_string($value)) {
                     //$cleanedArray[$key] = $this->HTMLPurifier->purify(urldecode(str_replace("+", "%2B", $value)));
                     $cleanedArray[$key] = $this->getCache($value);
@@ -316,6 +317,7 @@ class Firewall
         if (is_array($input)) {
             $cleanedArray = [];
             foreach ($input as $key => $value) {
+                $key = $this->sanitizeKey($key); // 架构级兜底：中和键名注入字符（RCE/XSS），不改任何插件
                 if (is_string($value)) {
                     $cleanedArray[$key] = $this->filter($value, $flags);
                 } elseif (is_array($value)) {
@@ -354,5 +356,20 @@ class Firewall
             $content = (bool)$content;
         }
         return $content;
+    }
+
+    /**
+     * 架构级安全兜底：中和数组"键名"里的注入字符。
+     * 根因：WAF 历来只清洗数组的"值"、不清洗"键"——攻击者遂把 PHP 代码/HTML 藏进键名，
+     * 经手写配置写入器逃逸单引号 => 配置文件 RCE；或经后台表格 innerHTML 渲染 => 存储型 XSS。
+     * 合法键名（配置键 [A-Za-z0-9_]、SKU 规格名等人类文本）不含下列字符，故仅剔除：
+     * 单引号/反斜杠（PHP 串逃逸）、尖括号/双引号（HTML 逃逸）、控制字符（含换行）。整数键原样保留。
+     */
+    private function sanitizeKey(mixed $key): mixed
+    {
+        if (!is_string($key)) {
+            return $key;
+        }
+        return preg_replace('/[\x00-\x1F\x7F<>"\'\\\\]/', '', $key);
     }
 }

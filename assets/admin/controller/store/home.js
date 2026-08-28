@@ -370,9 +370,17 @@
         const iconHtml = icon ? `<img src="${escapeHtml(icon)}" class="md-plugin__icon" alt="">` : '<span class="md-plugin__icon material-icons-outlined" aria-hidden="true">apps</span>';
         return `<div class="md-plugin">${iconHtml}<span class="md-plugin__name">${renderStoreInlineHtml(item?.plugin_name || '')}</span></div>`;
     };
-    const configureEnterpriseCta = ($button, reconnect = false) => {
-        const title = reconnect ? '重新开通企业版' : '开通企业版';
-        const description = reconnect ? '当前设备重新授权 · 其他设备不受影响' : '全部插件免费 · 专属技术支持';
+    //本机授权等级：0=专业版，1=企业版，无授权时为 null/undefined。
+    //注意不能用 !level 判断有无授权——那会把「专业版(0)」和「没买过」混作一谈，
+    //专业版用户因此看到的是「重新开通企业版」，而他要做的其实是升级。
+    const isBoundPro = level => level !== null && level !== undefined && level !== '' && Number(level) === 0;
+    const configureEnterpriseCta = ($button, mode = 'new') => {
+        const copy = {
+            upgrade: ['升级企业版', '当前设备由专业版升级 · 全部插件免费'],
+            reconnect: ['重新开通企业版', '当前设备重新授权 · 其他设备不受影响'],
+            new: ['开通企业版', '全部插件免费 · 专属技术支持']
+        };
+        const [title, description] = copy[mode] || copy.new;
 
         $button
             .addClass('admin-mobile-store-enterprise-cta admin-mobile-store-enterprise-cta--primary')
@@ -1078,7 +1086,10 @@
                 const $UpdatePro = $(`.update-pro`);
                 const $BindPro = $(`.bind-pro`);
                 const reconnectEnterprise = Boolean(res?.data?.is_have_level);
-                configureEnterpriseCta($UpdatePro, reconnectEnterprise);
+                //专业版在本机 → 升级；本机无授权但账户名下有 → 重新开通；都没有 → 开通
+                configureEnterpriseCta($UpdatePro, isBoundPro(res?.data?.level)
+                    ? 'upgrade'
+                    : (reconnectEnterprise ? 'reconnect' : 'new'));
                 $(`.store-toolbar`).show();
                 $UpdatePro.show().off(namespace).on('click' + namespace, () => _Bill());
 

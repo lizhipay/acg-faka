@@ -13,6 +13,13 @@
         return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
+    //HTML 转义：后台移动端表格按 innerHTML 插值，渲染用户可控字段前必须转义（与桌面 order.js 一致）
+    function escapeHtml(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+            return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'}[c];
+        });
+    }
+
     //剥掉金额字符串上的货币前缀：历史 ¥/￥ 与当前配置符号都要认
     function stripLeadingCurrency(text) {
         return String(text)
@@ -538,12 +545,12 @@
         descriptor.format = function (_, row) {
             var values = [];
             var race = String(row && row.race || '').trim();
-            if (race && race !== '-') values.push(race);
+            if (race && race !== '-') values.push(escapeHtml(race));
             var sku = row && row.sku;
             if (sku && typeof sku === 'object') {
                 Object.keys(sku).forEach(function (key) {
                     var value = String(sku[key] == null ? '' : sku[key]).trim();
-                    if (value) values.push(String(key).trim() + '：' + value);
+                    if (value) values.push(escapeHtml(String(key).trim()) + '：' + escapeHtml(value));
                 });
             }
             return values.join(' · ') || '-';
