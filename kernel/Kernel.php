@@ -58,7 +58,11 @@ try {
     $_GET['s'] = $routePath;
     Context::set(\Kernel\Context\Interface\Request::class, new Request());
     if (trim($routePath, "/") == 'admin') {
+        //必须 exit：/admin 是 302 跳后台登录页，不 exit 会继续往下走、命中「控制器
+        //App\Controller 不存在」抛 404；新版 feedback() 会显式 http_response_code(404)，
+        //把这里的 302 覆盖成 404（旧版 feedback 隐式 200 不改状态码才侥幸没暴露）。
         header('location:' . "/admin/authentication/login");
+        exit;
     }
 
     $s = explode("/", trim((string)$routePath, '/'));
