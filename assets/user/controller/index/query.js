@@ -50,10 +50,10 @@
 
     function _GetStatusText(status) {
         const statusMap = {
-            0: '<i class="fa-duotone fa-regular fa-clock"></i> 待付款',
-            1: '<i class="fa-duotone fa-regular fa-circle-check"></i> 已付款'
+            0: '<i class="fa-duotone fa-regular fa-clock"></i> ' + i18n('待付款'),
+            1: '<i class="fa-duotone fa-regular fa-circle-check"></i> ' + i18n('已付款')
         };
-        return statusMap[status] || '未知状态';
+        return statusMap[status] || i18n('未知状态');
     }
 
     // 获取状态样式类
@@ -70,8 +70,8 @@
     // 获取发货状态文本
     function _GetShipmentStatusText(status) {
         const shipmentMap = {
-            0: '<span class="shipment-badge shipment-waiting">等待发货</span>',
-            1: '<span class="shipment-badge shipment-paid">已发货</span>'
+            0: '<span class="shipment-badge shipment-waiting">' + i18n('等待发货') + '</span>',
+            1: '<span class="shipment-badge shipment-paid">' + i18n('已发货') + '</span>'
         };
         return shipmentMap[status] || shipmentMap[0];
     }
@@ -80,25 +80,25 @@
         let sku = ``, cardContent = ``;
 
         if (order.race) {
-            sku += `<span class="goods-sku a-badge a-badge-success">商品类型: ${order.race}</span>`;
+            sku += `<span class="goods-sku a-badge a-badge-success">${i18n('商品类型')}: ${i18n(order.race)}</span>`;
         }
 
         if (!util.isEmptyOrNotJson(order?.sku)) {
             for (const skuKey in order?.sku) {
-                sku += `<span class="goods-sku a-badge a-badge-primary">${skuKey}: ${order?.sku[skuKey]}</span>`;
+                sku += `<span class="goods-sku a-badge a-badge-primary">${i18n(skuKey)}: ${i18n(order?.sku[skuKey])}</span>`;
             }
         }
 
-        sku += `<span class="goods-sku a-badge a-badge-warning">数量: ${order.card_num}</span>`;
+        sku += `<span class="goods-sku a-badge a-badge-warning">${i18n('数量')}: ${order.card_num}</span>`;
 
         if (order.status == 1) {
             if (order.password === true) {
                 cardContent = `<div class="card-password-section card-content-${order.trade_no}">
         <div class="password-form">
           <div class="input-group">
-            <input type="password" class="form-control card-password-input passin-${order.trade_no}" placeholder="请输入查询密码">
+            <input type="password" class="form-control card-password-input passin-${order.trade_no}" placeholder="${i18n('请输入查询密码')}">
             <button type="button" class="btn btn-primary view-card-btn" data-no="${order.trade_no}">
-              <i class="fa-duotone fa-regular fa-eye me-2"></i>查看卡密
+              <i class="fa-duotone fa-regular fa-eye me-2"></i>${i18n('查看卡密')}
             </button>
           </div>
         </div>
@@ -107,7 +107,7 @@
       <div class="card-loading loading-${order.trade_no}" style="display: none;">
         <div class="loading-content">
           <i class="fa-duotone fa-regular fa-spinner-third icon-spin"></i>
-          <span>正在解密数据...</span>
+          <span>${i18n('正在解密数据')}...</span>
         </div>
       </div>`;
             } else {
@@ -117,7 +117,7 @@
             cardContent = `<div class="card-section">
                 <div class="card-header">
                     <div class="card-title shipment-content" style="font-size: 1.2rem">
-                         <div class="shipment-title"><i class="fa-duotone fa-regular fa-gift me-1"></i>宝贝内容</div>
+                         <div class="shipment-title"><i class="fa-duotone fa-regular fa-gift me-1"></i>${i18n('宝贝内容')}</div>
                          <div class="shipment-status">${_GetShipmentStatusText(order.delivery_status)} </div>
                     </div>
                 </div>
@@ -133,24 +133,24 @@
         </div>
         <div class="order-basic">
           <div class="order-no">#<span class="order-no-text">${order.trade_no}</span></div>
-          <div class="order-time">下单时间：<span class="order-time-text">${order.create_time}</span></div>
-          <div class="payment-time">付款时间：<span class="payment-time-text">${order.pay_time ?? "-"}</span></div>
-          <div class="payment-dst">支付方式：<span class="payment-method"><img src="${order?.pay?.icon}" alt="支付方式" class="payment-icon"><span class="payment-name">${order?.pay?.name}</span></span></div>
+          <div class="order-time">${i18n('下单时间：')}<span class="order-time-text">${order.create_time}</span></div>
+          <div class="payment-time">${i18n('付款时间：')}<span class="payment-time-text">${order.pay_time ?? "-"}</span></div>
+          <div class="payment-dst">${i18n('支付方式：')}<span class="payment-method"><img src="${order?.pay?.icon}" alt="${i18n('支付方式')}" class="payment-icon"><span class="payment-name">${order?.pay?.name}</span></span></div>
         </div>
       </div>
       <div class="order-right">
         <div class="order-amount">
-          <span class="amount-label">订单金额</span>
-          <span class="amount-value">¥<span class="amount-number">${order.amount}</span></span>
+          <span class="amount-label">${i18n('订单金额')}</span>
+          <span class="amount-value">${format.currencySymbol()}<span class="amount-number">${order.amount}</span></span>
         </div>
        
       </div>
     </div>
 
-    <!-- 商品信息 -->
+    <!-- ${i18n('商品信息')} -->
     <div class="goods-section">
       <div class="goods-thumb">
-        <img src="${order?.commodity?.cover}" alt="商品图片" class="goods-image">
+        <img src="${order?.commodity?.cover}" alt="${i18n('商品图片')}" class="goods-image">
       </div>
       <div class="goods-details">
         <h6 class="goods-name">${order?.commodity?.name}</h6>
@@ -226,7 +226,7 @@
                 _ShowCardContent(tradeNo, res?.data?.secret, res?.data?.leave_message);
             },
             error: res => {
-                message.error(res.msg ?? "未知错误");
+                message.error(res.msg ?? i18n("未知错误"));
                 _HidePasswordLoading(tradeNo);
                 _ShowPasswordInput(tradeNo);
             },

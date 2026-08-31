@@ -22,9 +22,14 @@
 >
 > 使用本程序即表示您已充分理解并同意本法律声明的所有内容。
 
+## 广告
+
+🚀 ARM AI — GPT / Claude / Gemini / Grok Token 服务平台，超低倍率、余额长期有效并支持无理由退款。立即体验：https://ai.arm.moe/
+
+
 ## 快速体验
-- 后台演示：[http://162.14.111.118:91/admin](http://162.14.111.118:91/admin)  账号：demo@demo.com 密码：123456
-- 前台演示：[http://162.14.111.118:91](http://162.14.111.118:91) 账号：为了明天美好而战斗 密码：123456
+- 后台演示：[https://demo.faka.wiki/admin](https://demo.faka.wiki/admin)  账号：demo@demo.com 密码：123456
+- 前台演示：[https://demo.faka.wiki](https://demo.faka.wiki) 账号：为了明天美好而战斗 密码：123456
 - 文档地址：[https://faka.wiki](https://faka.wiki)
 
 ## 功能简介
@@ -38,7 +43,7 @@
 - 共享店铺系统，可以在后台直接对接别人的店铺，通过扣除余额来进行无感知进货。
 - 应用商店，拥有众多插件以及模板，让你的店铺变得格外强大。
 - 界面美观，完美支持PC和手机，真正的内外二次元文化。
-- 强悍的扩展能力，你可以通过本程序在几分钟之内快速的实现你任意想实现的在线购物功能，例子如下： 
+- 强悍的扩展能力，你可以通过本程序在几分钟之内快速的实现你任意想实现的在线购物功能，例子如下：
   - 游戏方面，物品购买即时到玩家背包
   - 商业软件余额充值
   - 商业软件自动授权
@@ -53,10 +58,12 @@
 - 以上步骤完成后，然后配置伪静态，Apache无需配置，根目录已经有.htaccess文件了，但如果你是Nginx，则需要配置伪静态。
 - 下面是Nginx伪静态规则：
 ```
+location ~* ^/(runtime|kernel|config|vendor)/                { return 404; }
+location ~  /\.(?!well-known)                                { return 404; }
+location ~* \.(log|sql|sqlite|db|db-wal|db-shm|bak|old|save|orig|swp|swo|tmp|ini|lock)$  { return 404; }
+location ~* (~|composer\.(json|lock)|package(-lock)?\.json)$ { return 404; }
 location / {
-      if (!-e $request_filename){
-              rewrite ^(.*)$ /index.php?s=$1 last; break;
-      }
+    try_files $uri $uri/ /index.php?s=$uri&$args;
 }
 ```
 - Windows IIS服务器环境，可以使用下面伪静态规则：

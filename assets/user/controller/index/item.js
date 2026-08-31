@@ -1,6 +1,8 @@
 !function () {
     const _item = getVar("_var_item");
     let _price = 0, _available = false;
+    //抢购结束后付款区被收起，切换SKU重新查库存时不能把它又打开
+    let _seckillEnded = false;
     const $vstack = $(`.vstack`), $cashPay = $(`.cash-pay`);
 
     function _getPostData() {
@@ -35,14 +37,14 @@
             url: "/user/api/index/valuation",
             data: _getPostData(),
             done: res => {
-                $price.html(`<span class="unit">¥</span>${format.amountRemoveTrailingZeros(res.data.price)}`);
+                $price.html(`<span class="unit">${format.currencySymbol()}</span>${format.amountRemoveTrailingZeros(res.data.price)}`);
                 _price = res.data.price;
                 _available = true;
             },
             loader: false,
             error: d => {
                 typeof error === "function" && error(d);
-                $price.html(`<span class="unit">¥</span>${format.amountRemoveTrailingZeros(_price)}`);
+                $price.html(`<span class="unit">${format.currencySymbol()}</span>${format.amountRemoveTrailingZeros(_price)}`);
             }
         });
 
@@ -67,16 +69,17 @@
                 if (new Date(startTime).getTime() > now) {
                     //未开始
                     const t = format.expireTime(startTime);
-                    t && $snapUp.addClass("badge-soft-info").html(`离抢购开始还剩${t}`);
+                    t && $snapUp.addClass("badge-soft-info").html(`${i18n('离抢购开始还剩')}${t}`);
                     resolve(true);
                 } else if (new Date(endTime).getTime() > now) {
                     //已开始
                     const t = format.expireTime(endTime);
-                    t && $snapUp.removeClass("badge-soft-info").addClass("badge-soft-primary").html(`抢购结束还剩${t}`);
+                    t && $snapUp.removeClass("badge-soft-info").addClass("badge-soft-primary").html(`${i18n('抢购结束还剩')}${t}`);
                     resolve(true);
                 } else {
                     //已结束
-                    $snapUp.removeClass("badge-soft-success").addClass("badge-soft-muted").html(`抢购已结束`);
+                    $snapUp.removeClass("badge-soft-success").addClass("badge-soft-muted").html(`${i18n('抢购已结束')}`);
+                    _seckillEnded = true;
                     $cashPay.fadeOut(150);
                     resolve(false);
                 }
@@ -146,14 +149,14 @@
     function _SetWholesaleMsg() {
         const $qtyGroup = $(`.qty-group`);
         $(`.wholesale-table`).remove();
-        const html = `<table class="table wholesale-table mt-1 mb-0"><thead><tr><th scope="col">批发数量</th><th scope="col">单价</th></tr></thead><tbody>[body]</tbody></table>`;
+        const html = `<table class="table wholesale-table mt-1 mb-0"><thead><tr><th scope="col">${i18n('批发数量')}</th><th scope="col">${i18n('单价')}</th></tr></thead><tbody>[body]</tbody></table>`;
         if (!util.isEmptyOrNotJson(_item?.config?.category)) {
             const sku = $(`.switch-race.is-primary`).data('sku');
             //分类批发
             if (_item?.config?.category_wholesale?.hasOwnProperty(sku)) {
                 let body = ``;
                 for (const k in _item.config.category_wholesale[sku]) {
-                    body += `<tr><td>${k}</td><td>¥${_item.config.category_wholesale[sku][k]}</td></tr>`;
+                    body += `<tr><td>${k}</td><td>${format.currencySymbol()}${_item.config.category_wholesale[sku][k]}</td></tr>`;
                 }
                 $qtyGroup.after(html.replace("[body]", body));
             }
@@ -163,7 +166,7 @@
         if (!util.isEmptyOrNotJson(_item?.config?.wholesale)) {
             let body = ``;
             for (const k in _item.config.wholesale) {
-                body += `<tr><td>${k}</td><td>¥${_item.config.wholesale[k]}</td></tr>`;
+                body += `<tr><td>${k}</td><td>${format.currencySymbol()}${_item.config.wholesale[k]}</td></tr>`;
             }
             $qtyGroup.after(html.replace("[body]", body));
         }
@@ -177,12 +180,16 @@
             done: res => {
                 if (res.data.stock_state <= 0) {
                     $cashPay.fadeOut(150);
-                    $itemStock.removeClass("badge-soft-success").addClass("badge-soft-danger").html(`已售罄`);
+                    $itemStock.removeClass("badge-soft-success").addClass("badge-soft-danger").html(`${i18n('已售罄')}`);
                     return;
                 }
                 
-                $itemStock.removeClass("badge-soft-danger").addClass('badge-soft-success').html(`库存 ${res.data.stock}`);
-                $cashPay.fadeIn(150);
+                $itemStock.removeClass("badge-soft-danger").addClass('badge-soft-success').html(`${i18n('库存')} ${res.data.stock}`);
+                //抢购结束也会把付款区收起来，那是另一码事——不能因为这个SKU有货就把它又打开，
+                //否则切一下SKU就能给已经结束的秒杀下单
+                if (!_seckillEnded) {
+                    $cashPay.fadeIn(150);
+                }
             },
             loader: false
         });
@@ -206,7 +213,7 @@
             url: `/user/api/index/pay?itemId=${_item.id}`,
             done: res => {
                 res.data.forEach(item => {
-                    $payList.append(`<a class="pay" data-id="${item.id}"><img src="${item.icon}"><span>${item.name}</span></a>`);
+                    $payList.append(`<a class="pay" data-id="${item.id}"><img src="${item.icon}"><span>${i18n(item.name)}</span></a>`);
                 });
             },
             loader: false
@@ -218,7 +225,13 @@
             util.post("/user/api/order/trade", post, res => {
                 if (post["pay_id"] == 1) {
                     //余额购买，直接反馈
-                    treasure.show(res.data.tradeNo, res.data.secret);
+                    treasure.show(res.data.tradeNo, res.data.secret, res.data.leave_message);
+                    return;
+                }
+
+                //0元单(如100%优惠券抵扣)没有收银台，url为空时直接反馈结果，防止跳转到"null"
+                if (!res.data.url) {
+                    treasure.show(res.data.tradeNo, res.data.secret, res.data.leave_message);
                     return;
                 }
 
@@ -241,11 +254,11 @@
                     const selections = table.getSelections();
                     if (selections.length == 0) {
                         $(`input[name=card_id]`).val("");
-                        $OptionalCard.html(`未自选,将随机发货`);
+                        $OptionalCard.html(`${i18n('未自选')},${i18n('将随机发货')}`);
                     } else {
                         const draftPremium = selections[0].draft_premium > 0 ? selections[0].draft_premium : _item.draft_premium;
 
-                        $OptionalCard.html(`${draftPremium > 0 ? `<span class="text-primary me-1">« ¥${draftPremium} »</span> ` : ''}${selections[0].draft}`);
+                        $OptionalCard.html(`${draftPremium > 0 ? `<span class="text-primary me-1">« ${format.currencySymbol()}${draftPremium} »</span> ` : ''}${selections[0].draft}`);
                         $(`input[name=card_id]`).val(selections[0].id);
                     }
 
@@ -254,7 +267,7 @@
                 },
                 tab: [
                     {
-                        name: `<i class="fa-duotone fa-regular fa-list-radio"></i> 自助选号`,
+                        name: `<i class="fa-duotone fa-regular fa-list-radio"></i> ${i18n('自助选号')}`,
                         form: [
                             {
                                 name: "sku",
@@ -271,11 +284,11 @@
                                             field: 'draft_premium', title: '溢价', formatter: _ => {
                                                 if (_ == 0) {
                                                     if (_item.draft_premium > 0) {
-                                                        return format.badge("¥" + _item.draft_premium, "a-badge-primary");
+                                                        return format.badge(format.currencySymbol() + _item.draft_premium, "a-badge-primary");
                                                     }
                                                     return '-';
                                                 }
-                                                return format.badge("¥" + _, "a-badge-primary");
+                                                return format.badge(format.currencySymbol() + _, "a-badge-primary");
                                             }
                                         },
                                     ]);
@@ -302,7 +315,7 @@
                 ],
                 assign: {},
                 autoPosition: true,
-                confirmText: `<i class="fa-duotone fa-regular fa-badge-check"></i> 确认选号`,
+                confirmText: `<i class="fa-duotone fa-regular fa-badge-check"></i> ${i18n('确认选号')}`,
                 width: "620px"
             });
         });
@@ -311,7 +324,7 @@
     function _ShareItem() {
         $(`.shared-button`).click(() => {
             util.copyTextToClipboard(_item.share_url, () => {
-                layer.msg("分享链接复制成功，快去分享给朋友吧！")
+                layer.msg(i18n("分享链接复制成功，快去分享给朋友吧！"))
             });
         });
     }

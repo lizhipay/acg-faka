@@ -77,6 +77,12 @@ interface App
     public function plugins(array $data): array;
 
     /**
+     * 应用商店里有已上架插件的作者名单，用于「按作者筛选」
+     * @return array
+     */
+    public function authors(): array;
+
+    /**
      * @param int $type
      * @param int $pluginId
      * @param int $payType

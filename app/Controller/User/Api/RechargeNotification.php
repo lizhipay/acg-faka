@@ -6,6 +6,7 @@ namespace App\Controller\User\Api;
 
 use App\Controller\Base\API\User;
 use App\Interceptor\Waf;
+use App\Util\CallbackIpWhitelist;
 use App\Util\Str;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
@@ -26,7 +27,9 @@ class RechargeNotification extends User
      */
     public function callback(Request $request): string
     {
-        $handle = $_GET['_PARAMETER'][0];
+        CallbackIpWhitelist::enforce();
+        //回调URL带的就是订单号
+        $tradeNo = (string)($_GET['_PARAMETER'][0] ?? '');
         foreach (['unsafePost', 'unsafeJson', 'unsafeGet'] as $method) {
             $data = $request->$method();
             if (isset($data['s'])) unset($data['s']);
@@ -56,6 +59,6 @@ class RechargeNotification extends User
             throw new JSONException("非法签名");
         }
 
-        return $this->recharge->callback($handle, $data);
+        return $this->recharge->callback($tradeNo, $data);
     }
 }

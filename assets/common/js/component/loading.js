@@ -2,7 +2,6 @@ class Loading {
     static _overlay = null;
     static _inlineHost = null; // 当前内联宿主
     static _inlineEl = null;   // 当前内联loader
-    static _locked = false;
 
     /**
      * 显示加载动画
@@ -54,14 +53,11 @@ class Loading {
         if (color) ring.style.setProperty('--chahuo-ring-color', color);
         if (border != null) ring.style.setProperty('--chahuo-ring-border', typeof border === 'number' ? border + 'px' : String(border));
         if (typeof overlayAlpha === 'number') ov.style.setProperty('--chahuo-ring-overlay', `rgba(0,0,0,${overlayAlpha})`);
-
-        this._lockScroll();
     }
 
     /** 隐藏（同时清理 overlay 与 inline） */
     static hide() {
         if (this._overlay) this._overlay.setAttribute('mask-hidden', 'true');
-        this._unlockScroll();
         this._cleanupInline();
     }
 
@@ -86,21 +82,5 @@ class Loading {
         }
         this._inlineEl = null;
         this._inlineHost = null;
-    }
-
-    static _lockScroll() {
-        if (this._locked) return;
-        this._locked = true;
-        const doc = document.documentElement;
-        const sbw = window.innerWidth - doc.clientWidth;
-        doc.style.overflow = 'hidden';
-        if (sbw > 0) doc.style.paddingRight = sbw + 'px';
-    }
-    static _unlockScroll() {
-        if (!this._locked) return;
-        this._locked = false;
-        const doc = document.documentElement;
-        doc.style.overflow = '';
-        doc.style.paddingRight = '';
     }
 }

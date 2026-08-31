@@ -18,16 +18,16 @@
                 let html = format.badge(`<i class="fa-duotone fa-regular fa-user"></i> ${res.data.username}`, 'a-badge-light edit-store-user');
 
                 if (res.data.level === 0) {
-                    html += format.badge(`<i class="fa-duotone fa-regular fa-crown"></i> 專業版`, 'a-badge a-badge-primary hide-mobile');
+                    html += format.badge(`<i class="fa-duotone fa-regular fa-crown"></i> ${i18n('專業版')}`, 'a-badge a-badge-primary hide-mobile');
                 }
 
                 if (res.data.level === 1) {
-                    html += format.badge(`<i class="fa-duotone fa-regular fa-crown"></i> 企業版`, 'a-badge a-badge-success');
+                    html += format.badge(`<i class="fa-duotone fa-regular fa-crown"></i> ${i18n('企業版')}`, 'a-badge a-badge-success');
                 }
 
                 if (res.data.developer == 1) {
-                    html += format.badge(`<i class="fa-duotone fa-regular fa-code"></i> 開發者`, 'a-badge a-badge-success hide-mobile');
-                    html += format.badge(`<i class="fa-duotone fa-regular fa-yen-sign"></i> ${res.data.balance}`, 'a-badge a-badge-warning hide-mobile');
+                    html += format.badge(`<span class="material-icons-outlined md-top-pill__icon" aria-hidden="true">terminal</span> ${i18n('開發者')}`, 'a-badge a-badge-success hide-mobile');
+                    html += format.badge(`<span class="material-icons-outlined md-top-pill__icon" aria-hidden="true">account_balance_wallet</span> ${res.data.balance}`, 'a-badge a-badge-warning hide-mobile');
                 }
 
                 $StoreText.html(format.badgeGroup(html));
@@ -38,30 +38,30 @@
                         submit: '/admin/api/app/editPassword',
                         tab: [
                             {
-                                name: `<i class="fa-duotone fa-regular fa-user-pen"></i> 修改应用商店账户密码`,
+                                name: `<i class="fa-duotone fa-regular fa-user-pen"></i> ${i18n('修改应用商店账户密码')}`,
                                 form: [
                                     {
                                         title: false,
                                         name: "tips_page",
                                         type: "custom",
                                         complete: (form, dom) => {
-                                            dom.html(`<div class="">               
+                                            dom.html(`<div class="">
                   <div class="alert alert-warning d-flex align-items-center" role="alert">
                     <p class="mb-0">
-                    <i class="fa-duotone fa-regular fa-circle-exclamation"></i> 旧密码输入错误超过10次，将会永久封禁账户，请慎重操作。
+                    <i class="fa-duotone fa-regular fa-circle-exclamation"></i> ${i18n('旧密码输入错误超过')}10${i18n('次，将会永久封禁账户，请慎重操作。')}
                     </p>
                   </div>`);
                                         }
                                     },
-                                    {title: false, name: "old_password", type: "password", placeholder: "旧密码"},
+                                    {title: "旧密码", name: "old_password", type: "password", placeholder: "请输入旧密码"},
                                     {
-                                        title: false,
+                                        title: "新密码",
                                         name: "new_password",
                                         type: "input",
-                                        placeholder: "新密码(6位字符以上)"
+                                        placeholder: "6位字符以上"
                                     },
                                     {
-                                        title: false,
+                                        title: "踢除其他登录",
                                         name: "kick",
                                         tips: "如果开启此功能，当您修改密码时，所有已登录服务器将被强制下线，必须使用新密码重新登录。建议仅在账号可能被他人盗用时使用，平时无需勾选。",
                                         type: "switch",
@@ -73,7 +73,7 @@
                         autoPosition: true,
                         height: "auto",
                         maxmin: false,
-                        confirmText: `${util.icon("fa-duotone fa-regular fa-rotate")} 确认修改`,
+                        confirmText: `${util.icon("fa-duotone fa-regular fa-rotate")} ${i18n('确认修改')}`,
                         width: "320px"
                     });
                 });
@@ -91,12 +91,12 @@
                     }, 1500);
                 });
             } : false,
-            confirmText: `<i class="fa-duotone fa-regular fa-arrows-rotate"></i>立即更新`,
+            confirmText: `<i class="fa-duotone fa-regular fa-arrows-rotate"></i>${i18n('立即更新')}`,
             width: "620px",
             height: "720px",
             tab: [
                 {
-                    name: `<i class="fa-duotone fa-regular fa-code"></i> 版本列表`,
+                    name: `<i class="fa-duotone fa-regular fa-code"></i> ${i18n('版本列表')}`,
                     form: [
                         {
                             title: false,
@@ -147,7 +147,7 @@
                 if (_IsLatestVersion) {
                     $('.latest-version').css("color", "green").html("[ Latest ]");
                 } else {
-                    $('.latest-version').css("color", "red").html(`[ 更新 v${res.data.version} ]`);
+                    $('.latest-version').css("color", "red").html(`[ ${i18n('更新')} v${res.data.version} ]`);
                     let cache = localStorage.getItem(res.data.version);
                     //第一次检测到版本，主动打开更新窗口
                     if (!cache) {
@@ -161,10 +161,10 @@
                 });
             },
             error: () => {
-                $('.latest-update').css("color", "red").html("版本检查失败");
+                $('.latest-update').css("color", "red").html(i18n("版本检查失败"));
             },
             fail: () => {
-                $('.latest-update').css("color", "red").html("版本检查失败");
+                $('.latest-update').css("color", "red").html(i18n("版本检查失败"));
             }
         });
     }
@@ -180,15 +180,31 @@
             }
 
             if (res.themePlugin > 0){
-                $(`.theme-update`).html(`${res.themePlugin}个更新`).show();
+                $(`.theme-update`).html(`${res.themePlugin}${i18n('个更新')}`).show();
             }
 
             if (res.generalPlugin > 0){
-                $(`.general-update`).html(`${res.generalPlugin}个更新`).show();
+                $(`.general-update`).html(`${res.generalPlugin}${i18n('个更新')}`).show();
             }
 
             if (res.payPlugin > 0){
-                $(`.payPlugin-update`).html(`${res.payPlugin}个更新`).show();
+                $(`.payPlugin-update`).html(`${res.payPlugin}${i18n('个更新')}`).show();
+            }
+        });
+    }
+
+    function _LoadTicketBadge() {
+        util.post({
+            url: "/admin/api/ticket/badge",
+            loader: false,
+            error: false,
+            fail: false,
+            done: res => {
+                const count = Math.max(0, Number(res?.data?.count || 0));
+                $('.ticket-admin-badge')
+                    .text(count > 99 ? '99+' : count)
+                    .prop('hidden', count < 1)
+                    .attr('aria-label', count > 0 ? `${i18n('有')} ${count} ${i18n('张工单等待处理')}` : i18n('没有待处理工单'));
             }
         });
     }
@@ -206,6 +222,12 @@
         $(document).pjax('a[target!=_blank]', '#pjax-container', {fragment: '#pjax-container', timeout: 8000});
         $(document).on('pjax:send', function () {
             Loading.show();
+            // 手机版:点菜单(pjax 导航)后自动收起侧栏抽屉；桌面态 aside 非 drawer-on,跳过
+            var aside = document.querySelector('#kt_aside');
+            if (aside && aside.classList.contains('drawer-on') && window.KTDrawer) {
+                var drawer = KTDrawer.getInstance(aside);
+                drawer && drawer.hide();
+            }
         });
         $(document).on('pjax:complete', function () {
             Loading.hide();
@@ -219,6 +241,13 @@
     _LoadStoreUserInfo();
     _LodLatest();
     _LoadPluginUpdates();
+    _LoadTicketBadge();
     _AppServerSelect();
     _Pjax();
+
+    $(document).off('ticket:badge-refresh.admin').on('ticket:badge-refresh.admin', _LoadTicketBadge);
+    if (window.__adminTicketBadgeTimer) {
+        clearInterval(window.__adminTicketBadgeTimer);
+    }
+    window.__adminTicketBadgeTimer = setInterval(_LoadTicketBadge, 60000);
 }();

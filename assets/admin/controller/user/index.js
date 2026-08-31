@@ -1,6 +1,271 @@
 !function () {
     const table = new Table("/admin/api/user/data", "#user-table");
-    const marketViewDom = `<div style="padding: 0px;" class="more-table"><table class="layui-table"><tbody><tr><td colspan="2" style="text-align: center;"><img src="[avatar]"                                                                 style="height: 80px;width:80px;border-radius: 100%;box-shadow: 1px 1px 10px 1px #ed9b9bb3;"></td></tr><tr><td>店铺名称</td><td>[shop_name]</td></tr><tr><td>浏览器标题</td><td>[title]</td></tr><tr><td>店铺公告</td><td>[notice]</td></tr><tr><td>客服QQ</td><td>[service_qq]</td></tr><tr><td>客服链接</td><td><a href="[service_url]" target="_blank">[service_url]</a></td></tr><tr><td>子域名</td><td><a href="//[subdomain]" target="_blank">[subdomain]</a></td></tr><tr><td>绑定域名</td><td><a href="//[topdomain]" target="_blank">[topdomain]</a></td></tr><tr><td>主站商品</td><td>[master_display]</td></tr><tr><td>创建时间</td><td>[create_time]</td></tr><tr><td>今日交易</td><td>[today_order_amount]</td></tr><tr><td>昨日交易</td><td>[yesterday_order_amount]</td></tr><tr><td>本周交易</td><td>[week_order_amount]</td></tr><tr><td>本月交易</td><td>[month_order_amount]</td></tr><tr><td>总交易</td><td>[total_order_amount]</td></tr></tbody></table></div>`;
+    const controllerLayers = new Set();
+    const businessRows = new Map();
+    let controllerActive = true;
+    let accountConfirmationOpen = false;
+    let groupUpdatePending = false;
+    const openControllerLayer = options => {
+        const originalEnd = options.end;
+        let index;
+        index = layer.open({
+            ...options,
+            end: function () {
+                controllerLayers.delete(index);
+                if (typeof originalEnd === 'function') return originalEnd.apply(this, arguments);
+            }
+        });
+        if (controllerActive) controllerLayers.add(index); else layer.close(index);
+        return index;
+    };
+    $(document)
+        .off('pjax:beforeReplace.mdUserController')
+        .one('pjax:beforeReplace.mdUserController', () => {
+            controllerActive = false;
+            controllerLayers.forEach(index => layer.close(index));
+            controllerLayers.clear();
+            businessRows.clear();
+            $('.handle, .btn-app-del').off('.mdAdminUserToolbar');
+            $(document).off('.mdUserBusinessDetails');
+            if (accountConfirmationOpen && typeof Swal !== 'undefined') Swal.close();
+            accountConfirmationOpen = false;
+            groupUpdatePending = false;
+        });
+    const escapeHtml = value => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    const mobileAdminEnabled = () => Boolean(window.AdminMobile && window.AdminMobile.isEnabled && window.AdminMobile.isEnabled());
+    const inputMeta = (name, attributes) => form => {
+        $('.' + form.unique + ' input[name="' + name + '"]').attr(attributes);
+    };
+    const mobileAccountSubmit = (url, row, account) => {
+        let confirming = false;
+        let requesting = false;
+        return (data, popupIndex) => {
+            if (!controllerActive || confirming || requesting || accountConfirmationOpen) return;
+            const action = String(data.action);
+            if (!['0', '1'].includes(action)) {
+                message.warning('请选择增加或扣减。');
+                return;
+            }
+            const rawAmount = String(data.amount ?? '').trim();
+            const amountNumber = Number(rawAmount);
+            if (!/^\d+(?:\.\d{1,2})?$/.test(rawAmount) || !Number.isFinite(amountNumber) || amountNumber <= 0 || amountNumber > 99999999.99) {
+                message.warning('请输入大于 0、最多两位小数且不超过 99999999.99 的数量。');
+                return;
+            }
+            const amount = amountNumber.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+            const rawReason = String(data.log ?? '').trim();
+            const reasonLength = Array.from(rawReason).length;
+            if (reasonLength < 2 || reasonLength > 64) {
+                message.warning('操作原因去除首尾空格后须为 2–64 个字。');
+                return;
+            }
+            data = {...data, amount: amount, log: rawReason};
+            const increase = action === '1';
+            const direction = increase ? i18n('增加') : i18n('扣减');
+            const username = escapeHtml(row.username || i18n('未命名会员'));
+            const userId = escapeHtml(row.id ?? '-');
+            const current = escapeHtml(row[account.field] ?? '0');
+            const reason = escapeHtml(rawReason);
+            const cumulativeLabel = account.totalLabel || i18n('累计统计');
+            const cumulative = increase
+                ? (String(data.total) === '1' ? `${i18n('计入')}${cumulativeLabel}` : `${i18n('不计入')}${cumulativeLabel}`)
+                : `${i18n('扣减操作不影响')}${cumulativeLabel}`;
+            confirming = true;
+            accountConfirmationOpen = true;
+            Swal.fire({
+                title: `${i18n('确认')}${direction}${account.label}`,
+                html: `<div style="text-align:left;line-height:1.8;">
+                    <div><b>${i18n('会员：')}</b>${username}（ID ${userId}）</div>
+                    <div><b>${i18n('当前')}${account.label}：</b>${current}</div>
+                    <div><b>${i18n('变动方向：')}</b>${direction}</div>
+                    <div><b>${i18n('变动数量：')}</b>${escapeHtml(amount)}</div>
+                    <div><b>${i18n('累计统计：')}</b>${escapeHtml(cumulative)}</div>
+                    <div><b>${i18n('操作原因：')}</b>${reason}</div>
+                    <div style="margin-top:10px;color:#d14343;">${i18n('提交后会立即写入账单并改变会员')}${account.label}，${i18n('无法在本页面一键撤销。')}</div>
+                </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                cancelButtonText: i18n('返回修改'),
+                confirmButtonText: `${i18n('确认')}${direction}`
+            }).then(result => {
+                confirming = false;
+                accountConfirmationOpen = false;
+                if (!(result.isConfirmed === true || result.value === true) || !controllerActive || requesting) return;
+                requesting = true;
+                util.post({
+                    url: url,
+                    data: data,
+                    done: res => {
+                        requesting = false;
+                        if (!controllerActive) return;
+                        layer.close(popupIndex);
+                        message.alert(!res.msg || res.msg === 'success' ? i18n('会员账户变动已保存。') : res.msg, 'success');
+                        table.refresh();
+                    },
+                    error: res => {
+                        requesting = false;
+                        if (controllerActive) message.alert(res?.msg || i18n('会员账户变动未能保存。'), 'error');
+                    },
+                    fail: () => {
+                        requesting = false;
+                        if (controllerActive) message.error('网络异常，会员账户变动未提交。');
+                    }
+                });
+            });
+        };
+    };
+    const detailValue = value => {
+        value = String(value ?? '').trim();
+        return value ? escapeHtml(value) : '-';
+    };
+    const safeExternalLink = (value, hostOnly = false) => {
+        const label = String(value ?? '').trim();
+        if (!label) return '-';
+        let href = label;
+        if (hostOnly && !/^[a-z][a-z0-9+.-]*:/i.test(href) && !href.startsWith('//')) href = 'https://' + href;
+        try {
+            const parsed = new URL(href, window.location.origin);
+            if (!['http:', 'https:'].includes(parsed.protocol)) return detailValue(label);
+            return `<a href="${escapeHtml(parsed.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
+        } catch (error) {
+            return detailValue(label);
+        }
+    };
+    const detailRow = (label, value) => `<div class="md-detail__row"><span class="md-detail__label">${escapeHtml(label)}</span><span class="md-detail__value">${value}</span></div>`;
+    const renderBusinessDetail = (row, statistics) => {
+        const business = row.business || {};
+        const avatar = row.avatar || '/favicon.ico';
+        const shopName = business.shop_name || row.username || i18n('未命名商户');
+        return `<div class="md-detail md-user-business-detail">
+            <div class="md-detail__header">${mdUserCell({avatar: escapeHtml(avatar), username: escapeHtml(shopName), id: escapeHtml(row.id)})}</div>
+            <div class="md-detail__body">
+                ${detailRow(i18n('浏览器标题'), detailValue(business.title))}
+                ${detailRow(i18n('店铺公告'), detailValue(business.notice))}
+                ${detailRow(i18n('客服 QQ'), detailValue(business.service_qq))}
+                ${detailRow(i18n('客服链接'), safeExternalLink(business.service_url))}
+                ${detailRow(i18n('子域名'), safeExternalLink(business.subdomain, true))}
+                ${detailRow(i18n('绑定域名'), safeExternalLink(business.topdomain, true))}
+                ${detailRow(i18n('主站商品'), business.master_display == 1 ? '<span class="text-success">' + i18n('显示') + '</span>' : '<span class="text-muted">' + i18n('隐藏') + '</span>')}
+                ${detailRow(i18n('创建时间'), detailValue(business.create_time))}
+                ${detailRow(i18n('今日交易'), detailValue(statistics.today_order_amount))}
+                ${detailRow(i18n('昨日交易'), detailValue(statistics.yesterday_order_amount))}
+                ${detailRow(i18n('本周交易'), detailValue(statistics.week_order_amount))}
+                ${detailRow(i18n('本月交易'), detailValue(statistics.month_order_amount))}
+                ${detailRow(i18n('总交易'), detailValue(statistics.total_order_amount))}
+            </div>
+        </div>`;
+    };
+    const renderLegacyBusinessDetail = (row, statistics) => {
+        const business = row.business || {};
+        const link = (value, hostOnly = false) => {
+            const label = detailValue(value);
+            if (label === '-') return label;
+            return safeExternalLink(value, hostOnly);
+        };
+        return `<div style="padding:0;" class="more-table"><table class="layui-table"><tbody>
+            <tr><td colspan="2" style="text-align:center;"><img src="${escapeHtml(row.avatar || '/favicon.ico')}" alt="" style="height:80px;width:80px;border-radius:100%;box-shadow:1px 1px 10px 1px #ed9b9bb3;"></td></tr>
+            <tr><td>${i18n('店铺名称')}</td><td>${detailValue(business.shop_name)}</td></tr>
+            <tr><td>${i18n('浏览器标题')}</td><td>${detailValue(business.title)}</td></tr>
+            <tr><td>${i18n('店铺公告')}</td><td>${detailValue(business.notice)}</td></tr>
+            <tr><td>${i18n('客服')}QQ</td><td>${detailValue(business.service_qq)}</td></tr>
+            <tr><td>${i18n('客服链接')}</td><td>${link(business.service_url)}</td></tr>
+            <tr><td>${i18n('子域名')}</td><td>${link(business.subdomain, true)}</td></tr>
+            <tr><td>${i18n('绑定域名')}</td><td>${link(business.topdomain, true)}</td></tr>
+            <tr><td>${i18n('主站商品')}</td><td>${business.master_display == 1 ? '<span style="color:green;">' + i18n('显示') + '</span>' : '<span style="color:green;">' + i18n('隐藏') + '</span>'}</td></tr>
+            <tr><td>${i18n('创建时间')}</td><td>${detailValue(business.create_time)}</td></tr>
+            <tr><td>${i18n('今日交易')}</td><td>${detailValue(statistics.today_order_amount)}</td></tr>
+            <tr><td>${i18n('昨日交易')}</td><td>${detailValue(statistics.yesterday_order_amount)}</td></tr>
+            <tr><td>${i18n('本周交易')}</td><td>${detailValue(statistics.week_order_amount)}</td></tr>
+            <tr><td>${i18n('本月交易')}</td><td>${detailValue(statistics.month_order_amount)}</td></tr>
+            <tr><td>${i18n('总交易')}</td><td>${detailValue(statistics.total_order_amount)}</td></tr>
+        </tbody></table></div>`;
+    };
+    const openBusinessDetail = row => {
+        const userId = Number(row?.id || 0);
+        if (!userId || !row?.business_level || !row?.business) return;
+        util.get(`/admin/api/user/statistics?id=${userId}`, statistics => {
+            if (!controllerActive) return;
+            const mobile = mobileAdminEnabled();
+            component.popup({
+                submit: false,
+                maxmin: false,
+                tab: [{
+                    name: mobile
+                        ? `<i class="fa-duotone fa-regular fa-store"></i> ${i18n('商户详情')}`
+                        : `<i class="fa-duotone fa-regular fa-face-viewfinder"></i> ${i18n('查看商家')}`,
+                    form: [{
+                        title: false,
+                        name: 'business_detail',
+                        type: 'custom',
+                        complete: (form, dom) => dom.html(mobile
+                            ? renderBusinessDetail(row, statistics || {})
+                            : renderLegacyBusinessDetail(row, statistics || {}))
+                    }]
+                }],
+                autoPosition: true,
+                height: 'auto',
+                width: '520px'
+            });
+        });
+    };
+    const openWechatQr = (value, id) => {
+        const mobile = mobileAdminEnabled();
+        const targetClass = mobile ? `md-user-wechat-qr-${Number(id) || 0}` : `wxqrcode-${Number(id) || 0}`;
+        openControllerLayer({
+            ...(mobile ? {
+                type: 1,
+                title: '微信收款码',
+                closeBtn: 1,
+                anim: 2,
+                area: ['100%', 'auto'],
+                offset: 'b',
+                maxmin: false,
+                resize: false,
+                move: false,
+                shadeClose: true,
+                skin: 'admin-mobile-layer-popup admin-mobile-layer-popup--sheet md-user-qr-layer',
+                content: `<div class="md-user-wechat-qr ${targetClass}"></div>`
+            } : {
+                type: 1,
+                title: false,
+                closeBtn: 0,
+                anim: 5,
+                area: ['245px', '245px'],
+                shadeClose: true,
+                content: `<div class="${targetClass}" style="padding:22px 20px 20px 24px;overflow:hidden;"></div>`
+            }),
+            success: layero => {
+                $(layero).find(`.${targetClass}`).qrcode({
+                    render: 'canvas',
+                    width: 200,
+                    height: 200,
+                    text: value
+                });
+            }
+        });
+    };
+
+    $(document)
+        .off('click.mdUserBusinessDetails', '.md-user-business-detail-trigger')
+        .on('click.mdUserBusinessDetails', '.md-user-business-detail-trigger', function (event) {
+            event.preventDefault();
+            const row = businessRows.get(String($(this).attr('data-user-id') || ''));
+            if (row) openBusinessDetail(row);
+        })
+        .off('click.mdAdminUserWechatQr', '.md-user-wechat-qr-trigger')
+        .on('click.mdAdminUserWechatQr', '.md-user-wechat-qr-trigger', function () {
+            const value = decodeURIComponent(String($(this).attr('data-wechat-code') || ''));
+            if (value) openWechatQr(value, $(this).attr('data-user-id'));
+        })
+        .off('pjax:beforeReplace.mdAdminUserQr')
+        .one('pjax:beforeReplace.mdAdminUserQr', () => {
+            $(document).off('click.mdAdminUserWechatQr', '.md-user-wechat-qr-trigger');
+        });
 
     const modal = function (title, a = {}) {
         let values = {...a};
@@ -21,7 +286,11 @@
                             photoAlbumUrl: '/admin/api/upload/get',
                             placeholder: "请选择图片", width: 64, height: 64
                         },
-                        {title: "用户名", name: "username", type: "input", placeholder: "请输入用户名"},
+                        {
+                            title: "用户名", name: "username", type: "input", placeholder: "请输入用户名",
+                            inputmode: 'text', enterkeyhint: 'next',
+                            complete: inputMeta('username', {autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false'})
+                        },
                         {
                             title: "会员等级",
                             name: "group_id",
@@ -36,11 +305,31 @@
                             dict: "business_level,id,name",
                             placeholder: "暂未开通"
                         },
-                        {title: "邮箱", name: "email", type: "input", placeholder: "请输入邮箱"},
-                        {title: "手机", name: "phone", type: "input", placeholder: "请输入手机号"},
-                        {title: "QQ", name: "qq", type: "input", placeholder: "请输入QQ号"},
-                        {title: "登录密码", name: "password", type: "input", placeholder: "不修改请留空"},
-                        {title: "上级ID", name: "pid", type: "input", placeholder: "请输入上级ID"},
+                        {
+                            title: "邮箱", name: "email", type: "input", placeholder: "请输入邮箱",
+                            inputmode: 'email', enterkeyhint: 'next',
+                            complete: inputMeta('email', {inputmode: 'email', autocomplete: 'email', autocapitalize: 'none', spellcheck: 'false'})
+                        },
+                        {
+                            title: "手机", name: "phone", type: "input", placeholder: "请输入手机号",
+                            inputmode: 'tel', enterkeyhint: 'next',
+                            complete: inputMeta('phone', {inputmode: 'tel', autocomplete: 'tel'})
+                        },
+                        {
+                            title: "QQ", name: "qq", type: "input", placeholder: "请输入QQ号",
+                            inputmode: 'numeric', enterkeyhint: 'next',
+                            complete: inputMeta('qq', {inputmode: 'numeric', autocomplete: 'off'})
+                        },
+                        {
+                            title: "登录密码", name: "password", type: "password", placeholder: "不修改请留空",
+                            enterkeyhint: 'next',
+                            complete: inputMeta('password', {autocomplete: 'new-password', autocapitalize: 'none', spellcheck: 'false'})
+                        },
+                        {
+                            title: "上级ID", name: "pid", type: "input", placeholder: "请输入上级ID",
+                            inputmode: 'numeric', enterkeyhint: 'done',
+                            complete: inputMeta('pid', {inputmode: 'numeric', autocomplete: 'off'})
+                        },
                         {title: "状态", name: "status", type: "switch", text: "正常"},
                     ]
                 }
@@ -56,8 +345,40 @@
     }
     table.setColumns([
         {checkbox: true},
-        {field: 'id', title: 'ID', width: 80}
-        , {field: 'avatar', title: '用户名', formatter: (_, __) => format.user(__)}
+        {field: 'id', title: 'ID', width: 80, visible: false}
+        , {
+            field: 'avatar',
+            title: '用户名',
+            formatter: (_, row) => {
+                const username = String(row?.username ?? '');
+                if (!username) return mdUserCell(row);
+                const userId = String(row?.id ?? '');
+                const avatar = row?.avatar
+                    ? `<img src="${escapeHtml(row.avatar)}" class="md-user-cell__avatar" alt="">`
+                    : `<span class="md-user-cell__avatar md-user-cell__avatar--ph">${escapeHtml((username.charAt(0) || '?').toUpperCase())}</span>`;
+                return `<div class="md-user-cell md-user-cell--copyable">${avatar}<div class="md-user-cell__text"><span class="md-user-cell__name-row"><span class="md-user-cell__name">${escapeHtml(username)}</span><button type="button" class="md-copyable-cell__copy" aria-label="${i18n('复制用户名')}" title="${i18n('复制用户名')}">${util.icon("fa-duotone fa-regular fa-copy")}</button></span><span class="md-user-cell__id">${escapeHtml(userId)}</span></div></div>`;
+            },
+            events: {
+                'click .md-copyable-cell__copy': (event, _, row) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const username = String(row?.username ?? '');
+                    if (!username) {
+                        message.error('用户名为空，无法复制');
+                        return;
+                    }
+                    util.copyTextToClipboard(
+                        username,
+                        () => message.success('用户名已复制'),
+                        () => message.error('用户名复制失败')
+                    );
+                },
+                'dblclick .md-copyable-cell__copy': event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }
+        }
         , {field: 'group', title: '会员等级', formatter: _ => format.group(_)}
         , {field: 'email', title: '邮箱'}
         , {field: 'phone', title: '手机号'}
@@ -66,59 +387,14 @@
         , {field: 'recharge', title: '元气', sort: true}
         , {field: 'coin', title: '硬币', formatter: _ => format.money(_, "#447cf3"), sort: true}
         , {
-            field: 'business_level', title: '商户信息', formatter: (_, __) => {
-                if (!_) {
-                    return '-';
-                }
-                const did = util.generateRandStr();
-
-                $(document).on("click", `.${did}`, () => {
-                    util.get(`/admin/api/user/statistics?id=${_.id}`, data => {
-
-
-                        component.popup({
-                            submit: false,
-                            maxmin: false,
-                            tab: [
-                                {
-                                    name: `<i class="fa-duotone fa-regular fa-face-viewfinder"></i> 查看商家`,
-                                    form: [
-                                        {
-                                            title: false, name: "custom", type: "custom", complete: (form, dom) => {
-
-                                                dom.html(marketViewDom.replace("[avatar]", __.avatar ? __.avatar : '/favicon.ico')
-                                                    .replace("[shop_name]", __.business.shop_name ? __.business.shop_name : "-")
-                                                    .replace("[title]", __.business.title ? __.business.title : "-")
-                                                    .replace("[notice]", __.business.notice ? __.business.notice : "-")
-                                                    .replace("[service_qq]", __.business.service_qq ? __.business.service_qq : "-")
-                                                    .replaceAll("[service_url]", __.business.service_url ? __.business.service_url : "-")
-                                                    .replaceAll("[subdomain]", __.business.subdomain ? __.business.subdomain : "-")
-                                                    .replaceAll("[topdomain]", __.business.topdomain ? __.business.topdomain : "-")
-                                                    .replace("[create_time]", __.business.create_time)
-                                                    .replace("[master_display]", __.business.master_display == 1 ? "<span style='color: green;'>显示</span>" : "<span style='color: green;'>隐藏</span>")
-                                                    .replace("[today_order_amount]", data.today_order_amount)
-                                                    .replace("[yesterday_order_amount]", data.yesterday_order_amount)
-                                                    .replace("[week_order_amount]", data.week_order_amount)
-                                                    .replace("[month_order_amount]", data.month_order_amount)
-                                                    .replace("[total_order_amount]", data.total_order_amount));
-
-                                            }
-                                        },
-                                    ]
-                                }
-                            ],
-                            autoPosition: true,
-                            height: "auto",
-                            width: "520px"
-                        });
-
-                    });
-                });
-
-                return `${_.name} <a class="text-primary ${did}" href="javascript:void(0);">详细</a>`
+            field: 'business_level', title: '商户信息', formatter: (_, row) => {
+                if (!_) return '-';
+                if (mobileAdminEnabled()) return format.group(_);
+                businessRows.set(String(row.id), row);
+                return `${escapeHtml(_.name)} <a class="text-primary md-user-business-detail-trigger" data-user-id="${Number(row.id) || 0}" href="javascript:void(0);">${i18n('详细')}</a>`;
             }
         }
-        , {field: 'parent', title: '上级', formatter: format.user}
+        , {field: 'parent', title: '上级', formatter: (_, __) => mdUserCell(_)}
         , {field: 'status', title: '状态', dict: "_user_status"}
         , {
             field: 'operation', title: '操作', type: 'button', buttons: [
@@ -127,10 +403,11 @@
                     tips: "余额操作",
                     click: (event, value, row, index) => {
                         component.popup({
-                            submit: '/admin/api/user/recharge',
+                            submit: mobileAccountSubmit('/admin/api/user/recharge', row, {label: '余额', field: 'balance', totalLabel: i18n('元气累计')}),
+                            submitRoute: '/admin/api/user/recharge',
                             tab: [
                                 {
-                                    name: "<i class='fa-duotone fa-regular fa-envelope-open-dollar'></i> 余额充值",
+                                    name: "<i class='fa-duotone fa-regular fa-envelope-open-dollar'></i> " + i18n('余额充值'),
                                     form: [
                                         {
                                             title: "类型",
@@ -139,12 +416,20 @@
                                             placeholder: "请选择",
                                             default: 1,
                                             dict: [
-                                                {id: 1, name: "<b style='color: green;'>充值</b>"},
-                                                {id: 0, name: "<b style='color: red;'>扣费</b>"},
+                                                {id: 1, name: "<b style='color: green;'>" + i18n('充值') + "</b>"},
+                                                {id: 0, name: "<b style='color: red;'>" + i18n('扣费') + "</b>"},
                                             ]
                                         },
-                                        {title: "金额", name: "amount", type: "input", placeholder: "请输入金额"},
-                                        {title: "原因", name: "log", type: "input", placeholder: "请输入原因"},
+                                        {
+                                            title: "金额", name: "amount", type: "input", placeholder: "请输入金额",
+                                            inputmode: 'decimal', enterkeyhint: 'next',
+                                            complete: inputMeta('amount', {inputmode: 'decimal', autocomplete: 'off'})
+                                        },
+                                        {
+                                            title: "原因", name: "log", type: "input", placeholder: "请输入原因",
+                                            inputmode: 'text', enterkeyhint: 'done',
+                                            complete: inputMeta('log', {autocomplete: 'off', maxlength: '64'})
+                                        },
                                         {title: "元气累计", name: "total", type: "switch", text: "是", default: 1},
                                     ]
                                 }
@@ -154,6 +439,7 @@
                             height: "auto",
                             width: "520px",
                             maxmin: false,
+                            confirmText: i18n('核对并提交'),
                             done: () => {
                                 table.refresh();
                             }
@@ -165,10 +451,11 @@
                     tips: "硬币操作",
                     click: (event, value, row, index) => {
                         component.popup({
-                            submit: '/admin/api/user/coin',
+                            submit: mobileAccountSubmit('/admin/api/user/coin', row, {label: '硬币', field: 'coin', totalLabel: i18n('硬币累计')}),
+                            submitRoute: '/admin/api/user/coin',
                             tab: [
                                 {
-                                    name: `<i class="fa-duotone fa-regular fa-coins"></i> 硬币充值`,
+                                    name: `<i class="fa-duotone fa-regular fa-coins"></i> ${i18n('硬币充值')}`,
                                     form: [
                                         {
                                             title: "类型",
@@ -177,13 +464,21 @@
                                             placeholder: "请选择",
                                             default: 1,
                                             dict: [
-                                                {id: 1, name: "<b style='color: green;'>充值</b>"},
-                                                {id: 0, name: "<b style='color: red;'>扣费</b>"},
+                                                {id: 1, name: "<b style='color: green;'>" + i18n('充值') + "</b>"},
+                                                {id: 0, name: "<b style='color: red;'>" + i18n('扣费') + "</b>"},
                                             ]
                                         },
-                                        {title: "金额", name: "amount", type: "input", placeholder: "请输入硬币数量"},
-                                        {title: "原因", name: "log", type: "input", placeholder: "请输入原因"},
-                                        {title: "元气累计", name: "total", type: "switch", text: "是", default: 1}
+                                        {
+                                            title: "金额", name: "amount", type: "input", placeholder: "请输入硬币数量",
+                                            inputmode: 'decimal', enterkeyhint: 'next',
+                                            complete: inputMeta('amount', {inputmode: 'decimal', autocomplete: 'off'})
+                                        },
+                                        {
+                                            title: "原因", name: "log", type: "input", placeholder: "请输入原因",
+                                            inputmode: 'text', enterkeyhint: 'done',
+                                            complete: inputMeta('log', {autocomplete: 'off', maxlength: '64'})
+                                        },
+                                        {title: "硬币累计", name: "total", type: "switch", text: "是", default: 1}
                                     ]
                                 }
                             ],
@@ -192,6 +487,7 @@
                             height: "auto",
                             width: "520px",
                             maxmin: false,
+                            confirmText: i18n('核对并提交'),
                             done: () => {
                                 table.refresh();
                             }
@@ -202,7 +498,7 @@
                     icon: 'fa-duotone fa-regular fa-pen-to-square text-primary',
                     tips: '修改',
                     click: (event, value, row, index) => {
-                        modal(`<i class="fa-duotone fa-regular fa-user-pen"></i> 修改用户`, row);
+                        modal(`<i class="fa-duotone fa-regular fa-user-pen"></i> ${i18n('修改用户')}`, row);
                     }
                 },
                 {
@@ -221,10 +517,15 @@
                     tips: '禁用此用户',
                     show: _ => _.status === 1,
                     click: (event, value, row, index) => {
-                        util.post('/admin/api/user/save', {id: row.id, status: 0}, res => {
-                            message.info("已禁用");
-                            table.refresh();
-                        });
+                        message.ask(
+                            `${i18n('禁用后，会员')}“${escapeHtml(row.username || i18n('未命名会员'))}”（ID ${escapeHtml(row.id)}）${i18n('将无法正常使用账户。确认禁用吗？')}`,
+                            () => util.post('/admin/api/user/save', {id: row.id, status: 0}, () => {
+                                message.info("已禁用");
+                                table.refresh();
+                            }),
+                            i18n('确认禁用会员'),
+                            i18n('确认禁用')
+                        );
                     }
                 },
                 {
@@ -232,13 +533,20 @@
                     tips: '删除此用户',
                     click: (event, value, row, index) => {
 
-                        message.ask("您正在删除会员，该操作无法撤回，是否还要继续？", () => {
+                        message.ask(`${i18n('将永久删除会员')}“${escapeHtml(row.username || i18n('未命名会员'))}”（ID ${escapeHtml(row.id)}）${i18n('及其关联数据，无法恢复。确认删除吗？')}`, () => {
                             util.post("/admin/api/user/del", {list: [row.id]}, () => {
                                 message.success("删除成功");
                                 table.refresh();
                             })
                         });
                     }
+                },
+                {
+                    icon: 'fa-duotone fa-regular fa-store text-primary',
+                    title: '查看商户',
+                    tips: '查看商户',
+                    show: row => mobileAdminEnabled() && Boolean(row?.business_level && row?.business),
+                    click: (event, value, row) => openBusinessDetail(row)
                 }
             ]
         },
@@ -246,7 +554,12 @@
     ]);
 
 
-    table.setFloatMessage([
+    // 用户名列（头像单元格）双击 → MUI 详情弹窗；hover 提示「双击查看详细信息」
+    table.setColumnDetail({
+        column: 'avatar',
+        trigger: 'dblclick',
+        title: '会员详细信息',
+        fields: [
         {field: 'nicename', title: '真实姓名'}
         , {field: 'total_coin', title: '总硬币'}
         , {field: 'create_time', title: '注册时间'}
@@ -262,54 +575,40 @@
                 if (!val) {
                     return '-';
                 }
-                $(document).off('click', `.wxqrcode-click-${item.id}`);
-                $(document).on('click', `.wxqrcode-click-${item.id}`, function () {
-                    layer.open({
-                        type: 1,
-                        title: false,
-                        closeBtn: 0, //不显示关闭按钮
-                        anim: 5,
-                        area: ['245px', '245px'],
-                        shadeClose: true, //开启遮罩关闭
-                        content: '<div class="wxqrcode-' + item.id + '" style="padding: 22px 20px 20px 24px;overflow: hidden;"></div>',
-                        success: () => {
-                            $('.wxqrcode-' + item.id).qrcode({
-                                render: "canvas",
-                                width: 200,
-                                height: 200,
-                                text: item.wechat
-                            });
-                        }
-                    });
-                });
-                return `<a href="javascript:void(0);" class="text-primary wxqrcode-click-${item.id}">查看</a>`;
+                const attributes = `data-user-id="${Number(item.id) || 0}" data-wechat-code="${escapeHtml(encodeURIComponent(String(val)))}"`;
+                if (!mobileAdminEnabled()) return `<a href="javascript:void(0);" class="text-primary md-user-wechat-qr-trigger" ${attributes}>${i18n('查看')}</a>`;
+                return `<button type="button" class="btn btn-sm btn-light-primary md-user-wechat-qr-trigger" ${attributes}>${i18n('查看')}</button>`;
             }
         }
         , {
             field: 'settlement',
             title: '结算方式',
             dict: [
-                {id: 0, name: `<span class="text-primary">支付宝</span>`},
-                {id: 1, name: `<span class="text-success">微信</span>`},
+                {id: 0, name: `<span class="text-primary">${i18n('支付宝')}</span>`},
+                {id: 1, name: `<span class="text-success">${i18n('微信')}</span>`},
             ]
         }
-    ]);
+        ]
+    });
 
 
     table.setSearch([
-        {title: "用户名", name: "search-username", type: "input"},
+        {title: "用户名", name: "search-username", type: "input", inputmode: 'search', enterkeyhint: 'search'},
+        //UID 精确匹配：列表里用户名下面显示的就是这个号，照着填能直接定位到人。
+        //用 equal 而不是 search，避免填 1 把 1/10/11/100 全捞出来
+        {title: "UID", name: "equal-id", type: "input", inputmode: 'numeric', enterkeyhint: 'search'},
         {title: "会员等级", name: "equal-group_id", type: "select", dict: "user_group,id,name"},
-        {title: "邮箱", name: "equal-email", type: "input"},
-        {title: "手机号", name: "equal-phone", type: "input"},
-        {title: "QQ号", name: "equal-qq", type: "input"},
-        {title: "IP地址", name: "equal-login_ip", type: "input"},
+        {title: "邮箱", name: "equal-email", type: "input", inputmode: 'email', enterkeyhint: 'search'},
+        {title: "手机号", name: "equal-phone", type: "input", inputmode: 'tel', enterkeyhint: 'search'},
+        {title: "QQ号", name: "equal-qq", type: "input", inputmode: 'numeric', enterkeyhint: 'search'},
+        {title: "IP地址", name: "equal-login_ip", type: "input", inputmode: 'text', enterkeyhint: 'search'},
         {title: "上级ID", name: "equal-pid", type: "remoteSelect", dict: "user,id,username"}
     ]);
     table.setState("status", "_user_status");
 
     table.render();
 
-    $('.handle').click(() => {
+    $('.handle').off('.mdAdminUserToolbar').on('click.mdAdminUserToolbar', () => {
         let selections = table.getSelectionIds();
         if (selections.length == 0) {
             message.error("请至少勾选1个会员进行操作！");
@@ -319,10 +618,46 @@
         let join = selections.join(",");
 
         component.popup({
-            submit: '/admin/api/user/fastUpdateUserGroup',
+            submitRoute: '/admin/api/user/fastUpdateUserGroup',
+            submit: (data, popupIndex) => {
+                if (groupUpdatePending || !controllerActive) return;
+                const groupId = Number(data.group_id || 0);
+                if (!Number.isInteger(groupId) || groupId < 1) {
+                    message.warning('请选择会员等级');
+                    return;
+                }
+                message.ask(
+                    `${i18n('将修改已选中的')} ${selections.length} ${i18n('名会员等级，并立即影响对应等级规则。确认继续吗？')}`,
+                    () => {
+                        if (groupUpdatePending || !controllerActive) return;
+                        groupUpdatePending = true;
+                        util.post({
+                            url: '/admin/api/user/fastUpdateUserGroup',
+                            data: data,
+                            done: response => {
+                                groupUpdatePending = false;
+                                if (!controllerActive) return;
+                                layer.close(popupIndex);
+                                message.success(response?.msg || i18n('会员等级已更新'));
+                                table.refresh();
+                            },
+                            error: response => {
+                                groupUpdatePending = false;
+                                if (controllerActive) message.error(response?.msg || i18n('会员等级更新失败'));
+                            },
+                            fail: () => {
+                                groupUpdatePending = false;
+                                if (controllerActive) message.error('网络异常，会员等级未修改');
+                            }
+                        });
+                    },
+                    i18n('确认批量修改会员等级'),
+                    i18n('确认修改')
+                );
+            },
             tab: [
                 {
-                    name: `<i class="fa-duotone fa-regular fa-user-pen"></i> 批量修改会员等级`,
+                    name: `<i class="fa-duotone fa-regular fa-user-pen"></i> ${i18n('批量修改会员等级')}`,
                     form: [
                         {
                             title: "",
@@ -358,14 +693,14 @@
         });
     });
 
-    $('.btn-app-del').click(() => {
+    $('.btn-app-del').off('.mdAdminUserToolbar').on('click.mdAdminUserToolbar', () => {
         let selections = table.getSelectionIds();
         if (selections.length == 0) {
             message.error("请至少勾选1个会员进行操作！");
             return;
         }
 
-        message.ask('您确定要删除已经选中的用户吗？这是不可恢复的操作！', function () {
+        message.ask(`${i18n('将永久删除已选中的')} ${selections.length} ${i18n('名会员及其关联数据，无法恢复。确认删除吗？')}`, function () {
             util.post("/admin/api/user/del", {list: selections}, res => {
                 message.success("全部删除完毕");
                 table.refresh();

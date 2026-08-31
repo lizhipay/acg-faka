@@ -101,7 +101,46 @@ class Commodity extends Shared
         if (!$code) {
             throw new JSONException("对接CODE不能为空");
         }
-        return $this->json(data: $this->shop->getItem($code));
+        $item = $this->shop->getItem($code);
+
+        //#842 getItem() 的列白名单刻意不含 factory_price（那是本站自己的成本列，
+        //不能进前台详情），但对接语义里下游要的 factory_price 是"它在本站的拿货价"——
+        //即 inventory() 里按请求方身份现算的那个值。这里补同一份计算，否则下游
+        //每轮 item 同步都会把进货价刷成 0。
+        //注意：要在 getItem() 之后取模型，套娃商品的价格刚被里面的 syncRemoteItem 刷新过。
+        $commodity = \App\Model\Commodity::query()->where("code", $code)->first();
+        if ($commodity) {
+            $userId = $this->getUser()->id;
+            $userGroup = $this->getUserGroup();
+            $factoryPrice = 0;
+            $configs = Ini::toArray((string)$commodity->config);
+
+            if (array_key_exists("category", $configs)) {
+                //种类商品：单价合法为 0，逐种类算拿货价，与 inventory() 的 category_factory 同口径。
+                //ini 数字种类名会被 PHP 数组转成 int 键，strict_types 下必须显式转回 string
+                $factorys = [];
+                foreach ($configs['category'] as $ck => $cv) {
+                    try {
+                        $factorys[$ck] = $this->order->calcAmount(owner: $userId, num: 1, disableSubstation: true, group: $userGroup, commodity: $commodity, race: (string)$ck);
+                    } catch (\Error|\Exception $e) {
+                        continue;
+                    }
+                }
+                if (is_array($item['config'] ?? null)) {
+                    //与 inventory() 同口径：陈旧的 category_factory 一律丢弃，只信本次现算
+                    unset($item['config']['category_factory']);
+                    if (count($factorys) != 0) {
+                        $item['config']['category_factory'] = $factorys;
+                    }
+                }
+            } else {
+                $factoryPrice = $this->order->calcAmount(owner: $userId, num: 1, disableSubstation: true, group: $userGroup, commodity: $commodity);
+            }
+
+            $item['factory_price'] = $factoryPrice;
+        }
+
+        return $this->json(data: $item);
     }
 
     /**
@@ -399,7 +438,8 @@ class Commodity extends Shared
             group: $this->getUserGroup()
         );
         $price = $this->shop->getSubstationPrice($commodity, $price);
-        return $this->json(data: ["price" => $price]);
+        //附带本站货币代码：对接双方币种不一致时，拉取侧能发现并告警（金额数字本身不换算）
+        return $this->json(data: ["price" => $price, "currency_code" => \App\Util\Currency::code()]);
     }
 
     /**

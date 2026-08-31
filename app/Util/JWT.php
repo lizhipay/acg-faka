@@ -18,7 +18,13 @@ class JWT
             return [];
         }
 
-        $head = base64_decode($arr[0]);
-        return $head ? (array)json_decode($head, true) : [];
+        $segment = strtr($arr[0], '-_', '+/');
+        $segment .= str_repeat('=', (4 - strlen($segment) % 4) % 4);
+        $head = base64_decode($segment, true);
+        if (!is_string($head) || $head === '') {
+            return [];
+        }
+        $decoded = json_decode($head, true);
+        return is_array($decoded) ? $decoded : [];
     }
 }

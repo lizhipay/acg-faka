@@ -1,3 +1,8 @@
+<IfModule mod_setenvif.c>
+ # 让 Authorization: Bearer 头透传到 PHP（部分 Apache/FastCGI 会吞掉它）。
+ # MCP 端点同时支持 X-Access-Key 头，无需依赖此项。
+ SetEnvIf Authorization "(.+)" HTTP_AUTHORIZATION=$1
+</IfModule>
 <IfModule mod_rewrite.c>
  RewriteEngine on
  RewriteBase /

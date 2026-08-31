@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property float $amount
+ * @property float $pay_cost
  * @property string $create_ip
  * @property string $create_time
  * @property int $id
@@ -35,7 +36,7 @@ class UserRecharge extends Model
     /**
      * @var array
      */
-    protected $casts = ['amount' => 'float', 'id' => 'integer', 'pay_id' => 'integer', 'status' => 'integer', 'user_id' => 'integer'];
+    protected $casts = ['amount' => 'float', 'gateway_amount' => 'float', 'pay_cost' => 'float', 'id' => 'integer', 'pay_id' => 'integer', 'status' => 'integer', 'user_id' => 'integer'];
 
     /**
      * @return HasOne|null

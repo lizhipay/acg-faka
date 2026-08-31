@@ -4,7 +4,7 @@
     table.setColumns([
         {
             field: 'amount', title: '硬币', formatter: function (val, item) {
-                return '<b style="color: green;">￥' + item.amount + '</b>';
+                return '<b style="color: green;">' + format.currencySymbol() + item.amount + '</b>';
             }
         }
         , {

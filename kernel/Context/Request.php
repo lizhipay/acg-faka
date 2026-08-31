@@ -3,6 +3,8 @@ declare (strict_types=1);
 
 namespace Kernel\Context;
 
+use App\Util\Client;
+
 class Request extends Abstract\Request
 {
     public function __construct()
@@ -20,12 +22,7 @@ class Request extends Abstract\Request
         $this->files = $_FILES;
         unset($this->get['_route']);
 
-        if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $arr = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-            $this->clientIp = (string)$arr[0];
-        } else {
-            $this->clientIp = (string)$_SERVER['REMOTE_ADDR'];
-        }
+        $this->clientIp = Client::getAddress();
 
         if (str_contains((string)$this->header("ContentType"), "application/json")) {
             $this->_unsafe_json = $this->json = (array)json_decode($this->raw, true);

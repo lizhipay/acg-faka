@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use App\Util\AdminEntrance;
 use Illuminate\Database\Capsule\Manager;
 use Kernel\Annotation\Collector;
 use Kernel\Consts\Base;
@@ -47,10 +48,21 @@ try {
     }
 
     //waf install -> 2025-07-26
-    $routePath = $_GET['s'] = $_GET['s'] ?? "/user/index/index";
+    //?? 只兜住「参数不存在」，兜不住空值：nginx 重写首页时常给出 s= 或 s=/
+    //（try_files $uri $uri/ /index.php?s=$uri 对 / 就是 s=/），这类合法的根路由
+    //会被拼成控制器 App\Controller、方法名为空，class_exists 失败直接 404。
+    $routePath = (string)($_GET['s'] ?? '');
+    if (trim($routePath, "/ \t\n\r\0\x0B") === '') {
+        $routePath = "/user/index/index";
+    }
+    $_GET['s'] = $routePath;
     Context::set(\Kernel\Context\Interface\Request::class, new Request());
     if (trim($routePath, "/") == 'admin') {
+        //必须 exit：/admin 是 302 跳后台登录页，不 exit 会继续往下走、命中「控制器
+        //App\Controller 不存在」抛 404；新版 feedback() 会显式 http_response_code(404)，
+        //把这里的 302 覆盖成 404（旧版 feedback 隐式 200 不改状态码才侥幸没暴露）。
         header('location:' . "/admin/authentication/login");
+        exit;
     }
 
     $s = explode("/", trim((string)$routePath, '/'));
@@ -59,6 +71,7 @@ try {
     Context::set(Base::IS_INSTALL, file_exists(BASE_PATH . '/kernel/Install/Lock'));
     Context::set(Base::OPCACHE, extension_loaded("Zend OPcache") || extension_loaded("opcache"));
     Context::set(Base::STORE_STATUS, file_exists(BASE_PATH . "/kernel/Plugin.php"));
+    Context::set(Base::LANGUAGE, \Kernel\Util\Lang::detect());
 
     $count = count($s);
     $controller = "App\\Controller";
@@ -100,15 +113,32 @@ try {
     //插件库
     if (Context::get(Base::STORE_STATUS) && Context::get(Base::IS_INSTALL)) {
         require("Plugin.php");
-        //插件初始化
         Hook::inst()->load();
-        //插件初始化
         hook(\App\Consts\Hook::KERNEL_INIT);
+        AdminEntrance::guard();
     }
 
+    //安全响应头
+    if (!headers_sent()) {
+        header("X-Content-Type-Options: nosniff");
+        header("X-Frame-Options: SAMEORIGIN");
+        header("Referrer-Policy: strict-origin-when-cross-origin");
+        header("Content-Security-Policy: frame-ancestors 'self'; object-src 'none'; base-uri 'self'");
+    }
 
     //记录日志
     RequestLogger::logCurrentRequest(Context::get(\Kernel\Context\Interface\Request::class));
+
+
+    if (strtolower(trim((string)Context::get(Base::ROUTE), '/')) === '404.html') {
+        try {
+            $originUri = explode('?', (string)($_SERVER['REQUEST_URI'] ?? ''))[0];
+            $notFoundUri = $originUri !== '' ? $originUri : '/404.html';
+            hook(\App\Consts\Hook::HTTP_NOT_FOUND, $notFoundUri);
+        } catch (Throwable $ignored) {
+        }
+        exit(feedback("404 Not Found", 200));
+    }
 
     //检测类是否存在
     if (!class_exists($controller)) {
@@ -151,22 +181,36 @@ try {
         header('content-type:application/json;charset=utf-8');
         echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     } else {
-        header("Content-type: text/html; charset=utf-8");
+        $hasContentType = false;
+        foreach (headers_list() as $responseHeader) {
+            if (str_starts_with(strtolower($responseHeader), 'content-type:')) {
+                $hasContentType = true;
+                break;
+            }
+        }
+        if (!$hasContentType) {
+            header("Content-type: text/html; charset=utf-8");
+        }
         echo $result;
     }
 } catch (Throwable $e) {
     if ($e instanceof NotFoundException) {
+        try {
+            $notFoundRoute = (string)(Context::get(Base::ROUTE) ?? ($_GET['s'] ?? ''));
+            hook(\App\Consts\Hook::HTTP_NOT_FOUND, $notFoundRoute);
+        } catch (Throwable $ignored) {
+        }
         exit(feedback("404 Not Found"));
     } elseif ($e instanceof \Kernel\Exception\ParameterMissException) {
         header('content-type:application/json;charset=utf-8');
-        exit(json_encode(["code" => $e->getCode(), "msg" => $e->getMessage()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        exit(json_encode(["code" => $e->getCode(), "msg" => lang($e->getMessage())], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     } elseif ($e instanceof \Kernel\Exception\JSONException) {
         header('content-type:application/json;charset=utf-8');
-        exit(json_encode(["code" => $e->getCode(), "msg" => $e->getMessage()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        exit(json_encode(["code" => $e->getCode(), "msg" => lang($e->getMessage())], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     } elseif ($e instanceof \Kernel\Exception\ViewException) {
         header("Content-type: text/html; charset=utf-8");
-        exit(feedback($e->getFile() . "<br>" . $e->getMessage()));
+        exit(feedback($e->getFile() . "<br>" . $e->getMessage(), 500));
     } else {
-        exit(feedback($e->getFile() . ":" . $e->getLine() . "<br>" . $e->getMessage()));
+        exit(feedback($e->getFile() . ":" . $e->getLine() . "<br>" . $e->getMessage(), 500));
     }
 }

@@ -1,200 +1,335 @@
 !function () {
-    const _AD_HTML = `<div class="d-flex align-items-start position-relative mb-3 p-3 rounded bg-light bg-opacity-50">
-        <div class="position-absolute top-0 start-0 rounded h-100 bg-primary" style="width: 3px;"></div>
-        <div class="ms-3 flex-grow-1">
-            <a href="[url]" [target] class="fw-bold text-decoration-none text-dark d-block mb-1">[title]</a>
-            <div class="text-muted small">[create_time]</div>
-        </div>
+    let controllerActive = true;
+    const pendingRequests = new Set();
+    const pendingLoaders = new Set();
+    let dashboardDataGeneration = 0;
+    let weekStatisticsGeneration = 0;
+    const escapeHtml = value => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    const safeAnnouncementUrl = value => {
+        const url = String(value || '').trim();
+        // '#'/纯锚点是商店 API 表示"无链接"的占位值，不能被 new URL 解析成 origin/# 而漏过
+        if (!url || url.startsWith('#')) return '';
+        try {
+            const parsed = new URL(url, window.location.origin);
+            return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
+        } catch (error) {
+            return '';
+        }
+    };
+    const sanitizeAnnouncementHtml = value => {
+        const template = document.createElement('template');
+        template.innerHTML = String(value ?? '');
+        const allowedTags = new Set(['B', 'STRONG', 'SPAN', 'BR', 'EM', 'I', 'U', 'S', 'SMALL', 'MARK', 'CODE', 'FONT']);
+        const dangerousTags = new Set([
+            'SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'SVG', 'MATH', 'TEMPLATE',
+            'NOSCRIPT', 'FORM', 'INPUT', 'BUTTON', 'TEXTAREA', 'SELECT', 'OPTION',
+            'META', 'LINK', 'BASE', 'VIDEO', 'AUDIO', 'CANVAS', 'FRAME', 'FRAMESET', 'IMG'
+        ]);
+        const normalizeColor = value => {
+            const probe = document.createElement('span');
+            probe.style.color = String(value ?? '').trim();
+            return probe.style.color;
+        };
+        const walk = node => {
+            Array.from(node.childNodes).forEach(child => {
+                if (child.nodeType === Node.COMMENT_NODE) {
+                    child.remove();
+                    return;
+                }
+                if (child.nodeType !== Node.ELEMENT_NODE) return;
+                const tag = String(child.tagName || '').toUpperCase();
+                if (!allowedTags.has(tag)) {
+                    if (dangerousTags.has(tag)) {
+                        child.remove();
+                    } else {
+                        walk(child);
+                        child.replaceWith(...Array.from(child.childNodes));
+                    }
+                    return;
+                }
+
+                const color = normalizeColor(child.style.color || (tag === 'FONT' ? child.getAttribute('color') : ''));
+                Array.from(child.attributes).forEach(attribute => child.removeAttribute(attribute.name));
+                if (color) child.style.color = color;
+                walk(child);
+            });
+        };
+        walk(template.content);
+        return template.innerHTML.trim();
+    };
+    const trackRequest = request => {
+        if (!request || typeof request.always !== 'function') return request;
+        pendingRequests.add(request);
+        request.always(() => pendingRequests.delete(request));
+        return request;
+    };
+    const openLoader = () => {
+        const index = layer.load(2, {shade: ['0.3', '#fff']});
+        pendingLoaders.add(index);
+        return index;
+    };
+    const closeLoader = index => {
+        if (!pendingLoaders.delete(index)) return;
+        layer.close(index);
+    };
+    const requestStateTarget = target => typeof target === 'string' ? document.querySelector(target) : target;
+    const clearRequestState = target => {
+        const host = requestStateTarget(target);
+        if (!host) return;
+        host.replaceChildren();
+        host.hidden = true;
+    };
+    const renderRetryState = (target, text, retry) => {
+        const host = requestStateTarget(target);
+        if (!host) return;
+        const state = document.createElement('div');
+        const icon = document.createElement('span');
+        const message = document.createElement('span');
+        const button = document.createElement('button');
+        state.className = 'dashboard-request-state';
+        icon.className = 'material-icons-outlined';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = 'cloud_off';
+        message.className = 'dashboard-request-state__message';
+        message.textContent = String(text || i18n('加载失败，请重试'));
+        button.type = 'button';
+        button.className = 'btn btn-sm btn-light-primary dashboard-request-state__retry';
+        button.textContent = i18n('重新加载');
+        button.addEventListener('click', () => {
+            button.disabled = true;
+            button.setAttribute('aria-busy', 'true');
+            button.textContent = i18n('正在重试…');
+            retry();
+        }, {once: true});
+        state.append(icon, message, button);
+        host.replaceChildren(state);
+        host.hidden = false;
+    };
+    const _AD_HTML = `<div class="md-ad-item[static]">
+        <span class="md-ad-item__icon" aria-hidden="true"><i class="fa-duotone fa-regular fa-bullhorn"></i></span>
+        <span class="md-ad-item__body">
+            <a [link] class="md-ad-item__title">[title]</a>
+        </span>
+        <a [link] tabindex="-1" aria-hidden="true" class="md-ad-item__go"><i class="fa-duotone fa-regular [goicon]"></i></a>
     </div>`;
 
     function loadAd() {
         const $adHandle = $('.ad-html');
         // 加载公告数据
-        $.get("/admin/api/app/ad", res => {
+        trackRequest($.get("/admin/api/app/ad", res => {
+            if (!controllerActive) return;
             if (res.code != 200) {
-                $adHandle.html('<div class="text-center text-muted py-4">暂无公告</div>');
+                renderRetryState($adHandle[0], res.msg || i18n('公告加载失败，请重试'), loadAd);
                 return;
             }
 
-            if (res.data.length === 0) {
-                $adHandle.html('<div class="text-center text-muted py-4">暂无公告</div>');
+            if (!Array.isArray(res.data) || res.data.length === 0) {
+                $adHandle.html('<div class="text-center text-muted py-4">' + i18n('暂无公告') + '</div>');
                 return;
             }
 
             let html = "";
             res.data.forEach(item => {
-                html += _AD_HTML.replace("[title]", item.title)
-                    .replace("[create_time]", item.create_date)
-                    .replace("[url]", item.url ? item.url : "javascript:void(0)")
-                    .replace("[target]", item.url ? 'target="_blank"' : '');
+                const url = safeAnnouncementUrl(item.url);
+                const title = sanitizeAnnouncementHtml(item.title) || i18n('公告');
+                // [title] 最后替换：它是外部 HTML，先替换可避免其内容碰巧含占位符时被后续 replace 误伤
+                html += _AD_HTML.replace("[static]", () => url ? '' : ' md-ad-item--static')
+                    .replace(/\[link\]/g, () => url ? 'href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer"' : '')
+                    .replace("[goicon]", () => url ? 'fa-arrow-up-right' : 'fa-circle-info')
+                    .replace("[title]", () => title);
             });
             $adHandle.html(html);
+        }).fail((xhr, status) => {
+            if (!controllerActive || status === 'abort') return;
+            renderRetryState($adHandle[0], i18n('网络异常，公告加载失败'), loadAd);
+        }));
+    }
+
+    function initAnnouncementDisclosure() {
+        const card = document.querySelector('.dashboard-announcements__card');
+        const button = card?.querySelector('.dashboard-announcements__toggle');
+        const icon = button?.querySelector('.material-icons-outlined');
+        if (!card || !button || !icon) return;
+
+        const storageKey = 'admin-dashboard-announcements-collapsed';
+        let collapsed = false;
+        try {
+            collapsed = window.localStorage.getItem(storageKey) === '1';
+        } catch (error) {}
+
+        const render = () => {
+            card.classList.toggle('is-collapsed', collapsed);
+            button.setAttribute('aria-expanded', String(!collapsed));
+            button.setAttribute('aria-label', collapsed ? i18n('展开官方公告') : i18n('收起官方公告'));
+            icon.textContent = collapsed ? 'expand_more' : 'expand_less';
+        };
+
+        button.addEventListener('click', () => {
+            collapsed = !collapsed;
+            render();
+            try {
+                window.localStorage.setItem(storageKey, collapsed ? '1' : '0');
+            } catch (error) {}
         });
+        render();
     }
 
     // 获取仪表板数据
     function loadDashboardData(type) {
-        let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
-        $.post("/admin/api/dashboard/data", {type: type}, res => {
-            layer.close(loaderIndex);
+        const generation = ++dashboardDataGeneration;
+        const loaderIndex = openLoader();
+        trackRequest($.post("/admin/api/dashboard/data", {type: type}, res => {
+            closeLoader(loaderIndex);
+            if (!controllerActive || generation !== dashboardDataGeneration) return;
             if (res.code == 200) {
-                $('.turnover').text("￥" + res.data.turnover);
-                $('.order_num').text(res.data.order_num);
-                $('.business').text(res.data.business);
-                $('.cash_status_0').text(res.data.cash_status_0);
-                $('.cash_money_status_1').text("￥" + res.data.cash_money_status_1);
-                $('.user_register_num').text(res.data.user_register_num);
-                $('.order_profit').text("￥" + res.data.profit);
-                $('.recharge_amount').text("￥" + res.data.recharge_amount);
-                $('.divide_amount').text("￥" + res.data.divide_amount);
-                $('.rebate').text("￥" + res.data.rebate);
-                $('.cost').text("￥" + res.data.cost);
-                $('.online_amout').text("￥" + res.data.online_amout);
+                clearRequestState('.dashboard-data-feedback');
+                const n = v => Number(v || 0).toLocaleString('en-US');
+                const m = v => format.currencySymbol() + Number(v || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                $('.turnover').text(m(res.data.turnover));
+                $('.order_num').text(n(res.data.order_num));
+                $('.business').text(n(res.data.business));
+                $('.cash_status_0').text(n(res.data.cash_status_0));
+                $('.cash_money_status_1').text(m(res.data.cash_money_status_1));
+                $('.user_register_num').text(n(res.data.user_register_num));
+                $('.order_profit').text(m(res.data.profit));
+                $('.recharge_amount').text(m(res.data.recharge_amount));
+                $('.divide_amount').text(m(res.data.divide_amount));
+                $('.rebate').text(m(res.data.rebate));
+                $('.cost').text(m(res.data.cost));
+                $('.online_amout').text(m(res.data.online_amout));
+                return;
             }
+            renderRetryState('.dashboard-data-feedback', res.msg || i18n('经营数据加载失败，请重试'), () => loadDashboardData(type));
+        }).fail((xhr, status) => {
+            closeLoader(loaderIndex);
+            if (!controllerActive || status === 'abort' || generation !== dashboardDataGeneration) return;
+            renderRetryState('.dashboard-data-feedback', i18n('网络异常，经营数据加载失败'), () => loadDashboardData(type));
+        }));
+    }
+
+    let _chart = null, _chartData = null, _chartObserver = null, _chartResizeObserver = null;
+    const _resizeChart = () => {
+        if (_chart && ! _chart.isDisposed()) {
+            _chart.resize();
+        }
+    };
+
+    function destroyDashboard() {
+        if (!controllerActive) return;
+        controllerActive = false;
+        dashboardDataGeneration++;
+        weekStatisticsGeneration++;
+        pendingRequests.forEach(request => {
+            try { request.abort(); } catch (error) {}
         });
+        pendingRequests.clear();
+        pendingLoaders.forEach(index => layer.close(index));
+        pendingLoaders.clear();
+        $('.dashboard-data-type').off('.mdDashboard');
+        window.removeEventListener('resize', _resizeChart);
+        _chartObserver?.disconnect();
+        _chartObserver = null;
+        _chartResizeObserver?.disconnect();
+        _chartResizeObserver = null;
+        if (_chart && !_chart.isDisposed()) {
+            _chart.dispose();
+        }
+        _chart = null;
+        _chartData = null;
+    }
+
+    function _chartTheme() {
+        const s = getComputedStyle(document.documentElement);
+        const g = k => s.getPropertyValue(k).trim();
+        return {
+            profit: g('--md-success'), trade: g('--md-primary'),
+            cash: g('--md-secondary'), recharge: g('--md-warning'),
+            text: g('--md-on-surface-med'), line: g('--md-divider')
+        };
+    }
+
+    function _renderChart() {
+        const el = document.getElementById('statistics');
+        if (!el || !_chartData) return;
+        if (!_chart) _chart = echarts.init(el);
+        if (!_chartResizeObserver && typeof ResizeObserver === 'function') {
+            _chartResizeObserver = new ResizeObserver(_resizeChart);
+            _chartResizeObserver.observe(el);
+        }
+        const c = _chartTheme();
+        const S = (name, data) => ({
+            name, type: 'line', smooth: true,
+            symbol: 'circle', symbolSize: 5, showSymbol: false,
+            lineStyle: {width: 2}, areaStyle: {opacity: 0.14},
+            emphasis: {focus: 'series'}, data
+        });
+        _chart.setOption({
+            color: [c.profit, c.trade, c.cash, c.recharge],
+            tooltip: {trigger: 'axis', axisPointer: {type: 'cross'}},
+            legend: {data: [i18n('盈利'), i18n('交易金额'), i18n('提现'), i18n('充值')], icon: 'roundRect', textStyle: {color: c.text, fontSize: 12}},
+            grid: {left: '2%', right: '3%', bottom: '2%', top: 48, containLabel: true},
+            xAxis: [{
+                type: 'category', boundaryGap: false, data: _chartData.week,
+                axisLabel: {color: c.text, fontSize: 10},
+                axisLine: {lineStyle: {color: c.line}}, axisTick: {show: false}
+            }],
+            yAxis: [{
+                type: 'value', axisLabel: {color: c.text, fontSize: 10},
+                splitLine: {lineStyle: {color: c.line}}, axisLine: {show: false}
+            }],
+            series: [
+                S(i18n('盈利'), _chartData.series.profit),
+                S(i18n('交易金额'), _chartData.series.trade),
+                S(i18n('提现'), _chartData.series.cash),
+                S(i18n('充值'), _chartData.series.recharge)
+            ]
+        }, true);
     }
 
     function loadWeekStatistics() {
+        const generation = ++weekStatisticsGeneration;
+        const chartElement = document.getElementById('statistics');
         // 加载周统计数据
-        $.get("/admin/api/dashboard/weekStatistics", res => {
+        trackRequest($.get("/admin/api/dashboard/weekStatistics", res => {
+            if (!controllerActive || generation !== weekStatisticsGeneration) return;
             if (res.code != 200) {
-                layer.msg(res.msg);
+                if (chartElement) chartElement.hidden = true;
+                renderRetryState('.dashboard-chart-feedback', res.msg || i18n('趋势数据加载失败，请重试'), loadWeekStatistics);
                 return;
             }
-
-            let statistics = echarts.init(document.getElementById('statistics'));
-            let option = {
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: {
-                        type: 'cross',
-                        label: {
-                            backgroundColor: '#6a7985'
-                        }
-                    }
-                },
-                legend: {
-                    data: ['盈利', '交易金额', '提现', '充值'],
-                    textStyle: {
-                        fontSize: 12
-                    }
-                },
-                toolbox: {
-                    feature: {
-                        saveAsImage: {}
-                    }
-                },
-                grid: {
-                    left: '3%',
-                    right: '4%',
-                    bottom: '3%',
-                    containLabel: true
-                },
-                xAxis: [
-                    {
-                        type: 'category',
-                        boundaryGap: false,
-                        data: res.data.week,
-                        axisLabel: {
-                            fontSize: 10
-                        }
-                    }
-                ],
-                yAxis: [
-                    {
-                        type: 'value',
-                        axisLabel: {
-                            fontSize: 10
-                        }
-                    }
-                ],
-                series: [
-                    {
-                        name: '盈利',
-                        type: 'line',
-                        stack: 'Total',
-                        label: {
-                            show: true,
-                            position: 'top',
-                            fontSize: 10
-                        },
-                        areaStyle: {
-                            opacity: 0.3
-                        },
-                        emphasis: {
-                            focus: 'series'
-                        },
-                        data: res.data.series.profit,
-                        itemStyle: {
-                            color: '#3e8300'
-                        }
-                    },
-                    {
-                        name: '交易金额',
-                        type: 'line',
-                        stack: 'Total',
-                        label: {
-                            show: true,
-                            position: 'top',
-                            fontSize: 10
-                        },
-                        areaStyle: {
-                            opacity: 0.3
-                        },
-                        emphasis: {
-                            focus: 'series'
-                        },
-                        data: res.data.series.trade,
-                        itemStyle: {
-                            color: '#007bff'
-                        }
-                    },
-                    {
-                        name: '提现',
-                        type: 'line',
-                        stack: 'Total',
-                        areaStyle: {
-                            opacity: 0.3
-                        },
-                        emphasis: {
-                            focus: 'series'
-                        },
-                        data: res.data.series.cash,
-                        itemStyle: {
-                            color: '#351be6'
-                        }
-                    },
-                    {
-                        name: '充值',
-                        type: 'line',
-                        stack: 'Total',
-                        areaStyle: {
-                            opacity: 0.3
-                        },
-                        emphasis: {
-                            focus: 'series'
-                        },
-                        data: res.data.series.recharge,
-                        itemStyle: {
-                            color: '#f12de0'
-                        }
-                    }
-                ]
-            };
-            statistics.setOption(option);
-
-            // 响应式处理
-            window.addEventListener('resize', function () {
-                statistics.resize();
-            });
-        });
+            clearRequestState('.dashboard-chart-feedback');
+            if (chartElement) chartElement.hidden = false;
+            _chartData = res.data;
+            _renderChart();
+            // 主题切换时重新着色
+            if (!_chartObserver) {
+                _chartObserver = new MutationObserver(() => _renderChart());
+                _chartObserver.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+            }
+            window.removeEventListener('resize', _resizeChart);
+            window.addEventListener('resize', _resizeChart, {passive: true});
+        }).fail((xhr, status) => {
+            if (!controllerActive || status === 'abort' || generation !== weekStatisticsGeneration) return;
+            if (chartElement) chartElement.hidden = true;
+            renderRetryState('.dashboard-chart-feedback', i18n('网络异常，趋势数据加载失败'), loadWeekStatistics);
+        }));
     }
 
+    initAnnouncementDisclosure();
     loadAd();
     loadDashboardData(0);
     loadWeekStatistics();
 
-    $('.dashboard-data-type').change(function (e) {
+    $('.dashboard-data-type').off('.mdDashboard').on('change.mdDashboard', function () {
         loadDashboardData(this.value);
     });
+
+    $(document)
+        .off('pjax:beforeReplace.mdDashboard')
+        .one('pjax:beforeReplace.mdDashboard', destroyDashboard);
 }();

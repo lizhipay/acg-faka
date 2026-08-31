@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 
 use App\Controller\Base\View\Manage;
 use App\Interceptor\ManageSession;
+use App\Util\CallbackIpWhitelist;
 use App\Util\Client;
 use App\Util\Theme;
 use Kernel\Annotation\Interceptor;
@@ -66,20 +67,37 @@ class Config extends Manage
 
                 if (isset($appStore[$key])) {
                     $plugin = $appStore[$key];
+                    //图标只有商店缓存里有（本地主题目录不带图），拼上商店域名给前端直接用；
+                    //没缓存到的主题前端会退回占位图标，不会出现裂图
+                    if (!empty($plugin['icon'])) {
+                        $theme['icon'] = \App\Service\App::APP_URL . '/' . ltrim((string)$plugin['icon'], '/');
+                    }
                     if ($theme['info']['VERSION'] !== $plugin['version']) {
                         $theme['have_update'] = true;
                         $theme['update_content'] = $plugin['update_content'];
                         $theme['update_version'] = $plugin['version'];
+                        //升级接口要 plugin_id + type，缺一个就发不出请求；
+                        //这两个值只有商店缓存里有，前端拿不到别处去取
+                        $theme['plugin_id'] = $plugin['id'] ?? 0;
+                        $theme['plugin_type'] = $plugin['type'] ?? 2;
                     }
                 }
             }
         }
 
+        $themesJson = json_encode(
+            $themes,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
+        );
+
         return $this->render("网站设置", "Config/Setting.html", [
             "toolbar" => $this->TOOLBAR,
             "themes" => $themes,
+            "themes_json" => is_string($themesJson) ? $themesJson : '[]',
+            "user_center_mobile_theme" => \App\Model\Config::get("user_center_mobile_theme") ?: "0",
             "ip_get_mode" => $modes,
-            "ip_mode" => Client::getClientMode()
+            "ip_mode" => Client::getClientMode(),
+            "trusted_proxy_ips" => Client::getTrustedProxyConfig()
         ]);
     }
 
@@ -91,6 +109,10 @@ class Config extends Manage
     public function sms(): string
     {
         $smsConfig = json_decode(\App\Model\Config::get("sms_config"), true);
+        $smsConfig = is_array($smsConfig) ? $smsConfig : [];
+        foreach (['accessKeyId', 'accessKeySecret', 'tencentSecretId', 'tencentSecretKey', 'dxbao_password'] as $key) {
+            unset($smsConfig[$key]);
+        }
         return $this->render("短信设置", "Config/Sms.html", ["toolbar" => $this->TOOLBAR, "sms" => $smsConfig]);
     }
 
@@ -102,6 +124,8 @@ class Config extends Manage
     public function email(): string
     {
         $emailConfig = json_decode(\App\Model\Config::get("email_config"), true);
+        $emailConfig = is_array($emailConfig) ? $emailConfig : [];
+        unset($emailConfig['password']);
         return $this->render("邮箱设置", "Config/Email.html", ["toolbar" => $this->TOOLBAR, "email" => $emailConfig]);
     }
 
@@ -112,6 +136,13 @@ class Config extends Manage
     public function other(): string
     {
         $category = \App\Model\Category::query()->where("status", 1)->where("owner", 0)->get();
-        return $this->render("其他设置", "Config/Other.html", ["toolbar" => $this->TOOLBAR, "category" => $category->toArray()]);
+        return $this->render("其他设置", "Config/Other.html", [
+            "toolbar" => $this->TOOLBAR,
+            "category" => $category->toArray(),
+            "config" => [
+                CallbackIpWhitelist::ENABLED_CONFIG => \App\Model\Config::get(CallbackIpWhitelist::ENABLED_CONFIG),
+                CallbackIpWhitelist::RULES_CONFIG => \App\Model\Config::get(CallbackIpWhitelist::RULES_CONFIG),
+            ],
+        ]);
     }
 }

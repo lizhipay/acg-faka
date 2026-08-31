@@ -51,16 +51,22 @@ class Install extends User
         $data['ext']['json'] = extension_loaded("json");
         $data['ext']['session'] = extension_loaded("session");
         $data['ext']['zip'] = extension_loaded("zip");
+        //bcmath：Kernel\Util\Decimal 全靠它做金额运算，订单/充值/分站/商品都在用，缺了会直接致命错误
+        $data['ext']['bcmath'] = extension_loaded("bcmath") && function_exists("bcadd");
 
 
         $data['install'] = true;
+        $data['missing'] = [];
+
         if ($data['php_version'] < 8) {
             $data['install'] = false;
-        } else {
-            foreach ($data['ext'] as $ext) {
-                if (!$ext) {
-                    $data['install'] = false;
-                }
+        }
+
+        //不因为 PHP 版本不达标就跳过扩展检查，一次把所有缺的都列出来，免得站长改完版本再回来发现还缺扩展
+        foreach ($data['ext'] as $name => $ext) {
+            if (!$ext) {
+                $data['install'] = false;
+                $data['missing'][] = $name;
             }
         }
 
@@ -131,11 +137,59 @@ class Install extends User
         unlink($sqlFile . ".tmp");
         file_put_contents(BASE_PATH . '/kernel/Install/Lock', "");
 
+        //导入随版本分发的多语言词包（失败不影响安装，可在后台"语言翻译"页重建）
+        try {
+            $this->importLanguagePacks();
+        } catch (\Throwable $e) {
+        }
+
         try {
             $this->app->install();
         } catch (\Exception|\Error $e) {
         }
 
         return $this->json(200, '安装完成');
+    }
+
+    /**
+     * 导入 lang/{语言}.json 词包到翻译表并重建缓存。
+     * 与 tools/i18n/import.php 同源，安装完成后自动执行一次。
+     * @return void
+     */
+    private function importLanguagePacks(): void
+    {
+        foreach (\Kernel\Util\Lang::LANGS as $lang) {
+            if ($lang === \Kernel\Util\Lang::SOURCE) {
+                continue;
+            }
+            $file = BASE_PATH . "/assets/lang/{$lang}.json";
+            if (!is_file($file)) {
+                continue;
+            }
+            $data = json_decode((string)file_get_contents($file), true);
+            if (!is_array($data)) {
+                continue;
+            }
+            $rows = [];
+            foreach ($data as $source => $text) {
+                if (is_array($text)) {
+                    $text = $text['text'] ?? '';
+                }
+                if (!is_string($text) || trim($text) === '') {
+                    continue;
+                }
+                $rows[] = [
+                    'source' => (string)$source,
+                    'lang' => $lang,
+                    'text' => trim($text),
+                    'status' => 2,
+                    'scene' => 'tpl',
+                ];
+            }
+            foreach (array_chunk($rows, 200) as $chunk) {
+                \Kernel\Util\Lang::storeBatch($chunk);
+            }
+        }
+        \Kernel\Util\Lang::rebuild();
     }
 }

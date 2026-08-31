@@ -250,20 +250,24 @@
     color: #6366F1;
 }
 
+/* 验证码图为透明背景，底板由这里提供：深色主题下没有底板就会看不见数字 */
 .image-code {
-    border: 3px solid #f9bff773;
+    border: 1px solid rgba(15, 23, 42, .10);
     border-radius: 10px;
     margin-left: -15px;
-    opacity: 0.6;
     cursor: pointer;
     height: 48px;
+    background: #fff;
+    padding: 2px 6px;
 }
 
-.prompt-image-code{
-    border: 3px solid #f9bff773;
+.prompt-image-code {
+    border: 1px solid rgba(15, 23, 42, .10);
     border-radius: 10px;
     cursor: pointer;
     height: 48px;
+    background: #fff;
+    padding: 2px 6px;
 }
 
 .btn-ghost:hover {

@@ -15,14 +15,14 @@
 
                 <div class="col-12 col-lg-6 d-flex">
                     <div class="flex-fill">
-                        <h4>#{$item.name}</h4>
+                        <h4>#{lang($item.name)}</h4>
                         <div class="d-flex align-items-center gap-2 mb-2">
                             #{if $item.seckill_status == 1}
                                 <span class="badge-soft snap-up" style="display: none;"></span>
                             #{/if}
-                            <span class="badge-soft badge-soft-success">#{if $item.delivery_way == 0}自动发货#{else}在线发货#{/if}</span>
-                            <span class="badge-soft badge-soft-primary">已售 #{$item.order_sold}</span>
-                            <span class="badge-soft badge-soft-success item-stock">库存 #{$item.stock}</span>
+                            <span class="badge-soft badge-soft-success">#{if $item.delivery_way == 0}#{t("自动发货")}#{else}#{t("在线发货")}#{/if}</span>
+                            <span class="badge-soft badge-soft-primary">#{t("已售")} #{$item.order_sold}</span>
+                            <span class="badge-soft badge-soft-success item-stock">#{t("库存")} #{$item.stock}</span>
                             <span class="badge-soft badge-soft-info shared-button"><i
                                         class="fa-duotone fa-regular fa-share-from-square"></i></span>
                         </div>
@@ -32,14 +32,15 @@
                         <form class="vstack gap-3">
                             #{if !empty($item.config.category)}
                                 <div>
-                                    <label class="form-label mb-1">宝贝类型</label>
+                                    <label class="form-label mb-1">#{t("宝贝类型")}</label>
                                     <div class="sku-list">
                                         #{foreach $item.config.category as $race => $price}
+                                            #{* data-sku 是下单/匹配卡密用的键，必须保持中文原值，只翻译展示文字 *}
                                             <a class="switch-race sku #{if $price@first}is-primary#{/if}"
                                                data-sku="#{$race}"
                                                data-price="#{$price}"
-                                               href="javascript:void(0);">#{$race}<span
-                                                        class="badge-money">¥#{$price}</span></a>
+                                               href="javascript:void(0);">#{lang($race)}<span
+                                                        class="badge-money">#{$config.currency_symbol}#{$price}</span></a>
                                         #{/foreach}
                                     </div>
                                 </div>
@@ -48,15 +49,16 @@
                             #{if !empty($item.config.sku)}
                                 #{foreach $item.config.sku as $name => $sku}
                                     <div>
-                                        <label class="form-label mb-1">#{$name}</label>
+                                        <label class="form-label mb-1">#{lang($name)}</label>
                                         <div class="sku-list">
                                             #{foreach $sku as $key => $price}
+                                                #{* data-sku/data-value 是下单与匹配卡密用的键，必须保持中文原值，只翻译展示文字 *}
                                                 <a class="switch-sku sku #{if $price@first}is-primary#{/if}"
                                                    data-sku="#{$name}"
                                                    data-value="#{$key}" data-price="#{$price}"
-                                                   href="javascript:void(0);">#{$key}#{if $price > 0}<span
+                                                   href="javascript:void(0);">#{lang($key)}#{if $price > 0}<span
                                                             class="badge-money">
-                                                        +¥#{$price}</span>#{/if}</a>
+                                                        +#{$config.currency_symbol}#{$price}</span>#{/if}</a>
                                             #{/foreach}
                                         </div>
                                     </div>
@@ -66,8 +68,8 @@
                             #{if $item.draft_status == 1}
                                 <div>
                                     <input type="hidden" name="card_id" class="form-control">
-                                    <label class="form-label mb-1">自选账号</label>
-                                    <button type="button" class="optional-card">未自选,将随机发货</button>
+                                    <label class="form-label mb-1">#{t("自选账号")}</label>
+                                    <button type="button" class="optional-card">#{t("未自选,将随机发货")}</button>
                                 </div>
                             #{/if}
 
@@ -75,15 +77,15 @@
                                 <div>
                                     <label class="form-label mb-1">#{contact_type_msg($item.contact_type)}</label>
                                     <input type="text" name="contact" class="form-control"
-                                           placeholder="请输入您的#{contact_type_msg($item.contact_type)}">
+                                           placeholder="#{t('请输入您的')}#{contact_type_msg($item.contact_type)}">
                                 </div>
                             #{/if}
 
                             #{if $item.coupon == 1}
                                 <div>
-                                    <label class="form-label mb-1">优惠券</label>
+                                    <label class="form-label mb-1">#{t("优惠券")}</label>
                                     <input type="text" class="form-control" name="coupon"
-                                           placeholder="优惠券代码，没有则不填">
+                                           placeholder="#{t('优惠券代码，没有则不填')}">
                                 </div>
                             #{/if}
 
@@ -91,14 +93,14 @@
 
                             #{if $item.password_status == 1}
                                 <div>
-                                    <label class="form-label mb-1">查询密码</label>
+                                    <label class="form-label mb-1">#{t("查询密码")}</label>
                                     <input type="password" class="form-control" name="password"
-                                           placeholder="设置查询订单的密码">
+                                           placeholder="#{t('设置查询订单的密码')}">
                                 </div>
                             #{/if}
 
                             <div>
-                                <label class="form-label mb-1">购买数量</label>
+                                <label class="form-label mb-1">#{t("购买数量")}</label>
                                 <div class="input-group qty-group">
                                     <button type="button" class="change-num-sub">-</button>
                                     <input type="number" class="form-control text-center" name="num"
@@ -109,9 +111,9 @@
 
                             #{if $item.trade_captcha == 1}
                                 <div>
-                                    <label class="form-label mb-1">人机验证</label>
+                                    <label class="form-label mb-1">#{t("人机验证")}</label>
                                     <div class="input-group" style="width: 240px;">
-                                        <input type="text" class="form-control captcha-input" placeholder="图形验证码"
+                                        <input type="text" class="form-control captcha-input" placeholder="#{t('图形验证码')}"
                                                name="captcha">
                                         <div class="input-group-append">
                                             <img class="input-group-text captcha-img"
@@ -123,7 +125,7 @@
 
                             <div class="cash-pay p-2" style="display: none;">
                                 <label class="form-label mb-2"><i class="fa-duotone fa-regular fa-cart-shopping"></i>
-                                    付款</label>
+                                    #{t("付款")}</label>
                                 <div class="pay-list">
                                 </div>
                             </div>
@@ -140,10 +142,10 @@
     <div class="panel mt-3 item-detail">
         <div class="panel-header">
             <span class="icon"><i class="fa-duotone fa-regular fa-memo-circle-info"></i></span>
-            <h6 class="panel-title">宝贝详情</h6>
+            <h6 class="panel-title">#{t("宝贝详情")}</h6>
         </div>
         <div class="panel-body">
-            #{$item.description}
+            #{lang($item.description)}
         </div>
     </div>
 

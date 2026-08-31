@@ -26,6 +26,29 @@ abstract class User extends \App\Controller\Base\User
     ];
 
     /**
+     * config 里站长自填、买家可见的中文文案。这些既不在静态词包里，主题也不会各自记得包 lang()
+     * （shop_name/closed_message 连 Cartoon 都没包），所以在渲染出口统一翻译，issue #832。
+     * 只列展示文案：service_url、各类开关与路径不在其中。
+     * 店名/站点标题若不希望被翻译，在 TranslationBot 的 brand_words 里登记即可。
+     */
+    private const TRANSLATABLE_CONFIG = ['notice', 'shop_name', 'title', 'closed_message', 'commodity_name'];
+
+    /**
+     * 统一翻译 config 里的展示文案（在分站覆盖之后调用，主站/分站都覆盖到）
+     * @param array $config
+     * @return array
+     */
+    private function translateConfigText(array $config): array
+    {
+        foreach (self::TRANSLATABLE_CONFIG as $key) {
+            if (!empty($config[$key]) && is_string($config[$key])) {
+                $config[$key] = lang($config[$key], "dyn");
+            }
+        }
+        return $config;
+    }
+
+    /**
      * @param string $title
      * @param string $template
      * @param array $data
@@ -39,13 +62,16 @@ abstract class User extends \App\Controller\Base\User
             //加载helper
             require(BASE_PATH . "/app/View/User/Helper.php");
 
-            $data['title'] = $title;
+            //页面标题统一在此翻译，各控制器仍传中文原文
+            $data['title'] = lang($title, "tpl");
             $data['app']['version'] = \config("app")['version'];
             $cfg = Config::list();
 
             foreach ($cfg as $k => $v) {
                 $data["config"][$k] = $v;
             }
+
+            $data['config'] = $this->translateConfigText($data['config']);
             return View::render('User/' . $template, $data);
         } catch (\SmartyException $e) {
             throw new ViewException($e->getMessage());
@@ -68,7 +94,8 @@ abstract class User extends \App\Controller\Base\User
             //加载helper
             require(BASE_PATH . "/app/View/User/Helper.php");
 
-            $data['title'] = $title;
+            //页面标题统一在此翻译，各控制器仍传中文原文
+            $data['title'] = lang($title, "tpl");
             $data['app']['version'] = \config("app")['version'];
             $data['favicon'] = "/favicon.ico";
 
@@ -93,7 +120,16 @@ abstract class User extends \App\Controller\Base\User
                     $theme = $cfg['user_theme'];
                 }
             } else {
-                $theme = $cfg['user_center_theme'] ?: "Cartoon";
+                $centerTheme = $cfg['user_center_theme'] ?? "Cartoon";
+                if (Client::isMobile()) {
+                    $theme = $cfg['user_center_mobile_theme'] ?? "0";
+                    if ($theme === "" || $theme === "0") {
+                        $theme = $centerTheme;
+                    }
+                } else {
+                    $theme = $centerTheme;
+                }
+                $theme = $theme ?: "Cartoon";
             }
 
             //模板静态路径
@@ -102,6 +138,7 @@ abstract class User extends \App\Controller\Base\User
             $domain = Client::getDomain();
             $business = Business::query()->where("subdomain", $domain)->first() ?? Business::query()->where("topdomain", $domain)->first();
             if ($business) {
+                $data['isBusinessSite'] = true; //分站域名标记，供主题按主站/分站区分展示（如 Seattle 快捷入口）
                 $data['config']['shop_name'] = $business->shop_name;
                 $data['config']['title'] = $business->title;
                 $data['config']['notice'] = $business->notice;
@@ -115,6 +152,8 @@ abstract class User extends \App\Controller\Base\User
                     $data['favicon'] = $businessUser->avatar;
                 }
             }
+
+            $data['config'] = $this->translateConfigText($data['config']);
 
             $defaultThemePath = "User/Theme/Cartoon/";
             $themePath = "User/Theme/{$theme}/";

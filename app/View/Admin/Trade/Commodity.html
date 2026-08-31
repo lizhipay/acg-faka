@@ -9,107 +9,36 @@
         <!--begin::Container-->
         <div id="kt_content_container" class="container-fluid">
             <!--begin::Row-->
-            <div class="row g-5 g-xl-10">
-                <div class="col-xl-2">
-                    <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
-                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
-                        <!--begin::Body-->
-                        <div class="card-body">
-                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">总商品</span>
-                            <div class="fw-bolder fs-1 text-primary my-6">#{$all}</div>
-                        </div>
-                        <!--end::Body-->
-                    </div>
-                    <!--end::Statistics Widget 1-->
-                </div>
-                <div class="col-xl-2">
-                    <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-xl-8"
-                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-2.svg)">
-                        <!--begin::Body-->
-                        <div class="card-body">
-                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">已上架</span>
-                            <div class="fw-bolder fs-1 text-success my-6">#{$shelves}</div>
-                        </div>
-                        <!--end::Body-->
-                    </div>
-                    <!--end::Statistics Widget 1-->
-                </div>
-                <div class="col-xl-2">
-                    <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-5 mb-xl-8"
-                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-1.svg)">
-                        <!--begin::Body-->
-                        <div class="card-body">
-                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">未上架</span>
-                            <div class="fw-bolder fs-1 text-danger my-6">#{$not}</div>
-                        </div>
-                        <!--end::Body-->
-                    </div>
-                    <!--end::Statistics Widget 1-->
-                </div>
-
-                <div class="col-xl-2">
-                    <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-5 mb-xl-8"
-                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-3.svg)">
-                        <!--begin::Body-->
-                        <div class="card-body">
-                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">主站商品</span>
-                            <div class="fw-bolder fs-1 text-info my-6">#{$main}</div>
-                        </div>
-                        <!--end::Body-->
-                    </div>
-                    <!--end::Statistics Widget 1-->
-                </div>
-                <div class="col-xl-2">
-                    <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-5 mb-xl-8"
-                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
-                        <!--begin::Body-->
-                        <div class="card-body">
-                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">子站商品</span>
-                            <div class="fw-bolder fs-1 text-dark my-6">#{$child}</div>
-                        </div>
-                        <!--end::Body-->
-                    </div>
-                    <!--end::Statistics Widget 1-->
-                </div>
-                <div class="col-xl-2">
-                    <!--begin::Statistics Widget 1-->
-                    <div class="card bgi-no-repeat card-xl-stretch mb-5 mb-xl-8"
-                         style="background-position: right top; background-size: 30% auto; background-image: url(/assets/admin/images/svg/shapes/abstract-4.svg)">
-                        <!--begin::Body-->
-                        <div class="card-body">
-                            <span class="card-title fw-bolder text-muted text-hover-primary fs-4">子站上架</span>
-                            <div class="fw-bolder fs-1 text-success my-6">#{$child_shelves}</div>
-                        </div>
-                        <!--end::Body-->
-                    </div>
-                    <!--end::Statistics Widget 1-->
-                </div>
+            <h2 class="admin-mobile-only-section">#{t("商品概览")}</h2>
+            <div class="md-stat-grid" data-admin-mobile-stats="mini" role="region" aria-label="#{t('商品数据概览')}">
+                #{include file="../Component/StatCard.html" accent="primary" icon="fa-box" label="总商品" value=$all}
+                #{include file="../Component/StatCard.html" accent="success" icon="fa-boxes" label="已上架" value=$shelves}
+                #{include file="../Component/StatCard.html" accent="danger" icon="fa-box" label="未上架" value=$not}
+                #{include file="../Component/StatCard.html" accent="info" icon="fa-shop" label="主站商品" value=$main}
+                #{include file="../Component/StatCard.html" accent="secondary" icon="fa-store" label="子站商品" value=$child}
+                #{include file="../Component/StatCard.html" accent="success" icon="fa-cart-shopping" label="子站上架" value=$child_shelves}
             </div>
             <!--end::Row-->
 
             <!--begin::Tables Widget 9-->
+            <h2 class="admin-mobile-only-section">#{t("商品列表")}</h2>
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->
                 <div class="card-header border-0">
                     <div class="card-toolbar">
                         <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i class="fa-duotone fa-regular fa-circle-plus"></i>
-                            添加商品
+                            #{t("添加商品")}
                         </button>
                         <button class="btn btn-sm btn-light-success listed me-3"><i class="fa-duotone fa-regular fa-up-from-bracket"></i>
-                            上架选中商品
+                            #{t("上架选中商品")}
                         </button>
                         <button class="btn btn-sm btn-light-dark delist me-3"><i class="fa-duotone fa-regular fa-down-to-bracket"></i>
-                            下架选中商品
+                            #{t("下架选中商品")}
                         </button>
                         <button class="btn btn-sm btn-light-primary handle me-3"><i class="fa-duotone fa-regular fa-rotate"></i>
-                            一键操作选中商品
+                            #{t("一键操作选中商品")}
                         </button>
-                        <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fa-duotone fa-regular fa-trash-can"></i> 移除选中商品
+                        <button class="btn btn-sm btn-light-danger btn-app-del me-3"><i class="fa-duotone fa-regular fa-trash-can"></i> #{t("移除选中商品")}
                         </button>
                         <!--start::HOOK-->
                         #{hook(\App\Consts\Hook::ADMIN_VIEW_COMMODITY_TOOLBAR)}

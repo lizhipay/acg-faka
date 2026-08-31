@@ -22,6 +22,13 @@ interface Email
     public function send(string $email, string $title, string $content): bool;
 
     /**
+     * 最近一次发送失败的原因（SMTP 报错原文）。发送成功或未发送过时返回空串。
+     * 用于「发送测试邮件」把失败原因展示给站长，而不是只报一句"发送失败"。
+     * @return string
+     */
+    public function getLastError(): string;
+
+    /**
      * @param string $email
      * @param int $type
      * @return void

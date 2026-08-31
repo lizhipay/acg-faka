@@ -310,6 +310,19 @@ body.ay-bg {
 
 .ay-input:hover { border-color: rgba(255,255,255,.32); }
 .ay-eye:hover { background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.1)); }
+.ay-captcha {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 34px;
+    width: auto;
+    border-radius: 10px;
+    border: 1px solid var(--ay-stroke);
+    cursor: pointer;
+    background: #f5f8f3;
+}
+.ay-captcha:hover { opacity: .85; }
 
 /* 主按钮：萌系渐变 */
 .ay-btn {

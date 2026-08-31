@@ -37,12 +37,13 @@ class RequestLogger
                 'uri' => $_SERVER['REQUEST_URI'],
                 'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
                 'referer' => $_SERVER['HTTP_REFERER'] ?? '',
-                'get' => $request->get(),
-                'post' => $request->post(),
-                'json' => $request->json(),
-                'raw_body' => $request->raw(),
-                'cookies' => $request->cookie(),
-                'headers' => $request->header()
+                // 敏感字段脱敏：避免明文密钥/密码/令牌/会话 Cookie 落盘（历史泄露根因）
+                'get' => maskSensitive($request->get()),
+                'post' => maskSensitive($request->post()),
+                'json' => maskSensitive($request->json()),
+                'raw_body' => '', // 原始请求体含明文密钥（如 key=xxx&private_key=xxx），不再记录
+                'cookies' => array_map(static fn($v) => '***', (array)$request->cookie()),
+                'headers' => maskSensitive($request->header())
             ];
 
             $json = json_encode(

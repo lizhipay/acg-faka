@@ -296,14 +296,18 @@ class Authentication extends User
             ?? \App\Model\User::query()->where("phone", $_POST['username'])->first();
 
         if (!$user) {
+            $this->loginFail((string)$_POST['username'], "not_found");
             throw new JSONException("用户不存在");
         }
 
-        if (Str::generatePassword($_POST['password'], $user->salt) != $user->password) {
+        //verifyPassword 内含旧清洗管线的兼容比对：老账号的特殊字符密码当年哈希的是转义形态（#833）
+        if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)$_POST['password'], (string)$this->request->unsafePost('password'))) {
+            $this->loginFail((string)$_POST['username'], "password");
             throw new JSONException("密码错误");
         }
 
         if ($user->status == 0) {
+            $this->loginFail((string)$_POST['username'], "banned");
             throw new JSONException("您已被封禁");
         }
 
@@ -313,6 +317,19 @@ class Authentication extends User
 
         Captcha::destroy("login");
         return $this->json(200, "登录成功");
+    }
+
+    /**
+     * 登录失败通知点位（钩子异常不影响原有失败流程）
+     * @param string $account
+     * @param string $reason not_found|password|banned
+     */
+    private function loginFail(string $account, string $reason): void
+    {
+        try {
+            hook(Hook::USER_API_AUTH_LOGIN_FAIL, $account, $reason);
+        } catch (\Throwable $e) {
+        }
     }
 
     /**

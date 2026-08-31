@@ -12,14 +12,14 @@
 
         $(`.payButton`).click(() => {
             if (!groupId) {
-                layer.msg("请先选择要开通的套餐");
+                layer.msg(i18n("请先选择要开通的套餐"));
                 return;
             }
 
             util.post("/user/api/business/purchase", {
                 levelId: groupId
             }, res => {
-                layer.msg("开通成功");
+                layer.msg(i18n("开通成功"));
                 window.location.href = "/user/business/index";
             });
         });
@@ -29,6 +29,10 @@
             util.post("/user/api/business/saveConfig", util.arrayToObject($('.form-data').serializeArray()), res => {
                 message.success("保存成功");
             });
+        });
+
+        $('.clipboard').click(function () {
+            util.copyTextToClipboard($(this).data("text"), () => message.success("已复制 CNAME 地址"));
         });
 
 
@@ -57,7 +61,7 @@
                 submit: '/user/api/master/setCommodityAllPremium',
                 tab: [
                     {
-                        name: `<i class="fa-duotone fa-regular fa-hand-holding-dollar"></i> ${globalCategoryName ? `仅分类：<span class="text-success">${globalCategoryName}</span> 下的商品生效` : "全部商品"}`,
+                        name: `<i class="fa-duotone fa-regular fa-hand-holding-dollar"></i> ${globalCategoryName ? `${i18n('仅分类：')}<span class="text-success">${globalCategoryName}</span> ${i18n('下的商品生效')}` : i18n("全部商品")}`,
                         form: [
                             {title: "cid", name: "category_id", type: "input", hide: true},
                             {
@@ -68,6 +72,18 @@
                                 tips: "比如一个商品市场价 100 元，如果你填写了 50，售价就是：\n" +
                                     "100 + (100 × 0.5) = 150 元。\n" +
                                     "如果你的进货价是 70 元，那么最终利润就是：150 - 70 = 80 元。".replace("\n", "<br>")
+                            },
+                            {
+                                title: "价格取整",
+                                name: "rounding",
+                                type: "select",
+                                dict: [
+                                    {id: 0, name: "不取整（保留小数）"},
+                                    {id: 1, name: "四舍五入到整元"},
+                                    {id: 2, name: "向上取整到整元"}
+                                ],
+                                default: 0,
+                                tips: "按百分比加价后价格出现小数时的处理方式，例如加价后 3.66 元：四舍五入 → 4 元、向上取整 → 4 元；加价后 3.20 元：四舍五入 → 3 元、向上取整 → 4 元。仅对设置了加价的商品生效。"
                             }
                         ]
                     }
@@ -109,92 +125,17 @@
 
 
     function _NoticeEditor() {
+        const $mount = $('.notice-editor');
+        if (!$mount.length) return;
         ['basePath', 'workerPath', 'modePath', 'themePath'].forEach(name => {
             ace.config.set(name, '/assets/common/js/editor/code/lib');
         });
-
-        const wangEditor = window.wangEditor, uploadUrl = '/user/api/upload/send';
-        const editor = new wangEditor(`.editor-container`);
-        const textarea = $(`.text-container`);
-        const editorContent = $('.editor-content');
-        const editorWrapper = $('.editor-wrapper');
-        const htmlContainer = $('.html-container');
-        const business_notice_var = getVar(`_business_notice_var`);
-
-        editor.config.onchange = function (html) {
-            textarea.val(html);
-        }
-
-        editor.config.zIndex = 0;
-        editor.config.uploadFileName = 'file';
-        editor.config.uploadImgServer = uploadUrl + "?mime=image";
-        editor.config.uploadImgAccept = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
-        editor.config.uploadImgMaxLength = 1;
-        editor.config.uploadImgTimeout = 60 * 1000;
-        editor.config.uploadImgMaxSize = 50 * 1024 * 1024;  //50M
-        editor.config.uploadImgHooks = {
-            customInsert: function (insertImgFn, result) {
-                if (result.code != 200) {
-                    layer.msg(result.msg);
-                    return;
-                }
-                insertImgFn(result.data.url);
-            },
-            error: function (xhr, editor, resData) {
-                layer.msg("图片上传失败，文件可能过大");
-            },
-        }
-        editor.config.uploadVideoServer = uploadUrl + "?mime=video";
-        editor.config.uploadVideoName = 'file'
-        editor.config.uploadVideoHooks = {
-            customInsert: function (insertVideoFn, result) {
-                if (result.code != 200) {
-                    layer.msg(result.msg);
-                    return;
-                }
-                insertVideoFn(result.data.url);
-            },
-            error: function (xhr, editor, resData) {
-                layer.msg("视频上传失败，文件可能过大");
-            },
-        }
-        editor.config.height = 480;
-        editor.create();
-
-        editor.txt.html(business_notice_var);
-        textarea.val(business_notice_var);
-
-
-        $('.button-switch-notice').click(function () {
-            let _obj = $(this);
-            let type = _obj.attr("data-type");
-            if (type == 0) {
-                const toolbarWidth = $(`.editor-container .w-e-toolbar`).width();
-                const heightDifference = toolbarWidth > 1000 ? 40 : 80;
-
-                _obj.attr("data-type", 1);
-                _obj.html('<i class="fa-duotone fa-regular fa-pen-paintbrush me-1"></i>' + i18n("写作"));
-                editorWrapper.append(`<div id="notice-tmp-html" style="margin-top:10px;width:100%;height: ${480 + heightDifference}px"></div>`);
-                const editor = ace.edit(`notice-tmp-html`, {
-                    theme: "ace/theme/chrome",
-                    mode: "ace/mode/html"
-                });
-                editor.getSession().setUseWrapMode(true);
-                editor.setOption("showPrintMargin", false);
-                editor.setValue(textarea.val());
-                editor.getSession().on('change', function (delta) {
-                    const currentContent = editor.getValue();
-                    textarea.val(currentContent);
-                });
-                editorContent.hide();
-                htmlContainer.fadeIn(150);
-            } else {
-                _obj.attr("data-type", 0);
-                _obj.html('<i class="fa-duotone fa-regular fa-code me-1"></i>HTML');
-                editor.txt.html(textarea.val());
-                $(`#notice-tmp-html`).remove();
-                editorContent.fadeIn(150);
-            }
+        $mount.html(EditorV2.buildHtml({name: 'notice', placeholder: i18n('填写店铺公告，支持 Markdown 语法')}));
+        EditorV2.register($mount.get(0), {
+            name: 'notice',
+            uploadUrl: '/user/api/upload/send',
+            height: 420,
+            value: getVar('_business_notice_var') ?? ""
         });
     }
 
@@ -291,7 +232,7 @@
                                 submit: '/user/api/master/setCategory',
                                 tab: [
                                     {
-                                        name: `${util.icon("fa-duotone fa-regular fa-gear")} ${row.name}`,
+                                        name: `${util.icon("fa-duotone fa-regular fa-gear")} ${i18n(row.name)}`,
                                         form: [
                                             {title: "cid", name: "category_id", type: "input", hide: true},
                                             {
@@ -387,7 +328,9 @@
                     if (!item.user_commodity || item.user_commodity.premium == 0) {
                         return '-';
                     }
-                    return format.badge(`${item.user_commodity.premium}%`, "a-badge-success");
+                    const rounding = Number(item.user_commodity.rounding || 0);
+                    const roundingMark = rounding === 1 ? ` · ${i18n('四舍五入')}` : (rounding === 2 ? ` · ${i18n('向上取整')}` : '');
+                    return format.badge(`${item.user_commodity.premium}%${roundingMark}`, "a-badge-success");
                 }
             },
             {
@@ -410,7 +353,7 @@
                                 submit: '/user/api/master/setCommodity',
                                 tab: [
                                     {
-                                        name: `${util.icon("fa-duotone fa-regular fa-gear")} ${row.name}`,
+                                        name: `${util.icon("fa-duotone fa-regular fa-gear")} ${i18n(row.name)}`,
                                         form: [
                                             {title: "cid", name: "commodity_id", type: "input", hide: true},
                                             {
@@ -421,6 +364,14 @@
                                                 placeholder: "自定义商品名称，不填写代表使用主站的，支持HTML美化代码"
                                             },
                                             {
+                                                title: "自定义商品介绍",
+                                                name: "description",
+                                                type: "textarea",
+                                                height: 160,
+                                                placeholder: "不填写代表使用主站的商品介绍，支持HTML",
+                                                tips: "主站的介绍里可能带有主站自己的广告或联系方式，可以在这里改成你自己的。留空则继续沿用主站介绍。"
+                                            },
+                                            {
                                                 title: "加价百分比",
                                                 name: "premium",
                                                 type: "input",
@@ -428,6 +379,18 @@
                                                 tips: "比如一个商品市场价 100 元，如果你填写了 50，售价就是：\n" +
                                                     "100 + (100 × 0.5) = 150 元。\n" +
                                                     "如果你的进货价是 70 元，那么最终利润就是：150 - 70 = 80 元。".replace("\n", "<br>")
+                                            },
+                                            {
+                                                title: "价格取整",
+                                                name: "rounding",
+                                                type: "select",
+                                                dict: [
+                                                    {id: 0, name: "不取整（保留小数）"},
+                                                    {id: 1, name: "四舍五入到整元"},
+                                                    {id: 2, name: "向上取整到整元"}
+                                                ],
+                                                default: 0,
+                                                tips: "按百分比加价后价格出现小数时的处理方式。仅对设置了加价的商品生效。"
                                             },
                                             {title: "状态", name: "status", type: "switch", text: "显示|隐藏"}
                                         ]

@@ -27,6 +27,10 @@ abstract class ManagePlugin extends \App\Controller\Base\Manage
     protected function render(?string $title, string $template, array $data = [], bool $controller = false): string
     {
         try {
+            //后台模板函数（admin_var 等）：主后台 Manage::render 会加载，
+            //插件面板模板同样嵌入 Admin/Header.html，缺了它 Smarty 直接编译报错
+            require(BASE_PATH . "/app/View/Admin/Helper.php");
+
             $data['title'] = $title;
             $data['app']['version'] = \config("app")['version'];
 
@@ -53,6 +57,8 @@ abstract class ManagePlugin extends \App\Controller\Base\Manage
             }
             $data['manage_view_path'] = BASE_PATH . '/app/View/Admin/';
             $data['_store_initialize'] = file_exists(BASE_PATH . "/kernel/Plugin.php");
+            // 加密授权文件是否“成功加载”（顶层常量 _APP_STORE_LOAD_STATE）；比 file_exists 更严格
+            $data['_app_store_load_state'] = defined('_APP_STORE_LOAD_STATE') && \_APP_STORE_LOAD_STATE === true;
             return View::render($template, $data, BASE_PATH . "/app/Plugin/" . ($controller ? \Kernel\Util\Plugin::$currentControllerPluginName : \Kernel\Util\Plugin::$currentPluginName) . "/View");
         } catch (\SmartyException $e) {
             throw new ViewException($e->getMessage());

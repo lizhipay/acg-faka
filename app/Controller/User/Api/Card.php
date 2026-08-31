@@ -20,6 +20,7 @@ use Kernel\Annotation\Interceptor;
 use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
 use Kernel\Waf\Filter;
+use Kernel\Waf\Firewall;
 
 #[Interceptor([Waf::class, UserSession::class, Business::class], Interceptor::TYPE_API)]
 class Card extends User
@@ -87,14 +88,20 @@ class Card extends User
             throw new JSONException('(`･ω･´)商品不存在');
         }
 
-        $cards = trim(trim((string)$request->post("secret", Filter::NORMAL)), PHP_EOL);
+        $rawCards = $request->unsafePost("secret");
+        if (!is_string($rawCards)) {
+            throw new JSONException('(`･ω･´)卡密信息格式不正确');
+        }
+        // PHP has already URL-decoded form fields once. Keep literal strings
+        // such as "%0A" intact instead of decoding them into extra card rows.
+        $cards = trim((string)Firewall::instance()->xssKillerLiteral($rawCards));
 
         //进行批量插入
         if ($cards == '') {
             throw new JSONException('(`･ω･´)请至少添加1条卡密信息哦');
         }
 
-        $cards = explode(PHP_EOL, $cards);
+        $cards = preg_split('/\r\n|\n|\r/', $cards) ?: [];
         $count = count($cards);
 
         $success = 0;

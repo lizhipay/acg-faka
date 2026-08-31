@@ -23,9 +23,22 @@ class Log extends Manage
      */
     public function data(): array
     {
+        $map = array_intersect_key($_POST, array_flip([
+            'equal-email',
+            'equal-nickname',
+            'equal-create_ip',
+            'search-content',
+            'between-create_time',
+            'equal-risk',
+        ]));
+        $page = max(1, (int)$this->request->post('page'));
+        $limit = (int)$this->request->post('limit');
+        if (!in_array($limit, [15, 30, 50], true)) {
+            $limit = 15;
+        }
         $get = new Get(ManageLog::class);
-        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
-        $get->setWhere($_POST);
+        $get->setPaginate($page, $limit);
+        $get->setWhere($map);
         $data = $this->query->get($get);
         return $this->json(data: $data);
     }

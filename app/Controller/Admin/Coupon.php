@@ -15,6 +15,6 @@ class Coupon extends Manage
      */
     public function index(): string
     {
-        return $this->render("优惠卷", "Trade/Coupon.html");
+        return $this->render("优惠券", "Trade/Coupon.html");
     }
 }

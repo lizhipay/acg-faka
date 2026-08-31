@@ -21,11 +21,11 @@ interface Recharge
     public function trade(\App\Model\User $user): array;
 
     /**
-     * @param string $handle
+     * @param string $tradeNo 回调URL上带的订单号
      * @param array $map
      * @return string
      */
-    public function callback(string $handle, array $map): string;
+    public function callback(string $tradeNo, array $map): string;
 
 
     /**

@@ -85,27 +85,41 @@ class Dashboard extends \App\Controller\Base\API\Manage
     }
 
     /**
-     * 本周数据
+     * 数据趋势：最近 7 天（滚动窗口，含今天）。
+     * 不能按"自然周"取数：周一当天只有 1 个数据点，折线连不成线（前端又不显示孤点），
+     * 图表必然全空，跨周的数据也永远看不到（issue #785）。
      * @return array
      */
     public function weekStatistics(): array
     {
-        $w = date('w');
-        $w = $w == 0 ? 7 : $w;
+        $dayLabels = [1 => "周一", 2 => "周二", 3 => "周三", 4 => "周四", 5 => "周五", 6 => "周六", 7 => "周日"];
+        $begin = date("Y-m-d 00:00:00", strtotime("-6 day"));
+        $end = date("Y-m-d 23:59:59");
 
-        $week = [
-            1 => "星期一",
-            2 => "星期二",
-            3 => "星期三",
-            4 => "星期四",
-            5 => "星期五",
-            6 => "星期六",
-            7 => "星期七"
-        ];
+        // 整个窗口按日 GROUP BY 一次取全，替代旧实现的逐日逐指标查询（最多 42 条 SQL → 3 条）
+        $orderRows = \App\Model\Order::query()
+            ->whereBetween("create_time", [$begin, $end])
+            ->where("status", 1)
+            ->selectRaw("DATE(create_time) as day, SUM(amount) as amount, SUM(divide_amount) as divide_amount, SUM(rebate) as rebate, SUM(cost) as cost, SUM(rent) as rent")
+            ->groupBy("day")
+            ->get()
+            ->keyBy("day");
+        $cashRows = \App\Model\Cash::query()
+            ->whereBetween("create_time", [$begin, $end])
+            ->where("status", 1)
+            ->selectRaw("DATE(create_time) as day, SUM(amount) as amount")
+            ->groupBy("day")
+            ->get()
+            ->keyBy("day");
+        $rechargeRows = UserRecharge::query()
+            ->whereBetween("create_time", [$begin, $end])
+            ->where("status", 1)
+            ->selectRaw("DATE(create_time) as day, SUM(amount) as amount")
+            ->groupBy("day")
+            ->get()
+            ->keyBy("day");
 
         $weeks = [];
-
-
         $series = [
             "profit" => [],
             "trade" => [],
@@ -113,25 +127,22 @@ class Dashboard extends \App\Controller\Base\API\Manage
             "recharge" => []
         ];
 
-        for ($i = 1; $i <= $w; $i++) {
-            $weeks[] = $week[$i];
-            //交易额
-            $amount = \App\Model\Order::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->sum("amount");
+        for ($i = 6; $i >= 0; $i--) {
+            $ts = strtotime("-{$i} day");
+            $day = date("Y-m-d", $ts);
+            $weeks[] = date("m-d", $ts) . " " . lang($dayLabels[(int)date("N", $ts)]);
+
+            $order = $orderRows->get($day);
+            $amount = (string)($order?->amount ?? "0");
             $series["trade"][] = sprintf("%.2f", $amount);
-            //利润
-            $divideAmount = \App\Model\Order::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->sum("divide_amount");;
-            $rebate = \App\Model\Order::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->sum("rebate");;
-            $cost = \App\Model\Order::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->sum("cost");
-            $rent = \App\Model\Order::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->sum("rent");
-
-            $series['profit'][] = (new Decimal($amount))->sub($rent)->sub($divideAmount)->sub($rebate)->add($cost)->getAmount();
-
-            //提现
-            $cash = \App\Model\Cash::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->sum("amount");
-            $series["cash"][] = sprintf("%.2f", $cash);
-            //充值
-            $recharge = \App\Model\UserRecharge::query()->whereBetween("create_time", [Date::weekDay($i, Date::TYPE_START), Date::weekDay($i, Date::TYPE_END)])->where("status", 1)->sum("amount");;
-            $series["recharge"][] = sprintf("%.2f", $recharge);
+            $series["profit"][] = (new Decimal($amount))
+                ->sub((string)($order?->rent ?? "0"))
+                ->sub((string)($order?->divide_amount ?? "0"))
+                ->sub((string)($order?->rebate ?? "0"))
+                ->add((string)($order?->cost ?? "0"))
+                ->getAmount();
+            $series["cash"][] = sprintf("%.2f", (string)($cashRows->get($day)?->amount ?? "0"));
+            $series["recharge"][] = sprintf("%.2f", (string)($rechargeRows->get($day)?->amount ?? "0"));
         }
 
         return $this->json(200, "success", [

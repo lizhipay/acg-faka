@@ -231,6 +231,38 @@
             background-color: #ffffff;
         }
 
+        .env-tip {
+            box-sizing: border-box;
+            width: 80%;
+            margin: -6px auto 0 auto;
+            padding: 12px 15px;
+            border: 1px solid #fbc8c880;
+            border-radius: 8px;
+            background-color: #fff7f9;
+            color: #8a5b6b;
+            font-size: 12px;
+            line-height: 2;
+            text-align: left;
+        }
+
+        .env-tip b {
+            color: #e2557f;
+        }
+
+        .env-tip p {
+            margin: 4px 0 0 0;
+        }
+
+        .env-tip code {
+            display: inline-block;
+            margin: 2px 6px 2px 0;
+            padding: 0 8px;
+            border-radius: 5px;
+            background-color: #ffe3ea;
+            color: #d63a68;
+            font-family: Consolas, Monaco, monospace;
+        }
+
         .disabled {
             background-color: rgba(128, 128, 128, 0.49) !important;
             display: inline-block;
@@ -273,6 +305,20 @@
                     #{/foreach}
 
                 </table>
+                #{if !$install}
+                <div class="env-tip">
+                    <b>😿 环境还差一点，装好后刷新本页即可继续</b>
+                    #{if $php_version < 8}
+                    <p>PHP 版本过低（当前 #{$php_version}），本程序需要 <code>PHP 8.0</code> 及以上。</p>
+                    #{/if}
+                    #{if $missing}
+                    <p>缺少扩展：#{foreach $missing as $m}<code>#{$m}</code>#{/foreach}</p>
+                    <p>宝塔 / aaPanel：软件商店 → 对应 PHP 版本 → 设置 → 安装扩展，勾选后安装<br>
+                        命令行：<code>yum install php-bcmath</code> 或 <code>apt install php8.0-bcmath</code>，Docker 用
+                        <code>docker-php-ext-install bcmath</code>，装完请重启 PHP</p>
+                    #{/if}
+                </div>
+                #{/if}
                 <div class="#{if $install} button #{else} disabled #{/if}">#{if $install} 下一步 #{else} 👿 请检查环境 #{/if}
                 </div>
             </fieldset>

@@ -126,7 +126,7 @@ class Plugin
     /**
      * @param int $point
      * @param mixed ...$args
-     * @return array|Stock|string|void
+     * @return array|Stock|string|bool|void
      * @throws \ReflectionException
      */
     public static function hook(int $point, mixed &...$args)
@@ -142,15 +142,45 @@ class Plugin
                 $instance = new $item['namespace'];
                 Di::inst()->inject($instance);
                 $result = call_user_func_array([$instance, $item['method']], $args);
-                if (is_string($result)) {
+
+                // Stock 是短路信号，必须最先判
+                if ($result instanceof Stock) {
+                    return $result;
+                }
+
+                // bool 同样是决策信号（如 SERVICE_SMTP_SEND_BEFORE 返回 true 表示已由插件接管），
+                // 之前会被静默丢弃导致该契约从未生效，这里与 Stock 同级短路返回。
+                if (is_bool($result)) {
+                    return $result;
+                }
+
+                // 绝大多数钩子是 void，这里直接跳过，省得往下走一圈
+                if ($result === null) {
+                    continue;
+                }
+
+                if (is_string($result) && !is_array($results)) {
                     $results .= $result;
-                } elseif (is_array($result)) {
-                    if ($results === "") {
-                        $results = [];
+                    continue;
+                }
+
+                // 数组和**对象**都进收集模式。
+                //
+                // 对象原来是被静默丢弃的，于是想让订阅方 return 一个实体
+                // （比如 ThreadManager 的 Task 描述符）就只能退而求其次，
+                // 改用 `array &$tasks` 引用修改 —— API 难看，而且忘了写引用符号
+                // 也不会报错，只会让注册神秘失败。现在对象一视同仁地收集，
+                // 订阅方可以直接 `return new XxxEntity(...)`。
+                //
+                // 顺带把 string 也纳入收集：某个钩子点如果既有插件返回数组/对象、
+                // 又有插件返回字符串，老代码会走到 `$results .= $result`，
+                // 而那时 $results 已经是数组 —— PHP 8 下直接 TypeError 把请求打挂。
+                // 与其崩，不如收进同一个列表里。
+                if (is_array($result) || is_object($result) || is_string($result)) {
+                    if (!is_array($results)) {
+                        $results = $results === "" ? [] : [$results];
                     }
                     $results[] = $result;
-                } elseif ($result instanceof Stock) {
-                    return $result;
                 }
             }
 

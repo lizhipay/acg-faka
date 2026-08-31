@@ -143,20 +143,82 @@ HTML;
         }
 
 
-        if (!array_key_exists($plugin, $appStore)) {
+        $iconPath = $appStore[$plugin]['icon'] ?? null;
+        if (!is_string($iconPath) || !preg_match('#^/[A-Za-z0-9._~%/-]+$#D', $iconPath)) {
             $icon = "/favicon.ico";
         } else {
-            $icon = App::APP_URL . $appStore[$plugin]['icon'];
+            $icon = App::APP_URL . $iconPath;
         }
 
+        $pluginName = strip_tags((string)$plg['NAME']);
+        $pluginNameHtml = htmlspecialchars($pluginName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP
+            | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE;
 
         return $this->render("通用插件", "Config/Wiki.html", [
-            'pluginName' => strip_tags($plg['NAME']),
-            'basePath' => $staticBasePath,
-            'icon' => $icon,
-            'homepage' => $readmePath,
-            'sidebar' => $sidebarPath,
-            'terms' => $termsPath,
+            'pluginName' => $pluginNameHtml,
+            'pluginKeyJson' => json_encode($plugin, $jsonFlags),
+            // docsify 会把 name 拼进 HTML；这里传入实体编码后的文本，避免插件元数据形成标签或属性。
+            'pluginNameHtmlJson' => json_encode($pluginNameHtml, $jsonFlags),
+            'basePathJson' => json_encode($staticBasePath, $jsonFlags),
+            'iconJson' => json_encode($icon, $jsonFlags),
+            'homepageJson' => json_encode($readmePath, $jsonFlags),
+            'sidebarJson' => json_encode($sidebarPath, $jsonFlags),
         ]);
+    }
+
+    /**
+     * 提供 Wiki 目录下的 .md 文档内容 —— 走 PHP 路由(index.php),不依赖 nginx 对
+     * /app/Plugin/**\/Wiki/*.md 的静态文件读取。宝塔等安全规则会把 README.md / CHANGELOG.md
+     * 之类的文件名直接 `return 404`,导致 docsify 拉不到首页而整体报 404;本路由 URL 形如
+     * /admin/plugin/wikiRes?plugin=X&file=README.md,路径部分不以 README.md 结尾,不被该规则命中,
+     * 任意服务器都能正常加载文档。
+     * @param string $plugin
+     * @param string $file
+     * @throws NotFoundException
+     */
+    public function wikiRes(string $plugin, string $file): void
+    {
+        if (!preg_match('/^[A-Za-z0-9_]+$/', $plugin)) {
+            throw new NotFoundException("错误的插件");
+        }
+
+        $wiki = realpath(BASE_PATH . "/app/Plugin/{$plugin}/Wiki");
+        if ($wiki === false || !is_dir($wiki)) {
+            throw new NotFoundException("此插件没有文档");
+        }
+
+        //规范化相对路径:去查询/井号、统一分隔符、禁止目录穿越
+        $file = (string)preg_replace('/[?#].*$/', '', str_replace('\\', '/', $file));
+        $file = ltrim($file, '/');
+        if ($file === '' || strpos($file, '..') !== false) {
+            throw new NotFoundException("非法文件");
+        }
+
+        //定位:先精确,再同目录大小写不敏感兜底(兼容 Linux 大小写敏感 + 插件用 readme.md 等命名)
+        $target = realpath($wiki . '/' . $file);
+        if ($target === false) {
+            $dir = realpath($wiki . '/' . dirname($file));
+            if ($dir !== false && is_dir($dir) && str_starts_with($dir . '/', $wiki . '/')) {
+                $base = basename($file);
+                foreach ((array)scandir($dir) as $entry) {
+                    if (strcasecmp($entry, $base) === 0) {
+                        $target = realpath($dir . '/' . $entry);
+                        break;
+                    }
+                }
+            }
+        }
+
+        //必须落在 Wiki 目录内、是真实文件、且是 .md(只放行文档,杜绝读取源码/配置)
+        if ($target === false || !is_file($target)
+            || !str_starts_with($target, $wiki . DIRECTORY_SEPARATOR)
+            || strtolower((string)pathinfo($target, PATHINFO_EXTENSION)) !== 'md') {
+            throw new NotFoundException("文档不存在");
+        }
+
+        header('Content-Type: text/plain; charset=utf-8');
+        echo (string)file_get_contents($target);
+        exit;
     }
 }

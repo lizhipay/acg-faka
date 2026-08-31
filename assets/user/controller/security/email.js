@@ -5,14 +5,14 @@
         message.prompt({
             title: '人机验证',
             width: 420,
-            html: `<img src="/user/captcha/image?action=emailBindNew" onclick="this.src='/user/captcha/image?action=emailBindNew&t=' + new Date().getTime()"  class="prompt-image-code" alt="更换验证码">`,
+            html: `<img src="/user/captcha/image?action=emailBindNew" onclick="this.src='/user/captcha/image?action=emailBindNew&t=' + new Date().getTime()"  class="prompt-image-code" alt="${i18n('更换验证码')}">`,
             inputAttributes: {
                 onpaste: 'return false',
                 oncopy: 'return false'
             },
-            confirmButtonText: `继续操作`,
+            confirmButtonText: `${i18n('继续操作')}`,
             inputValidator: function (value) {
-                return (!value && "请输入验证码");
+                return (!value && i18n("请输入验证码"));
             }
         }).then(res => {
             if (res.isConfirmed === true) {

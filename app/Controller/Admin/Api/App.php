@@ -8,6 +8,7 @@ use App\Interceptor\Waf;
 use App\Model\ManageLog;
 use App\Util\Opcache;
 use App\Util\PayConfig;
+use App\Util\PluginPacker;
 use App\Util\Theme;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
@@ -135,6 +136,12 @@ class App extends Manage
             $data['keywords'] = urldecode($keywords);
         }
 
+        //按作者筛选：0/空表示不限，别塞进去白白改了签名参数
+        $authorId = (int)($_POST['author_id'] ?? 0);
+        if ($authorId > 0) {
+            $data['author_id'] = $authorId;
+        }
+
         $plugins = $this->app->plugins($data);
 
         //判断自己是否安装
@@ -174,6 +181,9 @@ class App extends Manage
             $plugins['rows'][$index]['icon'] = \App\Service\App::APP_URL . "/{$plugins['rows'][$index]['icon']}";
         }
 
+        //应用商店条目来自官方远端，属动态文案：只翻展示用的名称与简介，plugin_key 不动
+        $plugins['rows'] = \Kernel\Util\Lang::transList($plugins['rows'], ['plugin_name', 'description']);
+
         $json = $this->json(data: [
             "list" => $plugins['rows'],
             "total" => $plugins['count']
@@ -182,6 +192,33 @@ class App extends Manage
         $json['user'] = $plugins['user'];
         $json['purchase'] = $plugins['purchase'];
         return $json;
+    }
+
+    /**
+     * 作者下拉框的数据源。商店那边只返回有已上架插件的作者（当前 11 个，不分页），
+     * 这里转成前端字典要的 {id, name} 结构，顺带挡掉字段缺失的脏数据。
+     * @return array
+     */
+    public function authors(): array
+    {
+        //这是个筛选框的数据源，不是主流程：商店没这个接口、或临时抽风时
+        //只当"没有作者可筛"处理，前端据此不显示下拉框，绝不能把应用商店页面带崩
+        try {
+            $authors = $this->app->authors();
+        } catch (\Throwable $e) {
+            return $this->json(200, "ok", []);
+        }
+
+        $list = [];
+        foreach ($authors as $author) {
+            $id = (int)($author['id'] ?? 0);
+            $username = trim((string)($author['username'] ?? ''));
+            if ($id <= 0 || $username === '') {
+                continue;
+            }
+            $list[] = ["id" => $id, "name" => $username];
+        }
+        return $this->json(200, "ok", $list);
     }
 
     /**
@@ -305,6 +342,22 @@ class App extends Manage
         $pluginKey = (string)$_POST['plugin_key'];
         $type = (int)$_POST['type'];
 
+        //正在使用的网站模板不能卸载：uninstallPlugin 是直接删目录，
+        //删掉当前启用的模板会让前台立刻白屏，且无法从后台恢复
+        if ($type == 2) {
+            $inUse = [
+                'user_theme' => 'PC模板',
+                'user_mobile_theme' => '手机模板',
+                'user_center_theme' => 'PC会员中心',
+                'user_center_mobile_theme' => '手机会员中心',
+            ];
+            foreach ($inUse as $configKey => $label) {
+                if ((string)\App\Model\Config::get($configKey) === $pluginKey) {
+                    throw new JSONException("该模板正被「{$label}」使用，请先切换到其它模板再卸载");
+                }
+            }
+        }
+
         if ($type == 0) {
             _plugin_stop($pluginKey);
         }
@@ -321,14 +374,32 @@ class App extends Manage
      */
     public function developerPlugins(): array
     {
-        $plugins = $this->app->developerPlugins([
+        $query = [
             "page" => (int)$_POST['page'],
             "limit" => (int)$_POST['limit']
-        ]);
+        ];
+
+        //搜索条件：keyword 模糊搜索，其余三项是枚举。空值不下发，避免把"不筛选"当成筛选 0
+        $keyword = trim((string)($_POST['keyword'] ?? ''));
+        if ($keyword !== '') {
+            $query['keyword'] = $keyword;
+        }
+        foreach (['status', 'type', 'audit_review_status'] as $field) {
+            $value = (string)($_POST[$field] ?? '');
+            if ($value !== '' && ctype_digit($value)) {
+                $query[$field] = (int)$value;
+            }
+        }
+
+        $plugins = $this->app->developerPlugins($query);
 
         foreach ($plugins['rows'] as &$plugin) {
             $plugin['icon'] = \App\Service\App::APP_URL . "/{$plugin['icon']}";
         }
+        unset($plugin);
+
+        //开发者中心列表同样是远端动态文案
+        $plugins['rows'] = \Kernel\Util\Lang::transList($plugins['rows'], ['plugin_name', 'description']);
 
         $json = $this->json(data: [
             "list" => $plugins['rows'],
@@ -360,7 +431,19 @@ class App extends Manage
      */
     public function developerCreateKit(): array
     {
-        $file = $_POST['resource'];
+        $file = (string)($_POST['resource'] ?? '');
+
+        if ($file === '') {
+            //没传压缩包 = 走服务端自动打包（开发者中心的默认方式）
+            $_POST['resource'] = $this->autoPackage(
+                (int)($_POST['id'] ?? 0),
+                trim((string)($_POST['version'] ?? '')),
+                false
+            );
+            unset($_POST['version']);
+            return $this->json(200, "提交成功", $this->app->developerCreateKit($_POST));
+        }
+
         if (!file_exists(BASE_PATH . $file)) {
             throw new JSONException("请重新上传插件包");
         }
@@ -376,7 +459,47 @@ class App extends Manage
         unlink(BASE_PATH . $file);
         //需要审核的安装包临时存放地址
         $_POST['resource'] = $upload['path'];
+        unset($_POST['version']);
         return $this->json(200, "提交成功", $this->app->developerCreateKit($_POST));
+    }
+
+    /**
+     * 从本机插件目录现打一个包并直传商店，返回商店的临时 path。
+     *
+     * 开发者原本要自己 zip 好再上传，很容易出事：忘了删 Config.php（把自己的
+     * 密钥和启用状态发给所有用户）、把日志一起打进去、把插件文件夹本身也打进去、
+     * 或者包内版本号和填的版本号对不上被审核打回。这些现在全部由服务端保证。
+     *
+     * @param string $version 非空则先写回插件自己的版本文件再打包，保证两者一致
+     * @param bool $isUpdate true=更新包（剔除 Config.php），false=安装包（Config.php 清空成 return [];）
+     * @throws JSONException
+     */
+    private function autoPackage(int $pluginId, string $version, bool $isUpdate): string
+    {
+        $plugin = PluginPacker::resolveFromStore($this->app, $pluginId);
+        $type = (int)$plugin['type'];
+        $key = (string)$plugin['plugin_key'];
+        $dir = PluginPacker::sourceDir($key, $type);
+
+        if ($version !== '') {
+            PluginPacker::syncVersion($dir, $type, $version);
+        }
+
+        $bytes = PluginPacker::pack($dir, $type, $key, $isUpdate);
+
+        $upload = $this->app->upload([
+            [
+                'name' => 'file',
+                'contents' => $bytes,
+                'filename' => 'file.zip'
+            ]
+        ]);
+
+        $path = (string)($upload['path'] ?? '');
+        if ($path === '') {
+            throw new JSONException("插件包上传失败，商店未返回路径");
+        }
+        return $path;
     }
 
     /**
@@ -393,7 +516,19 @@ class App extends Manage
      */
     public function developerUpdatePlugin(): array
     {
-        $file = $_POST['audit_resource'];
+        $file = (string)($_POST['audit_resource'] ?? '');
+
+        if ($file === '') {
+            //没传压缩包 = 服务端自动打包。版本号同时写回插件的 Info，
+            //包内版本与 audit_version 必定一致，不会再被审核以「版本不符」打回
+            $_POST['audit_resource'] = $this->autoPackage(
+                (int)($_POST['id'] ?? 0),
+                trim((string)($_POST['audit_version'] ?? '')),
+                true
+            );
+            return $this->json(200, "提交成功", $this->app->developerUpdatePlugin($_POST));
+        }
+
         if (!file_exists(BASE_PATH . $file)) {
             throw new JSONException("请重新上传插件包");
         }

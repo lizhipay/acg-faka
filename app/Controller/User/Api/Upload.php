@@ -40,6 +40,11 @@ class Upload extends User
         $type = strtolower((string)$request->get("mime"));
         $thumbHeight = (int)$request->get("thumb_height");
 
+        //前端上传地址永远带 ?mime=；到这里为空基本都是服务器环境把 URL 参数吞了（issue #794）
+        if ($type === '') {
+            throw new JSONException("上传参数丢失：服务器未收到 mime 参数，请检查伪静态规则(try_files 是否带 \$args)、WAF 或 CDN 是否丢弃了链接参数");
+        }
+
         if (!in_array($type, self::MIME)) {
             throw new JSONException("mime not supported");
         }
@@ -51,11 +56,19 @@ class Upload extends User
 
         $fileName = $static_path . $handle['new_name'];
 
-        if ($tmp = $this->upload->get(md5_file(BASE_PATH . $fileName))) {
+        // 去重只在「当前用户自己的上传记录」内进行:
+        // 否则同一张图若已被管理员(/general/)或其它用户上传过,全局去重会命中他人记录,
+        // 导致本次上传既不落库、文件又被删除,该用户「相册」永远看不到自己传的图。
+        if ($tmp = $this->upload->get(md5_file(BASE_PATH . $fileName), $this->getUser()->id)) {
             File::remove(BASE_PATH . $fileName);
             $fileName = $tmp;
         } else {
-            $this->upload->add($fileName, $type, $this->getUser()->id);
+            //落库失败只可能是撞了全局唯一键(同一张图别人传过)：复用那份文件，别把 500 抛给前端
+            $shared = $this->upload->add($fileName, $type, $this->getUser()->id);
+            if ($shared !== null && $shared !== $fileName) {
+                File::remove(BASE_PATH . $fileName);
+                $fileName = $shared;
+            }
         }
 
         $append = [];

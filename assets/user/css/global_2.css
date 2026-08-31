@@ -3024,3 +3024,25 @@ input[name=btSelectAll] {
     cursor: pointer;
     height: 48px;
 }
+
+/* ===== SKU 收益明细弹窗 =====
+   markup 由共用的 assets/user/controller/user/promote.js 生成，样式却只写在
+   Cartoon 专属的 glass.css 里，导致 Seattle / MountFuji 打开这个弹窗时表格
+   完全没样式（列全挤在一起）。搬到四个主题都加载的 global_2.css。
+   规则只用 --md-* 令牌（md-tokens.css 各主题共用），本身是主题中立的。
+   .sku-detail 原来限定在 .uc-card 下（Cartoon 的卡片类），已去掉该作用域。 */
+/* SKU 收益明细弹层 */
+:root[data-theme] .uc-skupop { padding: 16px 18px; }
+:root[data-theme] .uc-skupop__meta { font-size: 13px; color: var(--md-on-surface-med); margin-bottom: 12px; }
+:root[data-theme] .uc-skupop__meta b { color: var(--md-success); }
+:root[data-theme] .uc-skupop__table { width: 100%; border-collapse: collapse; font-size: 13px; }
+:root[data-theme] .uc-skupop__table thead td { font-weight: 700; color: var(--md-on-surface-med); padding: 8px 10px; border-bottom: 1px solid var(--md-divider); white-space: nowrap; }
+:root[data-theme] .uc-skupop__table tbody td { padding: 8px 10px; border-bottom: 1px solid var(--md-divider); color: var(--md-on-surface); }
+:root[data-theme] .uc-skupop__table tbody tr:last-child td { border-bottom: none; }
+:root[data-theme] .uc-skupop__delta { font-weight: 700; color: var(--md-on-surface-dis); }
+:root[data-theme] .uc-skupop__delta.up { color: var(--md-success); }
+:root[data-theme] .uc-skupop__delta.down { color: var(--md-error); }
+
+/* 推广收益表里的 SKU 链接 */
+:root[data-theme] .bootstrap-table .sku-detail { color: var(--md-info); text-decoration: none; font-weight: 600; white-space: nowrap; }
+:root[data-theme] .bootstrap-table .sku-detail:hover { text-decoration: underline; }
