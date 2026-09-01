@@ -391,7 +391,7 @@
                 if (!_) return '-';
                 if (mobileAdminEnabled()) return format.group(_);
                 businessRows.set(String(row.id), row);
-                return `${escapeHtml(_.name)} <a class="text-primary md-user-business-detail-trigger" data-user-id="${Number(row.id) || 0}" href="javascript:void(0);">${i18n('详细')}</a>`;
+                return `${escapeHtml(_.name)} <a class="text-primary md-user-business-detail-trigger" data-user-id="${Number(row.id) || 0}" href="#" data-acg-noop>${i18n('详细')}</a>`;
             }
         }
         , {field: 'parent', title: '上级', formatter: (_, __) => mdUserCell(_)}
@@ -576,7 +576,7 @@
                     return '-';
                 }
                 const attributes = `data-user-id="${Number(item.id) || 0}" data-wechat-code="${escapeHtml(encodeURIComponent(String(val)))}"`;
-                if (!mobileAdminEnabled()) return `<a href="javascript:void(0);" class="text-primary md-user-wechat-qr-trigger" ${attributes}>${i18n('查看')}</a>`;
+                if (!mobileAdminEnabled()) return `<a href="#" data-acg-noop class="text-primary md-user-wechat-qr-trigger" ${attributes}>${i18n('查看')}</a>`;
                 return `<button type="button" class="btn btn-sm btn-light-primary md-user-wechat-qr-trigger" ${attributes}>${i18n('查看')}</button>`;
             }
         }

@@ -24,11 +24,51 @@
         var ctx = window;
         for (var i = 0; i < parts.length; i++) {
             if (ctx == null) {
+                ctx = null;
+                break;
+            }
+            ctx = ctx[parts[i]];
+        }
+        if (typeof ctx === 'function') {
+            return {fn: ctx, owner: owner(window, parts)};
+        }
+        //支付模板里的 goAlipay、插件里的 sendKeywords 都是 let/const 声明的，
+        //只存在于全局词法环境、不挂在 window 上，从这里走 window 永远找不到。
+        //间接 eval 在全局作用域求值，能取到它们；name 只可能是上面 ALLOW 里的
+        //字面量常量，不含任何来自页面或用户的输入。
+        try {
+            var fn = (0, eval)(name);
+            if (typeof fn !== 'function') {
+                return null;
+            }
+            return {fn: fn, owner: parts.length > 1 ? (0, eval)(parts.slice(0, -1).join('.')) : null};
+        } catch (e) {
+            return null;
+        }
+    }
+
+    //acg.API.tradePerform 内部要用 this.getPostData()，this 必须是 acg.API 而不是
+    //被点的元素——内联 onclick 写成 acg.API.tradePerform(id) 时 this 天然就是 acg.API。
+    //只有单段名字（goAlipay 这种）才沿用内联处理器的语义，把元素当 this。
+    function owner(root, parts) {
+        if (parts.length < 2) {
+            return null;
+        }
+        var ctx = root;
+        for (var i = 0; i < parts.length - 1; i++) {
+            if (ctx == null) {
                 return null;
             }
             ctx = ctx[parts[i]];
         }
-        return typeof ctx === 'function' ? ctx : null;
+        return ctx == null ? null : ctx;
+    }
+
+    function invoke(target, el) {
+        if (!target) {
+            return;
+        }
+        target.fn.apply(target.owner || el, args(el));
     }
 
     function args(el) {
@@ -161,10 +201,7 @@
 
         var action = el.getAttribute('data-acg-action');
         if (action) {
-            var fn = resolve(action);
-            if (fn) {
-                fn.apply(el, args(el));
-            }
+            invoke(resolve(action), el);
         }
     });
 
@@ -173,10 +210,7 @@
         if (!el) {
             return;
         }
-        var fn = resolve(el.getAttribute('data-acg-change'));
-        if (fn) {
-            fn.apply(el, args(el));
-        }
+        invoke(resolve(el.getAttribute('data-acg-change')), el);
     });
 
     document.addEventListener('submit', function (e) {

@@ -676,7 +676,7 @@
                         const badge = _Dict.result("_developer_plugin_status", val);
                         let html = badge !== undefined ? badge : escapeHtml(val);
                         // 单独成行 + 自身不折断：状态列很窄，跟徽标挤在一行会被从词中间断开
-                        const reasonLink = `<div class="mt-1"><a href="javascript:void(0)" class="dev-reject-reason text-danger" data-id="${escapeHtml(item.id)}" style="font-size:12px;white-space:nowrap;">`
+                        const reasonLink = `<div class="mt-1"><a href="#" data-acg-noop class="dev-reject-reason text-danger" data-id="${escapeHtml(item.id)}" style="font-size:12px;white-space:nowrap;">`
                             + `<i class="fa-duotone fa-regular fa-circle-info me-1"></i>${i18n('查看原因')}</a></div>`;
                         if (val == 2) {
                             html += reasonLink;

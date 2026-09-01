@@ -847,7 +847,7 @@
                      
                         
                         <div class="layout-box">
-                                        <div class="title"><i class="fa-duotone fa-regular fa-star-shooting"></i> ${i18n('付款购买')} ${plugin.group > 0 ? `<span class="text-success"> ${i18n('此插件企业版免费用，开通企业版更省钱更超值！')}<a href="javascript:void(0);" class="text-primary open-group-enterprise-click">${i18n('点我开企业版')}</a></span>` : ""}</div>
+                                        <div class="title"><i class="fa-duotone fa-regular fa-star-shooting"></i> ${i18n('付款购买')} ${plugin.group > 0 ? `<span class="text-success"> ${i18n('此插件企业版免费用，开通企业版更省钱更超值！')}<a href="#" data-acg-noop class="text-primary open-group-enterprise-click">${i18n('点我开企业版')}</a></span>` : ""}</div>
                                             <div class="pay-list online-pay">
                                                 <div data-id="${pluginId}" data-type="0" data-pay="0" class="pay-item online-pay-click"${pluginDisabled}><img class="item-icon" src="/assets/common/images/alipay.png"><span>${i18n('支付宝')}</span></div>
                                                 <div data-id="${pluginId}" data-type="0" data-pay="1" class="pay-item online-pay-click"${pluginDisabled}><img class="item-icon" src="/assets/common/images/wx.png"><span>${i18n('微信支付')}</span></div>

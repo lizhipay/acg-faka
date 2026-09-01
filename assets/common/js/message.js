@@ -123,3 +123,5 @@ const message = new class Message {
         }
     }
 }
+
+window.message = message;

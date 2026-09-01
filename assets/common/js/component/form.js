@@ -1859,7 +1859,7 @@ class Form {
         if (container.find('.widget-attr-adder').length) {
             return;
         }
-        container.append('<a href="javascript:void(0);" class="widget-attr-adder">'
+        container.append('<a href="#" data-acg-noop class="widget-attr-adder">'
             + '<i class="layui-icon">&#xe61f;</i> ' + i18n('添加') + '</a>');
         container.find('.widget-attr-adder').click(function () {
             const last = container.find('.widget-block').last();

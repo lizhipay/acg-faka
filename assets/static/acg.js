@@ -955,3 +955,6 @@ function fallbackCopy(text, done) {
     document.body.removeChild(ta);
 }
 
+//acg 是 let 声明的，只存在于全局词法环境。旧的内联 onclick 顺作用域链能找到它，
+//改成声明式绑定后由外部脚本从 window 逐级解析，找不到就静默失效，这里显式挂出去。
+window.acg = acg;

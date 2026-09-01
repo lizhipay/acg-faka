@@ -25,7 +25,7 @@
                     return '-';
                 }
                 const escAttr = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-                return `<a href="javascript:;" class="sku-detail" data-id="${Number(__.id)}" data-race="${escAttr(__.race || '')}">${Number(_)} ${i18n('组')} <i class="fa-duotone fa-regular fa-circle-info"></i></a>`;
+                return `<a href="#" data-acg-noop class="sku-detail" data-id="${Number(__.id)}" data-race="${escAttr(__.race || '')}">${Number(_)} ${i18n('组')} <i class="fa-duotone fa-regular fa-circle-info"></i></a>`;
             }
         }
         , {
