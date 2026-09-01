@@ -760,7 +760,7 @@ class Config extends Manage
             Client::MODE_CONFIG => (string)$ipGetMode,
             LinkDomainGuard::ENABLED_CONFIG => $this->settingBoolean($post, 'link_domain_filter'),
             LinkDomainGuard::WHITELIST_CONFIG => implode("\n", array_keys($normalized)),
-            \App\Util\Csp::MODE_CONFIG => in_array(($m = trim($this->settingString($post, 'csp_mode', 16))), ['off', 'report', 'enforce'], true) ? $m : 'enforce',
+            \App\Util\Csp::MODE_CONFIG => in_array(($m = trim($this->settingString($post, 'csp_mode', 16))), ['off', 'report', 'enforce'], true) ? $m : 'report',
         ];
 
         try {

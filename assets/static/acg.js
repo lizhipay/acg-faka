@@ -42,6 +42,20 @@ let acg = {
     }, loadScript(url, callback = null) {
         let _script = document.createElement('script');
         _script.setAttribute('type', 'text/javascript');
+        //带上版本号：这里加载的 layer.js / clipboard.js 原先没有任何缓存串，
+        //改了库文件老用户的浏览器会一直用旧副本（layer 的关闭按钮就因此长期留着
+        //href="javascript:;"，CSP 强制模式下每关一次弹窗报一条）。版本号取自
+        //本文件自己的 ?v=，跟着发版走，取不到就退回原样、不影响加载。
+        try {
+            if (url.indexOf('?') === -1) {
+                let self = document.querySelector('script[src*="/assets/static/acg.js"]');
+                let v = self && (self.getAttribute('src').split('v=')[1] || '').split('&')[0];
+                if (v) {
+                    url += '?v=' + v;
+                }
+            }
+        } catch (e) {
+        }
         _script.setAttribute('src', url);
         document.getElementsByTagName('head')[0].appendChild(_script);
         if (this.property.Browser.ie) {

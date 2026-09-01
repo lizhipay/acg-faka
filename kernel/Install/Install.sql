@@ -202,7 +202,7 @@ CREATE TABLE `__PREFIX__config`  (
                                      `value` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '配置内容',
                                      PRIMARY KEY (`id`) USING BTREE,
                                      UNIQUE INDEX `key`(`key`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 61 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = MyISAM AUTO_INCREMENT = 62 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
 
 INSERT INTO `__PREFIX__config` VALUES (1, 'shop_name', '异次元店铺');
@@ -264,6 +264,7 @@ INSERT INTO `__PREFIX__config` VALUES (57, 'currency_code', 'CNY');
 INSERT INTO `__PREFIX__config` VALUES (58, 'currency_symbol', '¥');
 INSERT INTO `__PREFIX__config` VALUES (59, 'currency_rate', '1');
 INSERT INTO `__PREFIX__config` VALUES (60, 'currency_decimals', '2');
+INSERT INTO `__PREFIX__config` VALUES (61, 'csp_mode', 'enforce');
 
 
 DROP TABLE IF EXISTS `__PREFIX__coupon`;

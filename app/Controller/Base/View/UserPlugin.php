@@ -7,7 +7,6 @@ use App\Model\Business;
 use App\Model\Config;
 use App\Util\Client;
 use App\Util\RichHtml;
-use App\Util\ViewSafe;
 use App\Util\Theme;
 use Kernel\Exception\JSONException;
 use Kernel\Exception\ViewException;
@@ -46,7 +45,7 @@ abstract class UserPlugin extends \App\Controller\Base\User
             $data['default_view_path'] = BASE_PATH . '/app/View/User/Theme/Cartoon/';
             return View::render(
                 $template,
-                ViewSafe::escape($data),
+                $data,
                 BASE_PATH . "/app/Plugin/" . ($controller ? \Kernel\Util\Plugin::$currentControllerPluginName : \Kernel\Util\Plugin::$currentPluginName) . "/View",
                 $controller
             );

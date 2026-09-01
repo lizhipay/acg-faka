@@ -187,5 +187,23 @@ interface Hook
      */
     public const CARD_CHANGE_AFTER = 0x8101;
 
+    /**
+     * 收集插件需要放行的 CSP 外部源。
+     *
+     * 插件要加载第三方脚本、样式、字体、iframe 时用它声明域名，不必改内核、也不必
+     * 往开源程序里写死任何域名：
+     *
+     *   #[Hook(point: \App\Consts\Hook::CSP_SOURCE_ALLOW)]
+     *   public function CSP_SOURCE_ALLOW(array &$sources): void
+     *   {
+     *       $sources['script-src'][] = 'https://example.com';
+     *   }
+     *
+     * 只有 script-src / style-src / font-src / img-src / connect-src / frame-src /
+     * media-src / worker-src 可扩展；每一项必须是带主机名的源，'unsafe-inline'、裸 *、
+     * 裸协议一律会被丢弃——否则一个插件就能把整条策略废掉。
+     */
+    public const CSP_SOURCE_ALLOW = 0x8102;
+
     public const LANG_MISS = 0x9100;
 }

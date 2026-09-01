@@ -41,13 +41,14 @@ final class Csp
         try {
             $v = (string)Config::get(self::MODE_CONFIG);
         } catch (\Throwable) {
-            return self::$modeCache = 'enforce';
+            return self::$modeCache = 'report';
         }
-        return self::$modeCache = in_array($v, ['off', 'report', 'enforce'], true) ? $v : 'enforce';
+        return self::$modeCache = in_array($v, ['off', 'report', 'enforce'], true) ? $v : 'report';
     }
 
     public static function resetCache(): void
     {
+        self::$extraCache = null;
         self::$modeCache = null;
         self::$nonce = null;
     }
@@ -131,18 +132,81 @@ final class Csp
         return $html;
     }
 
+    /**
+     * 插件可以往这几条指令里追加外部源。其余指令（default-src / object-src /
+     * base-uri / form-action / frame-ancestors）是兜底防线，不开放。
+     */
+    private const EXTENSIBLE = [
+        'script-src', 'style-src', 'font-src', 'img-src',
+        'connect-src', 'frame-src', 'media-src', 'worker-src',
+    ];
+
+    /**
+     * 必须是带主机名的源：scheme 可省，可用 *. 前缀，可带端口和路径。
+     * 因为要求至少有一个点，'unsafe-inline' 这类带引号的关键字、裸 * 和裸协议
+     * （https: 会放行全网脚本）都进不来。
+     */
+    private const SOURCE_PATTERN = '#^(?:https?://)?(?:\*\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(?::\d{1,5})?(?:/[^\s;,\'"]*)?$#i';
+
+    private static ?array $extraCache = null;
+
+    /**
+     * 收集插件声明的放行域名。任何一步出错都退回空清单——策略头绝不能因为
+     * 某个插件写错而发不出去。
+     *
+     * @return array<string, string[]>
+     */
+    private static function extraSources(): array
+    {
+        if (self::$extraCache !== null) {
+            return self::$extraCache;
+        }
+
+        $collected = [];
+        try {
+            $sources = array_fill_keys(self::EXTENSIBLE, []);
+            hook(\App\Consts\Hook::CSP_SOURCE_ALLOW, $sources);
+
+            foreach (self::EXTENSIBLE as $directive) {
+                $list = $sources[$directive] ?? null;
+                if (!is_array($list)) {
+                    continue;
+                }
+                foreach ($list as $source) {
+                    if (!is_string($source)) {
+                        continue;
+                    }
+                    $source = trim($source);
+                    if ($source === '' || !preg_match(self::SOURCE_PATTERN, $source)) {
+                        continue;
+                    }
+                    $collected[$directive][$source] = true;
+                }
+            }
+        } catch (\Throwable) {
+            return self::$extraCache = [];
+        }
+
+        return self::$extraCache = array_map('array_keys', $collected);
+    }
+
     public static function policy(): string
     {
+        $extra = self::extraSources();
+        $directive = static fn(string $name, string $value): string => trim(
+            $name . ' ' . $value . ' ' . implode(' ', $extra[$name] ?? [])
+        );
+
         return implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-eval' 'nonce-" . self::nonce() . "'",
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-            "font-src 'self' data: https://fonts.gstatic.com",
+            $directive('script-src', "'self' 'unsafe-eval' 'nonce-" . self::nonce() . "'"),
+            $directive('style-src', "'self' 'unsafe-inline' https://fonts.googleapis.com"),
+            $directive('font-src', "'self' data: https://fonts.gstatic.com"),
             //商户填的 QQ 头像等外部图源常是 http 明文；图片没有脚本能力，放行 http 不降低防护
-            "img-src 'self' data: blob: https: http:",
-            "media-src 'self' data: blob: https:",
-            "connect-src 'self' https: wss: data: blob:",
-            "frame-src 'self' https:",
+            $directive('img-src', "'self' data: blob: https: http:"),
+            $directive('media-src', "'self' data: blob: https:"),
+            $directive('connect-src', "'self' https: wss: data: blob:"),
+            $directive('frame-src', "'self' https:"),
             "frame-ancestors 'self'",
             "object-src 'none'",
             "base-uri 'self'",

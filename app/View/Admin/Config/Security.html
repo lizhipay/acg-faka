@@ -236,8 +236,8 @@
                                 <div class="col-lg-8 fv-row">
                                     <select name="csp_mode" class="form-select form-select-solid form-select-lg"
                                             data-control="select2" data-hide-search="true">
-                                        <option value="enforce" #{if $config.csp_mode != 'report' && $config.csp_mode != 'off'} selected #{/if}>#{t("强制拦截（推荐）")}</option>
-                                        <option value="report" #{if $config.csp_mode == 'report'} selected #{/if}>#{t("仅观察（只上报，不拦截）")}</option>
+                                        <option value="enforce" #{if $config.csp_mode == 'enforce'} selected #{/if}>#{t("强制拦截（推荐）")}</option>
+                                        <option value="report" #{if $config.csp_mode != 'enforce' && $config.csp_mode != 'off'} selected #{/if}>#{t("仅观察（只上报，不拦截）")}</option>
                                         <option value="off" #{if $config.csp_mode == 'off'} selected #{/if}>#{t("关闭")}</option>
                                     </select>
                                     <div class="form-text text-danger fw-bold">
