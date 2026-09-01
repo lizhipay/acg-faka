@@ -1366,7 +1366,8 @@
             ],
             batch: [
                 selector('.plugin-start', i18n('启动插件'), { role: 'batch' }),
-                selector('.plugin-stop', i18n('停止插件'), { role: 'batch', danger: true })
+                selector('.plugin-stop', i18n('停止插件'), { role: 'batch', danger: true }),
+                selector('.plugin-restart', i18n('重启插件'), { role: 'batch' })
             ],
             toolbar: [selector('.btn-app-create', i18n('安装插件'), { role: 'primary' }), selector('.plugin-update-all', i18n('更新全部插件'))]
         },

@@ -7,6 +7,9 @@ use App\Model\Config;
 
 final class Csp
 {
+    /** nonce 密钥在 config 表里的键名（NEVER_CACHE 通道，只存库） */
+    public const SECRET_CONFIG = 'csp_nonce_secret';
+
     public const MODE_CONFIG = 'csp_mode';
 
     public const REPORT_PATH = '/csp/report';
@@ -38,8 +41,10 @@ final class Csp
         if (self::$modeCache !== null) {
             return self::$modeCache;
         }
+        //只读缓存：键不存在就走默认值。Config::get() 对不存在的键会每次都拿排他锁再查库，
+        //而这里每个请求都要跑；老站点升级前库里没有这个键，等于每请求一次网络锁。
         try {
-            $v = (string)Config::get(self::MODE_CONFIG);
+            $v = (string)(Config::cached(self::MODE_CONFIG) ?? '');
         } catch (\Throwable) {
             return self::$modeCache = 'report';
         }
@@ -64,20 +69,48 @@ final class Csp
             return self::$nonce;
         }
 
-        $secret = '';
-        try {
-            $secret = (string)Config::get('app_key');
-        } catch (\Throwable) {
-        }
-        if ($secret === '') {
-            $secret = (string)@file_get_contents(BASE_PATH . '/kernel/Install/Lock');
-        }
-        if ($secret === '') {
-            return self::$nonce = rtrim(strtr(base64_encode(random_bytes(16)), '+/', '-_'), '=');
-        }
+        $secret = self::secret();
 
         $raw = hash_hmac('sha256', self::clientKey(), $secret, true);
         return self::$nonce = rtrim(strtr(base64_encode(substr($raw, 0, 16)), '+/', '-_'), '=');
+    }
+
+    /**
+     * nonce 的 HMAC 密钥。
+     *
+     * 用一把专门的随机密钥（安装 / 升级时生成，存 config 表的 csp_nonce_secret），
+     * 走 Config::secret() 的 NEVER_CACHE 通道：不进 runtime/config、不进模板变量，
+     * 每个请求只做一次唯一索引查询、不加任何文件锁（self::$nonce 会把结果记住）。
+     *
+     * 不能用商店的 app_key：那是登录应用商店后签发的凭证，重新登录就会换，换了之后
+     * 已打开页面的 pjax 片段带的 nonce 和首屏的 CSP 头对不上，强制模式下整段脚本被拦；
+     * 未绑定商店时它还是空的。也不能用 kernel/Install/Lock：安装程序写的是空文件。
+     *
+     * 密钥缺失（手工覆盖文件升级、没跑 update.php）或数据库暂时不可用时，退回由数据库
+     * 连接信息派生的稳定值。绝不在请求里随机生成——nonce 必须对同一客户端稳定。
+     */
+    private static function secret(): string
+    {
+        if (file_exists(BASE_PATH . '/kernel/Install/Lock')) {
+            try {
+                $stored = base64_decode(trim(Config::secret(self::SECRET_CONFIG)), true);
+                if ($stored !== false && strlen($stored) === 32) {
+                    return $stored;
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        try {
+            $db = config('database');
+            return hash('sha256', 'acg-csp-nonce|' . implode('|', [
+                (string)($db['host'] ?? ''), (string)($db['database'] ?? ''),
+                (string)($db['username'] ?? ''), (string)($db['password'] ?? ''),
+                (string)($db['prefix'] ?? ''),
+            ]), true);
+        } catch (\Throwable) {
+            return 'acg';
+        }
     }
 
     private static function clientKey(): string
@@ -207,6 +240,10 @@ final class Csp
             $directive('media-src', "'self' data: blob: https:"),
             $directive('connect-src', "'self' https: wss: data: blob:"),
             $directive('frame-src', "'self' https:"),
+            //代码编辑器（ACE）用 blob: URL 起 Web Worker 做语法校验。不单独写这条，
+            //浏览器会回退到 script-src，而那里没有 blob:，Worker 直接被拦、编辑器功能失效。
+            //worker-src 本来就在 EXTENSIBLE 名单里，但之前漏了输出，插件声明也会被静默丢掉。
+            $directive('worker-src', "'self' blob:"),
             "frame-ancestors 'self'",
             "object-src 'none'",
             "base-uri 'self'",

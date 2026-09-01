@@ -128,6 +128,7 @@ class Install extends User
             $pdo = new \PDO('mysql:dbname=' . $map['database'] . ';host=' . $host, $map['username'], $map['password']);
             $stmt = $pdo->prepare('INSERT INTO `' . $map['prefix'] . 'config` (`key`, `value`) VALUES (?, ?)');
             $stmt->execute(['request_log_key', base64_encode(random_bytes(32))]);
+            $stmt->execute(['csp_nonce_secret', base64_encode(random_bytes(32))]);
         } catch (\Throwable $e) {
         }
 

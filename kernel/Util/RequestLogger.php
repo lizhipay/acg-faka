@@ -19,11 +19,12 @@ class RequestLogger
      */
     public static function enabled(): bool
     {
-        $now = (string)Config::get("request_log_enabled");
+        //只读缓存：两个键在老站点上都可能不存在，Config::get() 会为缺键每请求拿排他锁
+        $now = (string)(Config::cached("request_log_enabled") ?? "");
         if ($now !== "") {
             return $now === "1";
         }
-        return (string)Config::get("request_log") !== "1";
+        return (string)(Config::cached("request_log") ?? "") !== "1";
     }
 
     /**

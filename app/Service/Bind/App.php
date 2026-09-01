@@ -206,9 +206,9 @@ class App implements \App\Service\App
      * @param string $key
      * @param int $type
      * @param int $pluginId
-     * @throws GuzzleException
      * @throws JSONException
      * @throws \ReflectionException
+     * @throws \Throwable
      */
     public function updatePlugin(string $key, int $type, int $pluginId): void
     {
@@ -224,7 +224,14 @@ class App implements \App\Service\App
         if (!is_dir($pluginPath)) {
             throw new JSONException("该插件还未安装，请先安装插件后再进行更新");
         }
-        // 更新流程走加密的 kernel/Plugin.php（server 类，需授权才能跑）：/v2/store/update + 版本闸
+
+
+        $wasRunning = false;
+        if ($type == 0) {
+            $current = Plugin::getPlugin($key, false);
+            $wasRunning = (int)($current[\App\Consts\Plugin::PLUGIN_CONFIG]['STATUS'] ?? 0) === 1;
+        }
+
         $storeDownload = \_plugin_download($pluginId, "update");
         if (!$storeDownload) {
             throw new JSONException(
@@ -233,37 +240,62 @@ class App implements \App\Service\App
                     : "更新失败，请确认已授权且客户端为最新版本"
             );
         }
-        //下载完成，开始安装
-        $src = BASE_PATH . "/kernel/Install/OS/{$storeDownload}";
-        if (!Zip::unzip($src, $pluginPath)) {
-            throw new JSONException("更新失败，请检查是否有写入权限");
-        }
-        //更新完成，删除src
-        unlink($src);
-        //判断目标目录是否有update.sql
-        $updateSql = $pluginPath . "update.sql";
-        if (file_exists($updateSql)) {
-            $database = config("database");
-            SQL::import($updateSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
+
+        if ($wasRunning) {
+            \_plugin_stop($key);
         }
 
-        if ($type == 0) {
-            Plugin::runHookState($key, \Kernel\Annotation\Plugin::UPGRADE);
-        } elseif ($type == 2) {
-            //清空模版缓存
-            $viewDir = realpath(BASE_PATH . "/runtime/view/");
-            if ($viewDir) {
-                File::delDirectory($viewDir);
+        try {
+            //下载完成，开始安装
+            $src = BASE_PATH . "/kernel/Install/OS/{$storeDownload}";
+            if (!Zip::unzip($src, $pluginPath)) {
+                throw new JSONException("更新失败，请检查是否有写入权限");
             }
+            //更新完成，删除src
+            unlink($src);
+            //判断目标目录是否有update.sql
+            $updateSql = $pluginPath . "update.sql";
+            if (file_exists($updateSql)) {
+                $database = config("database");
+                SQL::import($updateSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
+            }
+
+            if ($type == 0) {
+                Plugin::runHookState($key, \Kernel\Annotation\Plugin::UPGRADE);
+            } elseif ($type == 2) {
+                //清空模版缓存
+                $viewDir = realpath(BASE_PATH . "/runtime/view/");
+                if ($viewDir) {
+                    File::delDirectory($viewDir);
+                }
+            }
+
+            //扩展自带词包可能随升级更新，按文件指纹重新导入变化的部分
+            \Kernel\Util\Lang::scanExtensionPacks();
+
+            $files = [BASE_PATH . '/runtime/plugin/store.cache', BASE_PATH . '/runtime/plugin/update.cache'];
+            foreach ($files as $file) {
+                if (is_file($file)) {
+                    unlink($file);
+                }
+            }
+        } catch (\Throwable $e) {
+            //更新中途失败：尽力把插件拉回停之前的状态，拉不回也不能掩盖原始错误
+            if ($wasRunning) {
+                try {
+                    \_plugin_start($key);
+                } catch (\Throwable $ignored) {
+                }
+            }
+            throw $e;
         }
 
-        //扩展自带词包可能随升级更新，按文件指纹重新导入变化的部分
-        \Kernel\Util\Lang::scanExtensionPacks();
-
-        $files = [BASE_PATH . '/runtime/plugin/store.cache', BASE_PATH . '/runtime/plugin/update.cache'];
-        foreach ($files as $file) {
-            if (is_file($file)) {
-                unlink($file);
+        //之前在跑的恢复启动；之前没开的保持现状
+        if ($wasRunning) {
+            try {
+                \_plugin_start($key);
+            } catch (\Throwable $e) {
+                throw new JSONException("插件已更新，但重新启动失败：" . $e->getMessage() . "。请到插件列表手动启动。");
             }
         }
     }

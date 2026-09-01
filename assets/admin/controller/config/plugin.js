@@ -528,6 +528,86 @@
         }, 300, true);
     });
 
+    //重启 = 停用再启用。插件的钩子注册表（runtime/plugin/hook）是编译缓存，
+    //改了插件代码、尤其是新增 #[Hook] 方法后，必须走一遍停用→启用才会重建，
+    //否则新钩子不生效。以前只能手点两次，这里合成一个动作。
+    $('.plugin-restart').click(() => {
+        let plugins = table.getSelections();
+        if (plugins.length == 0) {
+            layer.msg(i18n("请至少勾选1个插件进行操作！"));
+            return;
+        }
+        const restartPlugins = () => {
+            const $restartIns = $('.plugin-restart span');
+            let index = 0;
+            const startLoadIndex = trackControllerLayer(layer.load(2, {shade: [0.3, 'var(--md-surface)']}));
+            util.timer(() => {
+                return new Promise(resolve => {
+                    if (!controllerActive) {
+                        resolve(false);
+                        return;
+                    }
+                    $restartIns.html(`${i18n('正在重启')} ${index}/${plugins.length}`);
+                    const plugin = plugins[index];
+                    index++;
+                    //只重启正在运行的；没运行的跳过，和启动/停止的处理方式一致
+                    if (plugin && plugin?.PLUGIN_CONFIG?.STATUS == 1) {
+                        const $state = $('.plugin-state[data-id=' + plugin.id + ']');
+                        util.post({
+                            url: "/admin/api/plugin/setConfig",
+                            data: {id: plugin.id, STATUS: 0},
+                            done: () => {
+                                if (!controllerActive) {
+                                    resolve(false);
+                                    return;
+                                }
+                                util.post({
+                                    url: "/admin/api/plugin/setConfig",
+                                    data: {id: plugin.id, STATUS: 1},
+                                    done: () => {
+                                        if (controllerActive) $state.removeClass("badge-light-danger").addClass("badge-light-success").html(i18n("已启动"));
+                                        resolve(controllerActive);
+                                    },
+                                    //停下来了但没起来：状态要如实显示成已停止，别让人以为还在跑
+                                    error: () => {
+                                        if (controllerActive) $state.removeClass("badge-light-success").addClass("badge-light-danger").html(i18n("已停止"));
+                                        resolve(controllerActive);
+                                    },
+                                    fail: () => {
+                                        if (controllerActive) $state.removeClass("badge-light-success").addClass("badge-light-danger").html(i18n("已停止"));
+                                        resolve(controllerActive);
+                                    },
+                                    loader: false
+                                });
+                            },
+                            error: () => {
+                                resolve(controllerActive);
+                            },
+                            fail: () => {
+                                resolve(controllerActive);
+                            },
+                            loader: false
+                        });
+                        return;
+                    } else if (plugin && plugin?.PLUGIN_CONFIG?.STATUS != 1) {
+                        resolve(true);
+                        return;
+                    }
+
+                    table.refresh();
+                    $restartIns.html(`${i18n('重启插件')}`);
+                    closeControllerLayer(startLoadIndex);
+                    resolve(false);
+                });
+            }, 300, true);
+        };
+        if (mobileAdminEnabled()) {
+            message.ask(`${i18n('将重启已选中的')} ${plugins.length} ${i18n('个插件，重启期间相关功能会短暂不可用。确认继续吗？')}`, restartPlugins, i18n('确认批量重启？'), i18n('确认重启'));
+        } else {
+            restartPlugins();
+        }
+    });
+
     $('.plugin-stop').click(() => {
         let plugins = table.getSelections();
         if (plugins.length == 0) {

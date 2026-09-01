@@ -39,7 +39,7 @@ class Config extends Model
      * 这些键只留在数据库里：不进 runtime/config（那份缓存的密钥由 config/database.php
      * 的内容推导，拿到网站目录就能解开），也不进 list() 交给模板的 $config。
      */
-    private const NEVER_CACHE = ['request_log_key'];
+    private const NEVER_CACHE = ['request_log_key', 'csp_nonce_secret'];
     private const CONTEXT_SNAPSHOT = '_DB_CONFIG_SNAPSHOT';
     private const CONTEXT_EXCLUSIVE_LOCK = '_DB_CONFIG_EXCLUSIVE_LOCK';
 

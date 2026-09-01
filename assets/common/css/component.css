@@ -2757,14 +2757,28 @@ textarea, input {
     font-weight: bolder;
 }
 
+/* ========== 加载指示器 ==========
+   DOM 由 loading.js 生成，这里只管长相：
+     .chahuo-ring-overlay > .chahuo-ring      （全屏模式，pjax 切页在用）
+     .chahuo-ring-inline  > .chahuo-ring      （内联模式，主题在用）
+   .chahuo-ring 本体是静止的容器，::before 是淡色轨道圈，::after 才是转动的细弧。
+   颜色跟后台主色令牌走，主题里没有令牌时退回原来的青色。 */
 :root {
     --chahuo-ring-z: 2147483647;
-    --chahuo-ring-overlay: rgba(0, 0, 0, .07); /* 想更淡就改成 .05/.04 */
-    --chahuo-ring-color: #25b09b;
-    --chahuo-ring-size: 50px; /* 直径 */
-    --chahuo-ring-border: 4px; /* 圈线粗细 */
+    --chahuo-ring-color: var(--md-primary, #25b09b);
+    --chahuo-ring-rgb: var(--md-primary-rgb, 37, 176, 155);
+    --chahuo-ring-size: 30px;
+    --chahuo-ring-border: 2.5px;
+    --chahuo-ring-overlay: rgba(255, 255, 255, .28);
+    --chahuo-ring-card: var(--md-surface, #fff);
+    --chahuo-ring-track: rgba(var(--chahuo-ring-rgb), .14);
 }
 
+:root[data-theme="dark"] {
+    --chahuo-ring-overlay: rgba(0, 0, 0, .34);
+}
+
+/* 全屏遮罩：极淡的一层雾，不遮内容 */
 .chahuo-ring-overlay {
     position: fixed;
     inset: 0;
@@ -2772,55 +2786,118 @@ textarea, input {
     place-items: center;
     z-index: var(--chahuo-ring-z);
     background: var(--chahuo-ring-overlay);
-    backdrop-filter: blur(1px);
+    backdrop-filter: blur(3px) saturate(1.05);
+    -webkit-backdrop-filter: blur(3px) saturate(1.05);
 }
 
 .chahuo-ring-overlay[mask-hidden="false"] {
     display: grid;
+    animation: chahuo-fade-in .16s ease-out both;
+}
+
+/* 顶部进度线：真正表达"页面在加载"的那根线，先快后慢停在 88% */
+.chahuo-ring-overlay::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 2px;
+    width: 0;
+    border-radius: 0 2px 2px 0;
+    background: linear-gradient(90deg, rgba(var(--chahuo-ring-rgb), .45), var(--chahuo-ring-color));
+    box-shadow: 0 0 10px rgba(var(--chahuo-ring-rgb), .55), 0 0 2px rgba(var(--chahuo-ring-rgb), .9);
+    animation: chahuo-bar 1.6s cubic-bezier(.22, .61, .36, 1) forwards;
 }
 
 .chahuo-ring-inline {
     display: inline-grid;
     place-items: center;
+    --chahuo-ring-size: 20px;
+    --chahuo-ring-border: 2px;
 }
 
+/* 本体：静止容器，两层伪元素叠在同一格 */
 .chahuo-ring {
+    display: grid;
+    place-items: center;
     width: var(--chahuo-ring-size);
     aspect-ratio: 1;
-    display: grid;
-    border: var(--chahuo-ring-border) solid transparent;
-    border-radius: 50%;
-    border-right-color: var(--chahuo-ring-color);
-    animation: chahuo-ring-spin 1s infinite linear;
+    animation: none;
 }
 
 .chahuo-ring::before,
 .chahuo-ring::after {
     content: "";
-    grid-area: 1/1;
-    margin: 2px;
-    border: inherit;
+    grid-area: 1 / 1;
+    width: var(--chahuo-ring-size);
+    aspect-ratio: 1;
     border-radius: 50%;
-    animation: chahuo-ring-spin 2s infinite;
+    border: var(--chahuo-ring-border) solid transparent;
+    box-sizing: border-box;
 }
 
+/* 轨道：淡色整圈，给弧线一个参照 */
+.chahuo-ring::before {
+    border-color: var(--chahuo-ring-track);
+}
+
+/* 弧线：主段 + 渐淡的尾巴，匀速转 */
 .chahuo-ring::after {
-    margin: 8px;
-    animation-duration: 3s;
+    border-top-color: var(--chahuo-ring-color);
+    border-right-color: rgba(var(--chahuo-ring-rgb), .35);
+    animation: chahuo-ring-spin .85s linear infinite;
+}
+
+/* 全屏模式：弧线装进一枚磨砂小卡片，浮在雾层上 */
+.chahuo-ring-overlay .chahuo-ring {
+    box-sizing: content-box;
+    padding: 14px;
+    border-radius: 18px;
+    background: var(--chahuo-ring-card);
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, .06),
+        0 12px 32px -8px rgba(0, 0, 0, .18),
+        0 0 0 1px rgba(var(--chahuo-ring-rgb), .10);
+    animation: chahuo-pop .22s cubic-bezier(.2, .8, .2, 1) both;
 }
 
 @keyframes chahuo-ring-spin {
-    to {
-        transform: rotate(1turn)
-    }
+    to { transform: rotate(1turn); }
 }
 
+@keyframes chahuo-bar {
+    0%   { width: 0; }
+    35%  { width: 46%; }
+    70%  { width: 72%; }
+    100% { width: 88%; }
+}
+
+@keyframes chahuo-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes chahuo-pop {
+    from { opacity: 0; transform: translateY(4px) scale(.94); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* 减少动效：请求仍然要有可见进度，弧线放慢，其余动画去掉。
+   选择器带 :root[data-theme] 是为了压过 _material.css 里同名的旧规则，
+   否则那条会让整张卡片一起转起来。 */
 @media (prefers-reduced-motion: reduce) {
+    .chahuo-ring-overlay[mask-hidden="false"],
+    .chahuo-ring-overlay::before,
+    :root[data-theme] .chahuo-ring-overlay[mask-hidden="false"],
+    :root[data-theme] .chahuo-ring-overlay::before { animation: none; }
+    .chahuo-ring-overlay::before,
+    :root[data-theme] .chahuo-ring-overlay::before { width: 88%; }
     .chahuo-ring,
     .chahuo-ring::before,
-    .chahuo-ring::after {
-        animation: none;
-    }
+    :root[data-theme] .chahuo-ring,
+    :root[data-theme] .chahuo-ring::before { animation: none; }
+    .chahuo-ring::after,
+    :root[data-theme] .chahuo-ring::after { animation: chahuo-ring-spin 1.8s linear infinite; }
 }
 
 .image-icon {

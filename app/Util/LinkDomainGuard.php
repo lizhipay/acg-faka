@@ -21,7 +21,8 @@ final class LinkDomainGuard
             return self::$enabledCache;
         }
         try {
-            return self::$enabledCache = (Config::get(self::ENABLED_CONFIG) !== '0');
+            //同 Csp::mode()：键不存在=默认开启，用只读缓存，别为缺键每请求拿一次排他锁
+            return self::$enabledCache = ((Config::cached(self::ENABLED_CONFIG) ?? '') !== '0');
         } catch (\Throwable) {
             return self::$enabledCache = false;
         }
@@ -73,12 +74,14 @@ final class LinkDomainGuard
         $entries = [];
 
         try {
-            foreach (preg_split('/[\r\n,]+/', (string)Config::get(self::WHITELIST_CONFIG)) ?: [] as $line) {
+            //只读缓存：这四个键任一不存在，Config::get() 都会每次提交拿一次排他锁再查库；
+            //而"不存在"在这里就等于空，用 cached() 正好
+            foreach (preg_split('/[\r\n,]+/', (string)(Config::cached(self::WHITELIST_CONFIG) ?? '')) ?: [] as $line) {
                 $entries[] = $line;
             }
-            $entries[] = (string)Config::get('domain');
-            $entries[] = (string)Config::get('cname');
-            $entries[] = (string)Config::get('callback_domain');
+            $entries[] = (string)(Config::cached('domain') ?? '');
+            $entries[] = (string)(Config::cached('cname') ?? '');
+            $entries[] = (string)(Config::cached('callback_domain') ?? '');
         } catch (\Throwable) {
             return self::$allowCache = [];
         }

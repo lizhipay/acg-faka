@@ -11,7 +11,7 @@
                     </div>
                 </div>
                 <div id="kt_account_profile_details" class="collapse show">
-                    <form id="data-form" class="form" data-admin-mobile-settings-page="security">
+                    <form id="data-form" method="post" class="form" data-admin-mobile-settings-page="security">
                     <!--
     后台 md-settings 把每个 .row 当卡片做双栏流式排布，于是「CDN 取 IP」「清理日志」这类
     块会被甩到右栏，和它们逻辑上所属的上一项断开。安全设置是逐项阅读的页面，顺序即语义，
@@ -309,5 +309,5 @@
     </div>
 </div>
 <!--end::Content-->
-#{include file="../Footer.html"}
 #{ready("/assets/admin/controller/config/security.js")}
+#{include file="../Footer.html"}
