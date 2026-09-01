@@ -1,5 +1,7 @@
 window._data_var = {};
 
+const __cspNonce = document.currentScript ? (document.currentScript.nonce || '') : '';
+
 function documentReady(callback) {
     if (document.readyState === "complete" || document.readyState === "interactive") {
         callback();
@@ -153,6 +155,7 @@ function flushReadyQueue() {
                     continue;
                 }
                 const script = document.createElement('script');
+                if (__cspNonce) script.nonce = __cspNonce;
                 script.setAttribute('ready', 'true');
                 script.setAttribute('data-ready-controller', 'true');
                 script.setAttribute('data-ready-src', result.source);

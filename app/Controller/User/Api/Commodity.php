@@ -214,6 +214,15 @@ class Commodity extends User
         if (!$saved) {
             throw new JSONException("保存失败，请检查信息填写是否完整");
         }
+        //新建路径 Query::save() 只返回 bool，靠上面生成的 code 回查自增 id
+        $changedId = $isCreate
+            ? (int)\App\Model\Commodity::query()->where('code', (string)$map['code'])->value('id')
+            : $id;
+        if ($changedId > 0) {
+            $ebIds = [$changedId];
+            $ebAction = $isCreate ? 'create' : 'update';
+            hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $ebIds, $ebAction, $commodity);
+        }
         return $this->json(200, '（＾∀＾）保存成功');
     }
 
@@ -238,6 +247,10 @@ class Commodity extends User
         }
 
         $commodity->delete();
+        $ebIds = [$id];
+        $ebAction = 'delete';
+        $ebBefore = null;
+        hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $ebIds, $ebAction, $ebBefore);
 
         return $this->json(200, '（＾∀＾）移除成功');
     }

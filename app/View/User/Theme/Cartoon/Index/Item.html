@@ -37,7 +37,7 @@
                                         #{foreach $item.config.category as $race => $price}
                                             #{* data-sku 是下单/匹配卡密用的键，必须保持中文原值，只翻译展示文字 *}
                                             <a class="switch-race sku #{if $price@first}is-primary#{/if}"
-                                               data-sku="#{$race}"
+                                               data-sku="#{$race|escape:'html'}"
                                                data-price="#{$price}"
                                                href="javascript:void(0);">#{lang($race)}<span
                                                         class="badge-money">#{$config.currency_symbol}#{$price}</span></a>
@@ -54,8 +54,8 @@
                                             #{foreach $sku as $key => $price}
                                                 #{* data-sku/data-value 是下单与匹配卡密用的键，必须保持中文原值，只翻译展示文字 *}
                                                 <a class="switch-sku sku #{if $price@first}is-primary#{/if}"
-                                                   data-sku="#{$name}"
-                                                   data-value="#{$key}" data-price="#{$price}"
+                                                   data-sku="#{$name|escape:'html'}"
+                                                   data-value="#{$key|escape:'html'}" data-price="#{$price}"
                                                    href="javascript:void(0);">#{lang($key)}#{if $price > 0}<span
                                                             class="badge-money">
                                                         +#{$config.currency_symbol}#{$price}</span>#{/if}</a>

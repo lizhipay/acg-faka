@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Util;
 
+use App\Model\Config;
 use JetBrains\PhpStorm\NoReturn;
 use Kernel\Util\View;
 
@@ -26,6 +27,10 @@ class Client
 
     private const CHAIN_HEADER_MODES = [2, 4, 5, 6, 7];
     private const TRUSTED_PROXY_FILE = BASE_PATH . '/runtime/trusted_proxies';
+    public const MODE_CONFIG = 'ip_get_mode';
+
+    private const LEGACY_MODE_FILE = BASE_PATH . '/runtime/mode';
+
     private const MAX_TRUSTED_PROXY_CONFIG_LENGTH = 8192;
     private const MAX_TRUSTED_PROXY_ENTRIES = 256;
     private const MAX_PROXY_HEADER_LENGTH = 8192;
@@ -55,12 +60,16 @@ class Client
         if ($mode < 0 || $mode >= count(self::HEADERS)) {
             throw new \InvalidArgumentException('客户端 IP 获取方式不正确');
         }
-        $value = (string)$mode;
-        $written = file_put_contents(BASE_PATH . "/runtime/mode", $value, LOCK_EX);
-        if ($written === false || $written !== strlen($value)) {
-            throw new \RuntimeException('客户端 IP 获取方式写入失败');
-        }
+        Config::put(self::MODE_CONFIG, (string)$mode);
         self::$mode = $mode;
+    }
+
+    /**
+     * @return void
+     */
+    public static function resetModeCache(): void
+    {
+        self::$mode = null;
     }
 
     /**
@@ -68,7 +77,19 @@ class Client
      */
     public static function haveMode(): bool
     {
-        return file_exists(BASE_PATH . "/runtime/mode");
+        if (!self::configReadable()) {
+            return false;
+        }
+
+        try {
+            if (Config::cached(self::MODE_CONFIG) !== null) {
+                return true;
+            }
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return is_file(self::LEGACY_MODE_FILE);
     }
 
     /**
@@ -79,19 +100,66 @@ class Client
         if (self::$mode !== null) {
             return self::$mode;
         }
+        return self::$mode = self::resolveClientMode();
+    }
 
-        $path = BASE_PATH . "/runtime/mode";
-        if (!file_exists($path)) {
+    /**
+     * 取值发生在 Request 构造期间——那时数据库连接还没建立，未安装的站点连库都没有。
+     * 所以这里走只读缓存，拿不到就退回旧的落地文件，任何一步失败都当作默认值 0。
+     *
+     * @return int
+     */
+    private static function resolveClientMode(): int
+    {
+        if (!self::configReadable()) {
             return 0;
         }
-        $value = file_get_contents($path);
-        if ($value === false || !preg_match('/^[0-8]$/D', trim($value))) {
+
+        try {
+            $value = Config::cached(self::MODE_CONFIG);
+        } catch (\Throwable) {
             return 0;
         }
 
-        $mode = (int)trim($value);
-        self::$mode = $mode;
-        return $mode;
+        if ($value === null) {
+            return self::legacyClientMode();
+        }
+
+        return self::normalizeMode($value);
+    }
+
+    /**
+     * @return bool
+     */
+    private static function configReadable(): bool
+    {
+        return is_file(BASE_PATH . '/kernel/Install/Lock');
+    }
+
+    /**
+     * @return int
+     */
+    private static function legacyClientMode(): int
+    {
+        if (!is_file(self::LEGACY_MODE_FILE)) {
+            return 0;
+        }
+        $value = @file_get_contents(self::LEGACY_MODE_FILE);
+        return $value === false ? 0 : self::normalizeMode($value);
+    }
+
+    /**
+     * @param string $value
+     * @return int
+     */
+    private static function normalizeMode(string $value): int
+    {
+        $value = trim($value);
+        if ($value === '' || !ctype_digit($value)) {
+            return 0;
+        }
+        $mode = (int)$value;
+        return $mode >= 0 && $mode < count(self::HEADERS) ? $mode : 0;
     }
 
     /**

@@ -15,8 +15,8 @@
 
     util.bindButtonUpload(".wechat-input", "/user/api/upload/send?mime=image", result => {
         $('input[name=wechat]').val(result.url);
-        $('.wx_qrcode').html('<img class="wechat-img" src="' + result.url + '" style="width: 100px;cursor: pointer;"   onclick="document.getElementsByClassName(\'wechat-input\')[0].click()">');
-        $('.wx_qrcode_temp').html('<img class="wechat-img" src="' + result.url + '" style="width: 100px;cursor: pointer;"   onclick="document.getElementsByClassName(\'wechat-input\')[0].click()">');
+        $('.wx_qrcode').html('<img class="wechat-img" src="' + result.url + '" style="width: 100px;cursor: pointer;"   data-acg-proxy=".wechat-input">');
+        $('.wx_qrcode_temp').html('<img class="wechat-img" src="' + result.url + '" style="width: 100px;cursor: pointer;"   data-acg-proxy=".wechat-input">');
         message.success("上传完成，需要保存才会生效哦");
     });
 

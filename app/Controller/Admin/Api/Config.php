@@ -16,6 +16,7 @@ use App\Service\Query;
 use App\Service\Sms;
 use App\Util\CallbackIpWhitelist;
 use App\Util\Client;
+use App\Util\LinkDomainGuard;
 use App\Util\Date;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -23,18 +24,14 @@ use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
-use Kernel\Exception\RuntimeException;
 use Kernel\Waf\Filter;
 use PHPMailer\PHPMailer\PHPMailer;
 
 #[Interceptor(ManageSession::class, Interceptor::TYPE_API)]
 class Config extends Manage
 {
-
     private const SETTING_REQUEST_FIELDS = [
         'logo',
-        'ip_get_mode',
-        'trusted_proxy_ips',
         'closed_message',
         'background_mobile_url',
         'closed',
@@ -59,11 +56,7 @@ class Config extends Manage
         'notice',
         'trade_verification',
         'session_expire',
-        'request_log',
-        // The secret suffix keeps browser DEBUG output and RequestLogger from
-        // exposing this security-sensitive route while it is being replaced.
-        'admin_entrance_secret',
-        'admin_entrance_clear',
+
     ];
 
     private const SETTING_BOOLEAN_FIELDS = [
@@ -75,7 +68,17 @@ class Config extends Manage
         'login_verification',
         'admin_login_verification',
         'trade_verification',
-        'request_log',
+    ];
+
+    private const SECURITY_REQUEST_FIELDS = [
+        'request_log_enabled',
+        'request_log_key',
+        'admin_entrance_secret',
+        'ip_get_mode',
+        'trusted_proxy_ips',
+        'link_domain_filter',
+        'link_domain_whitelist',
+        'csp_mode',
     ];
 
     private const SMS_REQUEST_FIELDS = [
@@ -99,6 +102,7 @@ class Config extends Manage
         'secure',
         'port',
         'username',
+        'from',
         'password',
     ];
 
@@ -155,9 +159,6 @@ class Config extends Manage
     #[Inject]
     private \App\Service\Currency $currency;
 
-    /**
-     * @throws JSONException
-     */
     private function settingString(array $post, string $key, int $maxLength, bool $required = false): string
     {
         if (!array_key_exists($key, $post) || (!is_scalar($post[$key]) && $post[$key] !== null)) {
@@ -170,17 +171,13 @@ class Config extends Manage
         if ($required && trim($value) === '') {
             throw new JSONException('网站设置必填项不能为空');
         }
-        // config.value is a MySQL TEXT column (maximum 65,535 bytes). Keep
-        // enough headroom for the row and reject oversized multibyte content.
+
         if (mb_strlen($value) > $maxLength || strlen($value) > 60000) {
             throw new JSONException('网站设置内容超出允许长度');
         }
         return $value;
     }
 
-    /**
-     * @throws JSONException
-     */
     private function settingInteger(
         array $post,
         string $key,
@@ -202,9 +199,6 @@ class Config extends Manage
             throw new JSONException("{$label}必须是 {$min} 到 {$max} 之间的整数");
         }
 
-        // FILTER_VALIDATE_INT rejects otherwise valid legacy values such as
-        // "06". Canonicalize decimal integers first, while still rejecting
-        // fractions, scientific notation and values outside the safe range.
         $negative = str_starts_with($raw, '-');
         $digits = ltrim(ltrim($raw, '+-'), '0');
         $normalized = $digits === '' ? '0' : ($negative ? '-' : '') . $digits;
@@ -217,9 +211,6 @@ class Config extends Manage
         return (int)$value;
     }
 
-    /**
-     * @throws JSONException
-     */
     private function settingBoolean(array $post, string $key): int
     {
         if (!array_key_exists($key, $post)) {
@@ -235,9 +226,6 @@ class Config extends Manage
         return (int)$value;
     }
 
-    /**
-     * @throws JSONException
-     */
     private function settingUrl(array $post, string $key): string
     {
         $value = trim($this->settingString($post, $key, 2048));
@@ -257,11 +245,6 @@ class Config extends Manage
         return $value;
     }
 
-    /**
-     * Validate an installed theme locally before the existing remote licence
-     * check runs after the configuration batch has been persisted.
-     * @throws JSONException
-     */
     private function settingTheme(array $post, string $key, bool $allowFollow = false): string
     {
         $theme = trim($this->settingString($post, $key, 64, true));
@@ -276,9 +259,6 @@ class Config extends Manage
         return $theme;
     }
 
-    /**
-     * @throws JSONException
-     */
     private function installFavicon(string $logo): void
     {
         if ($logo === '/favicon.ico') {
@@ -310,13 +290,9 @@ class Config extends Manage
             @unlink($temporary);
             throw new JSONException('LOGO 保存失败，请检查目录权限');
         }
-        // The uploaded source and its acg_upload record are intentionally kept.
-        // A routine settings save must not physically delete an uploaded file.
+
     }
 
-    /**
-     * @throws JSONException
-     */
     private function configPost(array $allowedFields, string $label): array
     {
         if (strtoupper($this->request->method()) !== 'POST') {
@@ -333,9 +309,6 @@ class Config extends Manage
         return $post;
     }
 
-    /**
-     * @throws JSONException
-     */
     private function configString(
         array $post,
         string $key,
@@ -359,11 +332,6 @@ class Config extends Manage
         return $value;
     }
 
-    /**
-     * Secrets are deliberately accepted only from blank page fields. Blank (or
-     * whitespace-only) input means preserve the value already stored server-side.
-     * @throws JSONException
-     */
     private function configSecret(array $post, string $key, int $maxLength, string $label): string
     {
         if (!array_key_exists($key, $post) || !is_scalar($post[$key])) {
@@ -381,9 +349,6 @@ class Config extends Manage
         return $value;
     }
 
-    /**
-     * @throws JSONException
-     */
     private function configInteger(array $post, string $key, int $min, int $max, string $label): int
     {
         if (!array_key_exists($key, $post) || !is_scalar($post[$key])) {
@@ -396,9 +361,6 @@ class Config extends Manage
         return (int)$value;
     }
 
-    /**
-     * @throws JSONException
-     */
     private function configBoolean(array $post, string $key, string $label): int
     {
         if (!array_key_exists($key, $post)) {
@@ -414,9 +376,6 @@ class Config extends Manage
         return (int)$value;
     }
 
-    /**
-     * @throws JSONException
-     */
     private function configMoney(array $post, string $key, string $label): string
     {
         $value = $this->configString($post, $key, 16, $label, true);
@@ -426,9 +385,6 @@ class Config extends Manage
         return $value;
     }
 
-    /**
-     * @throws JSONException
-     */
     private function configHttpUrl(
         array $post,
         string $key,
@@ -463,9 +419,6 @@ class Config extends Manage
         return $originOnly ? rtrim($value, '/') : $value;
     }
 
-    /**
-     * @throws JSONException
-     */
     private function configDomainList(array $post, string $key, string $label, bool $multiple): string
     {
         $value = $this->configString($post, $key, 2048, $label);
@@ -491,9 +444,6 @@ class Config extends Manage
         return implode(',', array_values(array_unique($normalized)));
     }
 
-    /**
-     * @throws JSONException
-     */
     private function configCallbackIpRules(array $post, bool $enabled): string
     {
         $rules = $this->configString(
@@ -516,9 +466,6 @@ class Config extends Manage
         return $rules;
     }
 
-    /**
-     * @throws JSONException
-     */
     private function configWelfareRules(array $post): string
     {
         $value = trim(str_replace(["\r\n", "\r"], "\n", $this->configString(
@@ -552,9 +499,6 @@ class Config extends Manage
         return implode(PHP_EOL, $lines);
     }
 
-    /**
-     * @throws JSONException
-     */
     private function normalizeDefaultCategory(array $post): string
     {
         $value = $this->configString($post, 'default_category', 32, '默认展开分类', true);
@@ -567,12 +511,6 @@ class Config extends Manage
         return (string)(int)$value;
     }
 
-    /**
-     * The caller holds Config's file lock and an open database transaction.
-     * Keep the category row locked through the guarded config write and commit.
-     *
-     * @throws JSONException
-     */
     private function lockDefaultCategory(string $value): void
     {
         if (in_array($value, ['0', 'recommend'], true)) {
@@ -599,9 +537,6 @@ class Config extends Manage
         }
     }
 
-    /**
-     * @throws JSONException
-     */
     private function encodeJsonConfig(array $config, string $label): string
     {
         try {
@@ -616,21 +551,11 @@ class Config extends Manage
         return $incoming !== '' ? $incoming : (is_scalar($stored[$storedKey] ?? null) ? (string)$stored[$storedKey] : '');
     }
 
-    /**
-     * 测试发送的限流参数（按渠道区分）。
-     * 短信每条都要花钱，且后台一旦失守就会被拿去刷短信，保持严格；
-     * 邮件走站长自己的 SMTP、不花钱，而调 SMTP 配置本来就要反复试
-     * （换端口、换加密方式、换授权码），沿用短信的额度只会把站长自己卡死。
-     */
     private const TEST_SEND_LIMITS = [
         'email' => ['max' => 20, 'window' => 300, 'interval' => 3],
         'sms' => ['max' => 3, 'window' => 300, 'interval' => 30],
     ];
 
-    /**
-     * Atomically limit real test sends by login session, administrator and IP.
-     * @throws JSONException
-     */
     private function consumeTestSendQuota(string $channel): void
     {
         $limit = self::TEST_SEND_LIMITS[$channel] ?? self::TEST_SEND_LIMITS['sms'];
@@ -646,7 +571,7 @@ class Config extends Manage
             $directory . '/' . hash('sha256', 'manage|' . $channel . '|' . $manageId) . '.lock',
             $directory . '/' . hash('sha256', 'ip|' . $channel . '|' . $ip) . '.lock',
         ];
-        sort($paths, SORT_STRING); // deterministic lock order prevents deadlocks
+        sort($paths, SORT_STRING);
         $handles = [];
         try {
             foreach ($paths as $path) {
@@ -701,12 +626,6 @@ class Config extends Manage
         }
     }
 
-    /**
-     * @param Request $request
-     * @return array
-     * @throws JSONException
-     * @throws \Throwable
-     */
     public function setting(Request $request): array
     {
         if (strtoupper($request->method()) !== 'POST') {
@@ -722,43 +641,12 @@ class Config extends Manage
         }
 
         $logo = trim($this->settingString($post, 'logo', 255, true));
-        $ipGetMode = $this->settingInteger($post, 'ip_get_mode', 0, 8, 'CDN 获取 IP 方式');
-        try {
-            $trustedProxyConfig = Client::normalizeTrustedProxyConfig(
-                array_key_exists('trusted_proxy_ips', $post)
-                    ? $this->settingString($post, 'trusted_proxy_ips', 8192)
-                    : Client::getTrustedProxyConfig()
-            );
-        } catch (\InvalidArgumentException $e) {
-            throw new JSONException($e->getMessage());
-        }
         $registeredType = $this->settingInteger($post, 'registered_type', 0, 2, '注册方式');
         $forgetType = $this->settingInteger($post, 'forget_type', 0, 1, '找回密码方式');
         $usernameLength = $this->settingInteger($post, 'username_len', 1, 32, '注册用户名长度', 6);
         $sessionExpire = $this->settingInteger($post, 'session_expire', 0, 31536000, '会话保持时间', 0);
         if ($sessionExpire > 0 && $sessionExpire < 120) {
             throw new JSONException('会话保持时间必须为 0，或至少 120 秒');
-        }
-
-        $entranceInput = trim($this->settingString($post, 'admin_entrance_secret', 65));
-        $clearEntrance = $this->settingBoolean($post, 'admin_entrance_clear');
-        if ($clearEntrance === 1 && $entranceInput !== '') {
-            throw new JSONException('不能同时设置新后台入口并关闭后台入口');
-        }
-        if ($clearEntrance === 1) {
-            $entrance = '';
-        } elseif ($entranceInput === '') {
-            // The current entrance never leaves the server. Blank means keep it.
-            $entrance = CFG::get('admin_entrance');
-        } else {
-            if (!preg_match('#^/?[A-Za-z0-9][A-Za-z0-9_-]{0,63}$#', $entranceInput)) {
-                throw new JSONException('后台安全入口仅支持单段字母、数字、下划线和短横线');
-            }
-            $entranceName = strtolower(ltrim($entranceInput, '/'));
-            if (in_array($entranceName, ['admin', 'user', 'shared', 'plugin', 'install', 'assets', 'index.php', 'favicon.ico'], true)) {
-                throw new JSONException('后台安全入口不能使用系统保留地址');
-            }
-            $entrance = '/' . ltrim($entranceInput, '/');
         }
 
         $settings = [
@@ -778,13 +666,11 @@ class Config extends Manage
             'forget_type' => $forgetType,
             'notice' => $this->settingString($post, 'notice', 60000),
             'session_expire' => $sessionExpire,
-            'admin_entrance' => $entrance,
         ];
         foreach (self::SETTING_BOOLEAN_FIELDS as $key) {
             $settings[$key] = $this->settingBoolean($post, $key);
         }
 
-        //公告是管理员富文本，取未过滤原文入库(#775)；空字节与长度校验和settingString保持一致
         $rawNotice = $request->unsafePost('notice');
         if (is_string($rawNotice) && !str_contains($rawNotice, "\0")) {
             if (mb_strlen($rawNotice) > 60000 || strlen($rawNotice) > 60000) {
@@ -793,37 +679,135 @@ class Config extends Manage
             $settings['notice'] = $rawNotice;
         }
 
-        // Validate every value before the first filesystem or database write.
-        // Favicon and client-IP configuration are filesystem state and cannot join the
-        // database transaction. Run the failure-prone file work first; if the
-        // later database commit fails these idempotent side effects may already
-        // be visible and a retry is required, while all config rows stay atomic.
         $this->installFavicon($logo);
         try {
-            Client::setTrustedProxyConfig($trustedProxyConfig);
-            Client::setClientMode($ipGetMode);
-            clearstatcache(true, BASE_PATH . '/runtime/mode');
-            $savedClientMode = @file_get_contents(BASE_PATH . '/runtime/mode');
-            if ($savedClientMode === false || trim($savedClientMode) !== (string)$ipGetMode) {
-                throw new RuntimeException('客户端 IP 获取方式写入失败');
-            }
             CFG::putMany($settings);
         } catch (\Throwable $e) {
             throw new JSONException("保存失败，请检查原因");
         }
 
-        // Preserve the pre-existing theme/plugin licence validation semantics.
-        // This is deliberately not exercised by mobile QA because it may update
-        // plugin/theme state according to the remote licence response.
         _plugin_start($settings['user_theme'], true);
         ManageLog::log($this->getManage(), "修改了网站设置");
         return $this->json(200, '保存成功');
     }
 
-    /**
-     * @return array
-     * @throws JSONException
-     */
+    public function security(Request $request): array
+    {
+        $post = $this->configPost(self::SECURITY_REQUEST_FIELDS, '安全设置');
+
+        $ipGetMode = $this->settingInteger($post, 'ip_get_mode', 0, 8, 'CDN 获取 IP 方式');
+        try {
+            $trustedProxyConfig = Client::normalizeTrustedProxyConfig(
+                array_key_exists('trusted_proxy_ips', $post)
+                    ? $this->settingString($post, 'trusted_proxy_ips', 8192)
+                    : Client::getTrustedProxyConfig()
+            );
+        } catch (\InvalidArgumentException $e) {
+            throw new JSONException($e->getMessage());
+        }
+
+        //提交上来的值就是状态：填了=启用该入口，清空=不启用。没有独立开关，避免两处状态互相矛盾。
+        $entranceInput = trim($this->settingString($post, 'admin_entrance_secret', 65));
+        if ($entranceInput === '') {
+            $entrance = '';
+        } else {
+            if (!preg_match('#^/?[A-Za-z0-9][A-Za-z0-9_-]{0,63}$#', $entranceInput)) {
+                throw new JSONException('后台安全入口仅支持单段字母、数字、下划线和短横线');
+            }
+            $entranceName = strtolower(ltrim($entranceInput, '/'));
+            if (in_array($entranceName, ['admin', 'user', 'shared', 'plugin', 'install', 'assets', 'index.php', 'favicon.ico'], true)) {
+                throw new JSONException('后台安全入口不能使用系统保留地址');
+            }
+            $entrance = '/' . ltrim($entranceInput, '/');
+        }
+
+        $logKey = trim($this->settingString($post, 'request_log_key', 64));
+        if ($logKey === '') {
+            //库里没有密钥（新装失败、或被人删了）时的恢复路径：保存一次就补一把。
+            //已有密钥则留空表示"不改"，不会误换掉、把历史日志变成天书。
+            if (!\App\Util\RequestLogCrypto::available()) {
+                \App\Util\RequestLogCrypto::generate();
+            }
+        } elseif ($logKey !== \App\Util\RequestLogCrypto::keyB64()
+            && !\App\Util\RequestLogCrypto::setKeyB64($logKey)) {
+            throw new JSONException('日志加密密钥必须是 base64 编码的 32 字节');
+        }
+
+        $whitelist = $this->settingString($post, 'link_domain_whitelist', 8192);
+        $normalized = [];
+        foreach (preg_split('/[\r\n,]+/', $whitelist) ?: [] as $line) {
+            $line = trim((string)$line);
+            if ($line === '') {
+                continue;
+            }
+            if (str_contains($line, '://')) {
+                $line = (string)parse_url($line, PHP_URL_HOST);
+            }
+            $line = strtolower(ltrim(trim($line, "/ \t"), '*.'));
+            $line = explode('/', $line)[0];
+            if ($line === '') {
+                continue;
+            }
+            if (!preg_match('/^[a-z0-9._-]{1,253}$/', $line)) {
+                throw new JSONException("外链域名白名单里有不合法的条目：{$line}");
+            }
+            $normalized[$line] = true;
+        }
+
+        $settings = [
+            'request_log_enabled' => $this->settingBoolean($post, 'request_log_enabled'),
+            'admin_entrance' => $entrance,
+            Client::MODE_CONFIG => (string)$ipGetMode,
+            LinkDomainGuard::ENABLED_CONFIG => $this->settingBoolean($post, 'link_domain_filter'),
+            LinkDomainGuard::WHITELIST_CONFIG => implode("\n", array_keys($normalized)),
+            \App\Util\Csp::MODE_CONFIG => in_array(($m = trim($this->settingString($post, 'csp_mode', 16))), ['off', 'report', 'enforce'], true) ? $m : 'enforce',
+        ];
+
+        try {
+            Client::setTrustedProxyConfig($trustedProxyConfig);
+            CFG::putMany($settings);
+        } catch (\Throwable $e) {
+            throw new JSONException("保存失败，请检查原因");
+        }
+
+        Client::resetModeCache();
+        LinkDomainGuard::resetCache();
+        \App\Util\Csp::resetCache();
+        ManageLog::log($this->getManage(), "修改了安全设置");
+        return $this->json(200, '保存成功');
+    }
+
+    public function requestLogClear(): array
+    {
+        if (strtoupper($this->request->method()) !== 'POST') {
+            throw new JSONException('仅接受 POST 请求');
+        }
+        $days = (int)$this->request->post('days');
+        if (!in_array($days, [0, 7, 15, 30], true)) {
+            throw new JSONException('清理范围不正确');
+        }
+
+        $result = \Kernel\Util\RequestLogger::prune($days);
+        $scope = $days === 0 ? '全部' : "{$days} 天前";
+        ManageLog::log($this->getManage(), "清理了请求日志({$scope})");
+
+        return $this->json(200, sprintf(
+            '已清理 %d 个日志文件，释放 %.1f MB',
+            $result['deleted'],
+            $result['bytes'] / 1048576
+        ));
+    }
+
+    public function cspClear(): array
+    {
+        if (strtoupper($this->request->method()) !== 'POST') {
+            throw new JSONException('仅接受 POST 请求');
+        }
+        \App\Util\Csp::clear();
+        ManageLog::log($this->getManage(), "清空了 CSP 违规统计");
+        return $this->json(200, '已清空');
+    }
+
     public function other(): array
     {
         $map = $this->configPost(self::OTHER_REQUEST_FIELDS, '其他设置');
@@ -842,10 +826,6 @@ class Config extends Manage
             throw new JSONException('单次最低充值金额不能高于单次最高充值金额');
         }
 
-        //货币四件套与 Service API 共用同一套校验（单一事实源）。
-        //字段缺席时【整个不写】而不是回填当前值：没刷新的旧后台页面（还没有货币区块）一保存，
-        //绝不能顺手把货币设置也重写一遍——回填读的是 Config::get 的缓存，
-        //而表单是 Config::list 从库渲染的，两者一旦不一致就会把缓存值倒灌回库。
         $currency = [];
         if (array_key_exists('currency_code', $map)) {
             $currency['currency_code'] = \App\Service\Bind\Currency::assertCode((string)$map['currency_code']);
@@ -885,10 +865,6 @@ class Config extends Manage
                 : $this->configBoolean($map, $key, '其他设置开关');
         }
 
-        // Serialize validation with category deletion. Config acquires the file
-        // lock first, opens a transaction, then this guard locks/revalidates the
-        // category row before the compensated MyISAM batch is written. The file
-        // lock remains held until the database transaction commits.
         try {
             CFG::putManyGuarded($settings, function () use ($settings): void {
                 $this->lockDefaultCategory($settings['default_category']);
@@ -903,18 +879,6 @@ class Config extends Manage
         return $this->json(200, '保存成功');
     }
 
-
-    /**
-     * 切换币种并按汇率换算全站金额数据（一次性重定价，不可逆）。
-     *
-     * 与 other() 的纯重标注保存是两条路：这里会真的改写余额、账单、历史订单、商品定价等
-     * 所有站点货币金额。换算逻辑（含并发锁、事务、审计日志）都在 Service 里，
-     * 本入口只做参数收集与操作留痕。
-     *
-     * @return array
-     * @throws JSONException
-     * @throws \Throwable
-     */
     public function currencyConvert(): array
     {
         $code = trim((string)($_POST['currency_code'] ?? ''));
@@ -937,23 +901,16 @@ class Config extends Manage
         return $this->json(200, '换算完成', ['summary' => $summary, 'total' => $converted]);
     }
 
-
-    /**
-     * @return array
-     * @throws RuntimeException
-     */
     public function setSubstationDisplayList(): array
     {
         $userId = (int)$_POST['id'];
         $type = (int)$_POST['type'];
         $list = json_decode(CFG::get("substation_display_list"), true);
         if ($type == 0) {
-            //添加过滤
             if (!in_array($userId, $list)) {
                 $list[] = $userId;
             }
         } else {
-            //解除过滤
             if (($key = array_search($userId, $list)) !== false) {
                 unset($list[$key]);
                 $list = array_values($list);
@@ -965,9 +922,6 @@ class Config extends Manage
         return $this->json(200, "成功", $list);
     }
 
-    /**
-     * @throws JSONException
-     */
     public function sms(): array
     {
         $map = $this->configPost(self::SMS_REQUEST_FIELDS, '短信设置');
@@ -1042,9 +996,6 @@ class Config extends Manage
         return $this->json(200, '保存成功');
     }
 
-    /**
-     * @throws JSONException
-     */
     public function email(): array
     {
         $map = $this->configPost(self::EMAIL_REQUEST_FIELDS, '邮箱设置');
@@ -1055,11 +1006,19 @@ class Config extends Manage
             && !preg_match('/^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)*[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/', $smtp)) {
             throw new JSONException('SMTP 服务器应为有效的主机名或 IP 地址');
         }
+        $storedFrom = isset($stored['from']) && is_scalar($stored['from']) ? trim((string)$stored['from']) : '';
+        $from = array_key_exists('from', $map)
+            ? $this->configString($map, 'from', 320, '发件人邮箱')
+            : $storedFrom;
+        if ($from !== '' && !PHPMailer::validateAddress($from)) {
+            throw new JSONException('发件人邮箱格式不正确');
+        }
         $config = [
             'smtp' => $smtp,
             'secure' => $this->configInteger($map, 'secure', 0, 1, 'SMTP 加密方式'),
             'port' => $this->configInteger($map, 'port', 1, 65535, 'SMTP 端口'),
             'username' => $this->configString($map, 'username', 320, 'SMTP 用户名', true),
+            'from' => $from,
             'password' => $this->preserveSecret(
                 $stored,
                 'password',
@@ -1082,7 +1041,6 @@ class Config extends Manage
         return $this->json(200, '保存成功');
     }
 
-
     public function smsTest(): array
     {
         $map = $this->configPost(['phone'], '测试短信');
@@ -1097,11 +1055,6 @@ class Config extends Manage
         return $this->json(200, "短信发送成功");
     }
 
-    /**
-     * @return array
-     * @throws JSONException
-     * @throws RuntimeException
-     */
     public function emailTest(): array
     {
         $map = $this->configPost(['email'], '测试邮件');
@@ -1113,20 +1066,12 @@ class Config extends Manage
         $shopName = CFG::get("shop_name");
         $result = $this->email->send($address, $shopName . "-手动测试邮件", '测试邮件，发送时间：' . Date::current());
         if (!$result) {
-            //把 SMTP 的真实报错带给站长，并针对最常见的几类错误给出可执行的下一步
             throw new JSONException($this->emailFailureMessage($this->email->getLastError()));
         }
         ManageLog::log($this->getManage(), "测试了邮件发送");
         return $this->json(200, "成功!");
     }
 
-    /**
-     * 把 SMTP 报错整理成站长看得懂的提示。
-     * 常见坑：端口与加密方式不匹配（465=SSL / 587=TLS）、Gmail 等要求应用专用密码、
-     * 服务器出网被封（云厂商默认封 25/465）。
-     * @param string $error
-     * @return string
-     */
     private function emailFailureMessage(string $error): string
     {
         $error = trim($error);
@@ -1136,7 +1081,7 @@ class Config extends Manage
 
         $config = json_decode((string)CFG::get('email_config'), true);
         $port = is_array($config) ? (int)($config['port'] ?? 0) : 0;
-        $secure = is_array($config) ? (int)($config['secure'] ?? 0) : 0; //0=SSL 1=TLS
+        $secure = is_array($config) ? (int)($config['secure'] ?? 0) : 0;
         $lower = strtolower($error);
         $hint = '';
 
@@ -1148,7 +1093,6 @@ class Config extends Manage
             $hint = '加密方式与端口不匹配。常见对应关系：465 端口用 SSL、587 端口用 TLS。';
         }
 
-        //端口/加密方式明显不匹配时直接点名，这是最高频的配置错误
         if (($port === 465 && $secure === 1) || ($port === 587 && $secure === 0)) {
             $expect = $port === 465 ? 'SSL' : 'TLS';
             $hint = "当前是 {$port} 端口 + " . ($secure === 0 ? 'SSL' : 'TLS') . " 的组合，通常不可用，{$port} 端口请改用 {$expect}。" . $hint;
@@ -1157,9 +1101,6 @@ class Config extends Manage
         return '发送失败：' . $error . ($hint !== '' ? "（{$hint}）" : '');
     }
 
-    /**
-     * @return array
-     */
     public function getBusiness(): array
     {
         $get = new Get(Business::class);

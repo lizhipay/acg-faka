@@ -3,218 +3,189 @@ declare(strict_types=1);
 
 namespace App\Consts;
 
-
-/**
- * Interface Hook
- * @package App\Consts
- */
 interface Hook
 {
-    //挂载点 app\View\Admin\Footer.html -> 放js的地方
     const ADMIN_VIEW_FOOTER = 0x1;
-    //后台全局body
+
     const ADMIN_VIEW_BODY = 0x10201;
-    //挂载点 app\View\Admin\Header.html -> 放css连接的地方
+
     const ADMIN_VIEW_HEADER = 0x2;
-    //挂载点 app\View\Admin\Header.html -> 左边菜单栏
+
     const ADMIN_VIEW_MENU = 0x3;
-    //挂载点 app\View\Admin\Header.html -> 应用商店旁边
+
     const ADMIN_VIEW_NAV = 0x4;
 
-    //后台会员管理页面header
     const ADMIN_VIEW_USER_HEADER = 0x10002;
-    //挂载点 app\View\Admin\User\User.html -> 底部代码，可以写一些JS逻辑
+
     const ADMIN_VIEW_USER_FOOTER = 0x9;
-    //挂载点 app\View\Admin\User\User.html -> 按钮区域，可以加一些按钮
+
     const ADMIN_VIEW_USER_TOOLBAR = 0x10;
-    //挂载点 app\View\Admin\User\User.html -> 数据表格
+
     const ADMIN_VIEW_USER_TABLE = 0x8;
 
-
-    //挂载点 app\View\Admin\Trade\Commodity.html -> 数据表格
     const ADMIN_VIEW_COMMODITY_TABLE = 0x5;
-    //挂载点 app\View\Admin\Trade\Commodity.html -> 底部代码，可以写一些JS逻辑
+
     const ADMIN_VIEW_COMMODITY_FOOTER = 0x6;
-    //挂载点 app\View\Admin\Trade\Commodity.html -> 按钮区域，可以加一些按钮
+
     const ADMIN_VIEW_COMMODITY_TOOLBAR = 0x7;
 
-
-    //后台分类页面的按钮
     const ADMIN_VIEW_CATEGORY_TOOLBAR = 0x701;
-    //后台分类页面的横向表格
+
     const ADMIN_VIEW_CATEGORY_TABLE = 0x702;
-    //后台分类页面提交的表格中
+
     const ADMIN_VIEW_CATEGORY_POST = 0x703;
 
-
-    //挂载点 app\View\Admin\Trade\Order.html -> 数据表格
     const ADMIN_VIEW_ORDER_TABLE = 0x11;
-    //挂载点 app\View\Admin\Trade\Order.html -> 底部代码，可以写一些JS逻辑
+
     const ADMIN_VIEW_ORDER_FOOTER = 0x12;
-    //挂载点 app\View\Admin\Trade\Order.html -> 按钮区域，可以加一些按钮
+
     const ADMIN_VIEW_ORDER_TOOLBAR = 0x13;
 
-    //挂载点 app\Controller\Admin\Config.php -> 挂载链接到网站设置的TOLLBAR上面，需要返回值二维数组
+    const ADMIN_VIEW_CARD_TOOLBAR = 0x801;
+    const ADMIN_VIEW_CARD_FOOTER = 0x802;
+
     const ADMIN_VIEW_CONFIG_TOOLBAR = 0x14;
 
-    //-----------------------PLUGIN-----------------------------
-    //HOOK后台在保存配置时候，可以返回修改后的内容 HOOK时传参：string pluginName,array  postMap
     const ADMIN_API_PLUGIN_SAVE_CONFIG = 0x15;
 
-
-    //客户下单之前触发的点位，可以做一下防刷机制，HOOK时传参：array $_POST
     const USER_API_ORDER_TRADE_BEGIN = 0x16;
-    //客户下单成功触发的点位，HOOK时传参：商品对象 $commodity, 订单对象 $order  支付对象 $pay
+
     const USER_API_ORDER_TRADE_AFTER = 0x17;
-    //客户成功付款后触发的点位，HOOK时传参：商品对象 $commodity, 订单对象 $order 支付对象 $pay
+
     const USER_API_ORDER_PAY_AFTER = 0x18;
-    //客户下单后，发起支付之前，HOOK时传参：商品对象 $commodity, 订单对象 $order 支付对象 $pay
+
     const USER_API_ORDER_TRADE_PAY_BEGIN = 0x171;
 
-
-    //客户充值付款成功，UserRecharge $recharge, Pay $pay
     const USER_API_RECHARGE_AFTER = 0x18191;
 
-
-    //注册账号之前，可以做一些限制
     const USER_API_AUTH_REGISTER_BEGIN = 0x19;
-    //注册账户之后，HOOK时传参：$user 注册成功后的用户对象
+
     const USER_API_AUTH_REGISTER_AFTER = 0x20;
 
-    //登录账号之前，可以做一些限制
     const USER_API_AUTH_LOGIN_BEGIN = 0x21;
-    //登录账户之后，HOOK时传参：$user 注册成功后的用户对象
+
     const USER_API_AUTH_LOGIN_AFTER = 0x22;
-    //会员登录失败（账号不存在/密码错误/已封禁），HOOK时传参：string $account 提交的账号, string $reason not_found|password|banned
+
     const USER_API_AUTH_LOGIN_FAIL = 0x23;
 
-    //后台登录成功，HOOK时传参：Manage $manage
     const ADMIN_API_AUTH_LOGIN_AFTER = 0x61;
-    //后台登录失败（含频率限制拦截），HOOK时传参：string $email 提交的账号, string $reason
+
     const ADMIN_API_AUTH_LOGIN_FAIL = 0x62;
 
-
-    //核心初始化完成
     const KERNEL_INIT = 0x30;
 
-    //控制器被调用之前，传参：控制器名称，调用方法
     const CONTROLLER_CALL_BEFORE = 0x31;
 
-    //控制器被调用之后，传参：控制器名称，调用方法，返回值
     const CONTROLLER_CALL_AFTER = 0X32;
 
-    //渲染视图 ，传视图raw的指针地址
     const RENDER_VIEW = 0x33;
 
-    //登录页面，第三方登录扩展按钮
     const USER_VIEW_AUTH_LOGIN_BUTTON = 0x41;
-    //注册页面，第三方登录按钮扩展
+
     const USER_VIEW_AUTH_REGISTER_BUTTON = 0x42;
-    //挂载点 app\View\Admin\Authentication\Login.html -> 后台登录表单内、提交按钮上方（验证码/人机验证等扩展）
+
     const ADMIN_VIEW_AUTH_LOGIN_FORM = 0x60;
-    //安全中心NAV SecurityNav.html
+
     const USER_VIEW_SECURITY_NAV = 0x43;
-    //个人资料选项
+
     const USER_VIEW_PERSONAL_FORM = 0x44;
 
-    //商品管理中的添加商品表单
     const ADMIN_VIEW_COMMODITY_POST = 0x45;
 
-    //用户前台中的添加商品表单
     const USER_VIEW_COMMODITY_POST = 0x46;
 
-    //在HTTP请求后，在返还给用户之前，拿到的返回数据
     const HTTP_ROUTE_RESPONSE = 0x47;
-    //路由未命中（控制器或方法不存在，即将输出 404），HOOK时传参：string $routePath 请求的路由
+
     const HTTP_NOT_FOUND = 0x48;
 
-    //挂载点 app\View\User\* -> INDEX -> 头部
     const USER_VIEW_INDEX_HEADER = 0x10001;
-    //挂载点 app\View\User\* -> INDEX -> 内容
+
     const USER_VIEW_INDEX_BODY = 0x10003;
-    //挂载点 app\View\User\* -> INDEX -> 底部
+
     const USER_VIEW_INDEX_FOOTER = 0x10004;
 
-    //前台获取的商品分类列表, 传入数组 array $data 指针
     const USER_API_INDEX_CATEGORY_LIST = 0x49;
-    //前台获取商品列表，传入数组 array $data 指针
+
     const USER_API_INDEX_COMMODITY_LIST = 0x50;
-    //前台获取商品详细信息 传入商品的数组 array $data 指针
+
     const USER_API_INDEX_COMMODITY_DETAIL_INFO = 0x51;
-    //前台下单之前，计算完订单金额，传入计算的值 array $result 指针地址
+
     const USER_API_INDEX_TRADE_CALC_AMOUNT = 0x52;
-    //前台获取完支付列表，传入 支付列表 array $list 指针地址
+
     const USER_API_INDEX_PAY_LIST = 0x53;
 
-    //前台查询订单后，获取到的订单列表，传入列表数据指针地址 array $list
     const USER_API_INDEX_QUERY_LIST = 0x54;
-    //前台查询订单里面，查询卡密信息触发，传入整个订单对象 Order $order
+
     const USER_API_INDEX_QUERY_SECRET = 0x55;
-    //用户进到订单页面中，获取到订单列表，传入列表指针地址 array $list
+
     const USER_API_PURCHASE_RECORD_LIST = 0x56;
 
-
-    // 挂载点：app\View\User\Theme\Cartoon\Common\Nav.html  左侧菜单
     const USER_VIEW_MENU = 0x57;
 
-
-    //挂载点：app\View\User\Theme\Cartoon\Header.html 头部NAV，返回数组信息
     const USER_VIEW_HEADER_NAV = 0x88;
 
-    //挂载点：订单查询里面的详细信息订单号后面的小尾巴
     const USER_VIEW_QUERY_TRADE_NO = 0x89;
 
-    //挂载点 app\View\User\* -> Common -> 头部
     const USER_VIEW_HEADER = 0x128;
-    //挂载点 app\View\User\* -> Common -> 内容
+
     const USER_VIEW_BODY = 0x129;
-    //挂载点 app\View\User\* -> Common -> 底部
+
     const USER_VIEW_FOOTER = 0x130;
 
-    //用户端全局  -> 头部
     const USER_GLOBAL_VIEW_HEADER = 0x228;
-    //用户端全局 -> 内容
+
     const USER_GLOBAL_VIEW_BODY = 0x229;
-    //用户端全局 -> 底部
+
     const USER_GLOBAL_VIEW_FOOTER = 0x230;
 
-    //防火墙拦截 -> $message
     const WAF_INTERCEPT = 0x289;
 
-
-    //邮件发送之前  -> array $config, string $email, string $title, string $content
     const SERVICE_SMTP_SEND_BEFORE = 0x3000;
-    //邮件发送成功 -> array $config, string $email, string $title, string $content
+
     const SERVICE_SMTP_SEND_SUCCESS = 0x3001;
-    //邮件发送失败 -> array $config, string $email, string $title, string $content
+
     const SERVICE_SMTP_SEND_ERROR = 0x3002;
 
-    //支付回调校验失败（签名/金额/handle/凭据/状态/订单不存在/重复通知），HOOK时传参：
-    //string $handle 支付插件, string $reason handle|not_found|credential|plugin|sign|status|duplicate|amount, ?string $tradeNo 订单号, array $map 回调原始数据
     const SERVICE_PAY_CALLBACK_FAIL = 0x3010;
 
-
-    //工单：会员创建工单成功（事务已提交），HOOK时传参：Ticket $ticket, TicketMessage $message 首条消息
     const USER_API_TICKET_CREATE_AFTER = 0x2100;
-    //工单：会员回复工单成功（事务已提交），HOOK时传参：Ticket $ticket, TicketMessage $message
+
     const USER_API_TICKET_REPLY_AFTER = 0x2101;
-    //工单：管理员回复工单成功，HOOK时传参：Ticket $ticket, TicketMessage $message, Manage $manage
+
     const ADMIN_API_TICKET_REPLY_AFTER = 0x2102;
 
-    //手动发货商品由后台/商家写入卡密完成发货，HOOK时传参：Order $order, bool $overwrite 是否覆盖了已有发货内容
     const ORDER_MANUAL_DELIVERY_AFTER = 0x2200;
 
-
-    //order
     public const HACK_ROUTE_TABLE_COLUMNS = 0x2005;
     public const HACK_ROUTE_TABLE_SEARCH = 0x2006;
     public const HACK_SUBMIT_FORM = 0x9038;
     public const HACK_SUBMIT_TAB = 0x9039;
 
-
-    //Commodity $commodity, ?string $race, ?array $sku  :: Stock
     public const SERVICE_SHOP_GET_ITEM_STOCK = 0x8000;
 
-    //国际化：翻译库未命中，请求尾批量触发。HOOK时传参：string[] $sources 中文原文列表, string[] $targetLangs 目标语言列表
+    /**
+     * 商品发生变更（新增/修改/删除/上下架/批量设置/对接同步）。
+     *
+     * 核心此前没有任何商品写侧钩子，而商品的批量启停、批量设置、批量删除走的都是
+     * 查询构造器的 update()/delete()，Eloquent 模型事件不会触发，插件无从感知。
+     * 这里统一在「事务提交之后」广播受影响的商品 id，让订阅方自己去算差量。
+     *
+     * @param int[]      $ids     受影响的商品 id
+     * @param string     $action  create|update|delete|status|batch|sync
+     * @param mixed|null $before  单个商品修改前的模型（仅 save 路径提供，其余为 null）
+     */
+    public const COMMODITY_CHANGE_AFTER = 0x8100;
+
+    /**
+     * 卡密池发生变更，即自动发货商品的库存变了。
+     *
+     * 同样在事务提交之后广播，参数给的是「受影响的商品 id」而不是卡密 id ——
+     * 订阅方关心的是哪个商品的库存动了，卡密本身是实现细节。
+     *
+     * @param int[]  $commodityIds 受影响的商品 id
+     * @param string $reason       import|edit|lock|unlock|sell|delete|order
+     */
+    public const CARD_CHANGE_AFTER = 0x8101;
+
     public const LANG_MISS = 0x9100;
 }

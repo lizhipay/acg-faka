@@ -1,13 +1,4 @@
-/*
- * EditorV2 — reusable self-built Markdown editor (CodeMirror source + marked live
- * preview + preview toggle ⇄ ACE HTML-source mode). Storage stays HTML: a hidden
- * <textarea class="text-container" name="..."> always holds the rendered HTML, so
- * save/buyer-render/DB are unchanged. Used by the form widget (type:"editorv2") and
- * standalone editors (e.g. the 店铺公告 notice on the settings page).
- *
- * Globals used at runtime: jQuery ($), i18n, layer, ace, CodeMirror, marked,
- * TurndownService, localStorage.
- */
+
 (function (global) {
     let ev2Seq = 0;
 
@@ -25,9 +16,6 @@
             + tb('table', 'fa-table', '表格');
     }
 
-    // Build the editor markup. The hidden textarea is left EMPTY here (register() sets
-    // its value via .val(), which is HTML-injection-safe) — never interpolate stored
-    // HTML into innerHTML.
     function buildHtml(opt) {
         const name = opt.name;
         const ph = opt.placeholder ?? '';
@@ -45,9 +33,6 @@
             + `</div>`;
     }
 
-    // Wire an existing .ev2-editor. rootEl may be the .ev2-editor itself or an ancestor.
-    // opt: { name, uploadUrl, height, value (initial HTML), onChange(html),
-    //        allowHtmlSource (default true), allowRawHtml (default true) }
     function register(rootEl, opt) {
         opt = opt || {};
         let destroyed = false;
@@ -66,7 +51,6 @@
         const uploadUrl = opt.uploadUrl || '/admin/api/upload/send';
         const allowRawHtml = opt.allowRawHtml !== false;
 
-        // --- converters (store stays HTML: markdown is only the authoring layer) ---
         const escapeHtml = (value) => String(value ?? '')
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -227,6 +211,7 @@
         let rid;
         const render = () => {
             if (destroyed) return;
+            if ($editor.attr('data-mode') === 'html') return;
             const src = cm.getValue();
             const html = src.trim() === '' ? '' : md2html(src);
             $textarea.val(html);
@@ -402,6 +387,10 @@
             getHTML: () => {
                 if (destroyed) return $textarea.val();
                 clearTimeout(rid);
+                if (aceEditor) {
+                    $textarea.val(aceEditor.getValue());
+                    return $textarea.val();
+                }
                 render();
                 return $textarea.val();
             },

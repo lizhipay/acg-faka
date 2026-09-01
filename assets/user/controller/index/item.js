@@ -1,5 +1,9 @@
 !function () {
     const _item = getVar("_var_item");
+
+    const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
     let _price = 0, _available = false;
     //抢购结束后付款区被收起，切换SKU重新查库存时不能把它又打开
     let _seckillEnded = false;
@@ -97,7 +101,6 @@
         });
     }
 
-
     function _SwitchRace() {
         const $switchRace = $(`.switch-race`);
 
@@ -156,7 +159,7 @@
             if (_item?.config?.category_wholesale?.hasOwnProperty(sku)) {
                 let body = ``;
                 for (const k in _item.config.category_wholesale[sku]) {
-                    body += `<tr><td>${k}</td><td>${format.currencySymbol()}${_item.config.category_wholesale[sku][k]}</td></tr>`;
+                    body += `<tr><td>${esc(k)}</td><td>${esc(format.currencySymbol())}${esc(_item.config.category_wholesale[sku][k])}</td></tr>`;
                 }
                 $qtyGroup.after(html.replace("[body]", body));
             }
@@ -166,7 +169,7 @@
         if (!util.isEmptyOrNotJson(_item?.config?.wholesale)) {
             let body = ``;
             for (const k in _item.config.wholesale) {
-                body += `<tr><td>${k}</td><td>${format.currencySymbol()}${_item.config.wholesale[k]}</td></tr>`;
+                body += `<tr><td>${esc(k)}</td><td>${esc(format.currencySymbol())}${esc(_item.config.wholesale[k])}</td></tr>`;
             }
             $qtyGroup.after(html.replace("[body]", body));
         }
@@ -183,7 +186,7 @@
                     $itemStock.removeClass("badge-soft-success").addClass("badge-soft-danger").html(`${i18n('已售罄')}`);
                     return;
                 }
-                
+
                 $itemStock.removeClass("badge-soft-danger").addClass('badge-soft-success').html(`${i18n('库存')} ${res.data.stock}`);
                 //抢购结束也会把付款区收起来，那是另一码事——不能因为这个SKU有货就把它又打开，
                 //否则切一下SKU就能给已经结束的秒杀下单
@@ -206,14 +209,13 @@
         });
     }
 
-
     function _SetPayList() {
         const $payList = $(`.pay-list`);
         util.post({
             url: `/user/api/index/pay?itemId=${_item.id}`,
             done: res => {
                 res.data.forEach(item => {
-                    $payList.append(`<a class="pay" data-id="${item.id}"><img src="${item.icon}"><span>${i18n(item.name)}</span></a>`);
+                    $payList.append(`<a class="pay" data-id="${esc(item.id)}"><img src="${esc(item.icon)}"><span>${esc(i18n(item.name))}</span></a>`);
                 });
             },
             loader: false
@@ -247,7 +249,6 @@
         const $OptionalCard = $(`.optional-card`);
         let table;
 
-
         $OptionalCard.click(() => {
             component.popup({
                 submit: (data, index) => {
@@ -258,7 +259,7 @@
                     } else {
                         const draftPremium = selections[0].draft_premium > 0 ? selections[0].draft_premium : _item.draft_premium;
 
-                        $OptionalCard.html(`${draftPremium > 0 ? `<span class="text-primary me-1">« ${format.currencySymbol()}${draftPremium} »</span> ` : ''}${selections[0].draft}`);
+                        $OptionalCard.html(`${draftPremium > 0 ? `<span class="text-primary me-1">« ${esc(format.currencySymbol())}${esc(draftPremium)} »</span> ` : ''}${esc(selections[0].draft)}`);
                         $(`input[name=card_id]`).val(selections[0].id);
                     }
 

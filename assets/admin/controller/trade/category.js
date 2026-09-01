@@ -251,7 +251,11 @@
             field: 'owner', title: '创建者', formatter: (_, __) => mdOwnerCell(_)
         },
         {
-            field: 'name', title: '分类名称'
+            field: 'name', title: '分类名称',
+            formatter: (value, row) => {
+                const ownerId = Number(row?.owner?.id ?? row?.owner ?? 0) || 0;
+                return ownerId === 0 ? String(value ?? '') : escapeHtml(value);
+            }
         }
         , {field: 'sort', title: '排序(越小越前)', sort: true, type: "input", reload: true}
         , {

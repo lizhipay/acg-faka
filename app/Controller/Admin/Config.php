@@ -16,30 +16,21 @@ use Kernel\Exception\ViewException;
 #[Interceptor(ManageSession::class)]
 class Config extends Manage
 {
-
     private array $TOOLBAR = [
         ["name" => '🤡 基本设置', "url" => "/admin/config/index"],
         ["name" => "👹 短信设置", "url" => "/admin/config/sms"],
         ["name" => "👺 邮箱设置", "url" => "/admin/config/email"],
         ["name" => "🛡️ 其他设置", "url" => "/admin/config/other"],
+        ["name" => "🔐 安全设置", "url" => "/admin/config/security"],
     ];
 
-    /**
-     * Config constructor.
-     */
     public function __construct()
     {
         $this->TOOLBAR = array_merge($this->TOOLBAR, (array)hook(\App\Consts\Hook::ADMIN_VIEW_CONFIG_TOOLBAR));
     }
 
-    /**
-     * @return string
-     * @throws ViewException
-     * @throws JSONException
-     */
     public function index(): string
     {
-
         $modes = [
             'REMOTE_ADDR',
             'HTTP_X_REAL_IP',
@@ -67,8 +58,7 @@ class Config extends Manage
 
                 if (isset($appStore[$key])) {
                     $plugin = $appStore[$key];
-                    //图标只有商店缓存里有（本地主题目录不带图），拼上商店域名给前端直接用；
-                    //没缓存到的主题前端会退回占位图标，不会出现裂图
+
                     if (!empty($plugin['icon'])) {
                         $theme['icon'] = \App\Service\App::APP_URL . '/' . ltrim((string)$plugin['icon'], '/');
                     }
@@ -76,8 +66,7 @@ class Config extends Manage
                         $theme['have_update'] = true;
                         $theme['update_content'] = $plugin['update_content'];
                         $theme['update_version'] = $plugin['version'];
-                        //升级接口要 plugin_id + type，缺一个就发不出请求；
-                        //这两个值只有商店缓存里有，前端拿不到别处去取
+
                         $theme['plugin_id'] = $plugin['id'] ?? 0;
                         $theme['plugin_type'] = $plugin['type'] ?? 2;
                     }
@@ -95,17 +84,9 @@ class Config extends Manage
             "themes" => $themes,
             "themes_json" => is_string($themesJson) ? $themesJson : '[]',
             "user_center_mobile_theme" => \App\Model\Config::get("user_center_mobile_theme") ?: "0",
-            "ip_get_mode" => $modes,
-            "ip_mode" => Client::getClientMode(),
-            "trusted_proxy_ips" => Client::getTrustedProxyConfig()
         ]);
     }
 
-    /**
-     * @return string
-     * @throws ViewException
-     * @throws RuntimeException
-     */
     public function sms(): string
     {
         $smsConfig = json_decode(\App\Model\Config::get("sms_config"), true);
@@ -116,11 +97,6 @@ class Config extends Manage
         return $this->render("短信设置", "Config/Sms.html", ["toolbar" => $this->TOOLBAR, "sms" => $smsConfig]);
     }
 
-    /**
-     * @return string
-     * @throws ViewException
-     * @throws RuntimeException
-     */
     public function email(): string
     {
         $emailConfig = json_decode(\App\Model\Config::get("email_config"), true);
@@ -129,10 +105,38 @@ class Config extends Manage
         return $this->render("邮箱设置", "Config/Email.html", ["toolbar" => $this->TOOLBAR, "email" => $emailConfig]);
     }
 
-    /**
-     * @return string
-     * @throws ViewException
-     */
+    public function security(): string
+    {
+        $modes = [
+            'REMOTE_ADDR',
+            'HTTP_X_REAL_IP',
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_CLIENT_IP',
+            'HTTP_X_FORWARDED',
+            'HTTP_X_CLUSTER_CLIENT_IP',
+            'HTTP_FORWARDED_FOR',
+            'HTTP_FORWARDED',
+            'HTTP_CF_CONNECTING_IP'
+        ];
+        for ($i = 0; $i <= 8; $i++) {
+            $ip = Client::getIp($i);
+            $modes[$i] = $modes[$i] . " - " . ($ip ?: "此模式不适用");
+        }
+
+        return $this->render("安全设置", "Config/Security.html", [
+            "toolbar" => $this->TOOLBAR,
+            "ip_get_mode" => $modes,
+            "ip_mode" => Client::getClientMode(),
+            "trusted_proxy_ips" => Client::getTrustedProxyConfig(),
+            "link_domain_auto" => implode('、', \App\Util\LinkDomainGuard::allowList()),
+            "admin_entrance" => (string)\App\Model\Config::get('admin_entrance'),
+            "request_log_key" => \App\Util\RequestLogCrypto::keyB64(),
+            "request_log_summary" => \Kernel\Util\RequestLogger::summary(),
+            "csp_summary" => \App\Util\Csp::summary(),
+            "csp_violations" => \App\Util\Csp::violations(30),
+        ]);
+    }
+
     public function other(): string
     {
         $category = \App\Model\Category::query()->where("status", 1)->where("owner", 0)->get();

@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Service\Bind;
 
-
 use App\Model\Commodity;
 use App\Model\PriceTemplate;
 use App\Util\Http;
@@ -19,18 +18,9 @@ use Kernel\Util\Decimal;
 
 class Shared implements \App\Service\Shared
 {
-
     #[Inject]
     private Client $http;
 
-    /**
-     * @param string $url
-     * @param string $appId
-     * @param string $appKey
-     * @param array $data
-     * @return array
-     * @throws JSONException
-     */
     public function mcyRequest(string $url, string $appId, string $appKey, array $data = []): array
     {
         try {
@@ -41,9 +31,7 @@ class Shared implements \App\Service\Shared
                 ],
                 "form_params" => $data,
                 "timeout" => 30,
-                // A redirect to another host must never receive the signed
-                // request headers. The configured endpoint has to answer
-                // directly; operators can update the saved base URL instead.
+
                 'allow_redirects' => false,
             ]);
 
@@ -63,16 +51,6 @@ class Shared implements \App\Service\Shared
         }
     }
 
-
-    /**
-     * @param string $url
-     * @param string $appId
-     * @param string $appKey
-     * @param array $data
-     * @return array
-     * @throws GuzzleException
-     * @throws JSONException
-     */
     private function post(string $url, string $appId, string $appKey, array $data = []): array
     {
         $data = array_merge($data, ["app_id" => $appId, "app_key" => $appKey]);
@@ -81,9 +59,7 @@ class Shared implements \App\Service\Shared
             $response = Http::make()->post($url, [
                 'form_params' => $data,
                 'timeout' => 30,
-                // app_key is part of this legacy request body. Disabling all
-                // redirects prevents a 307/308 response from forwarding that
-                // body to a different origin.
+
                 'allow_redirects' => false,
             ]);
         } catch (\Exception $e) {
@@ -98,15 +74,6 @@ class Shared implements \App\Service\Shared
         return (array)$result['data'];
     }
 
-    /**
-     * @param string $domain
-     * @param string $appId
-     * @param string $appKey
-     * @param int $type
-     * @return array|null
-     * @throws GuzzleException
-     * @throws JSONException
-     */
     public function connect(string $domain, string $appId, string $appKey, int $type = 0): ?array
     {
         if ($type == 1) {
@@ -118,10 +85,6 @@ class Shared implements \App\Service\Shared
         return $this->post($domain . "/shared/authentication/connect", $appId, $appKey);
     }
 
-    /**
-     * @param array $item
-     * @return array
-     */
     private function createV4Item(array $item): array
     {
         $arr = [
@@ -142,7 +105,7 @@ class Shared implements \App\Service\Shared
             'inventory_hidden' => 0,
             'only_user' => 0,
             'purchase_count' => 0,
-            'minimum' => 0, //最低购买，
+            'minimum' => 0,
             'maximum' => 0
         ];
 
@@ -182,16 +145,8 @@ class Shared implements \App\Service\Shared
         return $arr;
     }
 
-    /**
-     * @param \App\Model\Shared $shared
-     * @return array|null
-     * @throws GuzzleException
-     * @throws JSONException
-     */
     public function items(\App\Model\Shared $shared): ?array
     {
-        //跨币种换算系数在拉取前解析：配置不完整（选了无法自动换算的货币又没填汇率）
-        //要在这里就报错，绝不能把未换算的价格当本站货币放出去
         $factor = SharedCurrency::factor($shared);
 
         if ($shared->type == 1) {
@@ -218,13 +173,6 @@ class Shared implements \App\Service\Shared
         return SharedCurrency::tree((array)$this->post($shared->domain . "/shared/commodity/items", $shared->app_id, $shared->app_key), $factor);
     }
 
-    /**
-     * @param \App\Model\Shared $shared
-     * @param string $code
-     * @return array
-     * @throws GuzzleException
-     * @throws JSONException
-     */
     public function item(\App\Model\Shared $shared, string $code): array
     {
         $factor = SharedCurrency::factor($shared);
@@ -260,8 +208,6 @@ class Shared implements \App\Service\Shared
             "code" => $code
         ]);
 
-        //原生店铺返回的config是INI字符串，统一转成数组与type 1/2保持一致：
-        //下游同步处会把config传给Ini::toConfig(array)，传字符串会直接TypeError
         if (isset($a['config']) && !is_array($a['config'])) {
             $a['config'] = Ini::toArray((string)$a['config']);
         }
@@ -269,20 +215,8 @@ class Shared implements \App\Service\Shared
         return SharedCurrency::item($a, $factor);
     }
 
-
-    /**
-     * @param \App\Model\Shared $shared
-     * @param Commodity $commodity
-     * @param int $cardId
-     * @param int $num
-     * @param string $race
-     * @return bool
-     * @throws GuzzleException
-     * @throws JSONException
-     */
     public function inventoryState(\App\Model\Shared $shared, Commodity $commodity, int $cardId, int $num, string $race): bool
     {
-
         if ($shared->type == 1) {
             $config = Ini::toArray($commodity->config);
             $data = $this->mcyRequest($shared->domain . "/plugin/open-api/sku/state", $shared->app_id, $shared->app_key, [
@@ -302,27 +236,9 @@ class Shared implements \App\Service\Shared
         return true;
     }
 
-    /**
-     * @param \App\Model\Shared $shared
-     * @param Commodity $commodity
-     * @param string $contact
-     * @param int $num
-     * @param int $cardId
-     * @param int $device
-     * @param string $password
-     * @param string $race
-     * @param array|null $sku
-     * @param string|null $widget
-     * @param string $requestNo
-     * @return string
-     * @throws GuzzleException
-     * @throws JSONException
-     * @throws \ReflectionException
-     */
     public function trade(\App\Model\Shared $shared, Commodity $commodity, string $contact, int $num, int $cardId, int $device, string $password, string $race, ?array $sku, ?string $widget, string $requestNo): string
     {
         $wg = (array)json_decode((string)$widget, true);
-
 
         if ($shared->type == 1) {
             $config = Ini::toArray($commodity->config);
@@ -359,42 +275,21 @@ class Shared implements \App\Service\Shared
 
         $trade = $this->post($shared->domain . "/shared/commodity/trade", $shared->app_id, $shared->app_key, $post);
 
-        /**
-         * 更新缓存库存
-         * @var \App\Service\Shop $shop
-         */
         $shop = Di::inst()->make(\App\Service\Shop::class);
         $shop->updateSharedStock($commodity->id, $race, $sku);
 
         return (string)$trade['secret'];
     }
 
-    /**
-     * @param \App\Model\Shared $shared
-     * @param string $code
-     * @param array $map
-     * @return array
-     * @throws GuzzleException
-     * @throws JSONException
-     */
     public function draftCard(\App\Model\Shared $shared, string $code, array $map = []): array
     {
         $card = $this->post($shared->domain . "/shared/commodity/draftCard", $shared->app_id, $shared->app_key, array_merge([
             "code" => $code
         ], $map));
-        //预选卡列表带每张卡的 draft_premium（上游货币），一并换算
+
         return SharedCurrency::draftPremiums((array)$card, SharedCurrency::factor($shared));
     }
 
-
-    /**
-     * @param \App\Model\Shared $shared
-     * @param string $code
-     * @param int $cardId
-     * @return array
-     * @throws GuzzleException
-     * @throws JSONException
-     */
     public function getDraft(\App\Model\Shared $shared, string $code, int $cardId): array
     {
         $draft = $this->post($shared->domain . "/shared/commodity/draft", $shared->app_id, $shared->app_key, [
@@ -404,14 +299,6 @@ class Shared implements \App\Service\Shared
         return SharedCurrency::draftPremiums((array)$draft, SharedCurrency::factor($shared));
     }
 
-    /**
-     * @param \App\Model\Shared $shared
-     * @param Commodity $commodity
-     * @param string $race
-     * @return array
-     * @throws GuzzleException
-     * @throws JSONException
-     */
     public function inventory(\App\Model\Shared $shared, Commodity $commodity, string $race = ""): array
     {
         $factor = SharedCurrency::factor($shared);
@@ -464,16 +351,6 @@ class Shared implements \App\Service\Shared
         return SharedCurrency::item((array)$inventory, $factor);
     }
 
-    /**
-     * @param Commodity $commodity
-     * @param \App\Model\Shared $shared
-     * @param string $code
-     * @param string|null $race
-     * @param array|null $sku
-     * @return string
-     * @throws GuzzleException
-     * @throws JSONException
-     */
     public function getItemStock(Commodity $commodity, \App\Model\Shared $shared, string $code, ?string $race = null, ?array $sku = []): string
     {
         if ($shared->type == 1) {
@@ -495,23 +372,12 @@ class Shared implements \App\Service\Shared
         return $stock['stock'] ?? "0";
     }
 
-    /**
-     * @param Commodity $commodity
-     * @param \App\Model\Shared $shared
-     * @param string $code
-     * @param int $num
-     * @param string|null $race
-     * @param array|null $sku
-     * @param int|null $cardId
-     * @return string|float|int
-     */
     public function getValuation(Commodity $commodity, \App\Model\Shared $shared, string $code, int $num, ?string $race = null, ?array $sku = [], ?int $cardId = 0): string|float|int
     {
-        //汇率配置错误必须抛出去（下面的 catch 会把一切吞成 0，成本为 0 的报价比报错危险得多）
         $factor = SharedCurrency::factor($shared);
         try {
             $config = is_array($commodity->config) ? $commodity->config : Ini::toArray($commodity->config);
-            if ($shared->type == 1) { //V4
+            if ($shared->type == 1) {
                 $data = $this->mcyRequest($shared->domain . "/plugin/open-api/amount", $shared->app_id, $shared->app_key, [
                     'sku_id' => (int)$config['shared_mapping'][$race],
                     "quantity" => $num
@@ -535,8 +401,6 @@ class Shared implements \App\Service\Shared
                 'card_id' => $cardId
             ]);
 
-            //跨站货币守卫：上游会回报自己的币种，和店铺配置的「对方货币」对不上就告警——
-            //说明店铺档案里选错了货币，换算用的是错误汇率
             $remoteCurrency = strtoupper(trim((string)($data['currency_code'] ?? '')));
             $configured = strtoupper(trim((string)($shared->currency ?? ''))) ?: \App\Util\Currency::DEFAULT_CODE;
             if ($remoteCurrency !== '' && $remoteCurrency !== $configured) {
@@ -549,28 +413,18 @@ class Shared implements \App\Service\Shared
         }
     }
 
-
-    /**
-     * @param string $config
-     * @param string $price
-     * @param string $userPrice
-     * @param int $type
-     * @param float $premium
-     * @return array
-     * @throws JSONException
-     */
     public function AdjustmentPrice(string $config, string $price, string $userPrice, int $type, float $premium): array
     {
         $this->assertPlainPremiumType($type);
         $_config = Ini::toArray($config);
-        //race
+
         if (array_key_exists("category", $_config) && is_array($_config['category'])) {
             foreach ($_config['category'] as &$_price) {
                 $_tmp = new Decimal($_price, 2);
                 $_price = $type == 0 ? $_tmp->add($premium)->getAmount() : $_tmp->add((new Decimal($premium, 3))->mul($_price)->getAmount())->getAmount();
             }
         }
-        //sku
+
         if (array_key_exists("sku", $_config) && is_array($_config['sku'])) {
             foreach ($_config['sku'] as &$sku) {
                 foreach ($sku as &$_price) {
@@ -582,7 +436,6 @@ class Shared implements \App\Service\Shared
             }
         }
 
-        //wholesale
         if (array_key_exists("wholesale", $_config) && is_array($_config['wholesale'])) {
             foreach ($_config['wholesale'] as &$_price) {
                 $_tmp = new Decimal($_price, 2);
@@ -590,7 +443,6 @@ class Shared implements \App\Service\Shared
             }
         }
 
-        //category_wholesale
         if (array_key_exists("category_wholesale", $_config) && is_array($_config['category_wholesale'])) {
             foreach ($_config['category_wholesale'] as &$categoryWholesale) {
                 foreach ($categoryWholesale as &$_price) {
@@ -603,28 +455,12 @@ class Shared implements \App\Service\Shared
         $_tmp = new Decimal($price, 2);
         $price = $type == 0 ? $_tmp->add($premium)->getAmount() : $_tmp->add((new Decimal($premium, 3))->mul($price)->getAmount())->getAmount();
 
-
         $_tmp = new Decimal($userPrice, 2);
         $userPrice = $type == 0 ? $_tmp->add($premium)->getAmount() : $_tmp->add((new Decimal($premium, 3))->mul($userPrice)->getAmount())->getAmount();
-
 
         return ["config" => $_config, "price" => $price, "user_price" => $userPrice];
     }
 
-
-    /**
-     * 按加价模板计算接入商品的整套价格。
-     *
-     * 返回结构刻意与 AdjustmentPrice 对齐（config 同样是数组），调用方两种加价模式可以共用同一段代码；
-     * 多出来的 level_price 是模板独有的能力——普通加价没法给每个会员等级单独定价。
-     *
-     * @param PriceTemplate $template
-     * @param string $config
-     * @param string $price
-     * @param string $userPrice
-     * @param string $levelPrice
-     * @return array{config: array, price: string, user_price: string, level_price: string}
-     */
     public function AdjustmentTemplate(PriceTemplate $template, string $config, string $price, string $userPrice, string $levelPrice = ''): array
     {
         $result = $template->forShared($config, $price, $userPrice, $levelPrice);
@@ -636,13 +472,6 @@ class Shared implements \App\Service\Shared
         ];
     }
 
-
-    /**
-     * @param int $type
-     * @param float $premium
-     * @param float|int|string $amount
-     * @return string
-     */
     public function AdjustmentAmount(int $type, float $premium, float|int|string $amount): string
     {
         $this->assertPlainPremiumType($type);
@@ -650,19 +479,6 @@ class Shared implements \App\Service\Shared
         return $type == PriceTemplate::TYPE_FIXED ? $_tmp->add($premium)->getAmount() : $_tmp->add((new Decimal($premium, 3))->mul($amount)->getAmount())->getAmount();
     }
 
-    /**
-     * 这两个方法只会算「固定金额」和「百分比」两种加价。
-     *
-     * 它们原来的写法是 `$type == 0 ? 加固定值 : 加百分比` —— 任何不认识的 type
-     * 都会被当成百分比。加价模板（type=2）的 premium 恒为 0，于是
-     * `价格 + 0 × 价格 = 价格`，加价被静默抹平，商品按进货价卖出去。
-     * 这个 bug 藏了很久才被发现（表现是首页价格来回跳），所以这里改成显式白名单：
-     * 不认识的加价模式当场抛错，让它在第一次调用时就暴露，而不是变成收入损失。
-     *
-     * 模板模式请走 AdjustmentTemplate() 或 AdjustmentExtra()。
-     *
-     * @throws JSONException
-     */
     private function assertPlainPremiumType(int $type): void
     {
         if ($type === PriceTemplate::TYPE_FIXED || $type === PriceTemplate::TYPE_PERCENT) {
@@ -674,11 +490,6 @@ class Shared implements \App\Service\Shared
         throw new JSONException("未知的加价模式({$type})");
     }
 
-
-    /**
-     * 取商品的加价模板。只有加价模式确实是「模板」时才认，
-     * 避免旧数据里残留的 template_id 在其他模式下意外生效。
-     */
     private function resolvePremiumTemplate(Commodity $commodity): ?PriceTemplate
     {
         if ((int)$commodity->shared_premium_type !== PriceTemplate::SHARED_PREMIUM_TYPE) {
@@ -703,7 +514,6 @@ class Shared implements \App\Service\Shared
         }
 
         if ((int)$commodity->shared_premium_type === PriceTemplate::SHARED_PREMIUM_TYPE) {
-            //选了模板却取不到，按原价返回并留下痕迹，绝不用错误的公式硬算
             \Kernel\Util\Log::inst()->error("商品[{$commodity->id}]的加价模板不可用，附加金额未加价");
             return (string)$amount;
         }
@@ -711,12 +521,6 @@ class Shared implements \App\Service\Shared
         return $this->AdjustmentAmount((int)$commodity->shared_premium_type, (float)$commodity->shared_premium, $amount);
     }
 
-    /**
-     * @param Commodity|int $commodity
-     * @return bool
-     * @throws GuzzleException
-     * @throws JSONException
-     */
     public function syncRemoteItem(Commodity|int $commodity): bool
     {
         if (is_int($commodity)) {
@@ -736,12 +540,10 @@ class Shared implements \App\Service\Shared
         $remoteItem = $this->item($shared, $commodity->shared_code);
         $remoteConfig = Ini::toConfig($remoteItem['config'] ?: []);
 
-        //入库时选了加价模板的商品，每次同步都要按模板重算，否则价格会退回"平进平出"
         $template = $this->resolvePremiumTemplate($commodity);
         $usesTemplate = (int)$commodity->shared_premium_type === PriceTemplate::SHARED_PREMIUM_TYPE;
         $priceSyncable = !($usesTemplate && !$template);
         if (!$priceSyncable) {
-            //模板没了：宁可这次不同步价格，也不能退回无加价把售价刷成进货价
             \Kernel\Util\Log::inst()->error("商品[{$commodity->id}]的加价模板不可用，本次跳过价格与配置同步");
         }
 
@@ -764,7 +566,6 @@ class Shared implements \App\Service\Shared
                 );
         }
 
-
         $_config = $remoteItem['config'] ?: [];
 
         if (!empty($_config['sku'])) {
@@ -778,7 +579,7 @@ class Shared implements \App\Service\Shared
         if ($priceSyncable && $commodity->shared_amount_sync === 1) {
             $commodity->price = $base['price'];
             $commodity->user_price = $base['user_price'];
-            //模板还负责各会员等级的价格，同步价格时一并按模板重算
+
             if ($template && ($base['level_price'] ?? '') !== '') {
                 $commodity->level_price = $base['level_price'];
             }
@@ -794,19 +595,17 @@ class Shared implements \App\Service\Shared
                 ? $this->AdjustmentExtra($commodity, $remoteItem['draft_premium'])
                 : 0;
         }
-        $commodity->seckill_status = $remoteItem['seckill_status'];
-        $commodity->seckill_start_time = $remoteItem['seckill_start_time'];
-        $commodity->seckill_end_time = $remoteItem['seckill_end_time'];
         $commodity->widget = is_array($remoteItem['widget']) ? json_encode($remoteItem['widget']) : $remoteItem['widget'];
-        $commodity->minimum = $remoteItem['minimum'];
-        $commodity->maximum = $remoteItem['maximum'];
         $commodity->stock = $remoteItem['stock'];
-        $commodity->contact_type = $remoteItem['contact_type'];
-        //详情页的库存走 shared_stock 缓存，而这份缓存此前只有「本站卖出一单」才会失效——
-        //上游补货或在别处卖光都刷不掉它，商品能一直显示售罄或一直显示有货。
-        //同步本来就是为了让接入商品跟上上游，顺手把它清掉，下次访问详情页重新拉。
+
         $commodity->shared_stock = [];
         $commodity->save();
+
+        //上游同步会改写售价/库存/配置，对下游而言等同于一次商品变更
+        $ebIds = [(int)$commodity->id];
+        $ebAction = 'sync';
+        $ebBefore = null;
+        hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $ebIds, $ebAction, $ebBefore);
 
         return true;
     }

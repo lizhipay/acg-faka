@@ -35,7 +35,7 @@
                         <!--begin::Card body-->
                         <div class="card-body  p-9">
                             <h2 class="admin-mobile-settings-section-title" id="mobile-setting-brand"
-                                data-admin-mobile-description="设置网站 LOGO、请求日志和后台安全入口。">#{t("品牌与安全")}</h2>
+                                data-admin-mobile-description="设置网站 LOGO 与站点标识。安全相关选项已移至「安全设置」。">#{t("品牌")}</h2>
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
@@ -83,60 +83,9 @@
                             <!--end::Input group-->
 
 
-                            <!--begin::Input group-->
-                            <div class="row mb-6">
-                                <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("关闭请求日志(建议开启)")}</label>
-                                <!--begin::Label-->
-                                <!--begin::Label-->
-                                <div class="col-lg-8 d-flex align-items-center">
-                                    <div class="form-check form-check-solid form-switch fv-row">
-                                        <input class="form-check-input w-45px h-30px" type="checkbox"
-                                               name="request_log"
-                                               value="1" #{if $config.request_log== 1} checked #{/if}/>
-                                        <label class="form-check-label"></label>
-                                    </div>
+                            
 
-                                </div>
-                                <!--begin::Hint-->
-                                <div class="form-text text-success fw-bold admin-mobile-settings-request-log-copy">
-                                    #{t("此配置为临时选项，将在下一个版本中移除。当前我们正在对程序进行大幅优化。为便于排查现阶段系统可能出现的问题，本版本将开启请求日志功能，以协助技术人员更快速、准确地定位问题。如您的网站出现异常，请及时联系官方人员，我们将结合相关日志信息为您进行排查与处理。")}
-                                </div>
-                                <details class="admin-mobile-settings-details">
-                                    <summary>
-                                        <span class="material-icons-outlined" aria-hidden="true">info</span>
-                                        <span>
-                                            <strong>#{t("为什么建议开启请求日志？")}</strong>
-                                            <small>#{t("用于协助定位当前版本可能出现的网站异常")}</small>
-                                        </span>
-                                        <span class="material-icons-outlined" aria-hidden="true">expand_more</span>
-                                    </summary>
-                                    <p>#{t("此配置为临时选项，将在下一个版本中移除。当前我们正在对程序进行大幅优化。为便于排查现阶段系统可能出现的问题，本版本将开启请求日志功能，以协助技术人员更快速、准确地定位问题。如您的网站出现异常，请及时联系官方人员，我们将结合相关日志信息为您进行排查与处理。")}</p>
-                                </details>
-                                <!--end::Hint-->
-                                <!--begin::Label-->
-                            </div>
-                            <!--end::Input group-->
-
-                            <!--begin::Input group-->
-                            <div class="row mb-6">
-                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("后台安全入口")}</label>
-                                <div class="col-lg-8 fv-row">
-                                    <input type="password" name="admin_entrance_secret"
-                                           class="form-control form-control-lg form-control-solid"
-                                           autocomplete="new-password" autocapitalize="none" spellcheck="false"
-                                           maxlength="65"
-                                           placeholder="#{t('输入新入口；留空则保留现有入口')}" value=""/>
-                                    <div class="form-text text-danger fw-bold">
-                                        #{t("当前入口不会在页面中显示。输入新值可更换；留空不会关闭现有入口。")}
-                                    </div>
-                                    <label class="form-check form-check-inline form-check-solid mt-3">
-                                        <input class="form-check-input" type="checkbox" name="admin_entrance_clear" value="1">
-                                        <span class="fw-bold ps-2 fs-6 text-danger">#{t("明确关闭后台安全入口")}</span>
-                                    </label>
-                                </div>
-                            </div>
-                            <!--end::Input group-->
+                            
 
                             <h2 class="admin-mobile-settings-section-title" id="mobile-setting-theme"
                                 data-admin-mobile-description="选择 PC、手机及会员中心模板，并配置 IP 获取方式和背景图片。">#{t("模板与网络")}</h2>
@@ -232,42 +181,9 @@
                             <!--end::Input group-->
 
                             <!--end::Input group-->
-                            <!--begin::Input group-->
-                            <div class="row mb-6">
-                                <!--begin::Label-->
-                                <label class="col-lg-4 col-form-label required fw-bold fs-6">#{t("CDN获取IP方式")}</label>
-                                <!--end::Label-->
-                                <!--begin::Col-->
-                                <div class="col-lg-6 fv-row">
-                                    <!--begin::Input-->
-                                    <select name="ip_get_mode" class="form-select form-select-solid form-select-lg"
-                                            data-control="select2" data-hide-search="true">
-                                        #{foreach $ip_get_mode as $index => $mode}
-                                            <option value="#{$index|escape:'html'}" #{if $index == $ip_mode} selected #{/if}>#{$mode|escape:'html'}</option>
-                                        #{/foreach}
-                                    </select>
-                                    <!--end::Input-->
-                                </div>
-                                <!--end::Col-->
-                            </div>
-                            <!--end::Input group-->
+                            
 
-                            <!--begin::Input group-->
-                            <div class="row mb-6">
-                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("受信代理 IP")}</label>
-                                <div class="col-lg-6 fv-row">
-                                    <textarea name="trusted_proxy_ips"
-                                              class="form-control form-control-lg form-control-solid"
-                                              rows="4"
-                                              maxlength="8192"
-                                              autocapitalize="none" spellcheck="false"
-                                              placeholder="#{t('每行一个代理 IP 或 CIDR，例如：10.0.0.0/8')}">#{$trusted_proxy_ips|escape:'html'}</textarea>
-                                    <div class="form-text text-danger fw-bold">
-                                        #{t("只有直连来源 REMOTE_ADDR 命中此清单时，系统才会读取上方选择的 CDN 请求头；留空时一律使用 REMOTE_ADDR。请勿填写客户端网段或 0.0.0.0/0。")}
-                                    </div>
-                                </div>
-                            </div>
-                            <!--end::Input group-->
+                            
 
                             <!--begin::Input group-->
                             <div class="row mb-6">
@@ -293,7 +209,7 @@
                                     <button type="button" class="btn btn-light background-upload"
                                             data-admin-mobile-action-placement="inline"
                                             aria-label="#{t('上传 PC 网站背景图片')}" title="#{t('上传 PC 网站背景图片')}"
-                                            onclick="document.getElementsByClassName('background-upload')[0].click();">
+                                            data-acg-proxy=".background-upload">
                                         <i class="fa-duotone fa-regular fa-cloud-arrow-up"></i> #{t("上传图片")}
                                     </button>
                                     <!--end::Input-->
@@ -323,7 +239,7 @@
                                     <button type="button" class="btn btn-light background-mb-upload"
                                             data-admin-mobile-action-placement="inline"
                                             aria-label="#{t('上传手机网站背景图片')}" title="#{t('上传手机网站背景图片')}"
-                                            onclick="document.getElementsByClassName('background-mobile-upload')[0].click();">
+                                            data-acg-proxy=".background-mobile-upload">
                                         <i class="fa-duotone fa-regular fa-cloud-arrow-up"></i> #{t("上传图片")}
                                     </button>
                                     <!--end::Input-->

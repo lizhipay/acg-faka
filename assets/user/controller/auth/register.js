@@ -14,7 +14,7 @@
         message.prompt({
             title: '人机验证',
             width: 420,
-            html: `<img src="/user/captcha/image?action=phoneRegisterCaptcha" onclick="this.src='/user/captcha/image?action=phoneRegisterCaptcha&t=' + new Date().getTime()"  class="prompt-image-code" alt="${i18n('更换验证码')}">`,
+            html: `<img src="/user/captcha/image?action=phoneRegisterCaptcha" data-acg-refresh="/user/captcha/image?action=phoneRegisterCaptcha" class="prompt-image-code" alt="${i18n('更换验证码')}">`,
             inputAttributes: {
                 onpaste: 'return false',
                 oncopy: 'return false'
@@ -41,7 +41,7 @@
         message.prompt({
             title: '人机验证',
             width: 420,
-            html: `<img src="/user/captcha/image?action=emailRegisterCaptcha" onclick="this.src='/user/captcha/image?action=emailRegisterCaptcha&t=' + new Date().getTime()"  class="prompt-image-code" alt="${i18n('更换验证码')}">`,
+            html: `<img src="/user/captcha/image?action=emailRegisterCaptcha" data-acg-refresh="/user/captcha/image?action=emailRegisterCaptcha" class="prompt-image-code" alt="${i18n('更换验证码')}">`,
             inputAttributes: {
                 onpaste: 'return false',
                 oncopy: 'return false'

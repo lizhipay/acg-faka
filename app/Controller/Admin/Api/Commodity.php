@@ -584,9 +584,11 @@ class Commodity extends Manage
         if (array_key_exists('config', $map)) {
             $save->addForceMap('config', $map['config'] ?? '');
         }
+        $newCode = '';
         if ($id === 0) {
+            $newCode = strtoupper(Str::generateRandStr(16));
             $save->addForceMap('owner', 0);
-            $save->addForceMap('code', strtoupper(Str::generateRandStr(16)));
+            $save->addForceMap('code', $newCode);
         } else {
             $save->disableAddable();
         }
@@ -625,6 +627,14 @@ class Commodity extends Manage
         }
 
         ManageLog::log($this->getManage(), "[修改/新增]商品");
+        //Query::save() 只返回 bool，新建路径拿不到自增 id，靠刚生成的 code 回查（code 有索引）
+        $changedId = $id > 0 ? $id : (int)\App\Model\Commodity::query()->where('code', $newCode)->value('id');
+        if ($changedId > 0) {
+            //hook() 的变参是按引用接收的，字面量和表达式都传不进去，必须先落成变量
+            $ebIds = [$changedId];
+            $ebAction = $id > 0 ? 'update' : 'create';
+            hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $ebIds, $ebAction, $current);
+        }
         return $this->json(200, '（＾∀＾）保存成功');
     }
 
@@ -663,6 +673,13 @@ class Commodity extends Manage
             //与 deleteImpact 同理：事务已回滚，把真实原因透出去并落日志（issue #837）
             \Kernel\Util\Log::inst()->error("[商品删除] " . $e->getFile() . ":" . $e->getLine() . " " . $e->getMessage());
             throw new JSONException("商品删除失败，操作已回滚：" . mb_substr($e->getMessage(), 0, 160));
+        }
+
+        $deletedIds = array_values(array_map('intval', (array)($impact['commodity_ids'] ?? [])));
+        if ($deletedIds !== []) {
+            $ebAction = 'delete';
+            $ebBefore = null;
+            hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $deletedIds, $ebAction, $ebBefore);
         }
 
         $deletedCount = $impact['deletable_count'];
@@ -725,6 +742,11 @@ class Commodity extends Manage
         }
         $status = (int)$rawStatus;
         $count = \App\Model\Commodity::query()->whereIn('id', $list)->update(['status' => $status]);
+        if ($count > 0) {
+            $ebAction = 'status';
+            $ebBefore = null;
+            hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $list, $ebAction, $ebBefore);
+        }
         ManageLog::log($this->getManage(), "[批量更新]商品启停状态，共计：{$count}");
         return $this->json(200, $count > 0 ? '商品状态已经更新' : '商品状态无需更新', ['count' => $count]);
     }
@@ -786,6 +808,13 @@ class Commodity extends Manage
                 'shared_updated_count' => $sharedCount,
             ];
         });
+
+        //广播用请求的 id 集合即可：订阅方是拿快照算差量的，多给的 id 算不出变化，不会产生事件
+        if ((int)($result['updated_count'] ?? 0) > 0) {
+            $ebAction = 'batch';
+            $ebBefore = null;
+            hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $list, $ebAction, $ebBefore);
+        }
 
         ManageLog::log(
             $this->getManage(),

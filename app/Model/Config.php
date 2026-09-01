@@ -34,6 +34,12 @@ class Config extends Model
     protected $casts = ['id' => 'integer'];
 
     private const CACHE_FILE = BASE_PATH . "/runtime/config";
+
+    /**
+     * 这些键只留在数据库里：不进 runtime/config（那份缓存的密钥由 config/database.php
+     * 的内容推导，拿到网站目录就能解开），也不进 list() 交给模板的 $config。
+     */
+    private const NEVER_CACHE = ['request_log_key'];
     private const CONTEXT_SNAPSHOT = '_DB_CONFIG_SNAPSHOT';
     private const CONTEXT_EXCLUSIVE_LOCK = '_DB_CONFIG_EXCLUSIVE_LOCK';
 
@@ -200,13 +206,19 @@ class Config extends Model
 
 
     /**
-     * 为了方便，在这里直接静态get
+     * 只读缓存，命中不了就返回 null，全程不碰数据库。
+     * 给那些在连接建立之前、甚至安装完成之前就要取值的调用方用。
+     *
      * @param string $key
-     * @return string
+     * @return string|null
      * @throws RuntimeException
      */
-    public static function get(string $key): string
+    public static function cached(string $key): ?string
     {
+        if (in_array($key, self::NEVER_CACHE, true)) {
+            return null;
+        }
+
         $cacheKey = "_DB_CONFIG_" . $key;
         $cache = Context::get($cacheKey);
 
@@ -225,6 +237,26 @@ class Config extends Model
         if (array_key_exists($key, $configs)) {
             Context::set($cacheKey, $configs[$key]);
             return (string)$configs[$key];
+        }
+
+        return null;
+    }
+
+    /**
+     * 为了方便，在这里直接静态get
+     * @param string $key
+     * @return string
+     * @throws RuntimeException
+     */
+    public static function get(string $key): string
+    {
+        if (in_array($key, self::NEVER_CACHE, true)) {
+            return self::secret($key);
+        }
+
+        $cached = self::cached($key);
+        if ($cached !== null) {
+            return $cached;
         }
 
         // The request snapshot did not contain this key. Recheck both cache and
@@ -259,6 +291,36 @@ class Config extends Model
     /**
      * @return array
      */
+    /**
+     * 直接读数据库，不经过任何缓存。
+     *
+     * @param string $key
+     * @return string
+     */
+    public static function secret(string $key): string
+    {
+        $cfg = self::query()->where('key', $key)->first();
+        return $cfg ? (string)$cfg->value : '';
+    }
+
+    /**
+     * 直接写数据库，不重建 runtime/config，值不会落到磁盘上。
+     *
+     * @param string $key
+     * @param string $value
+     * @return bool
+     */
+    public static function putSecret(string $key, string $value): bool
+    {
+        $cfg = self::query()->where('key', $key)->first();
+        if (!$cfg) {
+            $cfg = new self();
+            $cfg->key = $key;
+        }
+        $cfg->value = $value;
+        return $cfg->save() === true;
+    }
+
     public static function list(): array
     {
         $cfg = Config::query()->get();
@@ -267,6 +329,10 @@ class Config extends Model
             $list[$item->key] = $item->value;
         }
         //货币键缺省回填：老站升级后没保存过货币设置时，模板 $config.currency_* 也要能直接用
+        foreach (self::NEVER_CACHE as $secret) {
+            unset($list[$secret]);
+        }
+
         $list += [
             'currency_code' => \App\Util\Currency::DEFAULT_CODE,
             'currency_symbol' => \App\Util\Currency::DEFAULT_SYMBOL,

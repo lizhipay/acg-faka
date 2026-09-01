@@ -172,7 +172,34 @@ class Card extends User
             }
         }
 
+        if ($success > 0) {
+            $ebIds = [$commodityId];
+            $ebReason = 'import';
+            hook(\App\Consts\Hook::CARD_CHANGE_AFTER, $ebIds, $ebReason);
+        }
         return $this->json(200, "共计导入:{$count}张卡密，成功:{$success}张，失败：{$error}张");
+    }
+
+    /**
+     * 卡密 id -> 受影响的商品 id（去重）。删除路径必须在删之前调用。
+     *
+     * @param int[]|string[] $cardIds
+     * @return int[]
+     */
+    private static function commodityIdsOfCards(array $cardIds): array
+    {
+        $cardIds = array_values(array_filter(array_map('intval', $cardIds), static fn(int $v): bool => $v > 0));
+        if ($cardIds === []) {
+            return [];
+        }
+        return \App\Model\Card::query()
+            ->whereIn('id', $cardIds)
+            ->distinct()
+            ->pluck('commodity_id')
+            ->map(static fn($id): int => (int)$id)
+            ->filter(static fn(int $id): bool => $id > 0)
+            ->values()
+            ->all();
     }
 
     /**
@@ -197,6 +224,9 @@ class Card extends User
         if (!$save) {
             throw new JSONException("保存失败");
         }
+        $ebIds = self::commodityIdsOfCards([(int)$map['id']]);
+        $ebReason = 'edit';
+        hook(\App\Consts\Hook::CARD_CHANGE_AFTER, $ebIds, $ebReason);
         return $this->json(200, '（＾∀＾）保存成功');
     }
 
@@ -208,6 +238,9 @@ class Card extends User
     {
         $list = (array)$_POST['list'];
         \App\Model\Card::query()->whereIn('id', $list)->where("owner", $this->getUser()->id)->whereRaw("status!=1")->update(['status' => 2]);
+        $ebIds = self::commodityIdsOfCards($list);
+        $ebReason = 'lock';
+        hook(\App\Consts\Hook::CARD_CHANGE_AFTER, $ebIds, $ebReason);
         return $this->json(200, '锁定成功');
     }
 
@@ -218,6 +251,9 @@ class Card extends User
     {
         $list = (array)$_POST['list'];
         \App\Model\Card::query()->whereIn('id', $list)->where("owner", $this->getUser()->id)->whereRaw("status!=1")->update(['status' => 0]);
+        $ebIds = self::commodityIdsOfCards($list);
+        $ebReason = 'unlock';
+        hook(\App\Consts\Hook::CARD_CHANGE_AFTER, $ebIds, $ebReason);
         return $this->json(200, '解锁成功');
     }
 
@@ -227,7 +263,11 @@ class Card extends User
     public function del(): array
     {
         $list = (array)$_POST['list'];
+        //删完就查不到了，商品 id 提前取
+        $affected = self::commodityIdsOfCards($list);
         \App\Model\Card::query()->whereIn('id', $list)->where("owner", $this->getUser()->id)->delete();
+        $ebReason = 'delete';
+        hook(\App\Consts\Hook::CARD_CHANGE_AFTER, $affected, $ebReason);
         return $this->json(200, '（＾∀＾）移除成功');
     }
 
@@ -239,6 +279,9 @@ class Card extends User
     {
         $list = (array)$_POST['list'];
         \App\Model\Card::query()->whereIn('id', $list)->where("owner", $this->getUser()->id)->whereRaw("status!=1")->update(['status' => 1, 'purchase_time' => Date::current()]);
+        $ebIds = self::commodityIdsOfCards($list);
+        $ebReason = 'sell';
+        hook(\App\Consts\Hook::CARD_CHANGE_AFTER, $ebIds, $ebReason);
         return $this->json(200, '操作成功');
     }
 

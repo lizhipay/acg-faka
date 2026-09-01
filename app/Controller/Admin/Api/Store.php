@@ -1243,6 +1243,12 @@ class Store extends Manage
                         throw new JSONException('商品保存失败');
                     }
                 });
+                if ((int)$commodity->id > 0) {
+                    $ebIds = [(int)$commodity->id];
+                    $ebAction = 'create';
+                    $ebBefore = null;
+                    hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $ebIds, $ebAction, $ebBefore);
+                }
                 $success++;
                 $results[] = [
                     'success' => true,

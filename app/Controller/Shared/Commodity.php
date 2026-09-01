@@ -70,7 +70,13 @@ class Commodity extends Shared
                 }
 
                 if ($child['delivery_way'] == 0) { //stock
-                    $list[$key]['children'][$index]['stock'] = Card::query()->where("status", 0)->where("commodity_id", $child['id'])->count();
+                    //套娃商品（本站自己也是从别处对接来的）卡池恒为空，按卡数算会把整批
+                    //有货商品报成 0 库存，下游只能全部判缺货下架。真实读数在 shared_stock
+                    //缓存里（getItemStock 每次现拉后回写）。这里只读缓存不现拉：items()
+                    //是整站商品的批量出口，逐个现拉会把一次请求放大成几百次上游 HTTP。
+                    $list[$key]['children'][$index]['stock'] = $commodity->shared_id
+                        ? $this->sharedStockSnapshot($commodity)
+                        : Card::query()->where("status", 0)->where("commodity_id", $child['id'])->count();
                 }
 
                 unset($list[$key]['children'][$index]['leave_message'], $list[$key]['children'][$index]['delivery_message']);
@@ -80,6 +86,28 @@ class Commodity extends Shared
         }
 
         return array_values($list);
+    }
+
+    /**
+     * 对接商品的库存快照——批量列表的尽力而为读数，两个来源取**较大**的一个：
+     *   - `shared_stock` 缓存：按 md5(id+种类+sku) 分档存，多档取最大（求和会把
+     *     「全规格」和「单规格」两种读数叠成假数）。只在成交后失效、没有 TTL，
+     *     所以可能陈旧；
+     *   - `stock` 列：syncRemoteItem（详情页每次访问）和自动货源接入（每轮同步）
+     *     都会把上游读数写在这里，多数时候反而更新。
+     * 两边都可能是过期的 0，谁也不能单独当准；取大是因为**少报的代价远大于多报**——
+     * 少报会让下游整批判缺货自动下架，多报则在真正下单时被 inventoryState 逐级
+     * 打到最终上游拦下。要精确读数的场合下游该走 stock / inventory 接口，那两个是现拉。
+     */
+    private function sharedStockSnapshot(\App\Model\Commodity $commodity): int
+    {
+        $max = (int)$commodity->stock;
+        foreach ((array)$commodity->shared_stock as $value) {
+            if (is_numeric($value) && (int)$value > $max) {
+                $max = (int)$value;
+            }
+        }
+        return $max;
     }
 
     /**

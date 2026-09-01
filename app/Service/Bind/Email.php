@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Service\Bind;
 
-
 use App\Consts\Hook;
 use App\Model\Config as CFG;
 use Kernel\Exception\JSONException;
@@ -14,26 +13,13 @@ class Email implements \App\Service\Email
 {
     private const BCC_BATCH_SIZE = 50;
 
-    /**
-     * 最近一次失败原因（SMTP 报错原文）。此前所有 catch 都是空的、PHPMailer 的
-     * ErrorInfo 从未被读取，站长只能看到一句"发送失败"，无从排障。
-     * @var string
-     */
     private string $lastError = '';
 
-    /**
-     * @inheritDoc
-     */
     public function getLastError(): string
     {
         return $this->lastError;
     }
 
-    /**
-     * 记录失败原因。只保留第一条：后续的连锁报错（如连接已断开）会盖住根因。
-     * @param string $message
-     * @return void
-     */
     private function recordError(string $message): void
     {
         $message = trim($message);
@@ -42,38 +28,17 @@ class Email implements \App\Service\Email
         }
     }
 
-    /**
-     * @param string $email
-     * @param string $title
-     * @param string $content
-     * @return bool
-     */
     public function send(string $email, string $title, string $content): bool
     {
         $result = $this->sendRecipients([$email], $title, $content, false);
         return $result['sent'] === 1;
     }
 
-    /**
-     * Send the same message to multiple recipients in privacy-safe BCC batches.
-     *
-     * @param array $emails
-     * @param string $title
-     * @param string $content
-     * @return array{sent: int, failed: int}
-     */
     public function sendMany(array $emails, string $title, string $content): array
     {
         return $this->sendRecipients($emails, $title, $content, true);
     }
 
-    /**
-     * @param array $emails
-     * @param string $title
-     * @param string $content
-     * @param bool $useBcc
-     * @return array{sent: int, failed: int}
-     */
     private function sendRecipients(array $emails, string $title, string $content, bool $useBcc): array
     {
         $result = ['sent' => 0, 'failed' => 0];
@@ -196,7 +161,6 @@ class Email implements \App\Service\Email
                             }
                         }
                     } catch (\Throwable $e) {
-                        //PHPMailer 默认把 SMTP 故障抛成异常，ErrorInfo 里是更具体的原文
                         $this->recordError((string)($mail->ErrorInfo ?: '') ?: $e->getMessage());
                         $sent = false;
                     }
@@ -215,10 +179,6 @@ class Email implements \App\Service\Email
         return $result;
     }
 
-    /**
-     * @param array<int, array{config: array, email: string, address: string, title: string, content: string}> $recipients
-     * @return array<int, array<int, array{config: array, email: string, address: string, title: string, content: string}>>
-     */
     private function recipientBatches(array $recipients): array
     {
         $batches = [];
@@ -244,11 +204,6 @@ class Email implements \App\Service\Email
         return $batches;
     }
 
-    /**
-     * @param array{sent: int, failed: int} $result
-     * @param array<int, array{config: array, email: string, address: string, title: string, content: string}> $batch
-     * @param array<string, bool> $deliveryResults
-     */
     private function recordBatchResult(
         array &$result,
         array $batch,
@@ -296,9 +251,6 @@ class Email implements \App\Service\Email
         }
     }
 
-    /**
-     * @return array
-     */
     private function emailConfig(): array
     {
         try {
@@ -309,12 +261,6 @@ class Email implements \App\Service\Email
         }
     }
 
-    /**
-     * @param array $config
-     * @param string $title
-     * @param string $content
-     * @return PHPMailer
-     */
     private function createMailer(array $config, string $title, string $content): PHPMailer
     {
         foreach (['smtp', 'port', 'username', 'password'] as $key) {
@@ -350,7 +296,12 @@ class Email implements \App\Service\Email
         $mail->Subject = $title;
         $mail->MsgHTML($content);
 
-        if (!$mail->SetFrom($mail->Username, (string)CFG::get("shop_name"))) {
+        $from = isset($config['from']) && is_scalar($config['from']) ? trim((string)$config['from']) : '';
+        if ($from === '') {
+            $from = $mail->Username;
+        }
+
+        if (!$mail->SetFrom($from, (string)CFG::get("shop_name"))) {
             throw new \RuntimeException('Email sender configuration is invalid.');
         }
 
@@ -360,7 +311,7 @@ class Email implements \App\Service\Email
     private function mailerSignature(array $config, string $title, string $content): string
     {
         $signatureConfig = [];
-        foreach (['smtp', 'port', 'username', 'password', 'secure'] as $key) {
+        foreach (['smtp', 'port', 'username', 'from', 'password', 'secure'] as $key) {
             $value = $config[$key] ?? null;
             $signatureConfig[$key] = is_scalar($value)
                 ? gettype($value) . ':' . (string)$value
@@ -379,21 +330,16 @@ class Email implements \App\Service\Email
         try {
             $mail->clearAllRecipients();
         } catch (\Throwable $e) {
-            // Recipient cleanup must not prevent the SMTP connection from closing.
         }
 
         try {
             $mail->smtpClose();
         } catch (\Throwable $e) {
-            // Closing a failed SMTP connection must not change delivery results.
         } finally {
             $mail = null;
         }
     }
 
-    /**
-     * @return bool|null
-     */
     private function runHook(
         int $type,
         array &$config,
@@ -420,20 +366,11 @@ class Email implements \App\Service\Email
         }
     }
 
-    /**
-     * @param array{sent: int, failed: int} $result
-     */
     private function recordResult(array &$result, bool $success): void
     {
         $result[$success ? 'sent' : 'failed']++;
     }
 
-    /**
-     * @param string $email
-     * @param int $type
-     * @return void
-     * @throws JSONException
-     */
     public function sendCaptcha(string $email, int $type): void
     {
         $capthca = mt_rand(100000, 999999);
@@ -446,7 +383,6 @@ class Email implements \App\Service\Email
 
         if (Session::has($key)) {
             if (Session::get($key)['time'] + 60 > time()) {
-               // throw new JSONException("验证码发送频繁，请稍后再试");
             }
         }
 
@@ -471,13 +407,6 @@ class Email implements \App\Service\Email
         Session::set($key, ["time" => time(), "code" => $capthca]);
     }
 
-
-    /**
-     * @param string $email
-     * @param int $type
-     * @param int $code
-     * @return bool
-     */
     public function checkCaptcha(string $email, int $type, int $code): bool
     {
         $key = match ($type) {
@@ -502,10 +431,6 @@ class Email implements \App\Service\Email
         return true;
     }
 
-    /**
-     * @param string $email
-     * @param int $type
-     */
     public function destroyCaptcha(string $email, int $type): void
     {
         $key = match ($type) {

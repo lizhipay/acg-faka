@@ -5,7 +5,7 @@
         message.prompt({
             title: '人机验证',
             width: 420,
-            html: `<img src="/user/captcha/image?action=phoneBindNew" onclick="this.src='/user/captcha/image?action=phoneBindNew&t=' + new Date().getTime()"  class="prompt-image-code" alt="${i18n('更换验证码')}">`,
+            html: `<img src="/user/captcha/image?action=phoneBindNew" data-acg-refresh="/user/captcha/image?action=phoneBindNew" class="prompt-image-code" alt="${i18n('更换验证码')}">`,
             inputAttributes: {
                 onpaste: 'return false',
                 oncopy: 'return false'

@@ -123,7 +123,7 @@
                             <span class="tk-inst-halo" aria-hidden="true"></span>
                             <span class="tk-inst-ico">
                                 <i class="fa-duotone fa-regular ${escapeHtml(opt.glyph || 'fa-cloud-arrow-down')}" aria-hidden="true"></i>
-                                ${iconUrl ? `<img src="${escapeHtml(iconUrl)}" alt="" onerror="this.remove()">` : ''}
+                                ${iconUrl ? `<img src="${escapeHtml(iconUrl)}" alt="" data-acg-fallback="remove">` : ''}
                             </span>
                             <span class="tk-inst-badge" aria-hidden="true"><i class="fa-duotone fa-regular fa-check"></i></span>
                         </div>

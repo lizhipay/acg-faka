@@ -19,9 +19,12 @@ class Search {
         this.click = click;
         this.isDestroyed = false;
         this.layuiEvents = [];
-        elm.append('<form class="layui-form-item layui-form table-search ' + this.unique + '" onsubmit="return false;"></form>');
+        elm.append('<form class="layui-form-item layui-form table-search ' + this.unique + '"></form>');
         let instance = $("." + this.unique);
         this.$instance = instance;
+        //原来写的是内联 onsubmit="return false"。CSP 强制模式会拦截内联事件属性，
+        //拦掉之后回车会走浏览器原生提交、整页刷新，所以改成显式监听。
+        instance.on('submit', function (e) { e.preventDefault(); return false; });
         opt.forEach(item => {
             item.title = i18n(item.title);
             this.item[item.name] = item;

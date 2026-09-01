@@ -1,12 +1,23 @@
 !function () {
     const table = new Table("/user/api/purchaseRecord/data", "#bill-table");
 
+    const esc = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    const subTime = (value) => {
+        const text = String(value ?? '').trim();
+        if (text === '' || text === '-' || text.startsWith('0000-00-00')) {
+            return '';
+        }
+        return `<div class="md-pair__row"><span class="md-pair__v md-pair__v--muted" style="font-size:11px">${esc(text)}</span></div>`;
+    };
+
     // 查看卡密弹窗(对标后台 trade/order.js:查看卡密):代码块 + 复制 + 下载
     const openSecret = (map) => {
         const secret = map.secret ?? '';
-        const escaped = String(secret).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        //发货留言与游客查询页(index/query.js)保持一致，商家富文本原样渲染
-        const leaveMessage = map?.commodity?.leave_message ? `<div style="margin-top:12px">${map.commodity.leave_message}</div>` : '';
+        const escaped2 = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const escaped = escaped2(secret);
+        const leaveMessage = map?.commodity?.leave_message ? `<div style="margin-top:12px">${escaped2(map.commodity.leave_message)}</div>` : '';
         layer.open({
             type: 1,
             title: `${util.icon("fa-duotone fa-regular fa-eye")} ${i18n('查看卡密')}`,
@@ -33,7 +44,12 @@
     };
 
     table.setColumns([
-        {field: 'trade_no', title: '订单号'}
+        {
+            field: 'trade_no', title: '订单号', formatter: (value, row) => {
+                const no = esc(value) || '-';
+                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__v">${no}</span></div>${subTime(row?.create_time)}</div>`;
+            }
+        }
         , {field: 'commodity', title: '商品', formatter: format.item}
         , {
             field: 'sku', title: '类别/SKU', formatter: (_, __) => {
@@ -49,10 +65,21 @@
                 return `<div class="md-pair">${rows}</div>`;
             }
         }
-        , {field: 'card_num', title: '数量'}
-        , {field: 'amount', title: '金额', formatter: _ => format.money(_, "green")}
+        , {
+            field: 'amount', title: '数量/金额', formatter: (value, row) => {
+                const num = Number(row?.card_num ?? 0) || 0;
+                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">${i18n('数量')}</span><span class="md-pair__v">${num}</span></div>`
+                    + `<div class="md-pair__row"><span class="md-pair__k">${i18n('金额')}</span><span class="md-pair__v">${format.money(value, "green")}</span></div></div>`;
+            }
+        }
         , {field: 'pay', title: '支付方式', formatter: format.pay}
-        , {field: 'status', title: '付款状态', dict: "_order_status"}
+        , {
+            field: 'status', title: '付款状态', formatter: (value, row) => {
+                const badge = _Dict.result("_order_status", value) ?? esc(value);
+                const paid = Number(value) === 1 ? subTime(row?.pay_time) : '';
+                return `<div class="md-pair"><div class="md-pair__row">${badge}</div>${paid}</div>`;
+            }
+        }
         , {field: 'delivery_status', title: '发货状态', dict: "_order_delivery_status"}
         , {
             field: 'secret', title: '操作', type: "button", buttons: [

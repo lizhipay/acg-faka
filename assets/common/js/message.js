@@ -1,4 +1,10 @@
 const message = new class Message {
+    escape(text) {
+        return String(text ?? '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[c]);
+    }
+
     log(text, type = 'success') {
         toastr.options = {
            // "closeButton": true,
@@ -18,18 +24,20 @@ const message = new class Message {
             "hideMethod": "fadeOut"
         };
 
+        const safe = this.escape(i18n(text));
+
         switch (type) {
             case "success":
-                toastr.success(i18n(text));
+                toastr.success(safe);
                 break;
             case "error":
-                toastr.error(i18n(text));
+                toastr.error(safe);
                 break;
             case "info":
-                toastr.info(i18n(text));
+                toastr.info(safe);
                 break;
             case "warning":
-                toastr.warning(i18n(text));
+                toastr.warning(safe);
                 break;
         }
     }
@@ -50,13 +58,6 @@ const message = new class Message {
         this.log(text, 'info');
     }
 
-    /**
-     * @param text 正文（支持 HTML）
-     * @param done 确认回调
-     * @param title 标题
-     * @param confirm 确认按钮文案
-     * @param options 透传给 Swal 的额外配置，如 {width: '760px'}：正文里带表格时默认宽度不够用
-     */
     ask(text, done = null, title = "您确定吗？", confirm = "确定", options = {}) {
         Swal.fire({
             title: i18n(title),
@@ -73,9 +74,6 @@ const message = new class Message {
         }));
     }
 
-    /**
-     * @param opt
-     */
     prompt(opt) {
         let options = {
             input: "text",
@@ -109,7 +107,6 @@ const message = new class Message {
             }
         });
     }
-
 
     alert(text, type = 'success') {
         text = i18n(text);

@@ -147,6 +147,24 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("发件人邮箱")}</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-8 fv-row">
+                                    <input type="text" name="from"
+                                           inputmode="email" autocapitalize="none" spellcheck="false"
+                                           class="form-control form-control-lg form-control-solid"
+                                           placeholder="#{t('留空则与用户名相同')}" value="#{$email.from|default:''|escape:'html'}"/>
+                                    <div class="form-text">#{t("部分SMTP服务商的登录用户名与发件邮箱不同，此处填写实际的发件邮箱地址。")}</div>
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
                                 <label class="col-lg-4 col-form-label required fw-bold fs-6">#{t("授权码")}</label>
                                 <!--end::Label-->
                                 <!--begin::Col-->

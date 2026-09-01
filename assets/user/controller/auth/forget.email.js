@@ -17,7 +17,7 @@
         message.prompt({
             title: '人机验证',
             width: 420,
-            html: `<img src="/user/captcha/image?action=emailForgetCaptcha" onclick="this.src='/user/captcha/image?action=emailForgetCaptcha&t=' + new Date().getTime()"  class="prompt-image-code" alt="${i18n('更换验证码')}">`,
+            html: `<img src="/user/captcha/image?action=emailForgetCaptcha" data-acg-refresh="/user/captcha/image?action=emailForgetCaptcha" class="prompt-image-code" alt="${i18n('更换验证码')}">`,
             inputAttributes: {
                 onpaste: 'return false',
                 oncopy: 'return false'

@@ -29,6 +29,7 @@
                         <button class="btn btn-sm btn-light-primary btn-app-export me-3"><i class="fa-duotone fa-regular fa-down-to-line"></i>
                             #{t("导出筛选卡密")}
                         </button>
+                        #{hook(\App\Consts\Hook::ADMIN_VIEW_CARD_TOOLBAR)}
                     </div>
                 </div>
                 <!--end::Header-->
@@ -46,4 +47,5 @@
 </div>
 <!--end::Content-->
 #{ready("/assets/admin/controller/trade/card.js")}
+#{hook(\App\Consts\Hook::ADMIN_VIEW_CARD_FOOTER)}
 #{include file="../Footer.html"}

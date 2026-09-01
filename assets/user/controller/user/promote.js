@@ -1,5 +1,5 @@
 !function () {
-    //推广链接:复制 + 二维码
+
     $('.clipboard').click(function () {
         util.copyTextToClipboard($(this).data("text"), () => {
             message.success("推广链接已复制");
@@ -11,7 +11,6 @@
         $qr.qrcode({width: 108, height: 108, text: $qr.data("url")});
     }
 
-    //商品预计收益表
     const table = new Table("/user/api/promote/data", "#promote-table");
     table.setColumns([
         {
@@ -25,7 +24,8 @@
                 if (!_ || _ <= 0) {
                     return '-';
                 }
-                return `<a href="javascript:;" class="sku-detail" data-id="${__.id}" data-race="${__.race || ''}">${_} ${i18n('组')} <i class="fa-duotone fa-regular fa-circle-info"></i></a>`;
+                const escAttr = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                return `<a href="javascript:;" class="sku-detail" data-id="${Number(__.id)}" data-race="${escAttr(__.race || '')}">${Number(_)} ${i18n('组')} <i class="fa-duotone fa-regular fa-circle-info"></i></a>`;
             }
         }
         , {

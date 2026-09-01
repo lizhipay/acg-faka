@@ -509,7 +509,7 @@
                                         <option value="recommend" #{if $config.default_category == "recommend"} selected #{/if}>#{t("推荐")}
                                         </option>
                                         #{foreach $category as $cate}
-                                            <option value="#{$cate.id|escape:'html'}" #{if $config.default_category == $cate.id} selected #{/if}>#{$cate.name|escape:'html'}</option>
+                                            <option value="#{$cate.id|escape:'html'}" #{if $config.default_category == $cate.id} selected #{/if}>#{$cate.name|strip_tags|strip|escape:'html'}</option>
                                         #{/foreach}
                                     </select>
                                     <!--end::Input-->

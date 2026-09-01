@@ -3,34 +3,43 @@ declare (strict_types=1);
 
 namespace Kernel\Waf;
 
+use App\Util\LinkDomainGuard;
 use Kernel\Component\Make;
 
 class URISchemeFilter extends \HTMLPurifier_URIFilter
 {
-
     use Make;
 
-    /**
-     * @var string
-     */
     public $name = 'URISchemeFilter';
 
-
-    /**
-     * @var array|string[]
-     */
     public array $whitelist = [
     ];
 
-    /**
-     * @param $uri
-     * @param $config
-     * @param $context
-     * @return bool
-     */
+    private static array $blocked = [];
+
+    public static function reset(): void
+    {
+        self::$blocked = [];
+    }
+
+    public static function blocked(): ?string
+    {
+        return self::$blocked[0] ?? null;
+    }
+
     public function filter(&$uri, $config, $context): bool
     {
-        //不过滤所有网址
-        return true;
+        $host = isset($uri->host) ? strtolower(trim((string)$uri->host)) : '';
+
+        if ($host === '') {
+            return true;
+        }
+
+        if (!LinkDomainGuard::enabled() || LinkDomainGuard::allows($host)) {
+            return true;
+        }
+
+        self::$blocked[] = $host;
+        return false;
     }
 }

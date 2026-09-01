@@ -1,0 +1,313 @@
+#{include file="../Header.html"}
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    #{include file="../Toolbar.html"}
+    <div class="post d-flex flex-column-fluid" id="kt_post">
+        <div id="kt_content_container" class="container-xxl md-settings">
+            <div class="card mb-5 mb-xl-10">
+                <div class="card-header border-0 cursor-pointer">
+                    <div class="card-title m-0">
+                        <h3 class="fw-bolder m-0">#{t("安全设置")}</h3>
+                    </div>
+                </div>
+                <div id="kt_account_profile_details" class="collapse show">
+                    <form id="data-form" class="form" data-admin-mobile-settings-page="security">
+                    <!--
+    后台 md-settings 把每个 .row 当卡片做双栏流式排布，于是「CDN 取 IP」「清理日志」这类
+    块会被甩到右栏，和它们逻辑上所属的上一项断开。安全设置是逐项阅读的页面，顺序即语义，
+    这里只在本页改回单栏，不动全局样式。
+-->
+                    <style>
+                        #data-form[data-admin-mobile-settings-page="security"] .card-body > .row {
+                            grid-column: 1 / -1;
+                        }
+
+                        /*
+                          这套后台把 ::placeholder 设成全透明——它用 col-form-label 渲染浮动标签占住框内，
+                          placeholder 只当占位撑高。下面两个字段用的是普通标题、没有浮动标签，
+                          空框里就什么都不显示了，这里把它们的 placeholder 恢复可见。
+                        */
+                        /*
+                          本页这几个小标题是普通 div，不是主题会适配的 label，
+                          字色落在了浅色模式的默认值上——暗色下就成了黑底黑字。
+                          改用会随主题翻转的 --bs-body-color。
+                        */
+                        #data-form[data-admin-mobile-settings-page="security"] .security-heading {
+                            color: var(--bs-body-color);
+                        }
+
+                        #admin-entrance::placeholder,
+                        #request-log-key::placeholder {
+                            color: var(--bs-gray-500, #99a1b7) !important;
+                            opacity: 1;
+                        }
+                    </style>
+                        <nav class="admin-mobile-settings-nav" aria-label="#{t('安全设置分区')}">
+                            <a href="#mobile-security-entrance">#{t("入口与日志")}</a>
+                            <a href="#mobile-security-ip">#{t("来源 IP")}</a>
+                            <a href="#mobile-security-link">#{t("外链域名")}</a>
+                            <a href="#mobile-security-csp">#{t("CSP 观察")}</a>
+                        </nav>
+                        <div class="card-body p-9">
+
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-security-entrance"
+                                data-admin-mobile-description="后台访问入口与请求日志开关。">#{t("入口与日志")}</h2>
+<!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("开启请求日志")}</label>
+                                <!--begin::Label-->
+                                <!--begin::Label-->
+                                <div class="col-lg-8 fv-row">
+                                    <div class="form-check form-check-solid form-switch">
+                                        <input class="form-check-input w-45px h-30px" type="checkbox"
+                                               name="request_log_enabled"
+                                               value="1" #{if $config.request_log_enabled != '0'} checked #{/if}/>
+                                        <label class="form-check-label"></label>
+                                    </div>
+
+                                    <div class="security-heading fw-bold fs-6 mt-6 mb-3">#{t("日志加密密钥")}</div>
+                                    <div class="position-relative">
+                                        <input type="password" name="request_log_key" id="request-log-key"
+                                               class="form-control form-control-lg form-control-solid"
+                                               style="padding-right:46px;"
+                                               autocomplete="off" autocapitalize="none" spellcheck="false"
+                                               value="#{$request_log_key|escape:'html'}"/>
+                                        <span id="request-log-key-toggle" role="button" tabindex="0"
+                                              class="material-icons-outlined position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
+                                              style="cursor:pointer;user-select:none;font-size:20px;"
+                                              aria-label="#{t('显示/隐藏密钥')}">visibility</span>
+                                    </div>
+                                    <div class="form-text text-danger fw-bold">
+                                        #{t("换掉密钥后，用旧密钥加密的历史日志将永久无法读取。命令行查看：php kernel/Console/RequestLogDecrypt.php 日志文件")}
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Input group-->
+
+
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <div class="col-lg-12 fv-row">
+                                    <div class="security-heading fw-bold fs-6 mb-3">#{t("清理日志")}</div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-sm btn-light-primary request-log-clear" data-days="30">#{t("清理 30 天前")}</button>
+                                        <button type="button" class="btn btn-sm btn-light-primary request-log-clear" data-days="15">#{t("清理 15 天前")}</button>
+                                        <button type="button" class="btn btn-sm btn-light-primary request-log-clear" data-days="7">#{t("清理 7 天前")}</button>
+                                        <button type="button" class="btn btn-sm btn-light-danger request-log-clear" data-days="0">#{t("清空全部")}</button>
+                                    </div>
+                                    <div class="form-text fw-bold">
+                                        #{if $request_log_summary.files > 0}
+                                            #{t("当前")} #{$request_log_summary.files} #{t("个文件")}，#{($request_log_summary.bytes/1048576)|string_format:"%.1f"} MB，#{$request_log_summary.oldest|escape:'html'} ~ #{$request_log_summary.newest|escape:'html'}
+                                        #{else}
+                                            #{t("当前没有日志文件")}
+                                        #{/if}
+                                    </div>
+                                    <div class="form-text text-danger fw-bold">
+                                        #{t("删除不可恢复。当天的日志一律保留，不会被任何一项清掉。")}
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <div class="col-lg-12 fv-row">
+                                    <div class="security-heading fw-bold fs-6 mb-3">#{t("后台安全入口")}</div>
+                                    <div class="position-relative">
+                                        <input type="password" name="admin_entrance_secret" id="admin-entrance"
+                                               class="form-control form-control-lg form-control-solid"
+                                               style="padding-right:46px;"
+                                               autocomplete="new-password" autocapitalize="none" spellcheck="false"
+                                               maxlength="65"
+                                               placeholder="#{t('未设置，后台地址当前不受保护')}"
+                                               value="#{$admin_entrance|escape:'html'}"/>
+                                        <span id="admin-entrance-toggle" role="button" tabindex="0"
+                                              class="material-icons-outlined position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
+                                              style="cursor:pointer;user-select:none;font-size:20px;"
+                                              aria-label="#{t('显示/隐藏入口')}">visibility</span>
+                                    </div>
+                                    <div class="form-text fw-bold">
+                                        #{t("填写后，后台需从该地址进入，直接访问 /admin 会被拒绝。仅支持一段字母、数字、下划线和短横线。")}
+                                    </div>
+                                    <div class="form-text text-danger fw-bold">
+                                        #{t("清空并保存即关闭该入口，后台地址将重新对外可见。")}
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-security-ip"
+                                data-admin-mobile-description="站点如何识别访客真实 IP。填错会让限流、封禁、风控全部失准。">#{t("来源 IP")}</h2>
+<!--begin::Input group-->
+                            <div class="row mb-6">
+                                <!--begin::Label-->
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">#{t("CDN获取IP方式")}</label>
+                                <!--end::Label-->
+                                <!--begin::Col-->
+                                <div class="col-lg-6 fv-row">
+                                    <!--begin::Input-->
+                                    <select name="ip_get_mode" class="form-select form-select-solid form-select-lg"
+                                            data-control="select2" data-hide-search="true">
+                                        #{foreach $ip_get_mode as $index => $mode}
+                                            <option value="#{$index|escape:'html'}" #{if $index == $ip_mode} selected #{/if}>#{$mode|escape:'html'}</option>
+                                        #{/foreach}
+                                    </select>
+                                    <!--end::Input-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Input group-->
+
+<!--begin::Input group-->
+                            <div class="row mb-6">
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("受信代理 IP")}</label>
+                                <div class="col-lg-6 fv-row">
+                                    <textarea name="trusted_proxy_ips"
+                                              class="form-control form-control-lg form-control-solid"
+                                              rows="4"
+                                              maxlength="8192"
+                                              autocapitalize="none" spellcheck="false"
+                                              placeholder="#{t('每行一个代理 IP 或 CIDR，例如：10.0.0.0/8')}">#{$trusted_proxy_ips|escape:'html'}</textarea>
+                                    <div class="form-text text-danger fw-bold">
+                                        #{t("只有直连来源 REMOTE_ADDR 命中此清单时，系统才会读取上方选择的 CDN 请求头；留空时一律使用 REMOTE_ADDR。请勿填写客户端网段或 0.0.0.0/0。")}
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Input group-->
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-security-link"
+                                data-admin-mobile-description="限制提交内容里可以出现的外部域名。">#{t("外链域名白名单")}</h2>
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("外链域名过滤(建议开启)")}</label>
+                                <div class="col-lg-8 d-flex align-items-center">
+                                    <div class="form-check form-check-solid form-switch fv-row">
+                                        <input class="form-check-input w-45px h-30px" type="checkbox"
+                                               name="link_domain_filter"
+                                               value="1" #{if $config.link_domain_filter != '0'} checked #{/if}/>
+                                        <label class="form-check-label"></label>
+                                    </div>
+                                </div>
+                                <div class="form-text text-success fw-bold">
+                                    #{t("前台提交的内容里出现白名单以外的域名时，整条提交会被拒绝，并告知是哪个域名。用于拦截钓鱼链接与外站 iframe。")}
+                                </div>
+                                <details class="admin-mobile-settings-details">
+                                    <summary>
+                                        <span class="material-icons-outlined" aria-hidden="true">info</span>
+                                        <span>
+                                            <strong>#{t("它会影响后台吗？")}</strong>
+                                            <small>#{t("不会，只作用于前台提交")}</small>
+                                        </span>
+                                        <span class="material-icons-outlined" aria-hidden="true">expand_more</span>
+                                    </summary>
+                                    <p>#{t("站长本来就要填支付网关、图床、上游货源这些外部地址，对后台做域名限制只会把自己锁在设置页外面，所以这条规则只挂在前台提交路径上。")}</p>
+                                </details>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <label class="col-lg-4 col-form-label fw-bold fs-6">#{t("允许的域名")}</label>
+                                <div class="col-lg-8 fv-row">
+                                    <textarea name="link_domain_whitelist"
+                                              class="form-control form-control-lg form-control-solid"
+                                              rows="6"
+                                              maxlength="8192"
+                                              autocapitalize="none" spellcheck="false"
+                                              placeholder="#{t('每行一个域名，例如：example.com')}">#{$config.link_domain_whitelist|escape:'html'}</textarea>
+                                    <div class="form-text fw-bold">
+                                        #{t("写父域名即放行其全部子域，边界卡在点上，evil-qq.com 不会被 qq.com 误放。可以直接粘贴整条网址，系统只取域名部分。")}
+                                    </div>
+                                    <div class="form-text text-success fw-bold">
+                                        #{t("以下本站域名已自动放行，无需填写：")}#{$link_domain_auto|escape:'html'}
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <h2 class="admin-mobile-settings-section-title" id="mobile-security-csp"
+                                data-admin-mobile-description="浏览器层的兜底防护，净化器漏了也依然拦得住。">#{t("内容安全策略 CSP")}</h2>
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <label class="col-lg-4 col-form-label required fw-bold fs-6">#{t("CSP安全执行模式")}</label>
+                                <div class="col-lg-8 fv-row">
+                                    <select name="csp_mode" class="form-select form-select-solid form-select-lg"
+                                            data-control="select2" data-hide-search="true">
+                                        <option value="enforce" #{if $config.csp_mode != 'report' && $config.csp_mode != 'off'} selected #{/if}>#{t("强制拦截（推荐）")}</option>
+                                        <option value="report" #{if $config.csp_mode == 'report'} selected #{/if}>#{t("仅观察（只上报，不拦截）")}</option>
+                                        <option value="off" #{if $config.csp_mode == 'off'} selected #{/if}>#{t("关闭")}</option>
+                                    </select>
+                                    <div class="form-text text-danger fw-bold">
+                                        #{t("换用第三方主题或插件后若出现按钮失灵、弹窗打不开，先改成「仅观察」即可立即恢复，再看下方统计定位是哪段脚本。")}
+                                    </div>
+                                    <details class="admin-mobile-settings-details">
+                                        <summary>
+                                            <span class="material-icons-outlined" aria-hidden="true">info</span>
+                                            <span>
+                                                <strong>#{t("CSP 能防什么？")}</strong>
+                                                <small>#{t("净化器漏了也依然拦得住")}</small>
+                                            </span>
+                                            <span class="material-icons-outlined" aria-hidden="true">expand_more</span>
+                                        </summary>
+                                        <p>#{t("其他所有防护都是「不让危险内容产生」，一旦某处漏掉就直接是漏洞。CSP 是浏览器层的兜底：即使页面上真的出现了注入的脚本，没有授权它也不会执行。")}</p>
+                                    </details>
+                                </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <div class="col-lg-12 fv-row">
+                                    <div class="security-heading fw-bold fs-5 mb-4">#{t("违规统计")}</div>
+                                    #{if $csp_summary.total > 0}
+                                        <div class="form-text fw-bold mb-3">
+                                            #{t("共")} #{$csp_summary.total} #{t("次违规，归并为")} #{$csp_summary.groups} #{t("类")}
+                                            <button type="button" class="btn btn-sm btn-light-danger ms-3" id="csp-clear">#{t("清空统计")}</button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-row-bordered table-row-gray-200 align-middle gs-0 gy-2">
+                                                <thead>
+                                                <tr class="fw-bold text-muted">
+                                                    <th>#{t("指令")}</th>
+                                                    <th>#{t("被拦对象")}</th>
+                                                    <th>#{t("来源")}</th>
+                                                    <th class="text-end">#{t("次数")}</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                #{foreach $csp_violations as $v}
+                                                    <tr>
+                                                        <td><span class="badge badge-light-warning">#{$v.directive|escape:'html'}</span></td>
+                                                        <td class="text-muted" style="word-break:break-all;max-width:280px;">#{$v.blocked|escape:'html'}</td>
+                                                        <td class="text-muted" style="word-break:break-all;max-width:280px;">#{$v.source|escape:'html'}#{if $v.line} : #{$v.line|escape:'html'}#{/if}</td>
+                                                        <td class="text-end fw-bold">#{$v.count}</td>
+                                                    </tr>
+                                                #{/foreach}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    #{else}
+                                        <div class="form-text fw-bold">
+                                            #{t("暂无违规记录。开关打开后浏览几个页面，这里会列出「若切成强制模式会被拦下的东西」。")}
+                                        </div>
+                                    #{/if}
+                                </div>
+                            </div>
+                            <!--end::Input group-->
+
+                        </div>
+                        <div class="card-footer d-flex justify-content-end py-6 px-9">
+                            <button type="submit" class="btn btn-primary" id="submit">#{t("保存安全设置")}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--end::Content-->
+#{include file="../Footer.html"}
+#{ready("/assets/admin/controller/config/security.js")}

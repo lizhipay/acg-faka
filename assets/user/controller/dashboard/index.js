@@ -1,4 +1,15 @@
 !function () {
+    const esc = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    const subTime = (value) => {
+        const text = String(value ?? '').trim();
+        if (text === '' || text === '-' || text.startsWith('0000-00-00')) {
+            return '';
+        }
+        return `<div class="md-pair__row"><span class="md-pair__v md-pair__v--muted" style="font-size:11px">${esc(text)}</span></div>`;
+    };
+
     // 查看卡密弹窗(复用共享 .md-secret,与 purchase.record.js / 后台 trade/order.js 同源)
     const openSecret = (secret, trade, leave) => {
         secret = secret ?? '';
@@ -35,7 +46,12 @@
     const table = new Table("/user/api/purchaseRecord/data", "#recent-buy-table");
 
     table.setColumns([
-        {field: 'trade_no', title: '订单号'}
+        {
+            field: 'trade_no', title: '订单号', formatter: (value, row) => {
+                const no = esc(value) || '-';
+                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__v">${no}</span></div>${subTime(row?.create_time)}</div>`;
+            }
+        }
         , {field: 'commodity', title: '商品', formatter: format.item}
         , {
             field: 'sku', title: '类别/SKU', formatter: (_, __) => {
@@ -51,10 +67,21 @@
                 return `<div class="md-pair">${rows}</div>`;
             }
         }
-        , {field: 'card_num', title: '数量'}
-        , {field: 'amount', title: '金额', formatter: _ => format.money(_, "green")}
+        , {
+            field: 'amount', title: '数量/金额', formatter: (value, row) => {
+                const num = Number(row?.card_num ?? 0) || 0;
+                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">${i18n('数量')}</span><span class="md-pair__v">${num}</span></div>`
+                    + `<div class="md-pair__row"><span class="md-pair__k">${i18n('金额')}</span><span class="md-pair__v">${format.money(value, "green")}</span></div></div>`;
+            }
+        }
         , {field: 'pay', title: '支付方式', formatter: format.pay}
-        , {field: 'status', title: '付款状态', dict: "_order_status"}
+        , {
+            field: 'status', title: '付款状态', formatter: (value, row) => {
+                const badge = _Dict.result("_order_status", value) ?? esc(value);
+                const paid = Number(value) === 1 ? subTime(row?.pay_time) : '';
+                return `<div class="md-pair"><div class="md-pair__row">${badge}</div>${paid}</div>`;
+            }
+        }
         , {field: 'delivery_status', title: '发货状态', dict: "_order_delivery_status"}
         , {
             field: 'secret', title: '操作', type: "button", buttons: [

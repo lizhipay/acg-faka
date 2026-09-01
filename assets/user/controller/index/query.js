@@ -1,4 +1,8 @@
 !function () {
+    const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+
     function _QueryOrders(keywords) {
         util.post({
             url: "/user/api/index/query",
@@ -28,7 +32,6 @@
             }
         });
     }
-
 
     // 显示加载状态
     function _ShowLoading() {
@@ -80,12 +83,12 @@
         let sku = ``, cardContent = ``;
 
         if (order.race) {
-            sku += `<span class="goods-sku a-badge a-badge-success">${i18n('商品类型')}: ${i18n(order.race)}</span>`;
+            sku += `<span class="goods-sku a-badge a-badge-success">${i18n('商品类型')}: ${esc(i18n(order.race))}</span>`;
         }
 
         if (!util.isEmptyOrNotJson(order?.sku)) {
             for (const skuKey in order?.sku) {
-                sku += `<span class="goods-sku a-badge a-badge-primary">${i18n(skuKey)}: ${i18n(order?.sku[skuKey])}</span>`;
+                sku += `<span class="goods-sku a-badge a-badge-primary">${esc(i18n(skuKey))}: ${esc(i18n(order?.sku[skuKey]))}</span>`;
             }
         }
 
@@ -111,7 +114,7 @@
         </div>
       </div>`;
             } else {
-                cardContent = `<div class="card-content-no-password"><div class="card-display">${order.secret}</div></div>${order?.commodity?.leave_message ? `<div class="mt-3">${order?.commodity?.leave_message}</div>` : ""}`;
+                cardContent = `<div class="card-content-no-password"><div class="card-display">${esc(order.secret)}</div></div>${order?.commodity?.leave_message ? `<div class="mt-3">${esc(order?.commodity?.leave_message)}</div>` : ""}`;
             }
 
             cardContent = `<div class="card-section">
@@ -135,7 +138,7 @@
           <div class="order-no">#<span class="order-no-text">${order.trade_no}</span></div>
           <div class="order-time">${i18n('下单时间：')}<span class="order-time-text">${order.create_time}</span></div>
           <div class="payment-time">${i18n('付款时间：')}<span class="payment-time-text">${order.pay_time ?? "-"}</span></div>
-          <div class="payment-dst">${i18n('支付方式：')}<span class="payment-method"><img src="${order?.pay?.icon}" alt="${i18n('支付方式')}" class="payment-icon"><span class="payment-name">${order?.pay?.name}</span></span></div>
+          <div class="payment-dst">${i18n('支付方式：')}<span class="payment-method"><img src="${esc(order?.pay?.icon)}" alt="${i18n('支付方式')}" class="payment-icon"><span class="payment-name">${esc(order?.pay?.name)}</span></span></div>
         </div>
       </div>
       <div class="order-right">
@@ -143,7 +146,7 @@
           <span class="amount-label">${i18n('订单金额')}</span>
           <span class="amount-value">${format.currencySymbol()}<span class="amount-number">${order.amount}</span></span>
         </div>
-       
+
       </div>
     </div>
 
@@ -157,7 +160,7 @@
         <div class="goods-meta">
           ${sku}
         </div>
-       
+
       </div>
     </div>
 
@@ -198,8 +201,8 @@
 
     function _ShowCardContent(tradeNo, content, leaveMessage = null) {
         $(`.card-content-${tradeNo}`).html(`<div class="card-content">
-          <div class="card-display">${content}</div>
-        </div>${leaveMessage ? `<div class="mt-3">${leaveMessage}</div>` : ""}`).show();
+          <div class="card-display">${esc(content)}</div>
+        </div>${leaveMessage ? `<div class="mt-3">${esc(leaveMessage)}</div>` : ""}`).show();
     }
 
     $(document).off('click', '.view-card-btn').on('click', '.view-card-btn', function () {
@@ -238,7 +241,6 @@
         });
     });
 
-
     $('.order-query-form').on('submit', function (e) {
         e.preventDefault();
 
@@ -251,11 +253,9 @@
             return;
         }
 
-
         _ShowLoading();
         _QueryOrders(keywords);
     });
-
 
     if (/^\d{18}$/.test(util.getParam("tradeNo"))) {
         $('.btn-search-query').click();

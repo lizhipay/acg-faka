@@ -412,6 +412,11 @@ class Card extends Manage
         }
 
 
+        if ($success > 0) {
+            $ebIds = [$commodityId];
+            $ebReason = 'import';
+            hook(\App\Consts\Hook::CARD_CHANGE_AFTER, $ebIds, $ebReason);
+        }
         ManageLog::log($this->getManage(), "[导入卡密]共计导入:{$count}张卡密，成功:{$success}张，失败：{$error}张");
         return $this->json(200, "共计导入:{$count}张卡密，成功:{$success}张，失败：{$error}张");
     }
@@ -470,6 +475,9 @@ class Card extends Manage
         if (!$card->save()) {
             throw new JSONException('保存失败');
         }
+        $ebIds = [(int)$card->commodity_id];
+        $ebReason = 'edit';
+        hook(\App\Consts\Hook::CARD_CHANGE_AFTER, $ebIds, $ebReason);
         ManageLog::log($this->getManage(), "[修改卡密]编辑了卡密信息");
         return $this->json(200, '（＾∀＾）保存成功');
     }
@@ -484,6 +492,11 @@ class Card extends Manage
             throw new JSONException('请至少选择一张卡密');
         }
         $count = \App\Model\Card::query()->whereIn('id', $list)->where('status', 0)->update(['status' => 2]);
+        if ($count > 0) {
+            $ebIds = self::commodityIdsOfCards($list);
+            $ebReason = 'lock';
+            hook(\App\Consts\Hook::CARD_CHANGE_AFTER, $ebIds, $ebReason);
+        }
         ManageLog::log($this->getManage(), "[锁定卡密]批量锁定卡密，共计：{$count}");
         return $this->json(200, $count > 0 ? '锁定成功' : '没有可锁定的卡密', ['count' => $count]);
     }
@@ -498,6 +511,11 @@ class Card extends Manage
             throw new JSONException('请至少选择一张卡密');
         }
         $count = \App\Model\Card::query()->whereIn('id', $list)->where('status', 2)->update(['status' => 0]);
+        if ($count > 0) {
+            $ebIds = self::commodityIdsOfCards($list);
+            $ebReason = 'unlock';
+            hook(\App\Consts\Hook::CARD_CHANGE_AFTER, $ebIds, $ebReason);
+        }
         ManageLog::log($this->getManage(), "[解锁卡密]批量解锁卡密，共计：{$count}");
         return $this->json(200, $count > 0 ? '解锁成功' : '没有可解锁的卡密', ['count' => $count]);
     }
@@ -528,8 +546,37 @@ class Card extends Manage
                 'purchase_time' => Date::current(),
             ]);
         });
+        if ($count > 0) {
+            $ebIds = self::commodityIdsOfCards($list);
+            $ebReason = 'sell';
+            hook(\App\Consts\Hook::CARD_CHANGE_AFTER, $ebIds, $ebReason);
+        }
         ManageLog::log($this->getManage(), "[出售卡密]手动标记已出售，共计：{$count}");
         return $this->json(200, '操作成功', ['count' => $count]);
+    }
+
+    /**
+     * 卡密 id -> 受影响的商品 id（去重）。
+     *
+     * 供 CARD_CHANGE_AFTER 钩子取参用：订阅方关心的是哪个商品的库存动了，
+     * 卡密 id 对它没有意义。删除路径必须在事务之前调用，否则行已经没了。
+     *
+     * @param int[] $cardIds
+     * @return int[]
+     */
+    private static function commodityIdsOfCards(array $cardIds): array
+    {
+        if ($cardIds === []) {
+            return [];
+        }
+        return \App\Model\Card::query()
+            ->whereIn('id', $cardIds)
+            ->distinct()
+            ->pluck('commodity_id')
+            ->map(static fn($id): int => (int)$id)
+            ->filter(static fn(int $id): bool => $id > 0)
+            ->values()
+            ->all();
     }
 
     /**
@@ -539,6 +586,8 @@ class Card extends Manage
     public function del(): array
     {
         $requestedIds = $this->cardIds($_POST['list'] ?? []);
+        //卡密行在事务里就没了，受影响的商品 id 必须提前取
+        $affectedCommodityIds = self::commodityIdsOfCards($requestedIds);
         $impact = DB::transaction(function () use ($requestedIds): array {
             $impact = $this->cardDeleteImpact($requestedIds, true);
             if (count($requestedIds) === 1 && $impact['blocked_count'] > 0) {
@@ -568,6 +617,10 @@ class Card extends Manage
         });
 
         $deletedCount = $impact['deleted_count'];
+        if ($deletedCount > 0 && $affectedCommodityIds !== []) {
+            $ebReason = 'delete';
+            hook(\App\Consts\Hook::CARD_CHANGE_AFTER, $affectedCommodityIds, $ebReason);
+        }
         $skippedCount = $impact['blocked_count'];
         $operation = count($requestedIds) > 1 ? '批量删除' : '删除';
         ManageLog::log(

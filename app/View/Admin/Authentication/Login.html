@@ -111,7 +111,7 @@
                         </svg>
                     </span>
                     <img id="ay-captcha-img" class="ay-captcha" src="/user/captcha/image?action=adminLogin"
-                         onclick="this.src='/user/captcha/image?action=adminLogin&t='+Date.now()"
+                         data-acg-refresh="/user/captcha/image?action=adminLogin"
                          title="#{t('看不清？点我刷新')}" alt="#{t('验证码')}">
                 </div>
                 #{/if}
@@ -129,7 +129,7 @@
 
                 <div class="ay-row">
                     <label class="ay-check"><input type="checkbox" id="ay-remember" name="remember" value="1">#{t("保持登录(365天)")}</label>
-                    <a class="ay-link" href="javascript:void(0)" onclick="message.info('查看官方文档重置密码方法');">#{t("忘记密码？")}</a>
+                    <a class="ay-link" href="javascript:void(0)" data-acg-action="message.info" data-acg-args='["查看官方文档重置密码方法"]'>#{t("忘记密码？")}</a>
                 </div>
 
                 <!--start::HOOK-->

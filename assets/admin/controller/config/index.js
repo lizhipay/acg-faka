@@ -232,7 +232,7 @@
         const themeIcon = (theme, name) => {
             if (theme && theme.icon) {
                 return `<img class="md-theme-opt__icon" src="${escapeHtml(theme.icon)}" alt="" loading="lazy"`
-                    + ` onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'md-theme-opt__icon md-theme-opt__icon--ph',textContent:this.dataset.ph||'#'}))"`
+                    + ` data-acg-fallback="placeholder" data-acg-ph-class="md-theme-opt__icon md-theme-opt__icon--ph"`
                     + ` data-ph="${escapeHtml(String(name || '#').trim().charAt(0))}">`;
             }
             return `<span class="md-theme-opt__icon md-theme-opt__icon--ph">${escapeHtml(String(name || '#').trim().charAt(0))}</span>`;

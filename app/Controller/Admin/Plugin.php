@@ -8,6 +8,7 @@ use App\Controller\Base\View\Manage;
 use App\Interceptor\ManageSession;
 use App\Service\App;
 use App\Util\File;
+use App\Util\Html;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
 use Kernel\Exception\NotFoundException;
@@ -155,15 +156,23 @@ HTML;
         $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP
             | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE;
 
+        // 这几个值是拼进 <script> 里的 JS 字面量，必须用 Html 包一层绕开 ViewSafe 的 HTML 转义。
+        // 不包的话 `"README.md"` 会被转成 `&quot;README.md&quot;`，整个 window.$docsify = {...}
+        // 变成语法错误静默失败，docsify 退回自己的默认值（basePath 空），页面永远显示
+        // 「404 - Not found」——所有插件的文档页都打不开，根因就在这里。
+        // 安全性不受影响：上面的 json_encode 已经带了 JSON_HEX_TAG（防 </script> 逃逸）与
+        // HEX_AMP/APOS/QUOT，那才是内联脚本该用的编码，外面再套 HTML 转义反而把它废掉。
+        $js = static fn(mixed $value): Html => new Html((string)json_encode($value, $jsonFlags));
+
         return $this->render("通用插件", "Config/Wiki.html", [
             'pluginName' => $pluginNameHtml,
-            'pluginKeyJson' => json_encode($plugin, $jsonFlags),
+            'pluginKeyJson' => $js($plugin),
             // docsify 会把 name 拼进 HTML；这里传入实体编码后的文本，避免插件元数据形成标签或属性。
-            'pluginNameHtmlJson' => json_encode($pluginNameHtml, $jsonFlags),
-            'basePathJson' => json_encode($staticBasePath, $jsonFlags),
-            'iconJson' => json_encode($icon, $jsonFlags),
-            'homepageJson' => json_encode($readmePath, $jsonFlags),
-            'sidebarJson' => json_encode($sidebarPath, $jsonFlags),
+            'pluginNameHtmlJson' => $js($pluginNameHtml),
+            'basePathJson' => $js($staticBasePath),
+            'iconJson' => $js($icon),
+            'homepageJson' => $js($readmePath),
+            'sidebarJson' => $js($sidebarPath),
         ]);
     }
 

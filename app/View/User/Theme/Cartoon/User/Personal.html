@@ -12,7 +12,7 @@
                         <div class="form-body">
                             <input type="file" class="avatar-input" style="display:none;">
                             <input type="text" name="avatar" style="display:none;" value="#{$user.avatar}">
-                            <img class="avatar-img uc-avatar-edit" onclick="document.getElementsByClassName('avatar-input')[0].click()" src="#{$user.avatar}" alt="#{t('点击修改')}">
+                            <img class="avatar-img uc-avatar-edit" data-acg-proxy=".avatar-input" src="#{$user.avatar}" alt="#{t('点击修改')}">
                         </div>
                     </div>
                     <div>
@@ -47,9 +47,9 @@
                             <input type="file" class="wechat-input" style="display:none;">
                             <input type="text" name="wechat" style="display:none;" value="">
                             #{if $user.wechat == ''}
-                            <i class="layui-icon wx_qrcode_temp" onclick="document.getElementsByClassName('wechat-input')[0].click()">&#xe681;</i>
+                            <i class="layui-icon wx_qrcode_temp" data-acg-proxy=".wechat-input">&#xe681;</i>
                             #{else}
-                            <div class="wx_qrcode" onclick="document.getElementsByClassName('wechat-input')[0].click()"></div>
+                            <div class="wx_qrcode" data-acg-proxy=".wechat-input"></div>
                             #{/if}
                         </div>
                     </div>

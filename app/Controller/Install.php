@@ -120,6 +120,17 @@ class Install extends User
 
         //导入数据库
         SQL::import($sqlFile . ".tmp", $host, $map['database'], $map['username'], $map['password'], $map['prefix']);
+
+        //请求日志密钥：随机生成后只存库。这里还不能用 Eloquent（连接是用安装前的
+        //配置建的），所以拿刚刚验证过的这套凭据直连写入。失败不影响安装——没有密钥
+        //就是不记请求日志，不会退回明文。
+        try {
+            $pdo = new \PDO('mysql:dbname=' . $map['database'] . ';host=' . $host, $map['username'], $map['password']);
+            $stmt = $pdo->prepare('INSERT INTO `' . $map['prefix'] . 'config` (`key`, `value`) VALUES (?, ?)');
+            $stmt->execute(['request_log_key', base64_encode(random_bytes(32))]);
+        } catch (\Throwable $e) {
+        }
+
         //设置数据库账号密码
         setConfig([
             'driver' => 'mysql',

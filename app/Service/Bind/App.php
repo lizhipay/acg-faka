@@ -173,7 +173,11 @@ class App implements \App\Service\App
 
         $storeDownload = \_plugin_download($pluginId);
         if (!$storeDownload) {
-            throw new JSONException("安装失败，请确认已授权且客户端为最新版本");
+            throw new JSONException(
+                ($r = trim((string)($GLOBALS['__acg_err'] ?? ''))) !== ''
+                    ? "安装失败：{$r}"
+                    : "安装失败，请确认已授权且客户端为最新版本"
+            );
         }
         //下载完成，开始安装
         $src = BASE_PATH . "/kernel/Install/OS/{$storeDownload}";
@@ -223,7 +227,11 @@ class App implements \App\Service\App
         // 更新流程走加密的 kernel/Plugin.php（server 类，需授权才能跑）：/v2/store/update + 版本闸
         $storeDownload = \_plugin_download($pluginId, "update");
         if (!$storeDownload) {
-            throw new JSONException("更新失败，请确认已授权且客户端为最新版本");
+            throw new JSONException(
+                ($r = trim((string)($GLOBALS['__acg_err'] ?? ''))) !== ''
+                    ? "更新失败：{$r}"
+                    : "更新失败，请确认已授权且客户端为最新版本"
+            );
         }
         //下载完成，开始安装
         $src = BASE_PATH . "/kernel/Install/OS/{$storeDownload}";

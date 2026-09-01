@@ -390,7 +390,7 @@ let acg = {
                     if (prev <= 1) {
                         prev = 1;
                     }
-                    $(instance).html('<table><tbody class="draftCard"></tbody></table> <div style="margin-top: 5px;" class="page-button"><button ' + (res.current_page <= 1 ? 'disabled' : '') + ' type="button" onclick="acg.API.draftCardPerform(\'' + instance + '\',' + commodityId + ',' + prev + ',\'' + draft_premium + '\')">' + acgT("上一组") + '</button> <button ' + (res.current_page >= res.last_page ? 'disabled' : '') + ' type="button" onclick="acg.API.draftCardPerform(\'' + instance + '\',' + commodityId + ',' + next + ',\'' + draft_premium + '\')">' + acgT("下一组") + '</button></div>');
+                    $(instance).html('<table><tbody class="draftCard"></tbody></table> <div style="margin-top: 5px;" class="page-button"><button ' + (res.current_page <= 1 ? 'disabled' : '') + ' type="button" data-acg-action="acg.API.draftCardPerform" data-acg-args=\'["' + instance + '",' + commodityId + ',' + prev + ',"' + draft_premium + '"]\'>' + acgT("上一组") + '</button> <button ' + (res.current_page >= res.last_page ? 'disabled' : '') + ' type="button" data-acg-action="acg.API.draftCardPerform" data-acg-args=\'["' + instance + '",' + commodityId + ',' + next + ',"' + draft_premium + '"]\'>' + acgT("下一组") + '</button></div>');
                 }, success: item => {
                     let premium = 0;
 
@@ -402,7 +402,7 @@ let acg = {
                         premium = item.draft_premium;
                     }
 
-                    $(instance).find(".draftCard").append('<tr><td><label><input type="checkbox" onchange="acg.API.draftCardCheckbox(this)" name="card_id" value="' + item.id + '"> ' + item.draft + (premium > 0 ? `<span class="card-premium">+${acgCurrencySymbol()}${premium}</span>` : '') + '</label></td></tr>');
+                    $(instance).find(".draftCard").append('<tr><td><label><input type="checkbox" data-acg-change="acg.API.draftCardCheckbox" name="card_id" value="' + item.id + '"> ' + item.draft + (premium > 0 ? `<span class="card-premium">+${acgCurrencySymbol()}${premium}</span>` : '') + '</label></td></tr>');
                 }
             });
         }, draftCardCheckbox(obj) {
