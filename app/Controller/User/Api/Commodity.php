@@ -175,9 +175,30 @@ class Commodity extends User
             \App\Model\Commodity::validateLevelPrice((string)$map['level_price']);
         }
 
+        // 商户可保存的字段白名单：只放前台商品编辑弹窗真正提交的列。
+        // 关键在于**排除**所有平台专属列——shared_*（平台货源对接标识与凭据引用）、
+        // factory_price（成本价）、api_status/recommend/hide/inventory_sync、pay_intercept、
+        // dock_*、asyn_request_*。这些只应由后台（站长）设置。
+        // 缺了这层白名单，商户就能把公开详情里读到的 shared_id/shared_code 写到自己 0 元商品上，
+        // 下单时系统仍用平台货源账户向上游代付进货，造成平台经济损失。见 issue #912。
+        // 与后台 Admin\Api\Commodity::save() 的 $allowed 同一套做法，只是这里刻意收窄。
+        $allowed = [
+            'category_id', 'cover', 'name', 'description', 'price', 'user_price', 'sort', 'status',
+            'delivery_way', 'delivery_auto_mode', 'delivery_message', 'stock', 'contact_type',
+            'password_status', 'coupon', 'seckill_status', 'seckill_start_time', 'seckill_end_time',
+            'draft_status', 'draft_premium', 'inventory_hidden', 'leave_message', 'send_email',
+            'only_user', 'purchase_count', 'widget', 'level_price', 'level_disable', 'minimum',
+            'maximum', 'config',
+        ];
+
         $save = new Save(\App\Model\Commodity::class);
-        $save->setMap($map);
+        $save->setMap($map, $allowed);
         $save->addForceMap("owner", $user->id);
+        // code 是系统生成的商品编码，不在白名单里，新建时强制写入（同后台做法）。
+        // 新建路径靠它回查自增 id，见下方。
+        if ($isCreate) {
+            $save->addForceMap("code", (string)$map['code']);
+        }
         // 表格中的上下架开关只提交 id/status。只有请求明确携带 config 时才覆盖，
         // 避免一次快捷操作把商品 SKU 等高级配置清空。
         if (array_key_exists('config', $map)) {
