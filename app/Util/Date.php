@@ -47,13 +47,37 @@ class Date
     }
 
     /**
-     * 时间计算器
-     * @param int $day
+     * 时间计算器：按天偏移取那一天的起点或终点。
+     *
+     * 终点给的是当天 23:59:59，而不是次日 00:00:00——统计一律走 whereBetween，
+     * 而它是闭区间，拿次日零点当终点会让零点整那条记录同时落进前后两个窗口
+     * （既算"今日"又算"昨日"）。create_time 是秒精度的 datetime，所以
+     * `<= 当天 23:59:59` 与 `< 次日 00:00:00` 完全等价，不会漏记。
+     *
+     * @param int $day 天偏移，0=今天、-1=昨天
+     * @param int $type TYPE_START=当天 00:00:00，TYPE_END=当天 23:59:59
      * @return string
      */
-    public static function calcDay(int $day = 0): string
+    public static function calcDay(int $day = 0, int $type = self::TYPE_START): string
     {
-        return date("Y-m-d", time() + ($day * 86400)) . ' 00:00:00';
+        $fix = $type === self::TYPE_END ? ' 23:59:59' : ' 00:00:00';
+        return date("Y-m-d", time() + ($day * 86400)) . $fix;
+    }
+
+    /**
+     * 本月起止。
+     *
+     * 终点是本月最后一天 23:59:59。不能拿"今天 00:00:00"当终点——那样今天
+     * 零点之后产生的订单全都不算进"本月数据"，要等到第二天查才看得见
+     * （GitHub #879）。
+     *
+     * @param int $type TYPE_START=本月 1 日 00:00:00，TYPE_END=本月最后一天 23:59:59
+     * @return string
+     */
+    public static function monthDay(int $type = self::TYPE_START): string
+    {
+        //Y-m-t 的 t 是当月天数，闰年、大小月都不用自己判断
+        return $type === self::TYPE_END ? date("Y-m-t 23:59:59") : date("Y-m-01 00:00:00");
     }
 
     /**

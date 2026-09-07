@@ -10,6 +10,9 @@ if (!function_exists("index_var")) {
         return set_script_var([
             "DEBUG" => DEBUG,
             "LANG" => \Kernel\Util\Lang::get(),
+            //站点语言清单：切换器的当前项标记、按钮角标都从这里取，
+            //站长加了语言或停用了某种语言，前端跟着变，不用改任何模板
+            "LANGS" => \Kernel\Util\Lang::menu(),
             "CURRENCY" => \App\Util\Currency::vars(),
             "CAT_ID" => (int)$_GET['cid'],
             "HACK_ROUTE_TABLE_COLUMNS" => hook(Hook::HACK_ROUTE_TABLE_COLUMNS),

@@ -207,6 +207,16 @@ class Table {
         this.queryParams[field] = value;
     }
 
+    /**
+     * 发请求前改写一次参数。收到的是副本，改完 return 出去即可，不会污染表格自己保留的
+     * queryParams（bootstrap-table 会把它跨请求合并，直接改会重复施加）。
+     * 目前用于翻译管理：搜索词里带 <div/<style 这类标签会被 WAF 当成 XSS 把整个请求拦掉，
+     * 只能换个编码传（见 config/lang.js）。
+     */
+    setParamsFilter(fn) {
+        this.paramsFilter = typeof fn === 'function' ? fn : null;
+    }
+
     setColumns(columns) {
         const hackTable = getVar("HACK_ROUTE_TABLE_COLUMNS");
         if (hackTable instanceof Array) {
@@ -1634,6 +1644,10 @@ class Table {
                 }
 
                 util.debug("POST(↑):" + this.queryUrl, "#ff4f33", this.queryParams);
+                if (this.paramsFilter) {
+                    const payload = Object.assign({}, this.queryParams);
+                    return this.paramsFilter(payload) || payload;
+                }
                 return this.queryParams;
             },
             responseHandler: (response, xhr) => {

@@ -180,6 +180,10 @@ class Shop implements \App\Service\Shop
             throw new JSONException("该商品配置异常，请商家检查商品[{$commodity->id}]的批发/规格/会员价配置：" . $e->getMessage());
         }
 
+        //会员价留空(0)时回退零售价——必须在分站加价之前归一，
+        //否则前台会显示 0 元而下单按零售价收费，两边对不上
+        $commodity->user_price = $commodity->memberPrice();
+
         $this->substationPriceIncrease($commodity);
 
         $commodity->service_url = Config::get("service_url");

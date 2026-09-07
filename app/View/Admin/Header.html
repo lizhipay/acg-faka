@@ -434,10 +434,9 @@
                                             </svg>
                                         </button>
                                         <div id="md-lang-menu" class="md-theme-menu">
-                                            <div class="md-theme-opt" data-lang-value="zh-cn"><span>简体中文</span><i class="md-check fa-duotone fa-regular fa-check"></i></div>
-                                            <div class="md-theme-opt" data-lang-value="zh-tw"><span>繁體中文</span><i class="md-check fa-duotone fa-regular fa-check"></i></div>
-                                            <div class="md-theme-opt" data-lang-value="en"><span>English</span><i class="md-check fa-duotone fa-regular fa-check"></i></div>
-                                            <div class="md-theme-opt" data-lang-value="ja"><span>日本語</span><i class="md-check fa-duotone fa-regular fa-check"></i></div>
+                                            #{foreach lang_menu() as $l}
+                                                <div class="md-theme-opt" data-lang-value="#{$l.code}"><span>#{$l.name}</span><i class="md-check fa-duotone fa-regular fa-check"></i></div>
+                                            #{/foreach}
                                         </div>
                                     </div>
                                 </div>

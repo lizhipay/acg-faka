@@ -275,6 +275,7 @@
                                                     <th>#{t("被拦对象")}</th>
                                                     <th>#{t("来源")}</th>
                                                     <th class="text-end">#{t("次数")}</th>
+                                                    <th class="text-end">#{t("操作")}</th>
                                                 </tr>
                                                 </thead>
                                                 <tbody>
@@ -284,6 +285,15 @@
                                                         <td class="text-muted" style="word-break:break-all;max-width:280px;">#{$v.blocked|escape:'html'}</td>
                                                         <td class="text-muted" style="word-break:break-all;max-width:280px;">#{$v.source|escape:'html'}#{if $v.line} : #{$v.line|escape:'html'}#{/if}</td>
                                                         <td class="text-end fw-bold">#{$v.count}</td>
+                                                        <td class="text-end" style="white-space:nowrap;">
+                                                            #{if $v.allowable}
+                                                                <button type="button" class="btn btn-sm btn-light-primary py-1 px-3 csp-allow"
+                                                                        data-key="#{$v.key|escape:'html'}"
+                                                                        data-blocked="#{$v.blocked|escape:'html'}">#{t("允许")}</button>
+                                                            #{else}
+                                                                <span class="text-muted fs-8">—</span>
+                                                            #{/if}
+                                                        </td>
                                                     </tr>
                                                 #{/foreach}
                                                 </tbody>
@@ -292,6 +302,43 @@
                                     #{else}
                                         <div class="form-text fw-bold">
                                             #{t("暂无违规记录。开关打开后浏览几个页面，这里会列出「若切成强制模式会被拦下的东西」。")}
+                                        </div>
+                                    #{/if}
+                                </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-6">
+                                <div class="col-lg-12 fv-row">
+                                    <div class="security-heading fw-bold fs-5 mb-4">#{t("已放行的外部脚本")}</div>
+                                    #{if $csp_allow}
+                                        <div class="table-responsive">
+                                            <table class="table table-row-bordered table-row-gray-200 align-middle gs-0 gy-2">
+                                                <tbody>
+                                                #{foreach $csp_allow as $a}
+                                                    <tr>
+                                                        <td style="word-break:break-all;">
+                                                            <code>#{$a.source|escape:'html'}</code>
+                                                            #{if $a.broad}
+                                                                <span class="badge badge-light-danger ms-2" title="#{t('该域名下任何脚本都能在你站上执行')}">#{t("整个域名")}</span>
+                                                            #{/if}
+                                                        </td>
+                                                        <td class="text-end" style="width:120px;white-space:nowrap;">
+                                                            <button type="button" class="btn btn-sm btn-light-danger py-1 px-3 csp-allow-remove"
+                                                                    data-source="#{$a.source|escape:'html'}">#{t("移除")}</button>
+                                                        </td>
+                                                    </tr>
+                                                #{/foreach}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="form-text">
+                                            #{t("这些地址被允许在「前台」加载脚本。后台一律不加载第三方脚本——后台的 XSS 能直接拿到管理员会话，代价比前台高得多。")}
+                                        </div>
+                                    #{else}
+                                        <div class="form-text fw-bold">
+                                            #{t("还没有放行任何外部脚本。需要在模板里挂客服组件、统计代码时：先把代码贴进模板，打开一次前台页面，被拦下的地址就会出现在上面的违规统计里，点「允许」即可——不用也不能手填，这样白名单里只会出现你自己站点真实请求过的地址。")}
                                         </div>
                                     #{/if}
                                 </div>
@@ -309,5 +356,5 @@
     </div>
 </div>
 <!--end::Content-->
-#{ready("/assets/admin/controller/config/security.js")}
+#{ready("/assets/admin/controller/config/security.js?rev=csp-allow-909")}
 #{include file="../Footer.html"}

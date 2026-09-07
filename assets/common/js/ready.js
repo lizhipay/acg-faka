@@ -330,8 +330,19 @@ function setLang(lang) {
         document.querySelectorAll("[data-lang-value]").forEach(function (el) {
             el.classList.toggle("active", el.getAttribute("data-lang-value") === current);
         });
-        //切换器按钮上显示当前语言的短码，免得只看一个地球图标不知道现在是哪国语言
-        const shortCode = {"zh-cn": "简", "zh-tw": "繁", "en": "EN", "ja": "日"}[current] || "";
+        //切换器按钮上显示当前语言的短码，免得只看一个地球图标不知道现在是哪国语言。
+        //短码由服务端的语言注册表下发，站长自己加的语言（韩语、葡语……）一样有角标。
+        const langs = getVar("LANGS") || [];
+        let shortCode = "";
+        for (let i = 0; i < langs.length; i++) {
+            if (langs[i] && langs[i].code === current) {
+                shortCode = langs[i].short || "";
+                break;
+            }
+        }
+        if (shortCode === "") {
+            shortCode = {"zh-cn": "简", "zh-tw": "繁", "en": "EN", "ja": "日"}[current] || current.split("-")[0].toUpperCase();
+        }
         document.querySelectorAll("[data-lang-label]").forEach(function (el) {
             el.textContent = shortCode;
         });

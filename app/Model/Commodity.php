@@ -400,4 +400,21 @@ class Commodity extends Model
 
         return false;
     }
+
+    /**
+     * 会员价：留空 / 为 0 时回退到零售价。
+     *
+     * 登录用户一律按会员价计价（会员等级门槛从 0 起，人人都有等级），所以会员价忘填
+     * 就是 0；而订单金额 ≤0 会被判定为免费并立即发货——一个空字段就等于把商品白送，
+     * 且站长以游客身份自测时价格正常，很难察觉。这里统一回退到零售价，
+     * 下单计价与前台展示都走它，保证两边口径一致。
+     *
+     * 商品本来就是免费的（零售价也是 0）时回退结果仍为 0，不影响真正的免费商品。
+     */
+    public function memberPrice(): float
+    {
+        $userPrice = (float)$this->user_price;
+
+        return $userPrice > 0 ? $userPrice : (float)$this->price;
+    }
 }

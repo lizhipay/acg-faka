@@ -5,7 +5,22 @@
     <div class="post d-flex flex-column-fluid" id="kt_post">
         <div id="kt_content_container" class="container-fluid">
 
-            <div class="row g-5 mb-5" id="lang-stat"></div>
+            <div class="card mb-5">
+                <div class="card-header border-0 pt-5">
+                    <h3 class="card-title align-items-start flex-column">
+                        <span class="card-label fw-bold fs-3 mb-1">#{t("站点语言")}</span>
+                        <span class="text-muted mt-1 fw-semibold fs-7">#{t("停用的语言不再对访客提供，也不会再花钱翻译；自定义语言由 AI 翻译插件补全")}</span>
+                    </h3>
+                    <div class="card-toolbar">
+                        <button class="btn btn-sm btn-primary btn-lang-add">
+                            <i class="fa-duotone fa-regular fa-plus"></i> #{t("添加语言")}
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body pt-3">
+                    <div class="row g-5" id="lang-stat"></div>
+                </div>
+            </div>
 
             <div class="card mb-5 mb-xl-8">
                 <div class="card-header border-0">
@@ -22,6 +37,9 @@
                         <button class="btn btn-sm btn-light-success btn-lang-scan me-3">
                             <i class="fa-duotone fa-regular fa-folder-magnifying-glass"></i> #{t("扫描扩展词包")}
                         </button>
+                        <button class="btn btn-sm btn-light-dark btn-lang-recycle me-3">
+                            <i class="fa-duotone fa-regular fa-broom-wide"></i> #{t("清理废弃词条")}
+                        </button>
                         <button class="btn btn-sm btn-light-danger btn-lang-del me-3">
                             <i class="fa-duotone fa-regular fa-trash-can"></i> #{t("删除选中")}
                         </button>
@@ -35,5 +53,5 @@
         </div>
     </div>
 </div>
-#{ready("/assets/admin/controller/config/lang.js")}
+#{ready("/assets/admin/controller/config/lang.js?rev=lang-888-recycle2")}
 #{include file="../Footer.html"}

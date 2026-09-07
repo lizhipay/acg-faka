@@ -225,10 +225,15 @@
         , {
             field: 'card_num', title: '数量/金额', formatter: (_, __) => {
                 const amt = parseFloat(__.amount) || 0;
+                //订单金额已含支付通道手续费，单独列一行提示，避免和商品定价混淆（issue #903）
+                const fee = parseFloat(__.pay_cost) || 0;
                 const amountHtml = amt > 0
                     ? `<span class="md-pair__v" style="color:var(--md-success);font-weight:600">${format.currencySymbol()}${format.amountRemoveTrailingZeros(amt)}</span>`
                     : `<span class="md-pair__v md-pair__v--muted">${format.currencySymbol()}0</span>`;
-                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">${i18n('数量')}</span><span class="md-pair__v">${__.card_num ?? '-'}</span></div><div class="md-pair__row"><span class="md-pair__k">${i18n('金额')}</span>${amountHtml}</div></div>`;
+                const feeRow = fee > 0
+                    ? `<div class="md-pair__row"><span class="md-pair__k">${i18n('含手续费')}</span><span class="md-pair__v md-pair__v--muted">${format.currencySymbol()}${format.amountRemoveTrailingZeros(fee)}</span></div>`
+                    : '';
+                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">${i18n('数量')}</span><span class="md-pair__v">${__.card_num ?? '-'}</span></div><div class="md-pair__row"><span class="md-pair__k">${i18n('金额')}</span>${amountHtml}</div>${feeRow}</div>`;
             }
         }
         , {
@@ -244,8 +249,9 @@
             field: 'delivery_status', title: '发货状态', dict: "_order_delivery_status"
         }
         , {
-            field: 'cost', title: '手续费/佣金', formatter: (_, __) => {
-                const fee = parseFloat(__.cost) || 0;
+            field: 'pay_cost', title: '手续费/佣金', formatter: (_, __) => {
+                //手续费取支付通道费 pay_cost（旧 cost 列已废弃、恒为 0）。issue #903
+                const fee = parseFloat(__.pay_cost) || 0;
                 const rebate = parseFloat(__.rebate) || 0;
                 if (fee <= 0 && rebate <= 0) return '-';
                 const fmt = v => format.currencySymbol() + format.amountRemoveTrailingZeros(v);
@@ -359,6 +365,7 @@
         {field: 'password', title: '查询密码'},
         {field: 'create_time', title: '下单时间'},
         {field: 'pay_time', title: '支付时间'},
+        {field: 'pay_cost', title: '支付手续费', formatter: v => (parseFloat(v) || 0) > 0 ? format.currencySymbol() + format.amountRemoveTrailingZeros(v) : '-'},
         {field: 'create_ip', title: '客户IP'},
         {field: 'create_device', title: '设备', dict: "_common_device"},
         {field: 'card.secret', title: '预选卡密'},

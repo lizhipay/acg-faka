@@ -9,6 +9,7 @@ use App\Entity\Query\Get;
 use App\Entity\Query\Save;
 use App\Interceptor\ManageSession;
 use App\Model\ManageLog;
+use App\Util\LangRecycle;
 use App\Service\Query;
 use App\Util\Client;
 use App\Util\Date;
@@ -400,21 +401,21 @@ class Commodity extends Manage
                 'card as card_success_count' => function (Builder $builder) {
                     $builder->where("status", 1);
                 },
-                //商品总盈利
+                //商品销售额（扣除支付通道手续费 pay_cost，不含商品成本 rent）。issue #903
                 'order as order_all_amount' => function (Builder $relation) {
-                    $relation->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_all_amount"));
+                    $relation->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount - COALESCE(pay_cost, 0)),0) as order_all_amount"));
                 },
                 //过去7天内盈利
                 'order as order_week_amount' => function (Builder $relation) {
-                    $relation->whereBetween('create_time', [Date::weekDay(1, Date::TYPE_START), Date::weekDay(7, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_week_amount"));
+                    $relation->whereBetween('create_time', [Date::weekDay(1, Date::TYPE_START), Date::weekDay(7, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount - COALESCE(pay_cost, 0)),0) as order_week_amount"));
                 },
                 //昨日盈利
                 'order as order_yesterday_amount' => function (Builder $relation) {
-                    $relation->whereBetween('create_time', [Date::calcDay(-1), Date::calcDay()])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_yesterday_amount"));
+                    $relation->whereBetween('create_time', [Date::calcDay(-1), Date::calcDay(-1, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount - COALESCE(pay_cost, 0)),0) as order_yesterday_amount"));
                 },
                 //今日盈利
                 'order as order_today_amount' => function (Builder $relation) {
-                    $relation->whereBetween('create_time', [Date::calcDay(), Date::calcDay(1)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_today_amount"));
+                    $relation->whereBetween('create_time', [Date::calcDay(), Date::calcDay(0, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount - COALESCE(pay_cost, 0)),0) as order_today_amount"));
                 }
             ]);
         });
@@ -635,6 +636,15 @@ class Commodity extends Manage
             $ebAction = $id > 0 ? 'update' : 'create';
             hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $ebIds, $ebAction, $current);
         }
+
+        //改掉的旧文案要把它的翻译带走：翻译库按 md5(原文) 寻址，不回收的话改一次名字
+        //就多一条没人认领的废词条，日子久了词条表里全是垃圾（GitHub #888）
+        if ($current !== null && $changedId > 0) {
+            $before = LangRecycle::commodityTexts($current);
+            $after = LangRecycle::commodityTexts(\App\Model\Commodity::query()->find($changedId));
+            LangRecycle::release(array_diff($before, $after));
+        }
+
         return $this->json(200, '（＾∀＾）保存成功');
     }
 
@@ -646,6 +656,11 @@ class Commodity extends Manage
     public function del(): array
     {
         $requestedIds = $this->commodityIds($_POST['list'] ?? []);
+        //删完就查不到了，先把这些商品的文案抓在手上，事务成功后再去回收它们的翻译
+        $doomedTexts = [];
+        foreach (\App\Model\Commodity::query()->whereIn('id', $requestedIds)->get() as $doomed) {
+            $doomedTexts = array_merge($doomedTexts, LangRecycle::commodityTexts($doomed));
+        }
         try {
             $impact = DB::transaction(function () use ($requestedIds): array {
                 $impact = $this->commodityDeleteImpact($requestedIds, true);
@@ -680,6 +695,8 @@ class Commodity extends Manage
             $ebAction = 'delete';
             $ebBefore = null;
             hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $deletedIds, $ebAction, $ebBefore);
+            //商品没了，它的翻译也跟着走（前提是没有别的商品/分类/历史订单还在用同一段文案）
+            LangRecycle::release($doomedTexts);
         }
 
         $deletedCount = $impact['deletable_count'];

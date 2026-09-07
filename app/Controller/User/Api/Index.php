@@ -219,6 +219,11 @@ class Index extends User
                 $data[$key]['cover'] = "/favicon.ico";
             }
 
+            //会员价留空(0)时回退零售价，与下单计价口径一致（放在分站加价之前）
+            if ((float)($data[$key]['user_price'] ?? 0) <= 0) {
+                $data[$key]['user_price'] = $data[$key]['price'];
+            }
+
             //分站自定义名称和价格
             if (isset($userCommodityMap[$val['id']])) {
                 $var = $userCommodityMap[$val['id']];

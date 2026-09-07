@@ -10,6 +10,7 @@ use App\Entity\Query\Save;
 use App\Interceptor\Business;
 use App\Interceptor\UserSession;
 use App\Interceptor\Waf;
+use App\Util\LangRecycle;
 use App\Service\Query;
 use App\Util\Client;
 use App\Util\Date;
@@ -62,11 +63,11 @@ class Commodity extends User
                     },
                     //昨日盈利
                     'order as order_yesterday_amount' => function (Builder $relation) {
-                        $relation->whereBetween('create_time', [Date::calcDay(-1), Date::calcDay()])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_yesterday_amount"));
+                        $relation->whereBetween('create_time', [Date::calcDay(-1), Date::calcDay(-1, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_yesterday_amount"));
                     },
                     //今日盈利
                     'order as order_today_amount' => function (Builder $relation) {
-                        $relation->whereBetween('create_time', [Date::calcDay(), Date::calcDay(1)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_today_amount"));
+                        $relation->whereBetween('create_time', [Date::calcDay(), Date::calcDay(0, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_today_amount"));
                     }
                 ]);
         });
@@ -243,6 +244,13 @@ class Commodity extends User
             $ebIds = [$changedId];
             $ebAction = $isCreate ? 'create' : 'update';
             hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $ebIds, $ebAction, $commodity);
+
+            //换下来的旧文案连同它的翻译一起回收，别让废词条堆着（GitHub #888）
+            if ($commodity !== null) {
+                $before = LangRecycle::commodityTexts($commodity);
+                $after = LangRecycle::commodityTexts(\App\Model\Commodity::query()->find($changedId));
+                LangRecycle::release(array_diff($before, $after));
+            }
         }
         return $this->json(200, '（＾∀＾）保存成功');
     }
@@ -267,11 +275,15 @@ class Commodity extends User
             throw new JSONException("商品不存在");
         }
 
+        //删完就查不到了，先把文案抓在手上
+        $doomedTexts = LangRecycle::commodityTexts($commodity);
+
         $commodity->delete();
         $ebIds = [$id];
         $ebAction = 'delete';
         $ebBefore = null;
         hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $ebIds, $ebAction, $ebBefore);
+        LangRecycle::release($doomedTexts);
 
         return $this->json(200, '（＾∀＾）移除成功');
     }

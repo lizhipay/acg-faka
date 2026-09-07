@@ -181,7 +181,9 @@ const _Dict = new class _Dict extends _DictUtil {
                 {id: 4, name: `${i18n('通用插件')}`},
                 {id: 5, name: `${i18n('支付接口')}`},
                 {id: 6, name: `${i18n('主题')}/${i18n('模版')}`},
-                {id: 3, name: `${i18n('免费应用')}`}
+                {id: 3, name: `${i18n('免费应用')}`},
+                {id: 9, name: `${i18n('最新发布')}`},
+                {id: 10, name: `${i18n('最受欢迎')}`}
             ],
             "_developer_plugin_status": [
                 {

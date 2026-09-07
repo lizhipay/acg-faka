@@ -35,14 +35,14 @@ class Dashboard extends User
         //经营(商家)
         if ($user->business_level) {
             $bill = \App\Model\Bill::query()->where("owner", $uid)->where("type", 1)->where("currency", 1);
-            $data['today_income'] = sprintf("%.2f", (float)(clone $bill)->whereBetween('create_time', [Date::calcDay(), Date::calcDay(1)])->sum("amount"));
-            $data['yesterday_income'] = sprintf("%.2f", (float)(clone $bill)->whereBetween('create_time', [Date::calcDay(-1), Date::calcDay()])->sum("amount"));
+            $data['today_income'] = sprintf("%.2f", (float)(clone $bill)->whereBetween('create_time', [Date::calcDay(), Date::calcDay(0, Date::TYPE_END)])->sum("amount"));
+            $data['yesterday_income'] = sprintf("%.2f", (float)(clone $bill)->whereBetween('create_time', [Date::calcDay(-1), Date::calcDay(-1, Date::TYPE_END)])->sum("amount"));
             $data['week_income'] = sprintf("%.2f", (float)(clone $bill)->whereBetween('create_time', [Date::weekDay(1, Date::TYPE_START), Date::weekDay(7, Date::TYPE_END)])->sum("amount"));
             $data['month_income'] = sprintf("%.2f", (float)(clone $bill)->where("create_time", ">=", $monthStart)->sum("amount"));
 
             $sellModel = \App\Model\Order::query()->where("user_id", $uid)->where("status", 1);
             $data['trade'] = sprintf("%.2f", (float)(clone $sellModel)->sum("amount"));
-            $data['today_orders'] = (clone $sellModel)->whereBetween('create_time', [Date::calcDay(), Date::calcDay(1)])->count();
+            $data['today_orders'] = (clone $sellModel)->whereBetween('create_time', [Date::calcDay(), Date::calcDay(0, Date::TYPE_END)])->count();
             $data['pending_delivery'] = (clone $sellModel)->where("delivery_status", 0)->count();
             $data['recent_sales'] = (clone $sellModel)->with(['commodity'])->orderBy("id", "desc")->limit(5)->get();
 
@@ -54,7 +54,7 @@ class Dashboard extends User
             $series = [];
             $max = 0;
             for ($i = 6; $i >= 0; $i--) {
-                $amount = (float)(clone $bill)->whereBetween('create_time', [Date::calcDay(-$i), Date::calcDay(-$i + 1)])->sum("amount");
+                $amount = (float)(clone $bill)->whereBetween('create_time', [Date::calcDay(-$i), Date::calcDay(-$i, Date::TYPE_END)])->sum("amount");
                 $max = max($max, $amount);
                 $series[] = [
                     'label' => date("m-d", strtotime(Date::calcDay(-$i))),

@@ -22,8 +22,9 @@ class Lang extends User
      */
     public function dict(): string
     {
-        $lang = strtolower(trim((string)($_GET['lang'] ?? "")));
-        if (!in_array($lang, \Kernel\Util\Lang::LANGS, true) || $lang === \Kernel\Util\Lang::SOURCE) {
+        $lang = \Kernel\Util\Lang::normalizeCode((string)($_GET['lang'] ?? ""));
+        //只认站点当前启用的语言：停用的语言连字典都不再对外输出
+        if ($lang === "" || !\Kernel\Util\Lang::acceptable($lang) || $lang === \Kernel\Util\Lang::SOURCE) {
             header("Content-Type: application/javascript; charset=utf-8");
             return "/* unsupported lang */";
         }

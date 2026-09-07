@@ -276,16 +276,27 @@ if (!function_exists("lang_dict_script")) {
 
 if (!function_exists("lang_code")) {
     /**
-     * 当前语言的 BCP-47 代码，供 <html lang="…"> 使用
+     * 当前语言的 BCP-47 代码，供 <html lang="…"> 使用。
+     * 站内一律小写存放（zh-cn / pt-br），这里把地区子标签还原成大写。
      */
     function lang_code(): string
     {
-        return [
-                "zh-cn" => "zh-CN",
-                "zh-tw" => "zh-TW",
-                "en" => "en",
-                "ja" => "ja",
-            ][\Kernel\Util\Lang::get()] ?? "zh-CN";
+        return \Kernel\Util\Lang::tag(\Kernel\Util\Lang::get());
+    }
+}
+
+if (!function_exists("lang_menu")) {
+    /**
+     * 语言切换器数据源：#{foreach lang_menu() as $l} ... #{/foreach}
+     *
+     * 每项 code / name / short / active。只含站长当前启用的语言——
+     * 模板照着渲染就行，站长加语言、停用语言都不用再改模板。
+     *
+     * @return array<int, array{code:string,name:string,short:string,active:bool}>
+     */
+    function lang_menu(): array
+    {
+        return \Kernel\Util\Lang::menu();
     }
 }
 

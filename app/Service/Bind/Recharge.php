@@ -65,6 +65,15 @@ class Recharge implements \App\Service\Recharge
             throw new JSONException("当前支付方式已停用");
         }
 
+        //风控判决。放在服务层而不是控制器：控制器那边不组装任何 $map，
+        //金额与通道是在这里才解析出来的。
+        $riskMap = ['amount' => $amount, 'pay_id' => $payId];
+        $risk = new \App\Entity\RiskContext('recharge', $riskMap);
+        hook(\App\Consts\Hook::USER_API_RECHARGE_TRADE_BEGIN, $risk, $user, $riskMap);
+        if ($risk->denied() || $risk->held()) {
+            throw new JSONException($risk->message("本次充值需要人工确认，请联系客服"));
+        }
+
         //回调地址
         $callbackDomain = trim(Config::get("callback_domain"), "/");
         $clientDomain = Client::getUrl();

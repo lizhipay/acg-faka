@@ -286,23 +286,42 @@ class Card extends Manage
             throw new JSONException("商品不存在");
         }
 
-        $list = \App\Model\Card::query()
+        $groups = \App\Model\Card::query()
             ->where("commodity_id", $commodityId)
             ->selectRaw("race, sku, sum(case when status = 0 then 1 else 0 end) as unsold, sum(case when status = 2 then 1 else 0 end) as locked, sum(case when status = 1 then 1 else 0 end) as sold, count(*) as total")
             ->groupBy(["race", "sku"])
             ->orderBy("race")
-            ->get()
-            ->map(fn($item) => [
-                "race" => $item->race,
-                "sku" => $item->sku,
-                "unsold" => (int)$item->unsold,
-                "locked" => (int)$item->locked,
-                "sold" => (int)$item->sold,
-                "total" => (int)$item->total,
-            ])
-            ->toArray();
+            ->get();
 
-        return $this->json(data: ["name" => strip_tags((string)$commodity->name), "list" => $list]);
+        // 只保留仍存在于商品「当前」SKU 配置里的组合，并按规范化签名归并——
+        // 卡密表会沉淀历史用过的 race/sku（规格改名或删除后旧卡仍在），直接按卡密分组
+        // 会把废弃规格也列出来、且同一规格因 JSON 键序不同出现重复项（issue #898）。
+        $config = \App\Util\Sku::configArray($commodity->config);
+        $merged = [];
+        foreach ($groups as $item) {
+            if (!\App\Util\Sku::comboExists($config, $item->race, $item->sku)) {
+                continue;
+            }
+            $sig = \App\Util\Sku::signature($item->race, $item->sku);
+            if (!isset($merged[$sig])) {
+                $skuArr = \App\Util\Sku::toArray($item->sku);
+                ksort($skuArr);
+                $merged[$sig] = [
+                    "race" => $item->race,
+                    "sku" => $skuArr,
+                    "unsold" => 0,
+                    "locked" => 0,
+                    "sold" => 0,
+                    "total" => 0,
+                ];
+            }
+            $merged[$sig]["unsold"] += (int)$item->unsold;
+            $merged[$sig]["locked"] += (int)$item->locked;
+            $merged[$sig]["sold"] += (int)$item->sold;
+            $merged[$sig]["total"] += (int)$item->total;
+        }
+
+        return $this->json(data: ["name" => strip_tags((string)$commodity->name), "list" => array_values($merged)]);
     }
 
 

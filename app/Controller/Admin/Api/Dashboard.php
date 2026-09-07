@@ -22,13 +22,13 @@ class Dashboard extends \App\Controller\Base\API\Manage
         $data = [];
         //今日
         if ($type == 0) {
-            $time = [Date::calcDay(), Date::calcDay(1)];
+            $time = [Date::calcDay(), Date::calcDay(0, Date::TYPE_END)];
         } elseif ($type == 1) {
-            $time = [Date::calcDay(-1), Date::calcDay()];
+            $time = [Date::calcDay(-1), Date::calcDay(-1, Date::TYPE_END)];
         } elseif ($type == 2) {
             $time = [Date::weekDay(1, Date::TYPE_START), Date::weekDay(7, Date::TYPE_END)];
         } elseif ($type == 3) {
-            $time = [date("Y-m-01 00:00:00"), Date::calcDay()];
+            $time = [Date::monthDay(), Date::monthDay(Date::TYPE_END)];
         }
 
         if ($type == 4) {

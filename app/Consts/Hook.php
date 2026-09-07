@@ -156,6 +156,44 @@ interface Hook
 
     const ORDER_MANUAL_DELIVERY_AFTER = 0x2200;
 
+    /* ───────────── 风控 / 人工审核 ─────────────
+     *
+     * 全部按引用传 `\App\Entity\RiskContext $risk`。订阅方**改对象、返回 null**；
+     * 千万不要返回 bool —— 派发器遇到 bool 会短路整条链，后面的订阅方一个都不会跑。
+     *
+     * 核心在钩子返回后读 $risk->action：
+     *   DENY   抛 JSONException($risk->message(兜底文案))
+     *   REVIEW 走各场景自己的挂起分支（见各插入点注释）
+     *   LIMIT  由订阅方自己给该身份挂软约束，核心不做特殊处理
+     *
+     * 注意：`hook()` 的变参是**按引用**接收的，实参必须是变量。
+     * 传字面量、数组字面量或函数返回值会直接 500。
+     */
+
+    /** 注册：全部校验通过、$user 已装配但**尚未落库**。传参 RiskContext $risk, \App\Model\User $user */
+    const USER_API_AUTH_REGISTER_VALIDATED = 0x2300;
+
+    /** 找回密码：**验证码校验之前**（拒绝时不消耗掉用户的邮件/短信验证码）。传参 RiskContext $risk, string $account */
+    const USER_API_AUTH_PASSWORD_BEGIN = 0x2301;
+
+    /** 充值下单：金额与通道校验之后、下单之前。传参 RiskContext $risk, \App\Model\User $user, array $map */
+    const USER_API_RECHARGE_TRADE_BEGIN = 0x2302;
+
+    /** 提现申请：绑定校验通过、落库之前。传参 RiskContext $risk, \App\Model\User $user, array $map */
+    const USER_API_CASH_SUBMIT_BEGIN = 0x2303;
+
+    /** 工单创建：进入 Service 之前。传参 RiskContext $risk, mixed $user, array $map */
+    const USER_API_TICKET_CREATE_BEGIN = 0x2304;
+
+    /**
+     * 发货之前（订单已支付，卡密尚未交出）。传参 RiskContext $risk, \App\Model\Order $order, \App\Model\Commodity $commodity
+     *
+     * 这是**唯一**能在卡密交出去之前把货扣下的位置，一处插入覆盖全部支付路径。
+     * REVIEW 表示「钱照收、卡先不发」：delivery_status 留 0、secret 换成提示文案，
+     * 也就是手动发货商品在付款到发货之间的形态。
+     */
+    const USER_API_ORDER_DELIVERY_BEGIN = 0x2305;
+
     public const HACK_ROUTE_TABLE_COLUMNS = 0x2005;
     public const HACK_ROUTE_TABLE_SEARCH = 0x2006;
     public const HACK_SUBMIT_FORM = 0x9038;

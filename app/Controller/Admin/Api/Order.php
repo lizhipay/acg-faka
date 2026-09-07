@@ -320,7 +320,8 @@ class Order extends Manage
         $raw = [];
         $data = $this->query->get($get, function (Builder $builder) use (&$raw) {
             $raw['order_amount'] = (clone $builder)->sum("amount");
-            $raw['order_cost'] = (clone $builder)->sum("cost");
+            //手续费总额取支付通道费 pay_cost（旧 cost 列已废弃、恒为 0）。issue #903
+            $raw['order_cost'] = (clone $builder)->sum("pay_cost");
             return $builder->with([
                 'coupon' => function (Relation $relation) {
                     $relation->select(["id", "code"]);

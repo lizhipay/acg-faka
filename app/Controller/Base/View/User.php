@@ -139,6 +139,12 @@ abstract class User extends \App\Controller\Base\User
                 $data['setting'] = $config['setting'];
             }
 
+            //语言切换器数据源。**必须以变量形式给模板**，不能让模板去调 lang_menu()：
+            //Smarty 在编译期就校验普通函数是否存在，模板一旦更新到只有旧核心的站点上，
+            //整页会抛 SmartyCompilerException 白屏；而未定义的变量只会渲染成空，最多是
+            //切换器不显示。模板是独立上架、可以先于核心更新的，这个降级路径必须留着。
+            $data['langs'] = \Kernel\Util\Lang::menu();
+
             $data = ViewSafe::escape($data);
 
             if ($config['info']['RENDER'] == Render::ENGINE_SMARTY || $system) {

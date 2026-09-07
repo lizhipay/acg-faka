@@ -19,8 +19,29 @@ final class Lang
 {
     public const COOKIE = "acg_lang";
     public const SOURCE = "zh-cn";
+    /**
+     * 内置语言。
+     *
+     * 注意：这只是「出厂自带」的四种，不等于站点当前支持的语言——站长可以停用其中任意一种，
+     * 也可以自己加语言。要拿站点实际支持的列表请用 langs()/targets()/registry()，
+     * 这个常量保留只是为了不打断已经在引用它的老插件。
+     */
     public const LANGS = ["zh-cn", "zh-tw", "en", "ja"];
     public const TABLE = "lang";
+
+    /**
+     * 语言注册表的配置键（值为 JSON 数组）。
+     * 读取一律走 Config::cached()：语言解析在每个请求都跑，绝不能让它去查库加排他锁。
+     */
+    public const REGISTRY_CONFIG = "lang_registry";
+
+    /**
+     * 出厂自带的四种语言：可以停用，但删不掉——已有词包、模板里的写死链接、
+     * 老插件对 LANGS 的引用都指望它们始终可解析。
+     *
+     * 显示名 / AI 目标描述 / 切换器角标一律来自 LangCatalog，不由站长定义。
+     */
+    private const BUILTIN = ["zh-cn", "zh-tw", "en", "ja"];
 
     //单条可入库文本的最大长度(字符)，超长的动态文本不进翻译库
     public const MAX_SOURCE_LEN = 500;
@@ -30,6 +51,7 @@ final class Lang
     public const MAX_MISS_PER_REQUEST = 100;
 
     private static ?string $lang = null;
+    private static ?array $registry = null;
     private static ?array $dict = null;
     private static ?array $reverse = null;
     private static array $miss = [];
@@ -38,6 +60,270 @@ final class Lang
     //本请求已返回过的长文本译文，防止「控制器翻过、模板再翻一次」把译文当新原文收集
     private static array $longReverse = [];
     private static bool $shutdownRegistered = false;
+
+    // ---------------- 语言注册表：内置 4 种 + 站长自定义 ----------------
+
+    /**
+     * 站点语言注册表。
+     *
+     * 每项：code / name / zh / prompt / short / enabled / builtin，显示名等元数据一律来自 LangCatalog。
+     * 内置语言恒在表内（可停用不可删），站长新增的语言追加在后面，顺序即前台切换器的顺序。
+     * 配置损坏、还没安装、数据库连不上时一律降级回内置四种——本方法永不抛错。
+     *
+     * @return array<string, array{code:string,name:string,zh:string,prompt:string,short:string,enabled:bool,builtin:bool}>
+     */
+    public static function registry(): array
+    {
+        if (self::$registry !== null) {
+            return self::$registry;
+        }
+
+        $rows = [];
+        try {
+            //cached() 只读 runtime/config 快照（共享锁，命中不了就返回 null），不碰数据库
+            $raw = \App\Model\Config::cached(self::REGISTRY_CONFIG);
+            if (is_string($raw) && $raw !== "") {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $rows = $decoded;
+                }
+            }
+        } catch (\Throwable $e) {
+        }
+
+        return self::$registry = self::normalizeRegistry($rows);
+    }
+
+    /**
+     * 把存下来的原始数组补全成完整注册表
+     * @param array $rows
+     * @return array
+     */
+    private static function normalizeRegistry(array $rows): array
+    {
+        $registry = [];
+
+        //先按存储顺序铺开，站长在后台排的序就是前台切换器的序
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $code = self::normalizeCode((string)($row["code"] ?? ""));
+            if ($code === "") {
+                continue;
+            }
+            $registry[$code] = self::makeEntry(
+                $code,
+                (string)($row["name"] ?? ""),
+                (string)($row["prompt"] ?? ""),
+                !isset($row["enabled"]) || (bool)$row["enabled"]
+            );
+        }
+
+        //配置里没提到的内置语言补回默认值：老站点升级、配置被手工删过都能自愈
+        foreach (self::BUILTIN as $code) {
+            if (!isset($registry[$code])) {
+                $registry[$code] = self::makeEntry($code, "", "", true);
+            }
+        }
+
+        //源语言是整套翻译的基准，既不能停用也不该排在别人后面
+        $source = $registry[self::SOURCE];
+        $source["enabled"] = true;
+        unset($registry[self::SOURCE]);
+
+        return [self::SOURCE => $source] + $registry;
+    }
+
+    /**
+     * @param string $code
+     * @param string $name
+     * @param string $prompt
+     * @param bool $enabled
+     * @return array{code:string,name:string,zh:string,prompt:string,short:string,enabled:bool,builtin:bool}
+     */
+    private static function makeEntry(string $code, string $name, string $prompt, bool $enabled): array
+    {
+        $builtin = in_array($code, self::BUILTIN, true);
+
+        //语言表说了算：站长改不了名字，语言表以后修订了也能自动同步到所有站点。
+        //存下来的 name/prompt 只在语言表没收录这个代码时兜底（老配置、语言表调整过）。
+        $meta = LangCatalog::get($code);
+        if ($meta !== null) {
+            return $meta + ["enabled" => $enabled, "builtin" => $builtin];
+        }
+
+        $name = trim($name);
+        $prompt = trim($prompt);
+        $name = $name !== "" ? $name : $code;
+
+        return [
+            "code" => $code,
+            "name" => $name,
+            "zh" => $name,
+            "prompt" => $prompt !== "" ? $prompt : $name,
+            "short" => strtoupper(substr(explode("-", $code)[0], 0, 2)),
+            "enabled" => $enabled,
+            "builtin" => $builtin,
+        ];
+    }
+
+    /**
+     * 语言码规范化：非法返回空串。
+     *
+     * 只放行 BCP-47 的小写子集——这个值会直接拼进 runtime/lang/{code}.php 的文件名、
+     * Cookie 值与前端 URL，任何路径分隔符/点号都必须挡在门外。
+     *
+     * @param string $code
+     * @return string
+     */
+    public static function normalizeCode(string $code): string
+    {
+        $code = strtolower(trim(str_replace("_", "-", $code)));
+        if (!preg_match('/^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$/', $code)) {
+            return "";
+        }
+        return $code;
+    }
+
+    /**
+     * 站点当前启用的语言码（含源语言，源语言在首位）
+     * @return string[]
+     */
+    public static function langs(): array
+    {
+        $codes = [];
+        foreach (self::registry() as $code => $item) {
+            if ($item["enabled"]) {
+                $codes[] = $code;
+            }
+        }
+        return $codes;
+    }
+
+    /**
+     * 需要翻译的目标语言 = 启用的非源语言。
+     * 停用的语言不再收集 miss、不再投递给翻译插件——GitHub #887 要的就是这个。
+     * @return string[]
+     */
+    public static function targets(): array
+    {
+        return array_values(array_diff(self::langs(), [self::SOURCE]));
+    }
+
+    /**
+     * 全部已注册语言码（含停用）。停用只是不对外提供，已有译文照常保留、随时可再启用。
+     * @return string[]
+     */
+    public static function registered(): array
+    {
+        return array_keys(self::registry());
+    }
+
+    /**
+     * 是否已注册（含停用）——落库/重建缓存这类不对外的操作用它校验
+     * @param string $code
+     * @return bool
+     */
+    public static function known(string $code): bool
+    {
+        return isset(self::registry()[$code]);
+    }
+
+    /**
+     * 是否可对外提供（已注册且启用）——解析请求语言、输出字典用它校验
+     * @param string $code
+     * @return bool
+     */
+    public static function acceptable(string $code): bool
+    {
+        return (self::registry()[$code]["enabled"] ?? false) === true;
+    }
+
+    /**
+     * 显示名，未注册的语言原样返回语言码
+     * @param string $code
+     * @return string
+     */
+    public static function name(string $code): string
+    {
+        return (string)(self::registry()[$code]["name"] ?? $code);
+    }
+
+    /**
+     * 交给 AI 翻译插件的目标语言描述
+     * @param string $code
+     * @return string
+     */
+    public static function promptName(string $code): string
+    {
+        return (string)(self::registry()[$code]["prompt"] ?? self::name($code));
+    }
+
+    /**
+     * 语言码的 BCP-47 写法：站内一律小写存放（zh-cn / pt-br），对外要把地区子标签大写。
+     * 用在 <html lang="…">、hreflang，以及切换器里给每种语言标注代码的模板。
+     * @param string $code
+     * @return string
+     */
+    public static function tag(string $code): string
+    {
+        $parts = explode("-", $code);
+        if (isset($parts[1])) {
+            $parts[1] = strtoupper($parts[1]);
+        }
+        return implode("-", $parts);
+    }
+
+    /**
+     * 前台语言切换器数据源。模板里直接 #{foreach lang_menu() as $l} 即可，
+     * 站长加了语言、停用了语言都不用再改模板。
+     *
+     * 每项：code 语言码 / name 显示名 / short 角标 / tag BCP-47 写法 / active 是否当前语言
+     * @return array<int, array{code:string,name:string,short:string,tag:string,active:bool}>
+     */
+    public static function menu(): array
+    {
+        $current = self::get();
+        $menu = [];
+        foreach (self::registry() as $code => $item) {
+            if (!$item["enabled"]) {
+                continue;
+            }
+            $menu[] = [
+                "code" => $code,
+                "name" => $item["name"],
+                "short" => $item["short"],
+                "tag" => self::tag($code),
+                "active" => $code === $current,
+            ];
+        }
+        return $menu;
+    }
+
+    /**
+     * 保存注册表。只有后台语言管理会调用它。
+     *
+     * @param array $rows [[code,name,prompt,enabled], ...]
+     * @return array 规范化后的注册表
+     */
+    public static function saveRegistry(array $rows): array
+    {
+        $clean = [];
+        foreach (self::normalizeRegistry($rows) as $item) {
+            $clean[] = [
+                "code" => $item["code"],
+                "name" => $item["name"],
+                "prompt" => $item["prompt"],
+                "enabled" => $item["enabled"],
+            ];
+        }
+
+        \App\Model\Config::put(self::REGISTRY_CONFIG, json_encode($clean, JSON_UNESCAPED_UNICODE));
+        self::$registry = null;
+
+        return self::registry();
+    }
 
     /**
      * 解析当前请求语言：cookie > Accept-Language > zh-cn
@@ -49,8 +335,8 @@ final class Lang
             return self::$lang;
         }
 
-        $cookie = strtolower(trim((string)($_COOKIE[self::COOKIE] ?? "")));
-        if (in_array($cookie, self::LANGS, true)) {
+        $cookie = self::normalizeCode((string)($_COOKIE[self::COOKIE] ?? ""));
+        if ($cookie !== "" && self::acceptable($cookie)) {
             return self::$lang = $cookie;
         }
 
@@ -96,21 +382,32 @@ final class Lang
      */
     private static function mapTag(string $tag): ?string
     {
+        //整串精确命中优先：站长加了 pt-br，浏览器报 pt-br 就直接用它
+        if (self::acceptable($tag)) {
+            return $tag;
+        }
+
         if (str_starts_with($tag, "zh")) {
-            //zh-tw / zh-hk / zh-mo / zh-hant 归繁体，其余中文归简体
+            //zh-tw / zh-hk / zh-mo / zh-hant 归繁体，其余中文归简体；停用了就回落到另一边
             foreach (["tw", "hk", "mo", "hant"] as $t) {
                 if (str_contains($tag, $t)) {
-                    return "zh-tw";
+                    return self::acceptable("zh-tw") ? "zh-tw" : (self::acceptable("zh-cn") ? "zh-cn" : null);
                 }
             }
-            return "zh-cn";
+            return self::acceptable("zh-cn") ? "zh-cn" : null;
         }
-        if (str_starts_with($tag, "en")) {
-            return "en";
+
+        //其余按主标签匹配：浏览器报 ko-kr 命中站点的 ko，报 pt 命中站点的 pt-br
+        $primary = explode("-", $tag)[0];
+        foreach (self::registry() as $code => $item) {
+            if (!$item["enabled"]) {
+                continue;
+            }
+            if ($code === $primary || str_starts_with($code, $primary . "-")) {
+                return $code;
+            }
         }
-        if (str_starts_with($tag, "ja")) {
-            return "ja";
-        }
+
         return null;
     }
 
@@ -132,6 +429,7 @@ final class Lang
         self::$lang = $lang;
         self::$dict = null;
         self::$reverse = null;
+        self::$registry = null;
         self::$miss = [];
     }
 
@@ -330,7 +628,7 @@ final class Lang
         $miss = self::$miss;
         self::$miss = [];
 
-        $targets = array_values(array_diff(self::LANGS, [self::SOURCE]));
+        $targets = self::targets();
 
         try {
             $now = date("Y-m-d H:i:s");
@@ -377,7 +675,7 @@ final class Lang
      */
     public static function store(string $source, string $lang, ?string $text, int $status = 1, string $scene = "dyn"): void
     {
-        if (!in_array($lang, self::LANGS, true) || $lang === self::SOURCE) {
+        if (!self::known($lang) || $lang === self::SOURCE) {
             return;
         }
         $now = date("Y-m-d H:i:s");
@@ -443,7 +741,7 @@ final class Lang
     public static function scanExtensionPacks(bool $force = false): array
     {
         $result = ["packs" => 0, "imported" => 0, "extensions" => []];
-        $targets = array_values(array_diff(self::LANGS, [self::SOURCE]));
+        $targets = self::targets();
 
         $stateFile = BASE_PATH . "/runtime/lang/packs.json";
         $state = [];
@@ -514,7 +812,7 @@ final class Lang
      */
     public static function importPackFile(string $file, string $lang, string $scene, bool $force = false): int
     {
-        if (!in_array($lang, self::LANGS, true) || $lang === self::SOURCE) {
+        if (!self::known($lang) || $lang === self::SOURCE) {
             return 0;
         }
         $pack = json_decode((string)@file_get_contents($file), true);
@@ -625,14 +923,14 @@ final class Lang
      */
     public static function rebuild(?string $lang = null): void
     {
-        $langs = $lang === null ? array_diff(self::LANGS, [self::SOURCE]) : [$lang];
+        $langs = $lang === null ? array_diff(self::registered(), [self::SOURCE]) : [$lang];
         $dir = BASE_PATH . "/runtime/lang";
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
 
         foreach ($langs as $l) {
-            if (!in_array($l, self::LANGS, true) || $l === self::SOURCE) {
+            if (!self::known($l) || $l === self::SOURCE) {
                 continue;
             }
             try {
@@ -804,7 +1102,7 @@ final class Lang
      */
     public static function dict(string $lang): array
     {
-        if (!in_array($lang, self::LANGS, true) || $lang === self::SOURCE) {
+        if (!self::known($lang) || $lang === self::SOURCE) {
             return [];
         }
         //前端 i18n() 只翻短 UI 文案，从不整段翻商品详情/公告——那些富文本走服务端 trans()，

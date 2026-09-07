@@ -34,7 +34,10 @@ class SharedValidation implements InterceptorInterface
             throw new JSONException("商户ID不存在");
         }
         $signature = Str::generateSignature($this->request->unsafePost(), $user->app_key);
-        if ($this->request->unsafePost("sign") != $signature) {
+        $sign = $this->request->unsafePost("sign");
+        //强类型 + 定时安全比较：hash_equals 只吃字符串，先挡掉数组/null；
+        //避免松散 != 的 magic hash("0e…" 全数字被当 0 相等) 与逐字节短路的时序侧信道。
+        if (!is_string($sign) || !hash_equals($signature, $sign)) {
             throw new JSONException("密钥错误");
         }
         //保存会话

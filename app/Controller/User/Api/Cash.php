@@ -82,8 +82,19 @@ class Cash extends User
             }
         }
 
+        //风控判决。提现是资损真正兑现的地方 —— 注册一个空账号几乎没有价值，
+        //危害要到把钱提走这一步才落地，所以真正的闸门在这里。
+        $riskMap = ['type' => $type, 'amount' => $amount, 'cost' => $cashCost];
+        $risk = new \App\Entity\RiskContext('cash', $riskMap);
+        hook(\App\Consts\Hook::USER_API_CASH_SUBMIT_BEGIN, $risk, $u, $riskMap);
+        if ($risk->denied()) {
+            throw new JSONException($risk->message("该笔兑现暂时无法提交，请联系客服"));
+        }
+
         $userId = $u->id;
-        $status = $type == 2 ? 1 : 0;
+        //挂人工审核不需要发明新状态：cash.status = 0 本来就是「待站长处理」，
+        //只有 type==2（兑现到可消费余额）会自动到账，挂起时把这条捷径关掉即可。
+        $status = ($type == 2 && !$risk->held()) ? 1 : 0;
         Db::transaction(function () use ($amount, $userId, $cashCost, $type, $status, $u) {
             $user = \App\Model\User::query()->find($userId);
             \App\Model\Bill::create($user, $amount, \App\Model\Bill::TYPE_SUB, "兑现", 1);

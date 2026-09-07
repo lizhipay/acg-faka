@@ -808,6 +808,88 @@ class Config extends Manage
         return $this->json(200, '已清空');
     }
 
+    /**
+     * 把一条违规记录加进外部脚本放行清单。
+     *
+     * 关键：入参是**违规记录的分组 key**，不是站长自己敲的域名。服务端拿 key 去违规库里
+     * 反查，只有本站真实请求过、真的被拦下来、且发生在前台的脚本类违规才允许放行——
+     * 站长因此填不宽也填不错，这是这套机制唯一的安全支点（GitHub #909）。
+     *
+     * @return array
+     * @throws JSONException
+     */
+    public function cspAllow(): array
+    {
+        if (strtoupper($this->request->method()) !== 'POST') {
+            throw new JSONException('仅接受 POST 请求');
+        }
+
+        $key = trim((string)($_POST['key'] ?? ''));
+        $grain = (string)($_POST['grain'] ?? 'dir');
+        if (!in_array($grain, ['file', 'dir', 'host'], true)) {
+            $grain = 'dir';
+        }
+
+        $row = null;
+        foreach (\App\Util\Csp::violations(1000) as $item) {
+            if (($item['key'] ?? '') === $key) {
+                $row = $item;
+                break;
+            }
+        }
+        if ($row === null) {
+            throw new JSONException('这条违规记录不存在，可能已被清空，请刷新后重试');
+        }
+        if (!\App\Util\Csp::allowable($row)) {
+            throw new JSONException(
+                str_starts_with((string)($row['document'] ?? ''), '/admin')
+                    ? '后台页面的脚本不能在这里放行。后台一律不加载第三方脚本；确有需要请用插件订阅 CSP_SOURCE_ALLOW 钩子。'
+                    : '这条违规不是外部脚本被拦（比如内联脚本、eval），加白名单解决不了它。'
+            );
+        }
+
+        $source = \App\Util\Csp::deriveSource((string)$row['blocked'], $grain);
+        if ($source === '') {
+            throw new JSONException('无法从这条记录里解析出可放行的地址');
+        }
+
+        $list = \App\Util\Csp::allowList();
+        if (in_array($source, $list, true)) {
+            return $this->json(200, '这个地址已经在放行清单里了', ['list' => $list]);
+        }
+        if (count($list) >= \App\Util\Csp::MAX_ALLOW) {
+            throw new JSONException('放行清单最多 ' . \App\Util\Csp::MAX_ALLOW . ' 条，请先移除不用的');
+        }
+
+        $list[] = $source;
+        $list = \App\Util\Csp::saveAllowList($list);
+
+        ManageLog::log($this->getManage(), "[CSP]放行外部脚本源 {$source}");
+        return $this->json(200, "已放行 {$source}，刷新前台页面即可生效", ['list' => $list]);
+    }
+
+    /**
+     * 从放行清单里移除一条
+     * @return array
+     * @throws JSONException
+     */
+    public function cspAllowRemove(): array
+    {
+        if (strtoupper($this->request->method()) !== 'POST') {
+            throw new JSONException('仅接受 POST 请求');
+        }
+
+        $source = trim((string)($_POST['source'] ?? ''));
+        $list = \App\Util\Csp::allowList();
+        if ($source === '' || !in_array($source, $list, true)) {
+            throw new JSONException('这条放行记录不存在');
+        }
+
+        $list = \App\Util\Csp::saveAllowList(array_values(array_diff($list, [$source])));
+        ManageLog::log($this->getManage(), "[CSP]移除外部脚本源 {$source}");
+        return $this->json(200, "已移除 {$source}", ['list' => $list]);
+    }
+
     public function other(): array
     {
         $map = $this->configPost(self::OTHER_REQUEST_FIELDS, '其他设置');

@@ -134,6 +134,11 @@ class Config extends Manage
             "request_log_summary" => \Kernel\Util\RequestLogger::summary(),
             "csp_summary" => \App\Util\Csp::summary(),
             "csp_violations" => \App\Util\Csp::violations(30),
+            "csp_allow" => array_map(static fn(string $src): array => [
+                'source' => $src,
+                //只填到域名的条目范围最大，界面上要标出来
+                'broad' => !str_contains(preg_replace('#^https?://#', '', $src) ?? $src, '/'),
+            ], \App\Util\Csp::allowList()),
         ]);
     }
 

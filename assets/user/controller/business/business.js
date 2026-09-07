@@ -143,6 +143,8 @@
     function _CategoryDef() {
         _CateTable = new Table("/user/api/master/category", "#master_category");
         _CateTable.setTree(1);
+        // 分类树要整棵渲染，接口不分页(#922)：分页会让父分类不在同一页的子分类直接消失
+        _CateTable.disablePagination();
         _CateTable.setColumns([
             {field: 'icon', title: '#', type: "image"},
             {field: 'name', title: '主站分类名称'},
@@ -242,7 +244,7 @@
                                                 height: 48,
                                                 placeholder: "自定义分类名称，不填写代表使用主站的，支持各种HTML美化代码"
                                             },
-                                            {title: "状态", name: "status", type: "switch", text: "显示|隐藏"}
+                                            {title: "状态", name: "status", type: "switch", text: "显示|隐藏", default: 1} // 首次设置还没有记录，默认显示，否则保存即隐藏(#922)
                                         ]
                                     }
                                 ],
@@ -392,7 +394,7 @@
                                                 default: 0,
                                                 tips: "按百分比加价后价格出现小数时的处理方式。仅对设置了加价的商品生效。"
                                             },
-                                            {title: "状态", name: "status", type: "switch", text: "显示|隐藏"}
+                                            {title: "状态", name: "status", type: "switch", text: "显示|隐藏", default: 1} // 首次设置还没有记录，默认显示，否则保存即隐藏(#922)
                                         ]
                                     }
                                 ],

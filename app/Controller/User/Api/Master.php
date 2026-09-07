@@ -34,19 +34,23 @@ class Master extends User
         $map = [];
         $map['equal-status'] = 1;
         $map['equal-owner'] = 0;
-        $map['equal-hide'] = 0;
+        //不过滤 hide：隐藏分类只是对游客不可见，配好会员等级后分站的会员照样能看到，分站主必须能配置它(#922)
         $get = new Get(\App\Model\Category::class);
-        $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
-
+        //树形表格靠 pid 拼父子关系，必须一次返回全部；分页会把父分类不在同一页的子分类整行丢掉(#922)
         $get->setWhere($map);
         $get->setOrderBy('sort', 'asc');
         $get->setColumn('id', 'icon', 'name', 'pid');
         $data = $this->query->get($get);
 
+        $ids = array_map('intval', array_column($data['list'], 'id'));
+        $userCategories = UserCategory::query()->where("user_id", $this->getUser()->id)->get()->keyBy("category_id");
 
         foreach ($data['list'] as &$item) {
-            $userCategory = UserCategory::query()->where("user_id", $this->getUser()->id)->where("category_id", $item['id'])->first();
-            $item['user_category'] = $userCategory?->toArray();
+            //上级不在列表里(被停用)的分类按顶级渲染，否则前端 treegrid 找不到父节点会把它丢掉
+            if ($item['pid'] !== null && !in_array((int)$item['pid'], $ids, true)) {
+                $item['pid'] = null;
+            }
+            $item['user_category'] = $userCategories->get((int)$item['id'])?->toArray();
         }
 
         return $this->json(data: $data);
@@ -58,16 +62,30 @@ class Master extends User
     public function setCategory(): array
     {
         $map = $this->request->post(flags: Filter::NORMAL);
-        $map['user_id'] = $this->getUser()->id;
+        $userId = $this->getUser()->id;
+        $id = (int)($map['id'] ?? 0);
+        $categoryId = (int)($map['category_id'] ?? 0);
 
-        if ($map['id'] != 0) {
-            if (!UserCategory::query()->where("user_id", $map['user_id'])->find($map['id'])) {
+        if ($id != 0) {
+            if (!UserCategory::query()->where("user_id", $userId)->find($id)) {
                 throw new JSONException("设置错误，请刷新网页");
             }
+        } else {
+            //首次设置时还没有 user_category 记录：确认是主站分类后按 (user_id, category_id) 复用已有记录，没有才新建(#922)
+            if ($categoryId <= 0 || !\App\Model\Category::query()->where("owner", 0)->where("id", $categoryId)->exists()) {
+                throw new JSONException("分类不存在，请刷新网页");
+            }
+            $id = (int)(UserCategory::query()->where("user_id", $userId)->where("category_id", $categoryId)->value("id") ?? 0);
         }
 
         $save = new Save(UserCategory::class);
+        $save->setId($id);
         $save->setMap($map, ['name', 'status']);
+        if ($id == 0) {
+            //白名单会把 user_id/category_id 一起滤掉，新建记录必须强制写入，否则 NOT NULL 列让 INSERT 直接报错(#922)
+            $save->addForceMap("user_id", $userId);
+            $save->addForceMap("category_id", $categoryId);
+        }
         $save = $this->query->save($save);
 
         if (!$save) {
@@ -158,15 +176,29 @@ class Master extends User
     public function setCommodity(): array
     {
         $map = $this->request->post(flags: Filter::NORMAL);
-        $map['user_id'] = $this->getUser()->id;
-        if ($map['id'] != 0) {
-            if (!UserCommodity::query()->where("user_id", $map['user_id'])->find($map['id'])) {
+        $userId = $this->getUser()->id;
+        $id = (int)($map['id'] ?? 0);
+        $commodityId = (int)($map['commodity_id'] ?? 0);
+
+        if ($id != 0) {
+            if (!UserCommodity::query()->where("user_id", $userId)->find($id)) {
                 throw new JSONException("设置错误，请刷新网页");
             }
+        } else {
+            //首次设置时还没有 user_commodity 记录：确认是主站商品后按 (user_id, commodity_id) 复用已有记录，没有才新建(#922)
+            if ($commodityId <= 0 || !\App\Model\Commodity::query()->where("owner", 0)->where("id", $commodityId)->exists()) {
+                throw new JSONException("商品不存在，请刷新网页");
+            }
+            $id = (int)(UserCommodity::query()->where("user_id", $userId)->where("commodity_id", $commodityId)->value("id") ?? 0);
         }
 
-        if ($map['premium'] < 0) {
-            throw new JSONException("加价百分比，无法低于0");
+        if (isset($map['premium']) && $map['premium'] !== '') {
+            if (!is_numeric($map['premium'])) {
+                throw new JSONException("加价百分比必须是数字");
+            }
+            if ($map['premium'] < 0) {
+                throw new JSONException("加价百分比，无法低于0");
+            }
         }
 
         if (isset($map['rounding'])) {
@@ -177,9 +209,15 @@ class Master extends User
         }
 
         $save = new Save(UserCommodity::class);
+        $save->setId($id);
         //description 走的是普通 post()，WAF 已经用 HTMLPurifier 过滤过一遍，
         //分站主是普通用户不是管理员，这里刻意不像后台那样取 unsafePost 原文(#805)
         $save->setMap($map, ['name', 'description', 'premium', 'status', 'rounding']);
+        if ($id == 0) {
+            //白名单会把 user_id/commodity_id 一起滤掉，新建记录必须强制写入，否则 NOT NULL 列让 INSERT 直接报错(#922)
+            $save->addForceMap("user_id", $userId);
+            $save->addForceMap("commodity_id", $commodityId);
+        }
 
         $save = $this->query->save($save);
         if (!$save) {

@@ -122,19 +122,42 @@ class Authentication extends User
             $user->pid = $_COOKIE['promotion_from'];
         }
 
+        //风控判决。刻意放在下面那个 try 之**外**：try 会把任何异常改写成「注册失败」，
+        //风控给的具体理由（含可查证编号）到用户那儿就没了。
+        $risk = new \App\Entity\RiskContext('register');
+        hook(Hook::USER_API_AUTH_REGISTER_VALIDATED, $risk, $user);
+
+        if ($risk->denied()) {
+            throw new JSONException($risk->message("注册失败"));
+        }
+
+        //挂人工审核 = 账号照建但不可用，且**不签发会话**。
+        //user.status 只有 1 才算可用（UserVisitor / UserSession 都这么判），
+        //所以未审核账号自然登录不了，在后台会员列表里就是「禁用」，既有工具全都认得。
+        //不跳过 loginSuccess 的话，用户会「注册成功」之后下一次点击就掉线。
+        $riskHeld = $risk->held();
+        if ($riskHeld) {
+            $user->status = 0;
+        }
+
         try {
             //session销毁
             Captcha::destroy("register");
                 $user->phone != null ?? $this->sms->destroyCaptcha($user->phone, Sms::CAPTCHA_REGISTER);
                 $user->email != null ?? $this->email->destroyCaptcha($user->email, Email::CAPTCHA_REGISTER);
             $user->save();
-            $this->sso->loginSuccess($user);
+            if (!$riskHeld) {
+                $this->sso->loginSuccess($user);
+            }
         } catch (\Exception $e) {
             throw new JSONException("注册失败");
         }
 
 
         hook(Hook::USER_API_AUTH_REGISTER_AFTER, $user);
+        if ($riskHeld) {
+            return $this->json(200, $risk->message("注册成功，账号正在人工审核中，通过后即可登录"));
+        }
         return $this->json(200, '注册成功');
     }
 
@@ -340,6 +363,15 @@ class Authentication extends User
     public function password(): array
     {
         $forgetType = (int)Config::get("forget_type");
+
+        //风控判决。刻意放在验证码校验**之前** —— 拒绝时不该白白消耗掉
+        //用户手里那条邮件/短信验证码，也不该替攻击者把站长的短信费烧掉。
+        $riskAccount = (string)($_POST['username'] ?? '');
+        $risk = new \App\Entity\RiskContext('password');
+        hook(Hook::USER_API_AUTH_PASSWORD_BEGIN, $risk, $riskAccount);
+        if ($risk->denied() || $risk->held()) {
+            throw new JSONException($risk->message("操作过于频繁，请稍后再试"));
+        }
 
         if (!isset($_POST['password']) || !Validation::password((string)$_POST['password'])) {
             throw new JSONException("密码最少6位");

@@ -9,6 +9,7 @@ use App\Interceptor\Waf;
 use App\Service\Ticket as TicketService;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
+use Kernel\Exception\JSONException;
 use Kernel\Waf\Filter;
 
 #[Interceptor([Waf::class, UserSession::class], Interceptor::TYPE_API)]
@@ -60,7 +61,15 @@ class Ticket extends User
     public function create(): array
     {
         $map = (array)$this->request->post(flags: Filter::NORMAL);
-        return $this->json(200, '工单创建成功', $this->ticket->create($this->getUser(), $map));
+
+        $riskUser = $this->getUser();
+        $risk = new \App\Entity\RiskContext('ticket', $map);
+        hook(\App\Consts\Hook::USER_API_TICKET_CREATE_BEGIN, $risk, $riskUser, $map);
+        if ($risk->denied()) {
+            throw new JSONException($risk->message("提交过于频繁，请稍后再试"));
+        }
+
+        return $this->json(200, '工单创建成功', $this->ticket->create($riskUser, $map));
     }
 
     public function reply(): array

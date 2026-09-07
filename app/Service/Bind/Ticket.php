@@ -208,7 +208,7 @@ class Ticket implements \App\Service\Ticket
             $counts[(int)$row->status] = (int)$row->aggregate;
         }
         $todayQuery = clone $base;
-        $today = (int)$todayQuery->whereBetween('create_time', [Date::calcDay(), Date::calcDay(1)])->count();
+        $today = (int)$todayQuery->whereBetween('create_time', [Date::calcDay(), Date::calcDay(0, Date::TYPE_END)])->count();
 
         return [
             'pending_admin' => $counts[TicketModel::STATUS_PENDING_ADMIN],

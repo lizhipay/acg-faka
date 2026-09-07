@@ -12,6 +12,21 @@ final class Csp
 
     public const MODE_CONFIG = 'csp_mode';
 
+    /**
+     * 站长放行的外部脚本源（换行分隔）。
+     *
+     * 只能通过「违规记录 → 允许」写入，没有自由输入的入口——这是这套机制唯一的安全支点：
+     * 白名单里只可能出现本站真实请求过、并且真的被拦下来的地址，站长填不宽也填不错。
+     * 详见 GitHub #909。
+     */
+    public const ALLOW_CONFIG = 'csp_script_allow';
+
+    /** 单站最多放行多少条，防止越攒越乱 */
+    public const MAX_ALLOW = 30;
+
+    /** 只有这些指令的违规可以被加白：放行的永远只是"脚本能从哪来" */
+    public const ALLOWABLE_DIRECTIVES = ['script-src', 'script-src-elem', 'worker-src'];
+
     public const REPORT_PATH = '/csp/report';
 
     private const STORE = BASE_PATH . '/runtime/csp/violations.json';
@@ -198,6 +213,17 @@ final class Csp
         $collected = [];
         try {
             $sources = array_fill_keys(self::EXTENSIBLE, []);
+
+            //站长在「违规记录」里点允许的外部脚本源。
+            //**只在前台生效**：后台 XSS 直接拿管理员会话，代价比前台高一个量级，而挂件、
+            //统计脚本这类需求 100% 在前台模板里。后台真要加载第三方脚本，走下面那个插件钩子。
+            if (!str_starts_with((string)getLocalRouter(), '/admin')) {
+                foreach (self::allowList() as $source) {
+                    $sources['script-src'][] = $source;
+                    $sources['worker-src'][] = $source;
+                }
+            }
+
             hook(\App\Consts\Hook::CSP_SOURCE_ALLOW, $sources);
 
             foreach (self::EXTENSIBLE as $directive) {
@@ -299,7 +325,131 @@ final class Csp
     {
         $store = self::read();
         uasort($store, static fn(array $a, array $b): int => ($b['count'] ?? 0) <=> ($a['count'] ?? 0));
-        return array_slice(array_values($store), 0, max(1, $limit));
+
+        $rows = [];
+        foreach ($store as $key => $row) {
+            //把分组 key 带出去，前端「允许」按钮要靠它指回这一条
+            $row['key'] = (string)$key;
+            $row['allowable'] = self::allowable($row);
+            $rows[] = $row;
+        }
+        return array_slice($rows, 0, max(1, $limit));
+    }
+
+    /**
+     * 这条违规能不能加白。
+     *
+     * 三个条件缺一不可：
+     *  - 是脚本类指令（放行的只该是"脚本能从哪来"）
+     *  - **不是后台页面**：后台 XSS 直接拿管理员会话，代价比前台高一个量级；
+     *    后台真要加载第三方脚本，走 CSP_SOURCE_ALLOW 插件钩子，那条路是给开发者的
+     *  - 被拦对象是个正常的 http(s) 绝对地址（inline / eval 这类拦不是靠加域名解决的）
+     *
+     * @param array $row
+     * @return bool
+     */
+    public static function allowable(array $row): bool
+    {
+        if (!in_array((string)($row['directive'] ?? ''), self::ALLOWABLE_DIRECTIVES, true)) {
+            return false;
+        }
+        if (str_starts_with((string)($row['document'] ?? ''), '/admin')) {
+            return false;
+        }
+        return self::deriveSource((string)($row['blocked'] ?? ''), 'dir') !== '';
+    }
+
+    /**
+     * 把被拦下来的完整地址收敛成一条 CSP 源表达式。
+     *
+     * @param string $blocked 违规记录里的被拦地址
+     * @param string $grain file=只这个文件 / dir=该目录（默认）/ host=整个域名
+     * @return string 非法返回空串
+     */
+    public static function deriveSource(string $blocked, string $grain = 'dir'): string
+    {
+        $parts = parse_url(trim($blocked));
+        if (!is_array($parts)) {
+            return '';
+        }
+        $scheme = strtolower((string)($parts['scheme'] ?? ''));
+        $host = strtolower((string)($parts['host'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || $host === '' || !str_contains($host, '.')) {
+            return '';
+        }
+        //第三方脚本源一定是个域名。IP 字面量和保留域（localhost/内网/测试域）不该进白名单——
+        //那多半是开发遗留，真放进去也只会解析到访客自己的机器上
+        if (filter_var($host, FILTER_VALIDATE_IP) !== false || str_starts_with($host, '[')) {
+            return '';
+        }
+        $tld = substr($host, (int)strrpos($host, '.') + 1);
+        if (in_array($tld, ['localhost', 'local', 'internal', 'intranet', 'test', 'invalid', 'example', 'lan', 'home'], true)) {
+            return '';
+        }
+
+        //一律按 https 放行：http 脚本在 https 站上本来就会被混合内容拦掉，
+        //不写 scheme 的话 CSP 会把 http 一起放行，白扩一片匹配面
+        $origin = 'https://' . $host;
+        $port = (int)($parts['port'] ?? 0);
+        if ($port > 0 && $port !== 443) {
+            $origin .= ':' . $port;
+        }
+
+        $path = (string)($parts['path'] ?? '');
+        $source = match ($grain) {
+            'file' => $path === '' ? $origin : $origin . $path,
+            //目录级：扛得住厂商发版换文件名(hash)，又不是整站放行
+            'dir' => $origin . (($slash = strrpos($path, '/')) === false ? '/' : substr($path, 0, $slash + 1)),
+            default => $origin,
+        };
+
+        return preg_match(self::SOURCE_PATTERN, $source) ? $source : '';
+    }
+
+    /**
+     * 站长已放行的脚本源
+     * @return string[]
+     */
+    public static function allowList(): array
+    {
+        try {
+            $raw = (string)(Config::cached(self::ALLOW_CONFIG) ?? '');
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $out = [];
+        foreach (preg_split('/[\r\n,]+/', $raw) ?: [] as $line) {
+            $line = trim($line);
+            if ($line !== '' && preg_match(self::SOURCE_PATTERN, $line)) {
+                $out[$line] = true;
+            }
+        }
+        return array_slice(array_keys($out), 0, self::MAX_ALLOW);
+    }
+
+    /**
+     * 覆盖写入放行清单。只有后台「违规记录 → 允许 / 移除」会调用。
+     * @param string[] $sources
+     * @return string[] 实际落库的清单
+     */
+    public static function saveAllowList(array $sources): array
+    {
+        $clean = [];
+        foreach ($sources as $source) {
+            if (!is_string($source)) {
+                continue;
+            }
+            $source = trim($source);
+            if ($source !== '' && preg_match(self::SOURCE_PATTERN, $source)) {
+                $clean[$source] = true;
+            }
+        }
+        $clean = array_slice(array_keys($clean), 0, self::MAX_ALLOW);
+
+        Config::put(self::ALLOW_CONFIG, implode("\n", $clean));
+        self::$extraCache = null;
+        return $clean;
     }
 
     public static function summary(): array

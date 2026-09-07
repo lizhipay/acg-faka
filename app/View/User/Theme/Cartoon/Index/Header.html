@@ -69,10 +69,9 @@
                 <i class="fa-duotone fa-regular fa-chevron-down lang-switch__caret"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end lang-switch__menu" aria-labelledby="langDropdown">
-                <li><a class="dropdown-item" href="javascript:;" data-lang-value="zh-cn">简体中文</a></li>
-                <li><a class="dropdown-item" href="javascript:;" data-lang-value="zh-tw">繁體中文</a></li>
-                <li><a class="dropdown-item" href="javascript:;" data-lang-value="en">English</a></li>
-                <li><a class="dropdown-item" href="javascript:;" data-lang-value="ja">日本語</a></li>
+                #{foreach $langs as $l}
+                    <li><a class="dropdown-item" href="javascript:;" data-lang-value="#{$l.code}">#{$l.name}</a></li>
+                #{/foreach}
             </ul>
         </div>
 

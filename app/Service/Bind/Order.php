@@ -89,7 +89,8 @@ class Order implements \App\Service\Order
         $this->parseConfig($commodity, $group);
         $config = (array)$commodity->config;
 
-        $price = $owner == 0 ? $commodity->price : $commodity->user_price;
+        //会员价留空(0)时回退零售价，避免"忘填会员价 = 登录用户 0 元白嫖"
+        $price = $owner == 0 ? $commodity->price : $commodity->memberPrice();
 
         if (!empty($race) && isset($config['category'][$race])) {
             $price = (float)$config['category'][$race];
@@ -153,7 +154,8 @@ class Order implements \App\Service\Order
         }
 
         $commodity = clone $commodity;
-        $price = (new Decimal($group ? $commodity->user_price : $commodity->price, 2));
+        //会员价留空(0)时回退零售价，避免"忘填会员价 = 登录用户 0 元白嫖"
+        $price = (new Decimal($group ? $commodity->memberPrice() : $commodity->price, 2));
 
         $levelPrice = $this->userDefinedPrice($commodity, $group);
         if ($levelPrice && $levelPrice['amount'] > 0 && $levelPrice['amount'] < $price->getAmount()) {
@@ -962,6 +964,24 @@ class Order implements \App\Service\Order
         $commodity = $order->commodity;
         $order->pay_time = Date::current();
         $order->status = 1;
+
+        //发货前的最后一道闸门。这是**唯一**能在卡密交出去之前把货扣下的位置，
+        //一处插入覆盖全部支付路径（0 元单、余额支付、各网关回调）。
+        //钱已经收到了，此刻不该再谈「拒绝」，只该决定卡发不发 ——
+        //所以订阅方只用 REVIEW：delivery_status 留 0、secret 换成提示文案，
+        //也就是手动发货商品在付款到发货之间的既有形态。
+        $risk = new \App\Entity\RiskContext('delivery');
+        hook(Hook::USER_API_ORDER_DELIVERY_BEGIN, $risk, $order, $commodity);
+        if ($risk->held()) {
+            $order->delivery_status = 0;
+            $order->secret = $risk->message("订单正在人工审核中，通过后会立即发货，请耐心等待。");
+            $order->save();
+            hook(Hook::USER_API_ORDER_PAY_AFTER, $commodity, $order, $order->pay);
+            //跳过：拉卡密、扣库存、分成与返利账单、发货邮件 ——
+            //这些副作用一个都没执行，所以审核通过后重跑一次恰好是对的
+            return (string)$order->secret;
+        }
+
         $shared = $commodity->shared;
 
         if ($shared) {
