@@ -33,7 +33,7 @@ session_set_cookie_params([
     'path' => '/',
     'httponly' => true,
     'samesite' => 'Lax',
-    'secure' => (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off'),
+    'secure' => App\Util\Client::isSecureRequest(),
 ]);
 session_name("ACG-SHOP");
 

@@ -134,7 +134,7 @@ class ManageSSO implements \App\Service\ManageSSO
             'path' => '/',
             'httponly' => true,               //禁止 JS 读取会话 Cookie（防 XSS 窃取/日志泄露复用）
             'samesite' => 'Lax',              //防 CSRF：跨站请求不携带后台会话
-            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+            'secure' => Client::isSecureRequest(),
         ]);
 
         //登录成功通知点位（会话已签发；钩子异常不影响登录结果）

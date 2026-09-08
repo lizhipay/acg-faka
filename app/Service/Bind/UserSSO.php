@@ -47,7 +47,7 @@ class UserSSO implements \App\Service\UserSSO
             'expires' => time() + $sessionExpire,
             'path' => '/',
             'samesite' => 'Lax',
-            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+            'secure' => Client::isSecureRequest(),
         ]);
         hook(Hook::USER_API_AUTH_LOGIN_AFTER, $user);
     }

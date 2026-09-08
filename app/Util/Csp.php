@@ -143,7 +143,7 @@ final class Csp
                 'path' => '/',
                 'httponly' => true,
                 'samesite' => 'Lax',
-                'secure' => (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off'),
+                'secure' => Client::isSecureRequest(),
             ]);
         }
         return $fresh;
