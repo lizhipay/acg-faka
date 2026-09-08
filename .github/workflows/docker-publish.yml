@@ -13,10 +13,14 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
     inputs:
+      version:
+        description: '镜像版本号，如 3.7.1（留空则只打 dev-<sha>）'
+        required: false
+        type: string
       tag_latest:
         description: '同时更新 latest 标签'
         type: boolean
-        default: false
+        default: true
 
 jobs:
   publish:
@@ -54,6 +58,23 @@ jobs:
           done
           exit "$fail"
 
+      # 手动触发时给的版本号：校验格式并拆出 major.minor，
+      # 这样不打 git tag 也能发出 3.7.1 / 3.7 这两个镜像标签。
+      - name: 解析手动指定的版本号
+        id: ver
+        env:
+          V: ${{ inputs.version }}
+        run: |
+          if [ -n "${V}" ]; then
+            case "${V}" in
+              [0-9]*.[0-9]*.[0-9]*) ;;
+              *) echo "::error::版本号要写成三段式，例如 3.7.1"; exit 1 ;;
+            esac
+            echo "full=${V}"        >> "$GITHUB_OUTPUT"
+            echo "minor=${V%.*}"    >> "$GITHUB_OUTPUT"
+            echo "::notice::将发布镜像标签 ${V} 和 ${V%.*}"
+          fi
+
       - name: 准备 QEMU
         uses: docker/setup-qemu-action@v3      # 交叉构建 arm64 用
 
@@ -71,7 +92,7 @@ jobs:
         if: steps.hub.outputs.enabled == 'true'
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: 计算镜像名与标签
@@ -80,11 +101,16 @@ jobs:
         with:
           images: |
             ghcr.io/${{ github.repository }}
-            name=${{ secrets.DOCKERHUB_USERNAME }}/acg-faka,enable=${{ steps.hub.outputs.enabled == 'true' }}
+            name=${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}/acg-faka,enable=${{ steps.hub.outputs.enabled == 'true' }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            # 手动触发且填了版本号时用这两条（type=semver 只认 git tag，手动跑产不出）
+            type=raw,value=${{ steps.ver.outputs.full }},enable=${{ steps.ver.outputs.full != '' }}
+            type=raw,value=${{ steps.ver.outputs.minor }},enable=${{ steps.ver.outputs.minor != '' }}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') || inputs.tag_latest }}
+            # 兜底：手动跑又没给版本号时，保证 tags 不为空（空了 build-push-action 直接失败）
+            type=raw,value=dev-{{sha}},enable=${{ github.event_name == 'workflow_dispatch' && steps.ver.outputs.full == '' }}
           labels: |
             org.opencontainers.image.title=acg-faka
             org.opencontainers.image.description=异次元发卡 — 基于 PHP8 的原生虚拟发卡与个人店铺系统
@@ -111,7 +137,7 @@ jobs:
         if: steps.hub.outputs.enabled == 'true'
         uses: peter-evans/dockerhub-description@v4
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ secrets.DOCKERHUB_USERNAME }}/acg-faka
+          repository: ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}/acg-faka
           readme-filepath: ./docker/README.md
