@@ -21,8 +21,8 @@ mkdir -p \
     runtime/view \
     runtime/waf
 
-# 后台“基础设置”会把上传的 Logo 写到 /favicon.ico。
-# 将它落到 assets/cache 这个持久化卷中，避免容器重建后丢失。
+# 网站公开路径 /favicon.ico 指向 assets/cache/favicon.ico。
+# 实际图片落在持久化卷中，避免容器重启或重建后丢失。
 if [ ! -f assets/cache/favicon.ico ]; then
     if [ -f /usr/local/share/acg-faka/favicon.ico ]; then
         cp /usr/local/share/acg-faka/favicon.ico assets/cache/favicon.ico
@@ -32,6 +32,11 @@ if [ ! -f assets/cache/favicon.ico ]; then
 fi
 
 if [ ! -L favicon.ico ]; then
+    # 兼容旧版保存逻辑：它会用上传图片替换 favicon.ico 这个符号链接，导致图片
+    # 只存在于容器可写层。重启同一个容器时先迁移到持久化卷，再恢复链接。
+    if [ -f favicon.ico ] && [ -s favicon.ico ]; then
+        cp favicon.ico assets/cache/favicon.ico
+    fi
     rm -f favicon.ico
     ln -s assets/cache/favicon.ico favicon.ico
 fi

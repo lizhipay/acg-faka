@@ -278,18 +278,34 @@ class Config extends Manage
             throw new JSONException('LOGO 文件大小不能超过 10MB');
         }
 
+        $publicFavicon = BASE_PATH . '/favicon.ico';
+        // Docker 部署的公开文件是符号链接，实际内容必须写进持久化卷；传统部署仍然
+        // 直接覆盖网站根目录的 favicon.ico，保持原有行为。
+        $target = is_link($publicFavicon)
+            ? BASE_PATH . '/assets/cache/favicon.ico'
+            : $publicFavicon;
         try {
-            $temporary = BASE_PATH . '/favicon.ico.setting-' . bin2hex(random_bytes(6));
+            $temporary = $target . '.setting-' . bin2hex(random_bytes(6));
         } catch (\Throwable $e) {
             throw new JSONException('无法创建安全的 LOGO 临时文件');
         }
         if (!copy($source, $temporary)) {
             throw new JSONException('LOGO 保存失败，请检查目录权限');
         }
-        if (!rename($temporary, BASE_PATH . '/favicon.ico')) {
+
+        // /favicon.ico 在 Docker 中是指向 assets/cache/favicon.ico 的符号链接。
+        // 不能 rename 到链接路径：rename 会替换链接本身，图片只留在容器可写层，
+        // 重启时链接被恢复后就会重新显示持久化卷里的旧图。
+        if (!@rename($temporary, $target)) {
+            // Windows 不一定允许 rename 覆盖已有文件，保留非 Docker 部署的兼容路径。
+            if (!@copy($temporary, $target)) {
+                @unlink($temporary);
+                throw new JSONException('LOGO 保存失败，请检查目录权限');
+            }
             @unlink($temporary);
-            throw new JSONException('LOGO 保存失败，请检查目录权限');
         }
+        @chmod($target, 0664);
+        clearstatcache(true, $target);
 
     }
 
