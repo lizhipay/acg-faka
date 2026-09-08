@@ -437,17 +437,59 @@ class Client
     }
 
     /**
+     * 判断当前请求是否通过 HTTPS 到达客户端。
+     *
+     * TLS 常在反向代理处终止，后端收到的连接仍是 HTTP。代理头只能在直连来源位于
+     * 后台配置的“受信代理”清单时使用，避免客户端伪造 X-Forwarded-Proto 后影响
+     * Secure Cookie 和回调地址。
+     */
+    public static function isSecureRequest(): bool
+    {
+        $https = strtolower(trim((string)($_SERVER['HTTPS'] ?? '')));
+        if ($https !== '' && $https !== 'off' && $https !== '0') {
+            return true;
+        }
+
+        if (strtolower(trim((string)($_SERVER['REQUEST_SCHEME'] ?? ''))) === 'https') {
+            return true;
+        }
+
+        $remoteAddress = self::normalizeIp((string)($_SERVER['REMOTE_ADDR'] ?? ''));
+        if ($remoteAddress === null || !self::isTrustedProxy($remoteAddress)) {
+            return false;
+        }
+
+        $forwardedProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? null;
+        if (is_scalar($forwardedProto) && strlen((string)$forwardedProto) <= 256) {
+            $proto = strtolower(trim(explode(',', (string)$forwardedProto, 2)[0]));
+            if (in_array($proto, ['http', 'https'], true)) {
+                return $proto === 'https';
+            }
+        }
+
+        $forwarded = $_SERVER['HTTP_FORWARDED'] ?? null;
+        if (!is_scalar($forwarded) || strlen((string)$forwarded) > self::MAX_PROXY_HEADER_LENGTH) {
+            return false;
+        }
+        $firstHop = explode(',', (string)$forwarded, 2)[0];
+        if (preg_match('/(?:^|;)\s*proto\s*=\s*"?(https?)"?(?:;|$)/i', $firstHop, $matches)) {
+            return strtolower($matches[1]) === 'https';
+        }
+        return false;
+    }
+
+    public static function getRequestScheme(): string
+    {
+        return self::isSecureRequest() ? 'https' : 'http';
+    }
+
+    /**
      * 获取URL地址
      * @return string
      */
     public static function getUrl(): string
     {
-        if (strtolower((string)$_SERVER["HTTPS"]) == "on") {
-            $_SERVER['REQUEST_SCHEME'] = "https";
-        } elseif (!isset($_SERVER['REQUEST_SCHEME'])) {
-            $_SERVER['REQUEST_SCHEME'] = "http";
-        }
-        return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'];
+        return self::getRequestScheme() . '://' . (string)($_SERVER['HTTP_HOST'] ?? '');
     }
 
     /**

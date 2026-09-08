@@ -28,13 +28,7 @@ class Request extends Abstract\Request
             $this->_unsafe_json = $this->json = (array)json_decode($this->raw, true);
         }
 
-        if (isset($_SERVER["HTTPS"]) && strtolower((string)$_SERVER["HTTPS"]) == "on") {
-            $this->header['Scheme'] = "https";
-        } elseif (!isset($_SERVER['REQUEST_SCHEME'])) {
-            $this->header['Scheme'] = "http";
-        } else {
-            $this->header['Scheme'] = $_SERVER['REQUEST_SCHEME'];
-        }
+        $this->header['Scheme'] = Client::getRequestScheme();
 
         $this->url = $this->header['Origin'] ?? $this->header['Scheme'] . '://' . $this->header['Host'];
         $this->domain = (string)explode(":", (string)$_SERVER['HTTP_HOST'])[0];

@@ -11,6 +11,7 @@ use App\Model\Upload as UploadModel;
 use App\Model\User;
 use App\Model\UserGroup;
 use App\Model\UserMessage;
+use App\Util\Client;
 use App\Util\Date;
 use App\Util\Throttle;
 use Illuminate\Database\Capsule\Manager as DB;
@@ -292,11 +293,7 @@ class Message implements \App\Service\Message
         }
 
         if (isset($_SERVER['HTTP_HOST']) && is_string($_SERVER['HTTP_HOST'])) {
-            $https = strtolower((string)($_SERVER['HTTPS'] ?? '')) === 'on';
-            $scheme = $https ? 'https' : strtolower((string)($_SERVER['REQUEST_SCHEME'] ?? 'http'));
-            if (!in_array($scheme, ['http', 'https'], true)) {
-                $scheme = 'http';
-            }
+            $scheme = Client::getRequestScheme();
             $candidates[] = $scheme . '://' . $_SERVER['HTTP_HOST'];
         }
 

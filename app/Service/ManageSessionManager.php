@@ -237,7 +237,7 @@ final class ManageSessionManager
             'path' => '/',
             'httponly' => true,
             'samesite' => 'Lax',
-            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+            'secure' => \App\Util\Client::isSecureRequest(),
         ]);
     }
 
