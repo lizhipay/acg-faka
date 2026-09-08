@@ -53,8 +53,13 @@ class View
             return false;
         }
 
+        //这几个目录允许被做成软链（容器里统一挂到数据卷，裸机上也有人把插件/模板
+        //挪到别的盘再软链回来）。每一个都要各自 realpath 后单独入列：
+        //realpath('app/View') 解不开更深一层的 'app/View/User/Theme' 软链，
+        //只放 app/View 的话主题模板会被判成"非法路径"，前台直接 500。
         $allowPaths = [
             realpath(BASE_PATH . '/app/View'),
+            realpath(BASE_PATH . '/app/View/User/Theme'),
             realpath(BASE_PATH . '/app/Pay'),
             realpath(BASE_PATH . '/app/Plugin')
         ];

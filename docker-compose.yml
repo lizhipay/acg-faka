@@ -42,15 +42,15 @@ services:
       ACG_DB_USERNAME: acg
       ACG_DB_PASSWORD_FILE: /secrets/mysql_app
       ACG_DB_PREFIX: acg_
+      # 有 redis 就把会话放 redis；不设这个变量时 entrypoint 会自动退回文件会话
+      ACG_REDIS_HOST: redis
+      ACG_REDIS_PORT: "6379"
     volumes:
       - acg_secrets:/secrets:ro
-      - acg_config:/var/www/html/config
-      - acg_install:/var/www/html/kernel/Install
-      - acg_runtime:/var/www/html/runtime
-      - acg_assets_cache:/var/www/html/assets/cache
-      - acg_plugins:/var/www/html/app/Plugin
-      - acg_pay:/var/www/html/app/Pay
-      - acg_themes:/var/www/html/app/View/User/Theme
+      # 镜像里站点的可写目录（配置/运行时/上传/插件/支付/模板/安装锁）都软链到 /data，
+      # 挂这一个卷就全保住了。别再按老结构逐个挂到 /var/www/html/... —— 那些路径
+      # 现在是软链，挂上去会把软链盖掉，站点起不来。
+      - acg_data:/data
 
   mysql:
     image: mysql:5.7
@@ -98,12 +98,6 @@ services:
 
 volumes:
   acg_secrets:
-  acg_config:
-  acg_install:
-  acg_runtime:
-  acg_assets_cache:
-  acg_plugins:
-  acg_pay:
-  acg_themes:
+  acg_data:
   acg_mysql:
   acg_redis:

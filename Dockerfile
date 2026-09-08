@@ -30,8 +30,18 @@ RUN set -eux; \
         printf 'Acquire::Check-Valid-Until "false";\n' > /etc/apt/apt.conf.d/99no-check-valid-until; \
     fi; \
     apt-get update; \
-    apt-get install -y --no-install-recommends nginx supervisor; \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+        nginx \
+        supervisor \
+        # 单容器全自动模式用的内置数据库与缓存。外接数据库时它们不会启动，
+        # 只占镜像体积，不占运行时资源。
+        mariadb-server \
+        mariadb-client \
+        redis-server \
+    ; \
+    rm -rf /var/lib/apt/lists/* /var/lib/mysql; \
+    # 数据目录一律落在 /data（单卷挂载），这里先把默认位置清掉
+    mkdir -p /data
 
 # 2) PHP 扩展。
 #
@@ -88,6 +98,7 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/acg-faka.conf
 COPY docker/php-fpm.conf     /usr/local/etc/php-fpm.d/zz-acg-faka.conf
 COPY docker/php.ini          /usr/local/etc/php/conf.d/acg-faka.ini
 COPY docker/entrypoint.sh    /usr/local/bin/acg-faka-entrypoint
+COPY docker/wait-db.sh       /usr/local/bin/acg-wait-db
 
 COPY . ${ACG_HOME}
 
@@ -138,8 +149,45 @@ RUN set -eux; \
     fi; \
     chown -R www-data:www-data ${ACG_HOME}; \
     chmod -R ug+rwX ${ACG_HOME}; \
-    chmod +x /usr/local/bin/acg-faka-entrypoint; \
+    chmod +x /usr/local/bin/acg-faka-entrypoint /usr/local/bin/acg-wait-db; \
     nginx -t -c /etc/nginx/nginx.conf
+
+# 所有会被写入的目录统一搬到 /data 并软链回去 —— 挂一个卷就能保住全部数据
+# （数据库、Redis、配置、上传、插件、模板、安装锁）。
+# 镜像里的原始内容先烘成 skel，首次启动时由 entrypoint 播种到 /data。
+RUN set -eux; \
+    mkdir -p /opt/acg-skel; \
+    for pair in \
+        "config:config" \
+        "kernel/Install:install" \
+        "assets/cache:assets_cache" \
+        "app/Plugin:plugins" \
+        "app/Pay:pay" \
+        "app/View/User/Theme:themes" \
+        "runtime:runtime" \
+    ; do \
+        src="${ACG_HOME}/${pair%%:*}"; \
+        name="${pair##*:}"; \
+        mkdir -p "$(dirname "/opt/acg-skel/${name}")"; \
+        mv "${src}" "/opt/acg-skel/${name}"; \
+        ln -s "/data/${name}" "${src}"; \
+    done; \
+    chown -R www-data:www-data /opt/acg-skel; \
+    # 关键：官方 php 镜像把 /var/www/html 设成 1777（world-writable + sticky）。
+    # 在这种目录下 Linux 的 fs.protected_symlinks 会**禁止非软链属主跟随软链** ——
+    # 软链属 root、php-fpm 跑在 www-data，结果 www-data 眼里 runtime/config 全都
+    # "不存在"，前台直接 500 而且什么错都不报。两手都要改：
+    #   1) 软链属主改成 www-data（与进程 uid 一致）
+    #   2) docroot 去掉 world-writable 和 sticky（本来也不该是 1777）
+    chown -h www-data:www-data \
+        "${ACG_HOME}/config" "${ACG_HOME}/kernel/Install" "${ACG_HOME}/assets/cache" \
+        "${ACG_HOME}/app/Plugin" "${ACG_HOME}/app/Pay" "${ACG_HOME}/app/View/User/Theme" \
+        "${ACG_HOME}/runtime"; \
+    chown www-data:www-data "${ACG_HOME}"; \
+    chmod 755 "${ACG_HOME}"; \
+    test -L "${ACG_HOME}/app/Plugin"
+
+VOLUME ["/data"]
 
 EXPOSE 80
 

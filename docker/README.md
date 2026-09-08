@@ -1,11 +1,30 @@
 # Docker 部署
 
+## 最简单：一个容器
+
+```bash
+docker run -d --name acg-faka -p 80:80 -v acg_data:/data --restart unless-stopped ghcr.io/lizhipay/acg-faka:latest
+```
+
+**就这一条。** 镜像自带 MariaDB 和 Redis，数据库密码首次启动随机生成，
+打开 <http://服务器IP> 直接进安装向导 —— 数据库那一步已经替你填好，只需要设个管理员账号。
+
+宝塔 / 1Panel 的「创建容器」里也是同样三件事：镜像填 `ghcr.io/lizhipay/acg-faka:latest`、
+端口映射 **主机端口 → 容器 80**、目录映射一个卷到 **`/data`**。
+
+> ⚠️ 容器内部端口是 **80**，不是 8080。映射错了浏览器打不开。
+>
+> ⚠️ `/data` 一定要挂出来。站点的数据库、配置、上传文件、插件、模板全在里面，
+> 不挂的话容器一删数据就没了。
+
+## 要独立的 MySQL / Redis：用 compose
+
 ```bash
 docker compose up -d
 ```
 
-就这一条命令。**不需要 `.env`，不需要改任何文件，也不需要自己想数据库密码** ——
-打开 <http://localhost:8080> 直接进安装向导，数据库那一步已经替你填好了。
+同样不需要 `.env`、不需要改文件。这种方式下内置的 MariaDB/Redis 不会启动，
+app 容器只跑 nginx + php-fpm，数据库走独立的 `mysql` 服务。
 
 改端口：`ACG_HTTP_PORT=8081 docker compose up -d`
 
@@ -13,7 +32,7 @@ docker compose up -d
 
 | 服务 | 镜像 | 说明 |
 |---|---|---|
-| `app` | 本仓库构建 | nginx + php-fpm 8.2，两个进程由 supervisord 托管，对外只开 80 |
+| `app` | 本仓库构建 | nginx + php-fpm 8.2（+ 单容器模式下的 MariaDB/Redis），supervisord 托管，对外只开 80 |
 | `mysql` | `mysql:5.7` | 只在内网可达，不往宿主机发布端口 |
 | `redis` | `redis:7.2-alpine` | PHP 会话存储（`acg_sess:` 前缀，db 1） |
 | `secrets-init` | 一次性任务 | 首次启动生成随机数据库密码，之后退出 |
@@ -68,10 +87,11 @@ docker compose exec mysql cat /secrets/mysql_root
 
 ## 持久化
 
-站点数据都在 named volume 里，容器重建不会丢：
+站点里所有会被写入的目录（配置、运行时、上传、插件、支付、模板、安装锁）在镜像里
+都软链到 `/data`，**挂这一个卷就全保住了**。单容器模式下数据库和 Redis 的数据也在
+`/data/mysql`、`/data/redis`。
 
-`acg_secrets`（数据库密码）、`acg_mysql`、`acg_redis`、`acg_config`、`acg_runtime`、
-`acg_install`、`acg_assets_cache`、`acg_plugins`、`acg_pay`、`acg_themes`
+compose 方式下是 `acg_data`（站点）+ `acg_mysql` + `acg_redis` + `acg_secrets`（密码）。
 
 ## 常用命令
 
