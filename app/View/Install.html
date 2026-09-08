@@ -1,457 +1,1333 @@
 <!doctype html>
-<html>
+<html lang="zh-CN" data-theme="light" data-theme-pref="auto">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>安装程序</title>
-    <script src="/assets/static/jquery.min.js"></script>
-    <script src="/assets/static/layer/layer.js"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <meta name="robots" content="noindex, nofollow">
+    <title>安装向导 · 异次元发卡</title>
+    <script>
+        /* 首屏防闪：主题和语言都在 CSS 生效前定下来。
+           主题用的 localStorage 键和后台登录页是同一个（admin-theme），装完进后台就是同一套外观。 */
+        (function () {
+            var root = document.documentElement;
+            try {
+                var pref = localStorage.getItem('admin-theme') || 'auto';
+                if (pref !== 'light' && pref !== 'dark') pref = 'auto';
+                var dark = pref === 'dark' || (pref === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+                root.setAttribute('data-theme', dark ? 'dark' : 'light');
+                root.setAttribute('data-theme-pref', pref);
+            } catch (e) {
+                root.setAttribute('data-theme', 'light');
+            }
+            try {
+                var tags = {'zh-cn': 'zh-CN', 'zh-tw': 'zh-TW', 'en': 'en', 'ja': 'ja'};
+                var l = localStorage.getItem('acg-install-lang');
+                if (l && tags[l]) root.setAttribute('lang', tags[l]);
+            } catch (e) {}
+        })();
+    </script>
+    <link rel="icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/assets/common/fonts/material-icons.css">
     <style>
-        html, body {
-            width: 100%;
-            height: 100%;
+        /* ================================================================
+           设计令牌 —— 中性底色 + 单一强调色，不用渐变、不做装饰动画
+           ================================================================ */
+        :root {
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+                    "Noto Sans CJK SC", "Helvetica Neue", Arial, sans-serif;
+            --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            --r-sm: 6px;
+            --r: 10px;
+            --r-lg: 14px;
+            --ease: cubic-bezier(.4, 0, .2, 1);
+            --dur: .18s;
+        }
+        html[lang="zh-TW"] { --font: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", "Noto Sans CJK TC", "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+        html[lang="ja"]    { --font: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo, "Noto Sans CJK JP", "Segoe UI", Arial, sans-serif; }
+        html[lang="en"]    { --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif; }
+
+        [data-theme="light"] {
+            --bg: #f6f6f7;
+            --surface: #ffffff;
+            --surface-2: #f2f2f4;
+            --surface-3: #e7e7ea;
+            --text: #18181b;
+            --text-2: #5b5b63;
+            --text-3: #8e8e98;
+            --line: #e5e5e9;
+            --line-2: #d3d3d9;
+            --accent: #c4426f;
+            --accent-2: #a8355d;
+            --accent-soft: #fbeaf0;
+            --accent-ink: #ffffff;
+            --ok: #17804a;      --ok-soft: #e8f5ee;
+            --warn: #9a6412;    --warn-soft: #fbf1e0;
+            --bad: #c0392f;     --bad-soft: #fbeae8;
+            --info: #2f5fb8;    --info-soft: #e9eefa;
+            --shadow: 0 1px 2px rgba(24, 24, 27, .05);
+            --ring: 0 0 0 3px rgba(196, 66, 111, .18);
+            --code-bg: #f2f2f4;
+        }
+        [data-theme="dark"] {
+            --bg: #101012;
+            --surface: #18181b;
+            --surface-2: #202024;
+            --surface-3: #2a2a30;
+            --text: #f1f1f3;
+            --text-2: #a4a4ad;
+            --text-3: #74747f;
+            --line: #2a2a30;
+            --line-2: #3a3a42;
+            --accent: #ee7ba4;
+            --accent-2: #f592b3;
+            --accent-soft: rgba(238, 123, 164, .12);
+            --accent-ink: #2a0c18;
+            --ok: #4ec98a;      --ok-soft: rgba(78, 201, 138, .12);
+            --warn: #e0a856;    --warn-soft: rgba(224, 168, 86, .12);
+            --bad: #f0736c;     --bad-soft: rgba(240, 115, 108, .12);
+            --info: #7ea5f0;    --info-soft: rgba(126, 165, 240, .12);
+            --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+            --ring: 0 0 0 3px rgba(238, 123, 164, .22);
+            --code-bg: #202024;
+        }
+
+        /* ================================================================
+           基础
+           ================================================================ */
+        *, *::before, *::after { box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
             margin: 0;
-            padding: 0;
-            font-family: 微软雅黑, serif;
-            background: url("/assets/admin/images/login/bg.jpg") fixed no-repeat;
-            background-size: cover;
+            font: 15px/1.6 var(--font);
+            color: var(--text);
+            background: var(--bg);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100dvh;
         }
+        button, input { font: inherit; color: inherit; }
+        button { cursor: pointer; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: var(--mono); font-size: .92em; }
+        .hidden { display: none !important; }
+        :focus-visible { outline: none; box-shadow: var(--ring); }
+        .mi { font-size: 20px; line-height: 1; vertical-align: middle; user-select: none; }
 
-        h1, h2, h3, h4, h5, h6 {
-            font-weight: 200;
+        /* ================================================================
+           顶栏
+           ================================================================ */
+        .topbar {
+            display: flex; align-items: center; justify-content: space-between; gap: 16px;
+            height: 56px; padding: 0 20px;
+            border-bottom: 1px solid var(--line); background: var(--surface);
         }
+        .brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+        .brand img { width: 22px; height: 22px; border-radius: 5px; flex: none; }
+        .brand-name { font-size: 15px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chip { font-family: var(--mono); font-size: 11.5px; color: var(--text-3); flex: none; }
+        .tools { display: flex; align-items: center; gap: 8px; flex: none; }
 
-        a {
-            text-decoration: none;
+        /* 主题三段式 */
+        .seg { display: inline-flex; padding: 2px; border-radius: var(--r); background: var(--surface-2); border: 1px solid var(--line); }
+        .seg button {
+            display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 26px;
+            border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-3); transition: color var(--dur), background var(--dur);
         }
+        .seg button .mi { font-size: 17px; }
+        .seg button:hover { color: var(--text); }
+        .seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
 
-        p, li, a {
-            font-size: 14px;
+        /* 语言 */
+        .lang { position: relative; }
+        .lang-btn {
+            display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px;
+            border-radius: var(--r); background: transparent; border: 1px solid var(--line); color: var(--text-2); font-size: 13.5px;
+            transition: background var(--dur), color var(--dur);
         }
-
-        fieldset {
-            margin: 0;
-            padding: 0;
-            border: none;
+        .lang-btn:hover { background: var(--surface-2); color: var(--text); }
+        .lang-btn .mi { font-size: 17px; }
+        .lang-menu {
+            position: absolute; right: 0; top: calc(100% + 6px); min-width: 160px; padding: 4px;
+            background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, .12); z-index: 20;
         }
-
-        .container {
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-            position: relative;
-            top: 50%; /*偏移*/
-            margin-top: -300px;
-            background-color: #ffffffd6;
-            -webkit-box-shadow: 0 6px 0 0 rgba(0, 0, 0, .01), 0 15px 32px 0 rgba(0, 0, 0, .06);
-            box-shadow: 0 6px 0 0 rgba(0, 0, 0, .01), 0 15px 32px 0 rgba(0, 0, 0, .06);
-            border-radius: 10px 10px 0 0;
+        .lang-menu button {
+            display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 7px 9px;
+            border: 0; border-radius: var(--r-sm); background: transparent; text-align: left; font-size: 14px;
         }
+        .lang-menu button:hover { background: var(--surface-2); }
+        .lang-menu button[aria-checked="true"] { color: var(--accent); font-weight: 600; }
+        .lang-menu button .mi { font-size: 17px; color: var(--accent); }
 
-
-        .wrapper {
-            width: 100%;
-            margin: 30px 0;
+        /* ================================================================
+           步骤条（横向、极简）
+           ================================================================ */
+        .steps { list-style: none; display: flex; align-items: center; margin: 0 0 34px; padding: 0; }
+        .step { display: flex; align-items: center; gap: 8px; min-width: 0; }
+        .step + .step::before {
+            content: ""; width: 28px; height: 1px; margin: 0 12px; flex: none;
+            background: var(--line-2); transition: background var(--dur);
         }
-
-        /* STEPS */
-
-        .steps {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
-            text-align: center;
+        .step.done + .step::before, .step.active + .step::before { background: var(--accent); }
+        .step-dot {
+            width: 22px; height: 22px; border-radius: 50%; flex: none;
+            display: grid; place-items: center;
+            border: 1px solid var(--line-2); color: var(--text-3);
+            font-size: 11.5px; font-weight: 650; font-family: var(--mono);
+            transition: all var(--dur) var(--ease);
         }
+        .step-dot .mi { font-size: 14px; }
+        .step.active .step-dot { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+        .step.done .step-dot { border-color: var(--accent); background: transparent; color: var(--accent); }
+        .step-title { font-size: 13.5px; color: var(--text-3); white-space: nowrap; transition: color var(--dur); }
+        .step.active .step-title { color: var(--text); font-weight: 600; }
+        .step.done .step-title { color: var(--text-2); }
+        .step-desc { display: none; }
 
+        /* ================================================================
+           内容
+           ================================================================ */
+        .stage { padding: 40px 20px 64px; }
+        .panel { width: 100%; max-width: 620px; margin: 0 auto; }
+        .view { animation: enter var(--dur) var(--ease); }
+        .view.leaving { animation: leave .14s var(--ease) forwards; }
+        @keyframes enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        @keyframes leave { to { opacity: 0; transform: translateY(-4px); } }
 
-        .steps li {
-            display: inline-block;
-            margin: 20px;
-            color: #ccc;
-            padding-bottom: 5px;
+        .eyebrow { font-size: 12.5px; font-weight: 600; letter-spacing: .3px; color: var(--accent); }
+        h1 { margin: 8px 0 8px; font-size: 25px; line-height: 1.25; font-weight: 700; letter-spacing: -.2px; }
+        .lead { margin: 0 0 26px; color: var(--text-2); font-size: 14.5px; max-width: 58ch; }
+
+        .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); }
+        .card + .card { margin-top: 12px; }
+        .card-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+        .card-h h3 { margin: 0; font-size: 12px; font-weight: 650; letter-spacing: .5px; text-transform: uppercase; color: var(--text-3); }
+
+        /* 横幅 */
+        .banner { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--surface); margin-bottom: 14px; }
+        .banner .mi { font-size: 21px; flex: none; margin-top: 1px; color: var(--text-3); }
+        .banner b { display: block; font-size: 14.5px; font-weight: 650; }
+        .banner p { margin: 3px 0 0; color: var(--text-2); font-size: 13.5px; }
+        .banner .aux { margin-left: auto; flex: none; font-size: 12.5px; color: var(--text-3); display: inline-flex; align-items: center; gap: 6px; }
+        .banner.ok   { background: var(--ok-soft);   border-color: transparent; }  .banner.ok .mi   { color: var(--ok); }
+        .banner.warn { background: var(--warn-soft); border-color: transparent; }  .banner.warn .mi { color: var(--warn); }
+        .banner.bad  { background: var(--bad-soft);  border-color: transparent; }  .banner.bad .mi  { color: var(--bad); }
+        .banner.info { background: var(--info-soft); border-color: transparent; }  .banner.info .mi { color: var(--info); }
+
+        /* 检查项 */
+        .rows { padding: 4px 8px; }
+        .row { display: flex; align-items: center; gap: 12px; padding: 10px 8px; }
+        .row + .row { border-top: 1px solid var(--line); }
+        .row .ico { color: var(--text-3); flex: none; display: grid; place-items: center; }
+        .row .ico .mi { font-size: 19px; }
+        .row .name { font-weight: 600; font-size: 14px; }
+        .row .sub { font-size: 12.5px; color: var(--text-3); }
+        .row .grow { flex: 1; min-width: 0; }
+        .pill { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+        .pill .mi { font-size: 15px; }
+        .pill.ok { color: var(--ok); }
+        .pill.bad { color: var(--bad); }
+
+        .ext-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px; }
+        .ext {
+            display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px;
+            border: 1px solid var(--line); border-radius: var(--r-sm);
+            background: var(--surface); font-family: var(--mono); font-size: 12.5px;
         }
+        .ext .mi { font-size: 16px; color: var(--ok); }
+        .ext.bad { color: var(--bad); }
+        .ext.bad .mi { color: var(--bad); }
 
-        .steps li.is-active {
-            border-bottom: 1px solid pink;
-            color: pink;
+        /* 修复指引 */
+        .fix { margin-top: 12px; }
+        .fix-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+        .fix-item b { display: block; font-size: 14px; margin-bottom: 6px; }
+        .fix-item p { margin: 4px 0; color: var(--text-2); font-size: 13.5px; }
+        .cmd {
+            position: relative; display: flex; align-items: center; gap: 10px; margin: 8px 0 0; padding: 9px 40px 9px 12px;
+            border-radius: var(--r-sm); background: var(--code-bg);
+            font-family: var(--mono); font-size: 12.5px; color: var(--text); overflow-x: auto; white-space: nowrap;
         }
-
-        /* FORM */
-
-        .form-wrapper .section {
-            padding: 0px 20px 30px 20px;
-            -webkit-box-sizing: border-box;
-            -moz-box-sizing: border-box;
-            box-sizing: border-box;
-            background-color: #ffffffd6;
-            opacity: 0;
-            -webkit-transform: scale(1, 0);
-            -ms-transform: scale(1, 0);
-            -o-transform: scale(1, 0);
-            transform: scale(1, 0);
-            -webkit-transform-origin: top center;
-            -moz-transform-origin: top center;
-            -ms-transform-origin: top center;
-            -o-transform-origin: top center;
-            transform-origin: top center;
-            -webkit-transition: all 0.5s ease-in-out;
-            -o-transition: all 0.5s ease-in-out;
-            transition: all 0.5s ease-in-out;
-            text-align: center;
-            position: absolute;
-            width: 100%;
-            min-height: 300px
+        .cmd .k { color: var(--text-3); flex: none; font-family: var(--font); font-size: 12px; }
+        .cmd .copy {
+            position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border: 0; border-radius: var(--r-sm);
+            background: transparent; color: var(--text-3); display: grid; place-items: center;
         }
+        .cmd .copy:hover { background: var(--surface-3); color: var(--text); }
+        .cmd .copy .mi { font-size: 16px; }
 
-        .form-wrapper .section h3 {
-            margin-bottom: 30px;
+        /* 表单 */
+        .form { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px 12px; }
+        .field { grid-column: span 6; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+        .field.c4 { grid-column: span 4; }
+        .field.c3 { grid-column: span 3; }
+        .field.c2 { grid-column: span 2; }
+        .label { display: flex; align-items: baseline; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--text-2); }
+        .label .opt { font-weight: 400; color: var(--text-3); font-size: 12px; }
+        .control { position: relative; display: flex; align-items: center; }
+        .control .mi.lead-ico { display: none; }
+        .input {
+            width: 100%; height: 42px; padding: 0 13px; border-radius: var(--r); border: 1px solid var(--line-2);
+            background: var(--surface); color: var(--text); transition: border-color var(--dur), box-shadow var(--dur);
+            outline: none; -webkit-appearance: none; appearance: none;
         }
+        .input::placeholder { color: var(--text-3); }
+        .input:hover { border-color: var(--text-3); }
+        .input:focus { border-color: var(--accent); box-shadow: var(--ring); }
+        .control.has-tail .input { padding-right: 42px; }
+        .tail { position: absolute; right: 5px; width: 30px; height: 30px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-3); display: grid; place-items: center; }
+        .tail:hover { background: var(--surface-2); color: var(--text); }
+        .tail .mi { font-size: 18px; }
+        .help { font-size: 12.5px; color: var(--text-3); }
+        .field.invalid .input { border-color: var(--bad); }
+        .field.invalid .input:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 16%, transparent); }
+        .field.invalid .help { color: var(--bad); }
 
-        .form-wrapper .section.is-active {
-            opacity: 1;
-            -webkit-transform: scale(1, 1);
-            -ms-transform: scale(1, 1);
-            -o-transform: scale(1, 1);
-            transform: scale(1, 1);
-            border-radius: 0 0 10px 10px;
-            -webkit-box-shadow: 0 6px 0 0 rgba(0, 0, 0, .01), 0 15px 32px 0 rgba(0, 0, 0, .06);
-            box-shadow: 0 6px 0 0 rgba(0, 0, 0, .01), 0 15px 32px 0 rgba(0, 0, 0, .06);
+        /* 密码强度 */
+        .meter { display: flex; gap: 3px; margin-top: 3px; }
+        .meter i { flex: 1; height: 3px; border-radius: 3px; background: var(--surface-3); transition: background var(--dur); }
+        .meter[data-level="1"] i:nth-child(-n+1) { background: var(--bad); }
+        .meter[data-level="2"] i:nth-child(-n+2) { background: var(--warn); }
+        .meter[data-level="3"] i:nth-child(-n+3) { background: var(--info); }
+        .meter[data-level="4"] i:nth-child(-n+4) { background: var(--ok); }
+        .meter-txt { font-size: 12px; color: var(--text-3); display: flex; justify-content: space-between; }
+        .meter-txt .caps { color: var(--warn); display: inline-flex; align-items: center; gap: 4px; }
+        .meter-txt .caps .mi { font-size: 14px; }
+
+        /* 确认框 */
+        .check { display: flex; align-items: flex-start; gap: 9px; margin-top: 12px; padding: 11px 13px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line-2); cursor: pointer; user-select: none; }
+        .check input { width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+        .check span { font-size: 13.5px; font-weight: 600; }
+        .check.shake { animation: shake .35s var(--ease); }
+        @keyframes shake { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+
+        .detail { margin-top: 9px; font-family: var(--mono); font-size: 12px; color: var(--text-3); word-break: break-all; }
+
+        /* 操作条 */
+        .actions { display: flex; align-items: center; gap: 8px; margin-top: 26px; }
+        .actions .spacer { flex: 1; }
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 42px; padding: 0 17px;
+            border-radius: var(--r); border: 1px solid transparent; font-weight: 600; font-size: 14px; white-space: nowrap;
+            transition: background var(--dur), color var(--dur), border-color var(--dur), opacity var(--dur);
         }
+        .btn .mi { font-size: 18px; }
+        .btn-primary { background: var(--accent); color: var(--accent-ink); }
+        .btn-primary:hover { background: var(--accent-2); }
+        .btn-primary:disabled { background: var(--surface-3); color: var(--text-3); cursor: not-allowed; }
+        .btn-ghost { background: var(--surface); color: var(--text-2); border-color: var(--line-2); }
+        .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+        .btn.loading { pointer-events: none; }
+        .spin { width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; flex: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .form-wrapper .button, .form-wrapper .submit {
-            background-color: pink;
-            display: inline-block;
-            padding: 8px 30px;
-            color: #fff;
-            cursor: pointer;
-            font-size: 14px !important;
-            font-family: 'Open Sans', sans-serif !important;
-            margin-top: 30px;
-            /*  position: absolute;
-              right: 20px;
-              bottom: -20px;*/
+        /* 安装中 */
+        .installing { padding: 8px 0; }
+        .stage-lines { margin: 22px 0 0; }
+        .stage-lines ul { margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+        .stage-lines li { list-style: none; display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-3); transition: color var(--dur); }
+        .stage-lines li .mi { font-size: 17px; }
+        .stage-lines li.on { color: var(--text); font-weight: 600; }
+        .stage-lines li.on .mi { color: var(--accent); }
+        .stage-lines li.did { color: var(--text-2); }
+        .stage-lines li.did .mi { color: var(--ok); }
+
+        /* 完成 */
+        .kv { display: grid; grid-template-columns: auto 1fr; gap: 9px 18px; padding: 14px 16px; font-size: 14px; margin: 0; }
+        .kv dt { color: var(--text-3); margin: 0; }
+        .kv dd { margin: 0; font-weight: 600; word-break: break-all; }
+
+        /* 提示气泡 */
+        .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(8px); padding: 9px 15px; border-radius: var(--r); background: var(--text); color: var(--bg); font-size: 13.5px; font-weight: 600; opacity: 0; pointer-events: none; transition: all var(--dur) var(--ease); z-index: 50; }
+        .toast.show { opacity: 1; transform: translateX(-50%); }
+
+        /* ================================================================
+           响应式
+           ================================================================ */
+        @media (max-width: 720px) {
+            .topbar { padding: 0 14px; }
+            .stage { padding: 26px 14px 48px; }
+            h1 { font-size: 22px; }
+            .ext-grid { grid-template-columns: repeat(2, 1fr); }
+            .steps { margin-bottom: 26px; }
+            .step + .step::before { width: 14px; margin: 0 7px; }
+            .step-title { display: none; }
+            .step.active .step-title { display: block; }
         }
-
-        .form-wrapper .submit {
-            border: none;
-            outline: none;
-            -webkit-box-sizing: content-box;
-            -moz-box-sizing: content-box;
-            box-sizing: content-box;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
+        @media (max-width: 520px) {
+            .field.c4, .field.c3, .field.c2 { grid-column: span 6; }
+            .actions { flex-wrap: wrap; }
+            .actions .btn-primary { width: 100%; order: -1; }
+            .actions .spacer { display: none; }
+            .banner .aux { display: none; }
+            .brand-name { display: none; }
         }
-
-        .form-wrapper input[type="text"], .form-wrapper input[type="password"] {
-            display: block;
-            padding: 10px;
-            margin: 10px auto;
-            background-color: #f1f1f1;
-            border: none;
-            width: 70%;
-            outline: none;
-            font-size: 14px !important;
-            font-family: 'Open Sans', sans-serif !important;
-        }
-
-        .form-wrapper input[type="radio"] {
-            display: none;
-        }
-
-        .form-wrapper input[type="radio"] + label {
-            display: block;
-            border: 1px solid #ccc;
-            width: 100%;
-            max-width: 100%;
-            padding: 10px;
-            -webkit-box-sizing: border-box;
-            -moz-box-sizing: border-box;
-            box-sizing: border-box;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .form-wrapper input[type="radio"] + label:before {
-            content: "?";
-            position: absolute;
-            right: -10px;
-            top: -10px;
-            width: 30px;
-            height: 30px;
-            line-height: 30px;
-            border-radius: 100%;
-            background-color: #3498db;
-            color: #fff;
-            display: none;
-        }
-
-        .form-wrapper input[type="radio"]:checked + label:before {
-            display: block;
-        }
-
-        .form-wrapper input[type="radio"] + label h4 {
-            margin: 15px;
-            color: #ccc;
-        }
-
-        .form-wrapper input[type="radio"]:checked + label {
-            border: 1px solid #3498db;
-        }
-
-        .form-wrapper input[type="radio"]:checked + label h4 {
-            color: #3498db;
-        }
-
-        .gridtable {
-            font-family: verdana, arial, sans-serif;
-            font-size: 11px;
-            color: #333333;
-            border-width: 1px;
-            border-color: #f3a5a5;
-            border-collapse: collapse;
-            margin: 0 auto 20px auto;
-            width: 80%;
-        }
-
-        table.gridtable th {
-            border-width: 1px;
-            padding: 8px;
-            border-style: solid;
-            border-color: #fbc8c880;
-            background-color: #ffd6d652;
-        }
-
-        .gridtable td {
-            border-width: 1px;
-            padding: 8px;
-            border-style: solid;
-            border-color: #fbc8c880;
-            background-color: #ffffff;
-        }
-
-        .env-tip {
-            box-sizing: border-box;
-            width: 80%;
-            margin: -6px auto 0 auto;
-            padding: 12px 15px;
-            border: 1px solid #fbc8c880;
-            border-radius: 8px;
-            background-color: #fff7f9;
-            color: #8a5b6b;
-            font-size: 12px;
-            line-height: 2;
-            text-align: left;
-        }
-
-        .env-tip b {
-            color: #e2557f;
-        }
-
-        .env-tip p {
-            margin: 4px 0 0 0;
-        }
-
-        .env-tip code {
-            display: inline-block;
-            margin: 2px 6px 2px 0;
-            padding: 0 8px;
-            border-radius: 5px;
-            background-color: #ffe3ea;
-            color: #d63a68;
-            font-family: Consolas, Monaco, monospace;
-        }
-
-        .disabled {
-            background-color: rgba(128, 128, 128, 0.49) !important;
-            display: inline-block;
-            padding: 8px 30px;
-            color: #fff;
-            cursor: pointer;
-            font-size: 14px !important;
-            font-family: 'Open Sans', sans-serif !important;
-            margin-top: 30px;
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="wrapper">
-        <ul class="steps">
-            <li class="is-active">🚜 环境检查</li>
-            <li>📀 数据库配置</li>
-            <li>🔐 管理员设置</li>
-        </ul>
-        <form method="post" class="form-wrapper install-info">
-            <fieldset class="section is-active">
-                <h3 style="color: pink;font-weight: bold;">程序版本：<b style="color: #ff98d6;">v#{$version}</b></h3>
-                <table class="gridtable">
-                    <tr>
-                        <th>依赖模块</th>
-                        <th>是否支持</th>
-                    </tr>
-                    <tr>
-                        <td>php-8.0</td>
-                        <td>#{if $php_version >= 8}<b style="color: green;">✔</b> #{else}<b style="color: red;">8.0+</b>#{/if}
-                        </td>
-                    </tr>
-                    #{foreach $ext as $key => $val}
-                    <tr>
-                        <td>#{$key}</td>
-                        <td>#{if $val}<b style="color: green;">✔</b> #{else}<b style="color: red;">不支持</b>#{/if}
-                        </td>
-                    </tr>
-                    #{/foreach}
+<script type="application/json" id="boot">#{$boot}</script>
 
-                </table>
-                #{if !$install}
-                <div class="env-tip">
-                    <b>😿 环境还差一点，装好后刷新本页即可继续</b>
-                    #{if $php_version < 8}
-                    <p>PHP 版本过低（当前 #{$php_version}），本程序需要 <code>PHP 8.0</code> 及以上。</p>
-                    #{/if}
-                    #{if $missing}
-                    <p>缺少扩展：#{foreach $missing as $m}<code>#{$m}</code>#{/foreach}</p>
-                    <p>宝塔 / aaPanel：软件商店 → 对应 PHP 版本 → 设置 → 安装扩展，勾选后安装<br>
-                        命令行：<code>yum install php-bcmath</code> 或 <code>apt install php8.0-bcmath</code>，Docker 用
-                        <code>docker-php-ext-install bcmath</code>，装完请重启 PHP</p>
-                    #{/if}
-                </div>
-                #{/if}
-                <div class="#{if $install} button #{else} disabled #{/if}">#{if $install} 下一步 #{else} 👿 请检查环境 #{/if}
-                </div>
-            </fieldset>
-            <fieldset class="section">
-                <h3 style="color: pink;font-weight: bold;">配置您的数据库信息</h3>
-                <input type="text" name="host" placeholder="数据库地址" , value="127.0.0.1">
-                <input type="text" name="database" placeholder="数据库名称">
-                <input type="text" name="username" placeholder="数据库账号">
-                <input type="text" name="password" placeholder="数据库密码">
-                <input type="text" name="prefix" placeholder="数据库前缀" value="acg_">
-                <div class="button">下一步</div>
-            </fieldset>
-            <fieldset class="section">
-                <h3 style="color: pink;font-weight: bold;">请设置管理员邮箱和密码</h3>
-                <input type="text" name="email" placeholder="管理员邮箱">
-                <input type="text" name="nickname" placeholder="呢称">
-                <input type="password" name="login_password" placeholder="登录密码">
-                <input type="password" name="login_re_password" placeholder="确认登录密码">
-                <input class="submit prevButton" type="button" value="上一步">
-                <input class="submit button installButton" type="button" value="立即安装">
-            </fieldset>
-            <fieldset class="section">
-                <h3 style="color: pink;font-weight: bold;margin-top: 100px;">恭喜，安装成功！<a
-                        href="/admin/authentication/login" style="font-size: 17px;color: #0C84D1;">登录</a></h3>
-            </fieldset>
-        </form>
+<header class="topbar">
+    <div class="brand">
+        <img src="/favicon.ico" alt="">
+        <span class="brand-name" data-i18n="brand">异次元发卡</span>
+        <span class="chip">v#{$version}</span>
     </div>
-</div>
+    <div class="tools">
+        <div class="seg" role="group" aria-label="theme" id="theme-seg">
+            <button type="button" data-pref="light" data-i18n-title="theme.light" title="浅色"><span class="mi material-icons-outlined">light_mode</span></button>
+            <button type="button" data-pref="auto"  data-i18n-title="theme.auto"  title="跟随系统"><span class="mi material-icons-outlined">brightness_auto</span></button>
+            <button type="button" data-pref="dark"  data-i18n-title="theme.dark"  title="深色"><span class="mi material-icons-outlined">dark_mode</span></button>
+        </div>
+        <div class="lang" id="lang">
+            <button type="button" class="lang-btn" id="lang-btn" aria-haspopup="menu" aria-expanded="false">
+                <span class="mi material-icons-outlined">translate</span>
+                <span id="lang-name">简体中文</span>
+            </button>
+            <div class="lang-menu hidden" id="lang-menu" role="menu"></div>
+        </div>
+    </div>
+</header>
+
+<main class="stage">
+    <div class="panel">
+        <ol class="steps" id="steps">
+            <li class="step active" data-step="0"><span class="step-dot"><span class="n">1</span></span><span class="step-title" data-i18n="step1.title">环境检查</span></li>
+            <li class="step" data-step="1"><span class="step-dot"><span class="n">2</span></span><span class="step-title" data-i18n="step2.title">数据库</span></li>
+            <li class="step" data-step="2"><span class="step-dot"><span class="n">3</span></span><span class="step-title" data-i18n="step3.title">管理员</span></li>
+            <li class="step" data-step="3"><span class="step-dot"><span class="n">4</span></span><span class="step-title" data-i18n="step4.title">完成</span></li>
+        </ol>
+        <div id="panel"></div>
+    </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-    $(document).ready(function () {
-        let getValue = function (name) {
-            return $('input[name=' + name + ']').val();
+(function () {
+    'use strict';
+
+    /* ================================================================
+       启动数据（服务端只给事实，不给文案）
+       ================================================================ */
+    var BOOT = {};
+    try { BOOT = JSON.parse(document.getElementById('boot').textContent || '{}'); } catch (e) {}
+
+    /* ================================================================
+       文案
+       ================================================================ */
+    var I18N = {
+        'zh-cn': {
+            'html.lang': 'zh-CN', 'brand': '异次元发卡', 'title': '安装向导 · 异次元发卡',
+            'step1.title': '环境检查', 
+            'step2.title': '数据库', 
+            'step3.title': '管理员', 
+            'step4.title': '完成', 
+            'theme.light': '浅色', 'theme.auto': '跟随系统', 'theme.dark': '深色',
+            'btn.next': '下一步', 'btn.back': '上一步', 'btn.test': '测试连接', 'btn.testing': '正在连接…', 'btn.install': '开始安装',
+            'btn.create': '为我创建', 'btn.creating': '正在创建…', 'btn.retry': '返回修改', 'btn.admin': '进入后台', 'btn.home': '访问首页',
+            'btn.copy': '复制', 'btn.copied': '已复制', 'btn.recheck': '重新检测', 'btn.rechecking': '检测中…',
+            'env.eyebrow': '第 1 步 · 环境检查', 'env.h1': '检查运行环境',
+            'env.lead': '安装前先确认服务器满足要求。发现问题会告诉你怎么修，修好后这里会自动更新。',
+            'env.ok.title': '环境就绪', 'env.ok.desc': '所有检查项均已通过，可以开始安装。',
+            'env.bad.title': '还有 {n} 项需要处理', 'env.bad.desc': '按下面的提示修复后，本页会自动重新检测。', 'env.autopoll': '每 {s} 秒自动检测',
+            'env.group.runtime': '运行环境', 'env.group.ext': 'PHP 扩展', 'env.group.fs': '目录权限',
+            'env.php': 'PHP 版本', 'env.php.sub': '当前 {cur}，需要 {min} 或更高',
+            'env.status.ok': '已就绪', 'env.status.missing': '缺少', 'env.status.low': '版本过低', 'env.status.unwritable': '不可写',
+            'env.fs.config': '保存数据库连接信息', 'env.fs.runtime': '缓存与运行时文件', 'env.fs.kernel/Install': '安装锁与升级包', 'env.fs.assets/cache': '上传文件与图片缓存',
+            'env.fix.title': '如何修复',
+            'env.fix.php': 'PHP 版本过低（当前 {cur}），本程序需要 {min} 及以上。请在面板里切换到更高的 PHP 版本，或更换 Docker 镜像。',
+            'env.fix.ext': '缺少扩展：{list}', 'env.fix.ext.bt': '宝塔 / aaPanel：软件商店 → 对应 PHP 版本 → 设置 → 安装扩展，勾选后安装。',
+            'env.fix.ext.cli': '命令行', 'env.fix.ext.docker': 'Docker', 'env.fix.ext.restart': '安装完成后重启 PHP 即可生效。',
+            'env.fix.fs': '以下目录不可写：{list}', 'env.fix.fs.desc': '把站点目录的所有者改成运行 PHP 的用户（宝塔通常是 www，Docker 通常是 www-data）：',
+            'db.eyebrow': '第 2 步 · 数据库', 'db.h1': '连接数据库', 'db.lead': '填写 MySQL 连接信息。继续之前会先测试连接，后面的步骤就不会因为它失败。',
+            'db.host': '数据库地址', 'db.host.help': '通常是 127.0.0.1；Docker Compose 请填服务名，例如 mysql', 'db.host.help.docker': '检测到容器环境：这里通常是 Compose 里的服务名，例如 mysql',
+            'db.port': '端口', 'db.name': '数据库名', 'db.name.help': '不存在时可以由我们为你创建', 'db.user': '用户名', 'db.pass': '密码',
+            'db.prefix': '表前缀', 'db.prefix.help': '多个程序共用一个数据库时用前缀区分；只能包含字母、数字和下划线', 'optional': '可选',
+            'db.err.host': '请填写有效的地址（字母、数字、点、横线）', 'db.err.port': '端口范围 1–65535', 'db.err.name': '请填写数据库名（字母、数字、下划线、横线）',
+            'db.err.user': '请填写用户名', 'db.err.prefix': '前缀只能包含字母、数字和下划线',
+            'db.r.ok.title': '连接成功', 'db.r.ok.empty': '{flavor} {version} · 数据库为空，可以直接安装', 'db.r.ok.coexist': '{flavor} {version} · 数据库里已有 {total} 张其它前缀的表，不受影响',
+            'db.r.created': '已为你创建数据库 {db}',
+            'db.r.overwrite.title': '该前缀下已有 {n} 张表', 'db.r.overwrite.desc': '安装会清空并重建这些表，其中的数据将全部丢失。如果这是上一次没完成的安装，直接覆盖即可；否则请换一个前缀或数据库。',
+            'db.r.overwrite.confirm': '我已了解，覆盖这些表',
+            'db.r.version.title': '数据库版本过低', 'db.r.version.desc': '当前 {flavor} {version}，需要 {min} 或更高（程序使用了 JSON 字段）。',
+            'db.r.connect.title': '无法连接到 {host}:{port}', 'db.r.connect.desc': '请确认地址和端口正确、MySQL 正在运行、防火墙已放行。Docker Compose 里请使用服务名而不是 127.0.0.1。',
+            'db.r.auth.title': '用户名或密码不正确', 'db.r.auth.desc': 'MySQL 拒绝了这组凭据。注意大小写，并确认该用户允许从当前主机连接。',
+            'db.r.unknown.title': '数据库「{db}」不存在', 'db.r.unknown.desc': '连接正常，但服务器上没有这个数据库。如果当前用户有建库权限，可以由我们为你创建。',
+            'db.r.denied.title': '无法创建数据库', 'db.r.denied.desc': '当前用户没有建库权限。请在面板里手动创建「{db}」，或换一个有权限的账号。',
+            'db.r.other.title': '连接失败', 'db.r.invalid': '参数不合法，请检查各项填写', 'db.r.detail': '服务器返回：', 'db.r.changed': '连接信息已修改，继续前会重新测试',
+            'admin.eyebrow': '第 3 步 · 管理员', 'admin.h1': '创建管理员账号', 'admin.lead': '这是你登录后台的账号，之后可以在后台修改。',
+            'admin.email': '邮箱', 'admin.email.help': '用于登录后台与接收通知', 'admin.nick': '昵称', 'admin.nick.help': '在后台显示的名字',
+            'admin.pass': '登录密码', 'admin.pass.help': '至少 6 位，建议混合字母、数字和符号', 'admin.pass2': '确认密码',
+            'admin.err.email': '请填写有效的邮箱地址', 'admin.err.nick': '请填写昵称', 'admin.err.pass': '密码至少 6 位', 'admin.err.pass2': '两次输入的密码不一致',
+            'pw.weak': '弱', 'pw.fair': '一般', 'pw.good': '良好', 'pw.strong': '很强', 'pw.caps': '大写锁定已开启', 'pw.show': '显示密码', 'pw.hide': '隐藏密码', 'pw.match': '两次密码一致',
+            'inst.title': '正在安装', 'inst.note': '大约需要几秒钟，请不要关闭本页。',
+            'inst.s1': '连接数据库', 'inst.s2': '写入表结构', 'inst.s3': '生成配置文件', 'inst.s4': '导入语言包', 'inst.s5': '初始化系统',
+            'inst.err.title': '安装没有完成', 'inst.err.desc': '服务器返回了以下信息，修正后可以重试：',
+            'done.eyebrow': '全部完成', 'done.h1': '安装成功', 'done.lead': '异次元发卡已经准备就绪，去后台开始配置你的店铺吧。',
+            'done.admin': '后台地址', 'done.account': '管理员', 'done.tip': '建议首次登录后到「系统设置 → 安全设置」检查一遍安全选项。',
+            'err.network': '网络错误，请稍后重试', 'err.server': '服务器返回了意外的响应', 'err.write': '没有写入权限，请检查站点目录的权限',
+            'err.db': '数据库出错：{msg}', 'err.installed': '程序已经安装过了。如需重新安装，请删除 kernel/Install/Lock 文件。'
+        },
+        'zh-tw': {
+            'html.lang': 'zh-TW', 'brand': '異次元發卡', 'title': '安裝精靈 · 異次元發卡',
+            'step1.title': '環境檢查', 
+            'step2.title': '資料庫', 
+            'step3.title': '管理員', 
+            'step4.title': '完成', 
+            'theme.light': '淺色', 'theme.auto': '跟隨系統', 'theme.dark': '深色',
+            'btn.next': '下一步', 'btn.back': '上一步', 'btn.test': '測試連線', 'btn.testing': '連線中…', 'btn.install': '開始安裝',
+            'btn.create': '替我建立', 'btn.creating': '建立中…', 'btn.retry': '返回修改', 'btn.admin': '進入後台', 'btn.home': '前往首頁',
+            'btn.copy': '複製', 'btn.copied': '已複製', 'btn.recheck': '重新檢測', 'btn.rechecking': '檢測中…',
+            'env.eyebrow': '第 1 步 · 環境檢查', 'env.h1': '檢查執行環境',
+            'env.lead': '安裝前先確認伺服器符合需求。發現問題會告訴你怎麼修，修好後這裡會自動更新。',
+            'env.ok.title': '環境就緒', 'env.ok.desc': '所有檢查項目均已通過，可以開始安裝。',
+            'env.bad.title': '還有 {n} 項需要處理', 'env.bad.desc': '依下方提示修復後，本頁會自動重新檢測。', 'env.autopoll': '每 {s} 秒自動檢測',
+            'env.group.runtime': '執行環境', 'env.group.ext': 'PHP 擴充套件', 'env.group.fs': '目錄權限',
+            'env.php': 'PHP 版本', 'env.php.sub': '目前 {cur}，需要 {min} 或更高',
+            'env.status.ok': '已就緒', 'env.status.missing': '缺少', 'env.status.low': '版本過低', 'env.status.unwritable': '無法寫入',
+            'env.fs.config': '儲存資料庫連線資訊', 'env.fs.runtime': '快取與執行期檔案', 'env.fs.kernel/Install': '安裝鎖與升級套件', 'env.fs.assets/cache': '上傳檔案與圖片快取',
+            'env.fix.title': '如何修復',
+            'env.fix.php': 'PHP 版本過低（目前 {cur}），本程式需要 {min} 以上。請在面板中切換至更高的 PHP 版本，或更換 Docker 映像。',
+            'env.fix.ext': '缺少擴充套件：{list}', 'env.fix.ext.bt': '寶塔 / aaPanel：軟體商店 → 對應 PHP 版本 → 設定 → 安裝擴充，勾選後安裝。',
+            'env.fix.ext.cli': '命令列', 'env.fix.ext.docker': 'Docker', 'env.fix.ext.restart': '安裝完成後重新啟動 PHP 即可生效。',
+            'env.fix.fs': '以下目錄無法寫入：{list}', 'env.fix.fs.desc': '將站台目錄的擁有者改為執行 PHP 的使用者（寶塔通常是 www，Docker 通常是 www-data）：',
+            'db.eyebrow': '第 2 步 · 資料庫', 'db.h1': '連線資料庫', 'db.lead': '填寫 MySQL 連線資訊。繼續之前會先測試連線，後面的步驟就不會因它而失敗。',
+            'db.host': '資料庫位址', 'db.host.help': '通常是 127.0.0.1；Docker Compose 請填服務名稱，例如 mysql', 'db.host.help.docker': '偵測到容器環境：這裡通常是 Compose 中的服務名稱，例如 mysql',
+            'db.port': '連接埠', 'db.name': '資料庫名稱', 'db.name.help': '不存在時可以由我們替你建立', 'db.user': '使用者名稱', 'db.pass': '密碼',
+            'db.prefix': '資料表前綴', 'db.prefix.help': '多個程式共用一個資料庫時用前綴區分；只能包含字母、數字與底線', 'optional': '選填',
+            'db.err.host': '請填寫有效的位址（字母、數字、點、連字號）', 'db.err.port': '連接埠範圍 1–65535', 'db.err.name': '請填寫資料庫名稱（字母、數字、底線、連字號）',
+            'db.err.user': '請填寫使用者名稱', 'db.err.prefix': '前綴只能包含字母、數字與底線',
+            'db.r.ok.title': '連線成功', 'db.r.ok.empty': '{flavor} {version} · 資料庫為空，可以直接安裝', 'db.r.ok.coexist': '{flavor} {version} · 資料庫中已有 {total} 張其他前綴的資料表，不受影響',
+            'db.r.created': '已替你建立資料庫 {db}',
+            'db.r.overwrite.title': '此前綴下已有 {n} 張資料表', 'db.r.overwrite.desc': '安裝會清空並重建這些資料表，其中的資料將全部遺失。如果這是上一次未完成的安裝，直接覆蓋即可；否則請更換前綴或資料庫。',
+            'db.r.overwrite.confirm': '我已了解，覆蓋這些資料表',
+            'db.r.version.title': '資料庫版本過低', 'db.r.version.desc': '目前 {flavor} {version}，需要 {min} 或更高（程式使用了 JSON 欄位）。',
+            'db.r.connect.title': '無法連線到 {host}:{port}', 'db.r.connect.desc': '請確認位址與連接埠正確、MySQL 正在執行、防火牆已放行。Docker Compose 中請使用服務名稱而非 127.0.0.1。',
+            'db.r.auth.title': '使用者名稱或密碼不正確', 'db.r.auth.desc': 'MySQL 拒絕了這組憑證。請注意大小寫，並確認該使用者允許從目前主機連線。',
+            'db.r.unknown.title': '資料庫「{db}」不存在', 'db.r.unknown.desc': '連線正常，但伺服器上沒有這個資料庫。如果目前使用者有建立資料庫的權限，可以由我們替你建立。',
+            'db.r.denied.title': '無法建立資料庫', 'db.r.denied.desc': '目前使用者沒有建立資料庫的權限。請在面板中手動建立「{db}」，或改用有權限的帳號。',
+            'db.r.other.title': '連線失敗', 'db.r.invalid': '參數不合法，請檢查各欄位', 'db.r.detail': '伺服器回應：', 'db.r.changed': '連線資訊已修改，繼續前會重新測試',
+            'admin.eyebrow': '第 3 步 · 管理員', 'admin.h1': '建立管理員帳號', 'admin.lead': '這是你登入後台的帳號，之後可以在後台修改。',
+            'admin.email': '電子郵件', 'admin.email.help': '用於登入後台與接收通知', 'admin.nick': '暱稱', 'admin.nick.help': '在後台顯示的名稱',
+            'admin.pass': '登入密碼', 'admin.pass.help': '至少 6 位，建議混合字母、數字與符號', 'admin.pass2': '確認密碼',
+            'admin.err.email': '請填寫有效的電子郵件', 'admin.err.nick': '請填寫暱稱', 'admin.err.pass': '密碼至少 6 位', 'admin.err.pass2': '兩次輸入的密碼不一致',
+            'pw.weak': '弱', 'pw.fair': '普通', 'pw.good': '良好', 'pw.strong': '很強', 'pw.caps': '大寫鎖定已開啟', 'pw.show': '顯示密碼', 'pw.hide': '隱藏密碼', 'pw.match': '兩次密碼一致',
+            'inst.title': '正在安裝', 'inst.note': '大約需要幾秒鐘，請不要關閉本頁。',
+            'inst.s1': '連線資料庫', 'inst.s2': '寫入資料表結構', 'inst.s3': '產生設定檔', 'inst.s4': '匯入語言套件', 'inst.s5': '初始化系統',
+            'inst.err.title': '安裝未完成', 'inst.err.desc': '伺服器回應了以下訊息，修正後可以重試：',
+            'done.eyebrow': '全部完成', 'done.h1': '安裝成功', 'done.lead': '異次元發卡已經準備就緒，前往後台開始設定你的商店吧。',
+            'done.admin': '後台位址', 'done.account': '管理員', 'done.tip': '建議首次登入後到「系統設定 → 安全設定」檢查一遍安全選項。',
+            'err.network': '網路錯誤，請稍後再試', 'err.server': '伺服器回應了非預期的內容', 'err.write': '沒有寫入權限，請檢查站台目錄的權限',
+            'err.db': '資料庫出錯：{msg}', 'err.installed': '程式已經安裝過了。如需重新安裝，請刪除 kernel/Install/Lock 檔案。'
+        },
+        'en': {
+            'html.lang': 'en', 'brand': 'acg-faka', 'title': 'Setup · acg-faka',
+            'step1.title': 'Environment', 
+            'step2.title': 'Database', 
+            'step3.title': 'Administrator', 
+            'step4.title': 'Done', 
+            'theme.light': 'Light', 'theme.auto': 'System', 'theme.dark': 'Dark',
+            'btn.next': 'Continue', 'btn.back': 'Back', 'btn.test': 'Test connection', 'btn.testing': 'Connecting…', 'btn.install': 'Install',
+            'btn.create': 'Create it for me', 'btn.creating': 'Creating…', 'btn.retry': 'Go back and fix', 'btn.admin': 'Open admin panel', 'btn.home': 'Visit site',
+            'btn.copy': 'Copy', 'btn.copied': 'Copied', 'btn.recheck': 'Check again', 'btn.rechecking': 'Checking…',
+            'env.eyebrow': 'Step 1 · Environment', 'env.h1': 'Check the environment',
+            'env.lead': 'Let’s make sure the server meets the requirements. Anything missing comes with instructions, and this page updates itself once it’s fixed.',
+            'env.ok.title': 'All set', 'env.ok.desc': 'Every check passed. You can proceed with the installation.',
+            'env.bad.title': '{n} item(s) need attention', 'env.bad.desc': 'Follow the instructions below; this page re-checks automatically.', 'env.autopoll': 'Re-checking every {s}s',
+            'env.group.runtime': 'Runtime', 'env.group.ext': 'PHP extensions', 'env.group.fs': 'Directory permissions',
+            'env.php': 'PHP version', 'env.php.sub': 'Running {cur}, requires {min} or newer',
+            'env.status.ok': 'Ready', 'env.status.missing': 'Missing', 'env.status.low': 'Too old', 'env.status.unwritable': 'Not writable',
+            'env.fs.config': 'Stores the database connection', 'env.fs.runtime': 'Caches and runtime files', 'env.fs.kernel/Install': 'Install lock and upgrade packages', 'env.fs.assets/cache': 'Uploads and image cache',
+            'env.fix.title': 'How to fix',
+            'env.fix.php': 'PHP {cur} is too old; {min} or newer is required. Switch the PHP version in your hosting panel, or use a newer Docker image.',
+            'env.fix.ext': 'Missing extensions: {list}', 'env.fix.ext.bt': 'aaPanel / BT Panel: App Store → your PHP version → Settings → Install extensions.',
+            'env.fix.ext.cli': 'Command line', 'env.fix.ext.docker': 'Docker', 'env.fix.ext.restart': 'Restart PHP after installing.',
+            'env.fix.fs': 'Not writable: {list}', 'env.fix.fs.desc': 'Make the PHP user own the site directory (usually www on panels, www-data in Docker):',
+            'db.eyebrow': 'Step 2 · Database', 'db.h1': 'Connect the database', 'db.lead': 'Enter your MySQL details. The connection is tested before you continue, so the later steps can’t fail on it.',
+            'db.host': 'Host', 'db.host.help': 'Usually 127.0.0.1. With Docker Compose use the service name, e.g. mysql', 'db.host.help.docker': 'Container detected: this is usually the Compose service name, e.g. mysql',
+            'db.port': 'Port', 'db.name': 'Database', 'db.name.help': 'If it doesn’t exist yet, we can create it for you', 'db.user': 'Username', 'db.pass': 'Password',
+            'db.prefix': 'Table prefix', 'db.prefix.help': 'Lets several apps share one database. Letters, digits and underscores only', 'optional': 'optional',
+            'db.err.host': 'Enter a valid host (letters, digits, dots, dashes)', 'db.err.port': 'Port must be 1–65535', 'db.err.name': 'Enter a database name (letters, digits, underscores, dashes)',
+            'db.err.user': 'Enter a username', 'db.err.prefix': 'Letters, digits and underscores only',
+            'db.r.ok.title': 'Connected', 'db.r.ok.empty': '{flavor} {version} · the database is empty, ready to install', 'db.r.ok.coexist': '{flavor} {version} · {total} table(s) with other prefixes will be left untouched',
+            'db.r.created': 'Database {db} has been created',
+            'db.r.overwrite.title': '{n} table(s) already use this prefix', 'db.r.overwrite.desc': 'Installing will drop and recreate them — all their data will be lost. If this is a previous unfinished install, go ahead; otherwise choose a different prefix or database.',
+            'db.r.overwrite.confirm': 'I understand, overwrite these tables',
+            'db.r.version.title': 'Database server too old', 'db.r.version.desc': '{flavor} {version} found; {min} or newer is required (JSON columns are used).',
+            'db.r.connect.title': 'Can’t reach {host}:{port}', 'db.r.connect.desc': 'Check the host and port, make sure MySQL is running and the firewall allows it. In Docker Compose, use the service name instead of 127.0.0.1.',
+            'db.r.auth.title': 'Wrong username or password', 'db.r.auth.desc': 'MySQL rejected these credentials. Check the case, and make sure the user is allowed to connect from this host.',
+            'db.r.unknown.title': 'Database “{db}” doesn’t exist', 'db.r.unknown.desc': 'The connection works, but there is no such database. If this user may create databases, we can create it for you.',
+            'db.r.denied.title': 'Couldn’t create the database', 'db.r.denied.desc': 'This user isn’t allowed to create databases. Create “{db}” in your panel, or use an account with the privilege.',
+            'db.r.other.title': 'Connection failed', 'db.r.invalid': 'Invalid input, please check the fields', 'db.r.detail': 'Server said:', 'db.r.changed': 'Details changed — the connection will be tested again before continuing',
+            'admin.eyebrow': 'Step 3 · Administrator', 'admin.h1': 'Create the admin account', 'admin.lead': 'This is the account you’ll use to sign in to the admin panel. You can change it later.',
+            'admin.email': 'Email', 'admin.email.help': 'Used to sign in and receive notifications', 'admin.nick': 'Display name', 'admin.nick.help': 'Shown in the admin panel',
+            'admin.pass': 'Password', 'admin.pass.help': 'At least 6 characters; mix letters, digits and symbols', 'admin.pass2': 'Confirm password',
+            'admin.err.email': 'Enter a valid email address', 'admin.err.nick': 'Enter a display name', 'admin.err.pass': 'At least 6 characters', 'admin.err.pass2': 'Passwords don’t match',
+            'pw.weak': 'Weak', 'pw.fair': 'Fair', 'pw.good': 'Good', 'pw.strong': 'Strong', 'pw.caps': 'Caps Lock is on', 'pw.show': 'Show password', 'pw.hide': 'Hide password', 'pw.match': 'Passwords match',
+            'inst.title': 'Installing', 'inst.note': 'This takes a few seconds. Please keep this page open.',
+            'inst.s1': 'Connecting to the database', 'inst.s2': 'Creating tables', 'inst.s3': 'Writing configuration', 'inst.s4': 'Importing language packs', 'inst.s5': 'Initializing',
+            'inst.err.title': 'Installation didn’t finish', 'inst.err.desc': 'The server responded with the following. Fix it and try again:',
+            'done.eyebrow': 'All done', 'done.h1': 'Installed', 'done.lead': 'acg-faka is ready. Head to the admin panel to set up your shop.',
+            'done.admin': 'Admin panel', 'done.account': 'Administrator', 'done.tip': 'After your first sign-in, take a minute to review Settings → Security.',
+            'err.network': 'Network error, please try again', 'err.server': 'Unexpected response from the server', 'err.write': 'No write permission — check the site directory permissions',
+            'err.db': 'Database error: {msg}', 'err.installed': 'Already installed. To reinstall, delete kernel/Install/Lock.'
+        },
+        'ja': {
+            'html.lang': 'ja', 'brand': 'acg-faka', 'title': 'セットアップ · acg-faka',
+            'step1.title': '環境チェック', 
+            'step2.title': 'データベース', 
+            'step3.title': '管理者', 
+            'step4.title': '完了', 
+            'theme.light': 'ライト', 'theme.auto': 'システムに従う', 'theme.dark': 'ダーク',
+            'btn.next': '次へ', 'btn.back': '戻る', 'btn.test': '接続テスト', 'btn.testing': '接続中…', 'btn.install': 'インストール',
+            'btn.create': '作成する', 'btn.creating': '作成中…', 'btn.retry': '戻って修正', 'btn.admin': '管理画面へ', 'btn.home': 'サイトを開く',
+            'btn.copy': 'コピー', 'btn.copied': 'コピーしました', 'btn.recheck': '再チェック', 'btn.rechecking': 'チェック中…',
+            'env.eyebrow': 'ステップ 1 · 環境チェック', 'env.h1': '動作環境を確認',
+            'env.lead': 'インストール前にサーバーが要件を満たしているか確認します。不足があれば直し方を案内し、直ればこのページが自動で更新されます。',
+            'env.ok.title': '準備完了', 'env.ok.desc': 'すべてのチェックに合格しました。インストールを始められます。',
+            'env.bad.title': '{n} 件の対応が必要です', 'env.bad.desc': '下の案内に沿って修正すると、このページが自動で再チェックします。', 'env.autopoll': '{s} 秒ごとに自動チェック',
+            'env.group.runtime': '実行環境', 'env.group.ext': 'PHP 拡張', 'env.group.fs': '書き込み権限',
+            'env.php': 'PHP バージョン', 'env.php.sub': '現在 {cur}、{min} 以上が必要',
+            'env.status.ok': 'OK', 'env.status.missing': '未インストール', 'env.status.low': '古すぎます', 'env.status.unwritable': '書き込み不可',
+            'env.fs.config': 'データベース接続情報を保存', 'env.fs.runtime': 'キャッシュと実行時ファイル', 'env.fs.kernel/Install': 'インストールロックと更新パッケージ', 'env.fs.assets/cache': 'アップロードと画像キャッシュ',
+            'env.fix.title': '修正方法',
+            'env.fix.php': 'PHP {cur} は古すぎます。{min} 以上が必要です。ホスティングパネルで PHP バージョンを切り替えるか、新しい Docker イメージをお使いください。',
+            'env.fix.ext': '不足している拡張：{list}', 'env.fix.ext.bt': 'aaPanel / 宝塔：アプリストア → 対象の PHP → 設定 → 拡張をインストール。',
+            'env.fix.ext.cli': 'コマンドライン', 'env.fix.ext.docker': 'Docker', 'env.fix.ext.restart': 'インストール後に PHP を再起動してください。',
+            'env.fix.fs': '書き込みできないディレクトリ：{list}', 'env.fix.fs.desc': 'サイトディレクトリの所有者を PHP の実行ユーザーにしてください（パネルでは通常 www、Docker では www-data）：',
+            'db.eyebrow': 'ステップ 2 · データベース', 'db.h1': 'データベースに接続', 'db.lead': 'MySQL の接続情報を入力してください。次へ進む前に接続をテストするので、後の手順で失敗することはありません。',
+            'db.host': 'ホスト', 'db.host.help': '通常は 127.0.0.1。Docker Compose ではサービス名（例：mysql）', 'db.host.help.docker': 'コンテナ環境を検出：通常は Compose のサービス名（例：mysql）です',
+            'db.port': 'ポート', 'db.name': 'データベース名', 'db.name.help': '存在しない場合はこちらで作成できます', 'db.user': 'ユーザー名', 'db.pass': 'パスワード',
+            'db.prefix': 'テーブル接頭辞', 'db.prefix.help': '複数のアプリで 1 つのデータベースを共有するときに区別します。英数字とアンダースコアのみ', 'optional': '任意',
+            'db.err.host': '有効なホストを入力してください（英数字・ドット・ハイフン）', 'db.err.port': 'ポートは 1〜65535', 'db.err.name': 'データベース名を入力してください（英数字・アンダースコア・ハイフン）',
+            'db.err.user': 'ユーザー名を入力してください', 'db.err.prefix': '英数字とアンダースコアのみ使えます',
+            'db.r.ok.title': '接続できました', 'db.r.ok.empty': '{flavor} {version} · データベースは空です。このままインストールできます', 'db.r.ok.coexist': '{flavor} {version} · 別の接頭辞のテーブルが {total} 件ありますが影響しません',
+            'db.r.created': 'データベース {db} を作成しました',
+            'db.r.overwrite.title': 'この接頭辞のテーブルが {n} 件あります', 'db.r.overwrite.desc': 'インストールするとこれらのテーブルは削除・再作成され、データはすべて失われます。前回の未完了インストールならそのまま上書きできます。そうでなければ接頭辞かデータベースを変えてください。',
+            'db.r.overwrite.confirm': '理解しました。これらのテーブルを上書きします',
+            'db.r.version.title': 'データベースのバージョンが古すぎます', 'db.r.version.desc': '現在 {flavor} {version}、{min} 以上が必要です（JSON 型を使用しています）。',
+            'db.r.connect.title': '{host}:{port} に接続できません', 'db.r.connect.desc': 'ホストとポート、MySQL が起動しているか、ファイアウォールを確認してください。Docker Compose では 127.0.0.1 ではなくサービス名を使います。',
+            'db.r.auth.title': 'ユーザー名またはパスワードが違います', 'db.r.auth.desc': 'MySQL が認証を拒否しました。大文字小文字と、このホストからの接続が許可されているかを確認してください。',
+            'db.r.unknown.title': 'データベース「{db}」がありません', 'db.r.unknown.desc': '接続はできましたが、このデータベースは存在しません。このユーザーに作成権限があれば、こちらで作成できます。',
+            'db.r.denied.title': 'データベースを作成できません', 'db.r.denied.desc': 'このユーザーには作成権限がありません。パネルで「{db}」を手動で作成するか、権限のあるアカウントをお使いください。',
+            'db.r.other.title': '接続に失敗しました', 'db.r.invalid': '入力に誤りがあります。各項目を確認してください', 'db.r.detail': 'サーバーの応答：', 'db.r.changed': '接続情報が変更されました。続行前に再テストします',
+            'admin.eyebrow': 'ステップ 3 · 管理者', 'admin.h1': '管理者アカウントを作成', 'admin.lead': '管理画面にログインするためのアカウントです。後から変更できます。',
+            'admin.email': 'メールアドレス', 'admin.email.help': 'ログインと通知の受信に使います', 'admin.nick': '表示名', 'admin.nick.help': '管理画面に表示される名前',
+            'admin.pass': 'パスワード', 'admin.pass.help': '6 文字以上。英字・数字・記号を組み合わせてください', 'admin.pass2': 'パスワード（確認）',
+            'admin.err.email': '有効なメールアドレスを入力してください', 'admin.err.nick': '表示名を入力してください', 'admin.err.pass': '6 文字以上にしてください', 'admin.err.pass2': 'パスワードが一致しません',
+            'pw.weak': '弱い', 'pw.fair': '普通', 'pw.good': '良い', 'pw.strong': '強い', 'pw.caps': 'Caps Lock がオンです', 'pw.show': 'パスワードを表示', 'pw.hide': 'パスワードを隠す', 'pw.match': 'パスワードが一致しました',
+            'inst.title': 'インストール中', 'inst.note': '数秒かかります。このページを閉じないでください。',
+            'inst.s1': 'データベースに接続', 'inst.s2': 'テーブルを作成', 'inst.s3': '設定ファイルを書き込み', 'inst.s4': '言語パックを読み込み', 'inst.s5': '初期化',
+            'inst.err.title': 'インストールが完了しませんでした', 'inst.err.desc': 'サーバーから次の応答がありました。修正して再試行してください：',
+            'done.eyebrow': 'すべて完了', 'done.h1': 'インストール完了', 'done.lead': 'acg-faka の準備ができました。管理画面でショップの設定を始めましょう。',
+            'done.admin': '管理画面', 'done.account': '管理者', 'done.tip': '初回ログイン後は「設定 → セキュリティ」を一度確認することをおすすめします。',
+            'err.network': 'ネットワークエラー。しばらくしてからお試しください', 'err.server': 'サーバーから予期しない応答がありました', 'err.write': '書き込み権限がありません。サイトディレクトリの権限を確認してください',
+            'err.db': 'データベースエラー：{msg}', 'err.installed': 'すでにインストール済みです。再インストールするには kernel/Install/Lock を削除してください。'
         }
+    };
+    var LANG_NAMES = {'zh-cn': '简体中文', 'zh-tw': '繁體中文', 'en': 'English', 'ja': '日本語'};
+    var LANG_ORDER = ['zh-cn', 'zh-tw', 'en', 'ja'];
 
-        $('.prevButton').click(function () {
-            var button = $(this);
-            var currentSection = button.parents(".section");
-            var currentSectionIndex = currentSection.index();
-            var headerSection = $('.steps li').eq(currentSectionIndex);
-            currentSection.removeClass("is-active").prev().addClass("is-active");
-            headerSection.removeClass("is-active").prev().addClass("is-active");
+    var lang = pickLang();
+    function pickLang() {
+        var saved = null;
+        try { saved = localStorage.getItem('acg-install-lang'); } catch (e) {}
+        if (saved && I18N[saved]) return saved;
+        if (BOOT.lang && I18N[BOOT.lang]) return BOOT.lang;
+        var nav = ((navigator.languages || [navigator.language || ''])[0] || '').toLowerCase();
+        if (nav.indexOf('zh') === 0) return /tw|hk|mo|hant/.test(nav) ? 'zh-tw' : 'zh-cn';
+        if (nav.indexOf('ja') === 0) return 'ja';
+        return 'en';
+    }
+    function t(key, vars) {
+        var s = (I18N[lang] && I18N[lang][key]) || I18N['zh-cn'][key] || key;
+        if (vars) s = s.replace(/\{(\w+)\}/g, function (_, k) { return vars[k] == null ? '' : String(vars[k]); });
+        return s;
+    }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); }
+    /* 带 {x} 的文案用于 innerHTML 时：整句转义后再把占位替换成已转义的值 */
+    function th(key, vars) {
+        var s = esc((I18N[lang] && I18N[lang][key]) || I18N['zh-cn'][key] || key);
+        if (vars) s = s.replace(/\{(\w+)\}/g, function (_, k) { return vars[k] == null ? '' : String(vars[k]); });
+        return s;
+    }
+
+    function applyLang(code, persist, skipRender) {
+        lang = I18N[code] ? code : 'zh-cn';
+        document.documentElement.setAttribute('lang', t('html.lang'));
+        document.title = t('title');
+        document.querySelectorAll('[data-i18n]').forEach(function (el) { el.textContent = t(el.getAttribute('data-i18n')); });
+        document.querySelectorAll('[data-i18n-title]').forEach(function (el) { el.title = t(el.getAttribute('data-i18n-title')); });
+        document.getElementById('lang-name').textContent = LANG_NAMES[lang];
+        renderLangMenu();
+        if (persist) {
+            try { localStorage.setItem('acg-install-lang', lang); } catch (e) {}
+            /* 同名 Cookie 是站点的语言开关：装完进后台直接就是这门语言 */
+            document.cookie = 'acg_lang=' + lang + '; path=/; max-age=31536000; SameSite=Lax';
+        }
+        if (!skipRender) render(true);
+    }
+    function renderLangMenu() {
+        var menu = document.getElementById('lang-menu');
+        menu.innerHTML = LANG_ORDER.map(function (c) {
+            return '<button type="button" role="menuitemradio" data-lang="' + c + '" aria-checked="' + (c === lang) + '"><span>' + LANG_NAMES[c] + '</span>' + (c === lang ? '<span class="mi material-icons-outlined">check</span>' : '') + '</button>';
+        }).join('');
+    }
+    (function langMenu() {
+        var btn = document.getElementById('lang-btn'), menu = document.getElementById('lang-menu'), wrap = document.getElementById('lang');
+        function close() { menu.classList.add('hidden'); btn.setAttribute('aria-expanded', 'false'); }
+        btn.addEventListener('click', function () {
+            var open = menu.classList.toggle('hidden') === false;
+            btn.setAttribute('aria-expanded', String(open));
         });
+        menu.addEventListener('click', function (e) {
+            var b = e.target.closest('[data-lang]');
+            if (!b) return;
+            close();
+            applyLang(b.getAttribute('data-lang'), true);
+        });
+        document.addEventListener('click', function (e) { if (!wrap.contains(e.target)) close(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    })();
 
-        $(".form-wrapper .button").click(function () {
-            var button = $(this);
-            var currentSection = button.parents(".section");
-            var currentSectionIndex = currentSection.index();
-            var headerSection = $('.steps li').eq(currentSectionIndex);
+    /* ================================================================
+       主题
+       ================================================================ */
+    (function theme() {
+        var seg = document.getElementById('theme-seg');
+        var mq = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+        function apply(pref) {
+            var dark = pref === 'dark' || (pref === 'auto' && mq && mq.matches);
+            document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme-pref', pref);
+            seg.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-pref') === pref)); });
+        }
+        apply(document.documentElement.getAttribute('data-theme-pref') || 'auto');
+        seg.addEventListener('click', function (e) {
+            var b = e.target.closest('button');
+            if (!b) return;
+            var pref = b.getAttribute('data-pref');
+            try { localStorage.setItem('admin-theme', pref); } catch (err) {}
+            apply(pref);
+        });
+        if (mq && mq.addEventListener) mq.addEventListener('change', function () {
+            if (document.documentElement.getAttribute('data-theme-pref') === 'auto') apply('auto');
+        });
+    })();
 
-            let host = getValue('host');
-            let database = getValue('database');
-            let username = getValue('username');
-            let password = getValue('password');
-            let prefix = getValue('prefix');
-            let email = getValue('email');
-            let nickname = getValue('nickname');
-            let login_password = getValue('login_password');
-            let login_re_password = getValue('login_re_password');
+    /* ================================================================
+       状态
+       ================================================================ */
+    var env = BOOT.env || {};
+    var state = {
+        step: 0,
+        form: {host: env.docker ? 'mysql' : '127.0.0.1', port: '3306', database: '', username: '', password: '', prefix: 'acg_', email: '', nickname: '', login_password: '', login_re_password: ''},
+        dbResult: null,          // 最近一次测试结果
+        dbTestedFor: '',         // 测试时的表单指纹，变了就作废
+        overwriteOk: false,
+        installError: null
+    };
+    try {
+        var saved = JSON.parse(sessionStorage.getItem('acg-install-state') || 'null');
+        if (saved && saved.form) {
+            Object.keys(state.form).forEach(function (k) { if (typeof saved.form[k] === 'string') state.form[k] = saved.form[k]; });
+            if (typeof saved.step === 'number' && saved.step > 0 && saved.step < 3 && env.install) state.step = saved.step;
+        }
+    } catch (e) {}
+    function persist() {
+        try { sessionStorage.setItem('acg-install-state', JSON.stringify({step: state.step, form: state.form})); } catch (e) {}
+    }
+    function dbFingerprint() {
+        var f = state.form;
+        return [f.host, f.port, f.database, f.username, f.password, f.prefix].join('');
+    }
 
-            if (currentSectionIndex == 0) {
-                currentSection.removeClass("is-active").next().addClass("is-active");
-                headerSection.removeClass("is-active").next().addClass("is-active");
+    var panel = document.getElementById('panel');
+    var toastTimer = null;
+    function toast(msg) {
+        var el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { el.classList.remove('show'); }, 1600);
+    }
+
+    function post(url, data) {
+        var body = new URLSearchParams();
+        Object.keys(data).forEach(function (k) { body.append(k, data[k]); });
+        return fetch(url, {method: 'POST', body: body, headers: {'X-Requested-With': 'XMLHttpRequest'}, credentials: 'same-origin'})
+            .then(function (r) { return r.text(); })
+            .then(function (txt) {
+                try { return JSON.parse(txt); } catch (e) { throw new Error(t('err.server')); }
+            });
+    }
+
+    function setStep(n) {
+        state.step = n;
+        persist();
+        document.querySelectorAll('#steps .step').forEach(function (li) {
+            var i = +li.getAttribute('data-step');
+            li.classList.toggle('active', i === n);
+            li.classList.toggle('done', i < n);
+            var dot = li.querySelector('.step-dot');
+            dot.innerHTML = i < n ? '<span class="mi material-icons-outlined">check</span>' : '<span class="n">' + (i + 1) + '</span>';
+        });
+        render();
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    /* 视图切换：换步骤时旧视图先淡出再换新内容；只是换语言重画同一步时直接替换，
+       不然切一次语言整块内容就闪一下，还有 160ms 的空窗。 */
+    var instantSwap = false;
+    function swap(html, after) {
+        var old = panel.firstElementChild;
+        var go = function () {
+            panel.innerHTML = '<div class="view">' + html + '</div>';
+            if (after) after(panel.firstElementChild);
+        };
+        if (old && !instantSwap && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            old.classList.add('leaving');
+            old.style.pointerEvents = 'none';   /* 淡出期间别再响应点击 */
+            setTimeout(go, 160);
+        } else {
+            go();
+        }
+    }
+
+    function render(instant) {
+        stopPoll();
+        instantSwap = !!instant;
+        try {
+            if (state.step === 0) renderEnv();
+            else if (state.step === 1) renderDb();
+            else if (state.step === 2) renderAdmin();
+            else renderDone();
+        } finally {
+            instantSwap = false;
+        }
+    }
+
+    /* ================================================================
+       第 1 步：环境
+       ================================================================ */
+    var pollTimer = null;
+    var POLL_S = 4;
+    function stopPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+
+    function envIssues(e) {
+        var n = 0;
+        if (!(e.php && e.php.ok)) n++;
+        n += (e.missing || []).length;
+        n += (e.unwritable || []).length;
+        return n;
+    }
+
+    function renderEnv() {
+        stopPoll();   /* 从 recheck() 直接进来时也要先清掉旧计时器，否则每次状态变化都叠一个新的 setInterval */
+        var e = env;
+        var issues = envIssues(e);
+        var ok = !!e.install;
+        var extKeys = Object.keys(e.ext || {});
+        var fsKeys = Object.keys(e.writable || {});
+        var php = e.php || {};
+
+        var html = '' +
+            '<span class="eyebrow">' + esc(t('env.eyebrow')) + '</span>' +
+            '<h1>' + esc(t('env.h1')) + '</h1>' +
+            '<p class="lead">' + esc(t('env.lead')) + '</p>' +
+            '<div class="banner ' + (ok ? 'ok' : 'warn') + '" id="env-banner">' +
+                '<span class="mi material-icons-outlined">' + (ok ? 'verified' : 'error_outline') + '</span>' +
+                '<div><b>' + (ok ? esc(t('env.ok.title')) : th('env.bad.title', {n: issues})) + '</b><p>' + esc(ok ? t('env.ok.desc') : t('env.bad.desc')) + '</p></div>' +
+                (ok ? '' : '<span class="aux"><span class="spin" style="width:14px;height:14px;border-width:2px"></span>' + th('env.autopoll', {s: POLL_S}) + '</span>') +
+            '</div>' +
+
+            '<div class="card"><div class="card-h"><h3>' + esc(t('env.group.runtime')) + '</h3></div><div class="rows">' +
+                '<div class="row"><span class="ico"><span class="mi material-icons-outlined">memory</span></span>' +
+                    '<div class="grow"><div class="name">' + esc(t('env.php')) + ' <code>' + esc(php.version || '?') + '</code></div>' +
+                    '<div class="sub">' + th('env.php.sub', {cur: php.version, min: php.min}) + '</div></div>' +
+                    pill(php.ok, php.ok ? 'env.status.ok' : 'env.status.low') +
+                '</div>' +
+            '</div></div>' +
+
+            '<div class="card"><div class="card-h"><h3>' + esc(t('env.group.ext')) + '</h3><span class="help">' + extKeys.filter(function (k) { return e.ext[k]; }).length + ' / ' + extKeys.length + '</span></div>' +
+                '<div class="ext-grid">' + extKeys.map(function (k) {
+                    return '<div class="ext ' + (e.ext[k] ? 'ok' : 'bad') + '"><span>' + esc(k) + '</span><span class="mi material-icons-outlined">' + (e.ext[k] ? 'check_circle' : 'cancel') + '</span></div>';
+                }).join('') + '</div>' +
+            '</div>' +
+
+            '<div class="card"><div class="card-h"><h3>' + esc(t('env.group.fs')) + '</h3></div><div class="rows">' + fsKeys.map(function (k) {
+                var w = e.writable[k];
+                return '<div class="row"><span class="ico"><span class="mi material-icons-outlined">' + (w ? 'folder' : 'folder_off') + '</span></span>' +
+                    '<div class="grow"><div class="name"><code>' + esc(k) + '/</code></div><div class="sub">' + esc(t('env.fs.' + k)) + '</div></div>' +
+                    pill(w, w ? 'env.status.ok' : 'env.status.unwritable') + '</div>';
+            }).join('') + '</div></div>' +
+
+            (ok ? '' : renderFix(e)) +
+
+            '<div class="actions">' +
+                '<button type="button" class="btn btn-ghost" id="recheck"><span class="mi material-icons-outlined">refresh</span><span>' + esc(t('btn.recheck')) + '</span></button>' +
+                '<span class="spacer"></span>' +
+                '<button type="button" class="btn btn-primary" id="next" ' + (ok ? '' : 'disabled') + '><span>' + esc(t('btn.next')) + '</span><span class="mi material-icons-outlined">arrow_forward</span></button>' +
+            '</div>';
+
+        swap(html, function (view) {
+            view.querySelector('#next').addEventListener('click', function () { if (env.install) setStep(1); });
+            view.querySelector('#recheck').addEventListener('click', function () { recheck(true); });
+            bindCopy(view);
+            if (!ok) pollTimer = setInterval(function () { recheck(false); }, POLL_S * 1000);
+        });
+    }
+
+    function pill(ok, key) {
+        return '<span class="pill ' + (ok ? 'ok' : 'bad') + '"><span class="mi material-icons-outlined">' + (ok ? 'check' : 'close') + '</span>' + esc(t(key)) + '</span>';
+    }
+
+    function renderFix(e) {
+        var items = [];
+        var php = e.php || {};
+        if (!php.ok) {
+            items.push('<div class="fix-item"><b>' + esc(t('env.php')) + '</b><p>' + th('env.fix.php', {cur: php.version, min: php.min}) + '</p></div>');
+        }
+        var missing = e.missing || [];
+        if (missing.length) {
+            var apt = 'apt install ' + missing.map(function (m) { return 'php8.2-' + m.replace('pdo_mysql', 'mysql').replace('pdo', 'mysql'); }).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(' ');
+            var yum = 'yum install ' + missing.map(function (m) { return 'php-' + m.replace('pdo_mysql', 'mysqlnd').replace('pdo', 'pdo'); }).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(' ');
+            var dk = 'docker-php-ext-install ' + missing.join(' ');
+            items.push('<div class="fix-item"><b>' + th('env.fix.ext', {list: missing.join(', ')}) + '</b>' +
+                '<p>' + esc(t('env.fix.ext.bt')) + '</p>' +
+                cmd(t('env.fix.ext.cli'), apt) + cmd('', yum) + cmd(t('env.fix.ext.docker'), dk) +
+                '<p>' + esc(t('env.fix.ext.restart')) + '</p></div>');
+        }
+        var unw = e.unwritable || [];
+        if (unw.length) {
+            items.push('<div class="fix-item"><b>' + th('env.fix.fs', {list: unw.join(', ')}) + '</b><p>' + esc(t('env.fix.fs.desc')) + '</p>' +
+                cmd('', 'chown -R www:www ' + '/path/to/site' + ' && chmod -R 755 ' + '/path/to/site') + '</div>');
+        }
+        return '<div class="card fix"><div class="card-h"><h3>' + esc(t('env.fix.title')) + '</h3></div><div class="fix-body">' + items.join('') + '</div></div>';
+    }
+    function cmd(label, text) {
+        return '<div class="cmd">' + (label ? '<span class="k">' + esc(label) + '</span>' : '') + '<span class="txt">' + esc(text) + '</span>' +
+            '<button type="button" class="copy" data-copy="' + esc(text) + '" title="' + esc(t('btn.copy')) + '"><span class="mi material-icons-outlined">content_copy</span></button></div>';
+    }
+    function bindCopy(view) {
+        view.querySelectorAll('[data-copy]').forEach(function (b) {
+            b.addEventListener('click', function () {
+                var text = b.getAttribute('data-copy');
+                var done = function () { toast(t('btn.copied')); };
+                if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+                else { fallbackCopy(text); done(); }
+            });
+        });
+    }
+    function fallbackCopy(text) {
+        var ta = document.createElement('textarea');
+        ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+    }
+
+    var rechecking = false;
+    function recheck(manual) {
+        if (rechecking) return;
+        rechecking = true;
+        var btn = panel.querySelector('#recheck');
+        if (manual && btn) { btn.classList.add('loading'); btn.innerHTML = '<span class="spin"></span><span>' + esc(t('btn.rechecking')) + '</span>'; }
+        post('/install/env', {}).then(function (res) {
+            if (res && res.code === 200 && res.data) {
+                var before = env.install;
+                env = res.data;
+                if (state.step === 0) {
+                    /* 状态变了才重绘，免得每 4 秒闪一下 */
+                    if (manual || env.install !== before || envIssues(env) !== lastIssues) renderEnv();
+                    lastIssues = envIssues(env);
+                }
+            } else if (manual) toast(t('err.server'));
+        }).catch(function () { if (manual) toast(t('err.network')); }).then(function () { rechecking = false; });
+    }
+    var lastIssues = envIssues(env);
+
+    /* ================================================================
+       表单工具
+       ================================================================ */
+    function field(opt) {
+        var tail = '';
+        if (opt.password) tail = '<button type="button" class="tail" data-eye="' + opt.name + '" title="' + esc(t('pw.show')) + '"><span class="mi material-icons-outlined">visibility</span></button>';
+        return '<div class="field ' + (opt.span || '') + '" data-field="' + opt.name + '">' +
+            '<label class="label" for="f-' + opt.name + '"><span>' + esc(opt.label) + '</span>' + (opt.optional ? '<span class="opt">' + esc(t('optional')) + '</span>' : '') + '</label>' +
+            '<div class="control' + (tail ? ' has-tail' : '') + '"><span class="mi material-icons-outlined lead-ico">' + opt.icon + '</span>' +
+            '<input class="input" id="f-' + opt.name + '" name="' + opt.name + '" type="' + (opt.password ? 'password' : (opt.type || 'text')) + '" value="' + esc(opt.value || '') + '"' +
+            ' autocomplete="' + (opt.autocomplete || 'off') + '" autocapitalize="off" autocorrect="off" spellcheck="false"' + (opt.inputmode ? ' inputmode="' + opt.inputmode + '"' : '') + (opt.placeholder ? ' placeholder="' + esc(opt.placeholder) + '"' : '') + '>' +
+            tail + '</div>' +
+            '<div class="help" data-help>' + esc(opt.help || '') + '</div>' + (opt.extra || '') +
+            '</div>';
+    }
+    function bindForm(view, names, onChange) {
+        names.forEach(function (n) {
+            var input = view.querySelector('[name="' + n + '"]');
+            if (!input) return;
+            input.addEventListener('input', function () {
+                state.form[n] = input.value;
+                persist();
+                clearInvalid(view, n);
+                if (onChange) onChange(n, input.value);
+            });
+            input.addEventListener('blur', function () { validateField(view, n, true); });
+        });
+        view.querySelectorAll('[data-eye]').forEach(function (b) {
+            b.addEventListener('click', function () {
+                var input = view.querySelector('[name="' + b.getAttribute('data-eye') + '"]');
+                var show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                b.title = t(show ? 'pw.hide' : 'pw.show');
+                b.querySelector('.mi').textContent = show ? 'visibility_off' : 'visibility';
+                input.focus();
+            });
+        });
+        view.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+                e.preventDefault();
+                var primary = view.querySelector('.btn-primary');
+                if (primary && !primary.disabled) primary.click();
             }
+        });
+        var first = null;
+        names.some(function (n) { var i = view.querySelector('[name="' + n + '"]'); if (i && !i.value) { first = i; return true; } return false; });
+        (first || view.querySelector('[name="' + names[0] + '"]')).focus({preventScroll: true});
+    }
+    function setInvalid(view, name, msg) {
+        var f = view.querySelector('[data-field="' + name + '"]');
+        if (!f) return;
+        f.classList.add('invalid'); f.classList.remove('ok');
+        f.querySelector('[data-help]').textContent = msg;
+        f.querySelector('input').setAttribute('aria-invalid', 'true');
+    }
+    function clearInvalid(view, name) {
+        var f = view.querySelector('[data-field="' + name + '"]');
+        if (!f || !f.classList.contains('invalid')) return;
+        f.classList.remove('invalid');
+        f.querySelector('[data-help]').textContent = f.getAttribute('data-help-default') || '';
+        f.querySelector('input').removeAttribute('aria-invalid');
+    }
+    function rememberHelp(view) {
+        view.querySelectorAll('.field').forEach(function (f) { f.setAttribute('data-help-default', f.querySelector('[data-help]').textContent); });
+    }
 
-            if (currentSectionIndex == 1) {
-                //验证主机
-                if (database == '') {
-                    layer.msg("请填写数据库名称");
-                    return;
+    var RULES = {
+        host: function (v) { return /^[A-Za-z0-9_\-.]{1,255}$/.test(v) ? '' : t('db.err.host'); },
+        port: function (v) { return (/^\d{1,5}$/.test(v) && +v >= 1 && +v <= 65535) ? '' : t('db.err.port'); },
+        database: function (v) { return /^[A-Za-z0-9_\-]{1,64}$/.test(v) ? '' : t('db.err.name'); },
+        username: function (v) { return v.trim() ? '' : t('db.err.user'); },
+        password: function () { return ''; },
+        prefix: function (v) { return /^[A-Za-z0-9_]{0,32}$/.test(v) ? '' : t('db.err.prefix'); },
+        email: function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : t('admin.err.email'); },
+        nickname: function (v) { return v.trim() ? '' : t('admin.err.nick'); },
+        login_password: function (v) { return v.length >= 6 ? '' : t('admin.err.pass'); },
+        login_re_password: function (v) { return v === state.form.login_password ? '' : t('admin.err.pass2'); }
+    };
+    function validateField(view, name, quiet) {
+        var rule = RULES[name];
+        if (!rule) return true;
+        var msg = rule(state.form[name] || '');
+        if (msg) { setInvalid(view, name, msg); return false; }
+        clearInvalid(view, name);
+        return true;
+    }
+    function validateAll(view, names) {
+        var firstBad = null;
+        names.forEach(function (n) { if (!validateField(view, n) && !firstBad) firstBad = n; });
+        if (firstBad) view.querySelector('[name="' + firstBad + '"]').focus();
+        return !firstBad;
+    }
+
+    /* ================================================================
+       第 2 步：数据库
+       ================================================================ */
+    function renderDb() {
+        var f = state.form;
+        var html = '' +
+            '<span class="eyebrow">' + esc(t('db.eyebrow')) + '</span>' +
+            '<h1>' + esc(t('db.h1')) + '</h1>' +
+            '<p class="lead">' + esc(t('db.lead')) + '</p>' +
+            '<form class="form" id="db-form" autocomplete="off" novalidate>' +
+                field({name: 'host', label: t('db.host'), icon: 'dns', value: f.host, help: t(env.docker ? 'db.host.help.docker' : 'db.host.help'), span: 'c4'}) +
+                field({name: 'port', label: t('db.port'), icon: 'tag', value: f.port, inputmode: 'numeric', span: 'c2'}) +
+                field({name: 'database', label: t('db.name'), icon: 'storage', value: f.database, help: t('db.name.help'), placeholder: 'acg_faka'}) +
+                field({name: 'username', label: t('db.user'), icon: 'person', value: f.username, span: 'c3'}) +
+                field({name: 'password', label: t('db.pass'), icon: 'key', value: f.password, password: true, span: 'c3', autocomplete: 'new-password'}) +
+                field({name: 'prefix', label: t('db.prefix'), icon: 'label', value: f.prefix, help: t('db.prefix.help'), optional: true}) +
+            '</form>' +
+            '<div id="db-result"></div>' +
+            '<div class="actions">' +
+                '<button type="button" class="btn btn-ghost" id="back"><span class="mi material-icons-outlined">arrow_back</span><span>' + esc(t('btn.back')) + '</span></button>' +
+                '<span class="spacer"></span>' +
+                '<button type="button" class="btn btn-ghost" id="test"><span class="mi material-icons-outlined">cable</span><span>' + esc(t('btn.test')) + '</span></button>' +
+                '<button type="button" class="btn btn-primary" id="next"><span>' + esc(t('btn.next')) + '</span><span class="mi material-icons-outlined">arrow_forward</span></button>' +
+            '</div>';
+
+        swap(html, function (view) {
+            rememberHelp(view);
+            var names = ['host', 'port', 'database', 'username', 'password', 'prefix'];
+            bindForm(view, names, function () {
+                /* 改了任何一项，上次的测试结果就不作数了 */
+                if (state.dbResult && dbFingerprint() !== state.dbTestedFor) {
+                    state.dbResult = null; state.overwriteOk = false;
+                    renderDbResult(view, {stale: true});
                 }
-                if (username == '') {
-                    layer.msg("请填写数据库账号");
-                    return;
-                }
-                if (password == '') {
-                    layer.msg("请填写数据库密码");
-                    return;
-                }
-                currentSection.removeClass("is-active").next().addClass("is-active");
-                headerSection.removeClass("is-active").next().addClass("is-active");
-            }
-
-            if (currentSectionIndex == 2) {
-
-                if (email == '') {
-                    layer.msg("请设设置管理员邮箱");
-                    return;
-                }
-
-                if (nickname == '') {
-                    layer.msg("呢称不能为空");
-                    return;
-                }
-
-                if (login_password == '') {
-                    layer.msg("请设置登录密码");
-                    return;
-                }
-                if (login_re_password == '') {
-                    layer.msg("请再次输入登录密码");
-                    return;
-                }
-
-                if (login_password != login_re_password) {
-                    layer.msg("两次密码输入不一致");
-                    return;
-                }
-
-                let installButton = $('.installButton');
-
-                installButton.attr('disabled', true);
-                installButton.css('background-color', 'rgba(0, 0, 0, 0.2)');
-                installButton.val('正在安装..');
-
-                $.post('/install/submit', $('.install-info').serialize(), res => {
-                    if (res.code == 200) {
-                        currentSection.removeClass("is-active").next().addClass("is-active");
-                        headerSection.removeClass("is-active").next().addClass("is-active");
-                        $(".form-wrapper").submit(function (e) {
-                            e.preventDefault();
-                        });
-                    } else {
-                        layer.msg(res.msg);
-                        installButton.attr('disabled', false);
-                        installButton.css('background-color', 'pink');
-                        installButton.val('重新安装');
+            });
+            if (state.dbResult && dbFingerprint() === state.dbTestedFor) renderDbResult(view, state.dbResult);
+            view.querySelector('#back').addEventListener('click', function () { setStep(0); });
+            view.querySelector('#test').addEventListener('click', function () { testDb(view, false); });
+            view.querySelector('#next').addEventListener('click', function () {
+                var r = state.dbResult;
+                if (r && r.ok && dbFingerprint() === state.dbTestedFor) {
+                    if (r.reason === 'version') return;
+                    if (r.tables && r.tables.prefixed > 0 && !state.overwriteOk) {
+                        var box = view.querySelector('#overwrite');
+                        if (box) { box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake'); box.querySelector('input').focus(); }
+                        return;
                     }
-                });
-            }
+                    setStep(2);
+                    return;
+                }
+                testDb(view, true);
+            });
         });
-    });
-</script>
+    }
 
+    function testDb(view, advance, create) {
+        var names = ['host', 'port', 'database', 'username', 'password', 'prefix'];
+        if (!validateAll(view, names)) return;
+        var testBtn = view.querySelector('#test'), nextBtn = view.querySelector('#next');
+        var label = create ? t('btn.creating') : t('btn.testing');
+        testBtn.classList.add('loading'); testBtn.innerHTML = '<span class="spin"></span><span>' + esc(label) + '</span>';
+        nextBtn.disabled = true;
+        var fp = dbFingerprint();
+        var data = {host: state.form.host, port: state.form.port, database: state.form.database, username: state.form.username, password: state.form.password, prefix: state.form.prefix};
+        if (create) data.create = '1';
+        post('/install/testDatabase', data).then(function (res) {
+            if (!res || res.code !== 200 || !res.data) throw new Error((res && res.msg) || t('err.server'));
+            state.dbResult = res.data; state.dbTestedFor = fp; state.overwriteOk = false;
+            renderDbResult(view, res.data);
+            if (res.data.ok && res.data.reason === 'ok' && advance && !(res.data.tables && res.data.tables.prefixed > 0)) {
+                setTimeout(function () { setStep(2); }, 350);
+            }
+        }).catch(function (err) {
+            renderDbResult(view, {ok: false, reason: 'other', message: err && err.message});
+        }).then(function () {
+            testBtn.classList.remove('loading'); testBtn.innerHTML = '<span class="mi material-icons-outlined">cable</span><span>' + esc(t('btn.test')) + '</span>';
+            nextBtn.disabled = false;
+        });
+    }
+
+    function renderDbResult(view, r) {
+        var box = view.querySelector('#db-result');
+        if (!box) return;
+        var f = state.form;
+        var srv = r.server || {};
+        var html = '';
+        if (r.stale) {
+            html = banner('info', 'info', esc(t('db.r.changed')), '');
+        } else if (r.ok) {
+            var over = r.tables && r.tables.prefixed > 0;
+            if (r.reason === 'version') {
+                html = banner('bad', 'error_outline', esc(t('db.r.version.title')), th('db.r.version.desc', {flavor: srv.flavor, version: srv.version, min: srv.min}));
+            } else if (over) {
+                html = banner('warn', 'warning_amber', th('db.r.overwrite.title', {n: r.tables.prefixed}), esc(t('db.r.overwrite.desc')) +
+                    '<label class="check' + '" id="overwrite"><input type="checkbox"' + (state.overwriteOk ? ' checked' : '') + '><span>' + esc(t('db.r.overwrite.confirm')) + '</span></label>');
+            } else {
+                var desc = r.tables && r.tables.total > 0 ? th('db.r.ok.coexist', {flavor: srv.flavor, version: srv.version, total: r.tables.total}) : th('db.r.ok.empty', {flavor: srv.flavor, version: srv.version});
+                if (r.created) desc += '<br>' + th('db.r.created', {db: f.database});
+                html = banner('ok', 'check_circle', esc(t('db.r.ok.title')), desc);
+            }
+        } else {
+            switch (r.reason) {
+                case 'connect': html = banner('bad', 'wifi_off', th('db.r.connect.title', {host: f.host, port: f.port}), esc(t('db.r.connect.desc')) + detail(r.message)); break;
+                case 'auth': html = banner('bad', 'lock', esc(t('db.r.auth.title')), esc(t('db.r.auth.desc')) + detail(r.message)); break;
+                case 'unknown_db': html = banner('info', 'help_outline', th('db.r.unknown.title', {db: f.database}), esc(t('db.r.unknown.desc')) +
+                    '<div style="margin-top:12px"><button type="button" class="btn btn-primary" id="create-db" style="height:40px"><span class="mi material-icons-outlined">add_circle_outline</span><span>' + esc(t('btn.create')) + '</span></button></div>'); break;
+                case 'create_denied': html = banner('bad', 'block', esc(t('db.r.denied.title')), th('db.r.denied.desc', {db: f.database}) + detail(r.message)); break;
+                case 'invalid': html = banner('bad', 'error_outline', esc(t('db.r.invalid')), ''); if (r.field) setInvalid(view, r.field, RULES[r.field] ? RULES[r.field](state.form[r.field] || '') || t('db.r.invalid') : t('db.r.invalid')); break;
+                default: html = banner('bad', 'error_outline', esc(t('db.r.other.title')), detail(r.message));
+            }
+        }
+        box.innerHTML = html ? '<div class="view" style="margin-top:18px">' + html + '</div>' : '';
+        var ov = box.querySelector('#overwrite input');
+        if (ov) ov.addEventListener('change', function () { state.overwriteOk = ov.checked; });
+        var cb = box.querySelector('#create-db');
+        if (cb) cb.addEventListener('click', function () { testDb(view, false, true); });
+    }
+    function banner(kind, icon, title, body) {
+        return '<div class="banner ' + kind + '" style="margin-bottom:0"><span class="mi material-icons-outlined">' + icon + '</span><div style="flex:1;min-width:0"><b>' + title + '</b>' + (body ? '<p>' + body + '</p>' : '') + '</div></div>';
+    }
+    function detail(msg) {
+        return msg ? '<div class="detail">' + esc(t('db.r.detail')) + ' ' + esc(msg) + '</div>' : '';
+    }
+
+    /* ================================================================
+       第 3 步：管理员
+       ================================================================ */
+    function renderAdmin() {
+        var f = state.form;
+        var html = '' +
+            '<span class="eyebrow">' + esc(t('admin.eyebrow')) + '</span>' +
+            '<h1>' + esc(t('admin.h1')) + '</h1>' +
+            '<p class="lead">' + esc(t('admin.lead')) + '</p>' +
+            '<form class="form" id="admin-form" autocomplete="off" novalidate>' +
+                field({name: 'email', label: t('admin.email'), icon: 'alternate_email', value: f.email, type: 'email', help: t('admin.email.help'), autocomplete: 'username', span: 'c3'}) +
+                field({name: 'nickname', label: t('admin.nick'), icon: 'badge', value: f.nickname, help: t('admin.nick.help'), span: 'c3'}) +
+                field({name: 'login_password', label: t('admin.pass'), icon: 'password', value: f.login_password, password: true, help: t('admin.pass.help'), autocomplete: 'new-password',
+                    extra: '<div class="meter" id="meter" data-level="0"><i></i><i></i><i></i><i></i></div><div class="meter-txt"><span id="meter-txt"></span><span class="caps hidden" id="caps"><span class="mi material-icons-outlined">keyboard_capslock</span>' + esc(t('pw.caps')) + '</span></div>'}) +
+                field({name: 'login_re_password', label: t('admin.pass2'), icon: 'done_all', value: f.login_re_password, password: true, autocomplete: 'new-password'}) +
+            '</form>' +
+            '<div class="actions">' +
+                '<button type="button" class="btn btn-ghost" id="back"><span class="mi material-icons-outlined">arrow_back</span><span>' + esc(t('btn.back')) + '</span></button>' +
+                '<span class="spacer"></span>' +
+                '<button type="button" class="btn btn-primary" id="install"><span class="mi material-icons-outlined">rocket_launch</span><span>' + esc(t('btn.install')) + '</span></button>' +
+            '</div>';
+
+        swap(html, function (view) {
+            rememberHelp(view);
+            var names = ['email', 'nickname', 'login_password', 'login_re_password'];
+            bindForm(view, names, function (n) {
+                if (n === 'login_password') { meter(view); if (state.form.login_re_password) matchHint(view); }
+                if (n === 'login_re_password') matchHint(view);
+            });
+            meter(view);
+            view.querySelectorAll('input[type="password"]').forEach(function (i) {
+                i.addEventListener('keyup', function (e) {
+                    var on = e.getModifierState && e.getModifierState('CapsLock');
+                    view.querySelector('#caps').classList.toggle('hidden', !on);
+                });
+            });
+            view.querySelector('#back').addEventListener('click', function () { setStep(1); });
+            view.querySelector('#install').addEventListener('click', function () {
+                if (!validateAll(view, names)) return;
+                install();
+            });
+        });
+    }
+    function strength(p) {
+        if (!p) return 0;
+        var s = 0;
+        if (p.length >= 6) s++;
+        if (p.length >= 10) s++;
+        if (/[a-z]/.test(p) && /[A-Z]/.test(p)) s++;
+        if (/\d/.test(p)) s++;
+        if (/[^A-Za-z0-9]/.test(p)) s++;
+        return Math.max(1, Math.min(4, Math.round(s * 4 / 5)));
+    }
+    function meter(view) {
+        var p = state.form.login_password;
+        var lv = strength(p);
+        view.querySelector('#meter').setAttribute('data-level', String(p ? lv : 0));
+        view.querySelector('#meter-txt').textContent = p ? t(['', 'pw.weak', 'pw.fair', 'pw.good', 'pw.strong'][lv]) : '';
+    }
+    function matchHint(view) {
+        var f = view.querySelector('[data-field="login_re_password"]');
+        var same = state.form.login_re_password && state.form.login_re_password === state.form.login_password;
+        f.classList.toggle('ok', !!same);
+        if (same) { clearInvalid(view, 'login_re_password'); f.querySelector('[data-help]').textContent = t('pw.match'); }
+        else f.querySelector('[data-help]').textContent = '';
+    }
+
+    /* ================================================================
+       安装
+       ================================================================ */
+    function install() {
+        var lines = ['inst.s1', 'inst.s2', 'inst.s3', 'inst.s4', 'inst.s5'];
+        var html = '<div class="installing">' +
+            '<h1 style="margin:0 0 6px">' + esc(t('inst.title')) + '</h1>' +
+            '<p class="lead" style="margin-bottom:0">' + esc(t('inst.note')) + '</p>' +
+            '<div class="stage-lines"><ul>' + lines.map(function (k, i) { return '<li data-i="' + i + '"><span class="mi material-icons-outlined">radio_button_unchecked</span><span>' + esc(t(k)) + '</span></li>'; }).join('') + '</ul></div>' +
+            '</div>';
+        swap(html, function (view) {
+            /* 服务端是一次调用做完全部工作，这里只是按它实际的执行顺序逐行点亮，不编百分比 */
+            var i = 0, items = view.querySelectorAll('.stage-lines li');
+            var tick = function () {
+                if (i > 0) { items[i - 1].classList.remove('on'); items[i - 1].classList.add('did'); items[i - 1].querySelector('.mi').textContent = 'check_circle'; }
+                if (i < items.length) { items[i].classList.add('on'); items[i].querySelector('.mi').textContent = 'radio_button_checked'; i++; }
+            };
+            tick();
+            var timer = setInterval(function () { if (i < items.length - 1) tick(); }, 900);
+            var f = state.form;
+            var started = Date.now();
+            post('/install/submit', {host: f.host, port: f.port, database: f.database, username: f.username, password: f.password, prefix: f.prefix, email: f.email, nickname: f.nickname, login_password: f.login_password})
+                .then(function (res) {
+                    clearInterval(timer);
+                    if (res && res.code === 200) {
+                        while (i < items.length) tick();
+                        tick();
+                        try { sessionStorage.removeItem('acg-install-state'); } catch (e) {}
+                        setTimeout(function () { setStep(3); }, Math.max(0, 900 - (Date.now() - started)));
+                    } else {
+                        state.installError = translateServerError(res && res.msg);
+                        renderInstallError();
+                    }
+                })
+                .catch(function (err) {
+                    clearInterval(timer);
+                    state.installError = (err && err.message) || t('err.network');
+                    renderInstallError();
+                });
+        });
+    }
+    function translateServerError(msg) {
+        msg = String(msg || '');
+        if (!msg) return t('err.server');
+        if (msg.indexOf('邮箱格式') >= 0) return t('admin.err.email');
+        if (msg.indexOf('过于简单') >= 0) return t('admin.err.pass');
+        if (msg.indexOf('昵称') >= 0) return t('admin.err.nick');
+        if (msg.indexOf('没有写入权限') >= 0) return t('err.write');
+        if (msg.indexOf('已经安装') >= 0 || msg === '已安装') return t('err.installed');
+        if (msg.indexOf('数据库出错') === 0) return t('err.db', {msg: msg.replace(/^数据库出错[，,]?原因[：:]?\s*/, '')});
+        return msg;
+    }
+    function renderInstallError() {
+        var html = '<span class="eyebrow">' + esc(t('admin.eyebrow')) + '</span>' +
+            '<h1>' + esc(t('inst.err.title')) + '</h1>' +
+            '<p class="lead">' + esc(t('inst.err.desc')) + '</p>' +
+            banner('bad', 'error_outline', esc(state.installError), '') +
+            '<div class="actions"><span class="spacer"></span><button type="button" class="btn btn-primary" id="retry"><span class="mi material-icons-outlined">arrow_back</span><span>' + esc(t('btn.retry')) + '</span></button></div>';
+        swap(html, function (view) {
+            view.querySelector('#retry').addEventListener('click', function () { setStep(2); });
+        });
+    }
+
+    /* ================================================================
+       完成
+       ================================================================ */
+    function renderDone() {
+        var adminUrl = location.origin + '/admin';
+        var html = '' +
+            '<span class="eyebrow">' + esc(t('done.eyebrow')) + '</span>' +
+            '<h1>' + esc(t('done.h1')) + '</h1>' +
+            '<p class="lead">' + esc(t('done.lead')) + '</p>' +
+            '<div class="card"><dl class="kv">' +
+                '<dt>' + esc(t('done.admin')) + '</dt><dd><code>' + esc(adminUrl) + '</code></dd>' +
+                '<dt>' + esc(t('done.account')) + '</dt><dd>' + esc(state.form.email) + '</dd>' +
+            '</dl></div>' +
+            '<p class="help" style="margin:14px 0 0">' + esc(t('done.tip')) + '</p>' +
+            '<div class="actions">' +
+                '<a class="btn btn-ghost" href="/"><span class="mi material-icons-outlined">storefront</span><span>' + esc(t('btn.home')) + '</span></a>' +
+                '<span class="spacer"></span>' +
+                '<a class="btn btn-primary" href="/admin/authentication/login" id="go-admin"><span class="mi material-icons-outlined">admin_panel_settings</span><span>' + esc(t('btn.admin')) + '</span></a>' +
+            '</div>';
+        swap(html, function (view) { view.querySelector('#go-admin').focus({preventScroll: true}); });
+    }
+
+    /* ================================================================
+       启动
+       ================================================================ */
+    applyLang(lang, false, true);   /* 只翻译静态文案；视图由下面的 setStep 首次渲染，避免开屏画两遍 */
+    setStep(state.step);
+})();
+</script>
 </body>
 </html>

@@ -1,19 +1,71 @@
-.git
-.serena
-.idea
-.vscode
+# ──────────────────────────────────────────────────────────────────────────
+# 构建上下文白名单
+#
+# 作者本机的这份仓库是「私有超集」：磁盘上躺着全部付费插件源码、支付插件、
+# 付费模板、加密工具链和线上凭证。它们靠 .gitignore 挡住不进 GitHub —— 但
+# docker build 读的是**磁盘**，不是 git，.gitignore 对它一点约束力都没有。
+#
+# 所以这里必须是白名单：默认排除一切，只放行公开版真正需要的东西。
+# 以后往仓库里加新目录，默认就是不进镜像 —— 这正是我们要的行为。
+#
+# 官方镜像正式发布走 GitHub Actions（构建机上只有公开仓库内容，物理隔绝），
+# 这份白名单是本地误 build 时的第二道防线。
+# ──────────────────────────────────────────────────────────────────────────
 
-Dockerfile
-docker-compose*.yml
-docker/*.md
+# ── 1) 默认排除一切 ────────────────────────────────────────────────────────
+**
 
-runtime/request/*
-runtime/tmp/*
-runtime/view/*
-runtime/waf/PACKET/*
+# ── 2) 放行运行必需的目录与文件 ────────────────────────────────────────────
+!app/**
+!assets/**
+!config/**
+!docker/**
+!kernel/**
+!vendor/**
+!composer.json
+!composer.lock
+!index.php
+!favicon.ico
+!.htaccess
+!LICENSE
+!README.md
 
+# ── 3) 再从放行的目录里挖掉不该进镜像的东西 ────────────────────────────────
+
+# 插件 / 支付插件 / 模板：公开版一个都不带，用户从应用商店安装。
+# app/Pay 只保留根目录那三个基类，app/View/User/Theme 只保留免费的 Cartoon。
+# 注意排的是**目录条目本身**（`/*`）而不是目录里的文件（`/**`）：
+# 后者只清空内容、留下一堆空壳目录，后台模板/支付列表是按目录扫的，
+# 会列出十几个点开就报错的「主题」。
+app/Plugin/*
+app/Pay/*
+!app/Pay/*.php
+app/View/User/Theme/*
+!app/View/User/Theme/Cartoon
+!app/View/User/Theme/Cartoon/**
+
+# 凭证：开发者中心 app_id/app_key、MCP access_key、本机数据库账号密码。
+# database.php 由 Dockerfile 重新写一份空的（安装向导会填），见 Dockerfile。
+config/store.php
+config/mcp.php
+config/terms
+config/database.php
+
+# 加密工具链的**明文源**。kernel/Plugin.php 是加密后的产物，Plugin_src.php 是它的
+# 源码，只存在于作者本机（git 未收录）。带进公开镜像等于把整套加密方案原样公开。
+kernel/Plugin_src.php
+**/*_src.php
+
+# 安装锁：绝对不能带进镜像，否则新容器会直接跳过安装向导。
 kernel/Install/Lock
-assets/cache/*
 
-*.log
-*.tmp
+# 应用商店的临时下载目录 / 运行时产物
+kernel/Install/OS/**
+kernel/Install/Update/**
+assets/cache/**
+runtime/**
+
+# 杂项
+**/.DS_Store
+**/*.log
+**/*.tmp

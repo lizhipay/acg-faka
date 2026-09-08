@@ -1,0 +1,117 @@
+# 构建并发布官方 Docker 镜像。
+#
+# 为什么一定要走 CI 而不是在本机 build：作者本机的仓库是「私有超集」，磁盘上有全部
+# 付费插件源码、加密工具链明文源和线上凭证。CI 的 checkout 只有公开仓库内容，
+# 从源头上就不可能把它们打进镜像。仓库里的 .dockerignore 是第二道防线。
+
+name: 发布 Docker 镜像
+
+on:
+  push:
+    # 版本 tag 是裸 semver（3.7.1），没有 v 前缀
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      tag_latest:
+        description: '同时更新 latest 标签'
+        type: boolean
+        default: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write          # 推 GHCR 需要
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 没配 Docker Hub 的 secret 时自动降级为「只发 GHCR」，不让整条流水线红掉。
+      # secrets 上下文不能直接写在 if: 里，所以先落成一个 output。
+      - name: 检查 Docker Hub 凭证
+        id: hub
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "${DOCKERHUB_TOKEN}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::未配置 DOCKERHUB_TOKEN，本次只发布到 GHCR"
+          fi
+
+      # 兜底闸门：万一有人在带私有内容的检出上跑这条流水线，宁可让它红，也不能推出去。
+      - name: 拦截私有内容
+        run: |
+          fail=0
+          if [ -n "$(find app/Plugin -type f 2>/dev/null | head -1)" ]; then
+            echo "::error::app/Plugin 下有文件，公开镜像不应包含任何插件源码"; fail=1
+          fi
+          for f in config/store.php config/mcp.php kernel/Plugin_src.php .developer; do
+            if [ -e "$f" ]; then echo "::error::检出里存在不该公开的 $f"; fail=1; fi
+          done
+          exit "$fail"
+
+      - name: 准备 QEMU
+        uses: docker/setup-qemu-action@v3      # 交叉构建 arm64 用
+
+      - name: 准备 Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录 GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 登录 Docker Hub
+        if: steps.hub.outputs.enabled == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 计算镜像名与标签
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}
+            name=${{ secrets.DOCKERHUB_USERNAME }}/acg-faka,enable=${{ steps.hub.outputs.enabled == 'true' }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') || inputs.tag_latest }}
+          labels: |
+            org.opencontainers.image.title=acg-faka
+            org.opencontainers.image.description=异次元发卡 — 基于 PHP8 的原生虚拟发卡与个人店铺系统
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.documentation=https://faka.wiki
+
+      - name: 构建并推送
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # 不生成 provenance/sbom 附件：否则 Docker Hub 的标签页会多出
+          # 一堆 unknown/unknown 架构的条目，看着像坏了。
+          provenance: false
+          sbom: false
+
+      # 把仓库里的 docker/README.md 同步成 Docker Hub 的项目说明
+      - name: 同步 Docker Hub 说明
+        if: steps.hub.outputs.enabled == 'true'
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/acg-faka
+          readme-filepath: ./docker/README.md

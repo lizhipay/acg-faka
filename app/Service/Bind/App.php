@@ -190,7 +190,7 @@ class App implements \App\Service\App
         $installSql = $pluginPath . "install.sql";
         if (file_exists($installSql)) {
             $database = config("database");
-            SQL::import($installSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
+            SQL::import($installSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix'], isset($database['port']) ? (int)$database['port'] : null);
         }
 
         if ($type == 0) {
@@ -257,7 +257,7 @@ class App implements \App\Service\App
             $updateSql = $pluginPath . "update.sql";
             if (file_exists($updateSql)) {
                 $database = config("database");
-                SQL::import($updateSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
+                SQL::import($updateSql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix'], isset($database['port']) ? (int)$database['port'] : null);
             }
 
             if ($type == 0) {
@@ -390,7 +390,7 @@ class App implements \App\Service\App
                 if (file_exists($sql)) {
                     //导入数据库
                     $database = config("database");
-                    SQL::import($sql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix']);
+                    SQL::import($sql, $database['host'], $database['database'], $database['username'], $database['password'], $database['prefix'], isset($database['port']) ? (int)$database['port'] : null);
                 }
 
                 //升级程序，防止sql等命令错误，通过php代码来执行sql，新增时间：2022/04/07

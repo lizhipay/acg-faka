@@ -15,6 +15,7 @@ RUN apt-get update \
     && if ! php -m | grep -qi '^curl$'; then docker-php-ext-install curl; fi \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
+        bcmath \
         gd \
         mbstring \
         opcache \
@@ -36,6 +37,8 @@ COPY . /var/www/html
 COPY docker/php.ini /usr/local/etc/php/conf.d/acg-faka.ini
 COPY docker/entrypoint.sh /usr/local/bin/acg-faka-entrypoint
 
+# config/database.php 被 .dockerignore 排除在构建上下文之外（构建机上那份含真实凭证），
+# 这里重新写一份空模板：安装向导跑完会把用户填的信息覆盖进去。
 RUN mkdir -p \
         /usr/local/share/acg-faka \
         /var/www/html/assets/cache \
@@ -50,6 +53,21 @@ RUN mkdir -p \
         /var/www/html/runtime/tmp \
         /var/www/html/runtime/view \
         /var/www/html/runtime/waf \
+    && printf '%s\n' \
+        '<?php' \
+        'declare(strict_types=1);' \
+        '' \
+        'return [' \
+        "    'driver' => 'mysql'," \
+        "    'host' => ''," \
+        "    'database' => ''," \
+        "    'username' => ''," \
+        "    'password' => ''," \
+        "    'charset' => 'utf8mb4'," \
+        "    'collation' => 'utf8mb4_unicode_ci'," \
+        "    'prefix' => ''," \
+        '];' \
+        > /var/www/html/config/database.php \
     && if [ -f /var/www/html/favicon.ico ]; then \
         cp /var/www/html/favicon.ico /usr/local/share/acg-faka/favicon.ico; \
         cp /var/www/html/favicon.ico /var/www/html/assets/cache/favicon.ico; \

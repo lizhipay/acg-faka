@@ -13,7 +13,7 @@ class SQL
     /**
      * @throws \Kernel\Exception\JSONException
      */
-    public static function import(string $sql, string $host, string $db, string $username, string $password, string $prefix)
+    public static function import(string $sql, string $host, string $db, string $username, string $password, string $prefix, ?int $port = null)
     {
         //处理前缀
         $sqlSrc = str_replace('__PREFIX__', $prefix, (string)file_get_contents($sql));
@@ -32,7 +32,7 @@ class SQL
         $dump = new Dump();
         $dump
             ->file($sql . '.process')
-            ->dsn('mysql:dbname=' . $db . ';host=' . $host)
+            ->dsn('mysql:dbname=' . $db . ';host=' . $host . ($port ? ';port=' . $port : ''))
             ->user($username)
             ->pass($password)
             ->tmp($tmp);

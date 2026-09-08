@@ -26,10 +26,12 @@ services:
     container_name: acg-faka-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      # 密码没有默认值，必须自己设：这套东西装完就会挂公网、里面是订单和卡密。
+      # 复制 .env.example 成 .env 再填，或者 export 出来。
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请先设置 MYSQL_ROOT_PASSWORD（可复制 .env.example 为 .env）}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-acg_faka}
       MYSQL_USER: ${MYSQL_USER:-acg}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-acg_password}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?请先设置 MYSQL_PASSWORD（可复制 .env.example 为 .env）}
       TZ: Asia/Shanghai
     command:
       - --character-set-server=utf8mb4
