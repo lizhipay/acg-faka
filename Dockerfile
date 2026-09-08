@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.2-apache-bookworm
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
 
@@ -15,6 +15,7 @@ RUN apt-get update \
     && if ! php -m | grep -qi '^curl$'; then docker-php-ext-install curl; fi \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
+        bcmath \
         gd \
         mbstring \
         opcache \

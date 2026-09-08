@@ -32,6 +32,7 @@
     "symfony/var-dumper": "^5.1",
     "illuminate/pagination": "^7.30.6",
     "rah/danpu": "^2.7",
+    "ext-bcmath": "*",
     "ext-json": "*",
     "phpmailer/phpmailer": "^6.5",
     "ext-openssl": "*",
