@@ -21,7 +21,7 @@ mkdir -p \
     runtime/view \
     runtime/waf
 
-# 后台“基础设置”会把上传的 Logo 写到 /favicon.ico。
+# 后台"基础设置"会把上传的 Logo 写到 /favicon.ico。
 # 将它落到 assets/cache 这个持久化卷中，避免容器重建后丢失。
 if [ ! -f assets/cache/favicon.ico ]; then
     if [ -f /usr/local/share/acg-faka/favicon.ico ]; then
@@ -45,4 +45,12 @@ chown -R www-data:www-data \
     kernel/Install \
     runtime
 
-exec docker-php-entrypoint "$@"
+# 内置数据库的密码是首次启动随机生成的，放在只读挂载的密钥卷里。
+# 读出来变成普通环境变量交给 php-fpm（pool 里 clear_env=no），
+# 安装向导据此把连接信息预填好 —— 用户一个字都不用填。
+if [ -n "${ACG_DB_PASSWORD_FILE:-}" ] && [ -r "${ACG_DB_PASSWORD_FILE}" ]; then
+    ACG_DB_PASSWORD="$(cat "${ACG_DB_PASSWORD_FILE}")"
+    export ACG_DB_PASSWORD
+fi
+
+exec "$@"

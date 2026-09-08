@@ -1,8 +1,29 @@
+# acg-faka 一键部署。
+#
+#   docker compose up -d
+#
+# 就这一条命令。不需要 .env，不需要改任何文件，不需要想数据库密码 ——
+# 内置 MySQL 的密码首次启动时随机生成并保存在密钥卷里，安装向导会自动读到，
+# 打开 http://localhost:8080 直接开始装。
+
 services:
+  # 首次启动生成随机数据库密码；已存在则原样保留。
+  # 借用 mysql 镜像跑一个 shell，省掉再拉一个 busybox。
+  secrets-init:
+    image: mysql:5.7
+    platform: linux/amd64
+    container_name: acg-faka-secrets-init
+    restart: "no"
+    entrypoint: ["/bin/sh", "/secrets-init.sh"]
+    volumes:
+      - ./docker/secrets-init.sh:/secrets-init.sh:ro
+      - acg_secrets:/secrets
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
+    image: acg-faka:local
     container_name: acg-faka-app
     restart: unless-stopped
     depends_on:
@@ -12,7 +33,17 @@ services:
         condition: service_started
     ports:
       - "${ACG_HTTP_PORT:-8080}:80"
+    environment:
+      TZ: Asia/Shanghai
+      # 安装向导据此自动填好内置数据库的连接信息，用户不用输入任何东西
+      ACG_DB_HOST: mysql
+      ACG_DB_PORT: "3306"
+      ACG_DB_DATABASE: acg_faka
+      ACG_DB_USERNAME: acg
+      ACG_DB_PASSWORD_FILE: /secrets/mysql_app
+      ACG_DB_PREFIX: acg_
     volumes:
+      - acg_secrets:/secrets:ro
       - acg_config:/var/www/html/config
       - acg_install:/var/www/html/kernel/Install
       - acg_runtime:/var/www/html/runtime
@@ -22,42 +53,51 @@ services:
       - acg_themes:/var/www/html/app/View/User/Theme
 
   mysql:
-    image: mysql:8.0
+    image: mysql:5.7
+    # MySQL 5.7 官方只发 amd64 镜像。ARM 机器（Apple Silicon / Ampere / Graviton）
+    # 会通过 qemu 模拟运行，能跑但偏慢；想要原生性能就把这两行换成 mariadb:10.6。
+    platform: linux/amd64
     container_name: acg-faka-mysql
     restart: unless-stopped
+    depends_on:
+      secrets-init:
+        condition: service_completed_successfully
     environment:
-      # 密码没有默认值，必须自己设：这套东西装完就会挂公网、里面是订单和卡密。
-      # 复制 .env.example 成 .env 再填，或者 export 出来。
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请先设置 MYSQL_ROOT_PASSWORD（可复制 .env.example 为 .env）}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-acg_faka}
-      MYSQL_USER: ${MYSQL_USER:-acg}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?请先设置 MYSQL_PASSWORD（可复制 .env.example 为 .env）}
+      MYSQL_ROOT_PASSWORD_FILE: /secrets/mysql_root
+      MYSQL_DATABASE: acg_faka
+      MYSQL_USER: acg
+      MYSQL_PASSWORD_FILE: /secrets/mysql_app
       TZ: Asia/Shanghai
     command:
       - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --default-authentication-plugin=mysql_native_password
+      - --collation-server=utf8mb4_general_ci
+      - --innodb-buffer-pool-size=256M
+      - --max-connections=200
     volumes:
+      - acg_secrets:/secrets:ro
       - acg_mysql:/var/lib/mysql
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent",
-        ]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$(cat /secrets/mysql_root)\" --silent"]
       interval: 5s
-      timeout: 3s
-      retries: 30
+      timeout: 5s
+      retries: 40
+      start_period: 30s
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.2-alpine
     container_name: acg-faka-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - acg_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
 volumes:
+  acg_secrets:
   acg_config:
   acg_install:
   acg_runtime:

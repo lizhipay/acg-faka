@@ -445,6 +445,7 @@
             'env.fix.ext': '缺少扩展：{list}', 'env.fix.ext.bt': '宝塔 / aaPanel：软件商店 → 对应 PHP 版本 → 设置 → 安装扩展，勾选后安装。',
             'env.fix.ext.cli': '命令行', 'env.fix.ext.docker': 'Docker', 'env.fix.ext.restart': '安装完成后重启 PHP 即可生效。',
             'env.fix.fs': '以下目录不可写：{list}', 'env.fix.fs.desc': '把站点目录的所有者改成运行 PHP 的用户（宝塔通常是 www，Docker 通常是 www-data）：',
+            'db.builtin.title': '已连接到内置数据库', 'db.builtin.desc': '这套容器自带 MySQL，连接信息已自动填好，密码由容器随机生成并保管，直接继续即可。', 'db.builtin.pass': '内置数据库已自动配置，留空即可', 'db.builtin.manual': '改用其它数据库',
             'db.eyebrow': '第 2 步 · 数据库', 'db.h1': '连接数据库', 'db.lead': '填写 MySQL 连接信息。继续之前会先测试连接，后面的步骤就不会因为它失败。',
             'db.host': '数据库地址', 'db.host.help': '通常是 127.0.0.1；Docker Compose 请填服务名，例如 mysql', 'db.host.help.docker': '检测到容器环境：这里通常是 Compose 里的服务名，例如 mysql',
             'db.port': '端口', 'db.name': '数据库名', 'db.name.help': '不存在时可以由我们为你创建', 'db.user': '用户名', 'db.pass': '密码',
@@ -497,6 +498,7 @@
             'env.fix.ext': '缺少擴充套件：{list}', 'env.fix.ext.bt': '寶塔 / aaPanel：軟體商店 → 對應 PHP 版本 → 設定 → 安裝擴充，勾選後安裝。',
             'env.fix.ext.cli': '命令列', 'env.fix.ext.docker': 'Docker', 'env.fix.ext.restart': '安裝完成後重新啟動 PHP 即可生效。',
             'env.fix.fs': '以下目錄無法寫入：{list}', 'env.fix.fs.desc': '將站台目錄的擁有者改為執行 PHP 的使用者（寶塔通常是 www，Docker 通常是 www-data）：',
+            'db.builtin.title': '已連線到內建資料庫', 'db.builtin.desc': '這套容器自帶 MySQL，連線資訊已自動填好，密碼由容器隨機產生並保管，直接繼續即可。', 'db.builtin.pass': '內建資料庫已自動設定，留空即可', 'db.builtin.manual': '改用其它資料庫',
             'db.eyebrow': '第 2 步 · 資料庫', 'db.h1': '連線資料庫', 'db.lead': '填寫 MySQL 連線資訊。繼續之前會先測試連線，後面的步驟就不會因它而失敗。',
             'db.host': '資料庫位址', 'db.host.help': '通常是 127.0.0.1；Docker Compose 請填服務名稱，例如 mysql', 'db.host.help.docker': '偵測到容器環境：這裡通常是 Compose 中的服務名稱，例如 mysql',
             'db.port': '連接埠', 'db.name': '資料庫名稱', 'db.name.help': '不存在時可以由我們替你建立', 'db.user': '使用者名稱', 'db.pass': '密碼',
@@ -549,6 +551,7 @@
             'env.fix.ext': 'Missing extensions: {list}', 'env.fix.ext.bt': 'aaPanel / BT Panel: App Store → your PHP version → Settings → Install extensions.',
             'env.fix.ext.cli': 'Command line', 'env.fix.ext.docker': 'Docker', 'env.fix.ext.restart': 'Restart PHP after installing.',
             'env.fix.fs': 'Not writable: {list}', 'env.fix.fs.desc': 'Make the PHP user own the site directory (usually www on panels, www-data in Docker):',
+            'db.builtin.title': 'Connected to the bundled database', 'db.builtin.desc': 'This stack ships its own MySQL. The details are filled in for you and the password is generated and kept by the container — just continue.', 'db.builtin.pass': 'Bundled database — leave empty', 'db.builtin.manual': 'Use a different database',
             'db.eyebrow': 'Step 2 · Database', 'db.h1': 'Connect the database', 'db.lead': 'Enter your MySQL details. The connection is tested before you continue, so the later steps can’t fail on it.',
             'db.host': 'Host', 'db.host.help': 'Usually 127.0.0.1. With Docker Compose use the service name, e.g. mysql', 'db.host.help.docker': 'Container detected: this is usually the Compose service name, e.g. mysql',
             'db.port': 'Port', 'db.name': 'Database', 'db.name.help': 'If it doesn’t exist yet, we can create it for you', 'db.user': 'Username', 'db.pass': 'Password',
@@ -601,6 +604,7 @@
             'env.fix.ext': '不足している拡張：{list}', 'env.fix.ext.bt': 'aaPanel / 宝塔：アプリストア → 対象の PHP → 設定 → 拡張をインストール。',
             'env.fix.ext.cli': 'コマンドライン', 'env.fix.ext.docker': 'Docker', 'env.fix.ext.restart': 'インストール後に PHP を再起動してください。',
             'env.fix.fs': '書き込みできないディレクトリ：{list}', 'env.fix.fs.desc': 'サイトディレクトリの所有者を PHP の実行ユーザーにしてください（パネルでは通常 www、Docker では www-data）：',
+            'db.builtin.title': '内蔵データベースに接続済み', 'db.builtin.desc': 'このコンテナには MySQL が同梱されています。接続情報は自動で入力済み、パスワードはコンテナが生成・保管します。そのまま次へ進んでください。', 'db.builtin.pass': '内蔵データベースは自動設定済み（空のままで OK）', 'db.builtin.manual': '別のデータベースを使う',
             'db.eyebrow': 'ステップ 2 · データベース', 'db.h1': 'データベースに接続', 'db.lead': 'MySQL の接続情報を入力してください。次へ進む前に接続をテストするので、後の手順で失敗することはありません。',
             'db.host': 'ホスト', 'db.host.help': '通常は 127.0.0.1。Docker Compose ではサービス名（例：mysql）', 'db.host.help.docker': 'コンテナ環境を検出：通常は Compose のサービス名（例：mysql）です',
             'db.port': 'ポート', 'db.name': 'データベース名', 'db.name.help': '存在しない場合はこちらで作成できます', 'db.user': 'ユーザー名', 'db.pass': 'パスワード',
@@ -725,9 +729,23 @@
        状态
        ================================================================ */
     var env = BOOT.env || {};
+    //官方镜像自带 MySQL：连接信息由服务端从环境变量注入，这里直接当默认值用。
+    //密码**不在** prefill 里——提交时带 use_builtin=1，由服务端自己去取。
+    var PRE = env.prefill || {};
+    var hasBuiltin = !!PRE.host;
     var state = {
         step: 0,
-        form: {host: env.docker ? 'mysql' : '127.0.0.1', port: '3306', database: '', username: '', password: '', prefix: 'acg_', email: '', nickname: '', login_password: '', login_re_password: ''},
+        form: {
+            host: PRE.host || (env.docker ? 'mysql' : '127.0.0.1'),
+            port: String(PRE.port || 3306),
+            database: PRE.database || '',
+            username: PRE.username || '',
+            password: '',
+            prefix: PRE.prefix || 'acg_',
+            email: '', nickname: '', login_password: '', login_re_password: ''
+        },
+        //只要用户没动过任何一项、密码也留空，就继续走"内置数据库"这条路
+        builtin: hasBuiltin,
         dbResult: null,          // 最近一次测试结果
         dbTestedFor: '',         // 测试时的表单指纹，变了就作废
         overwriteOk: false,
@@ -1051,16 +1069,25 @@
        ================================================================ */
     function renderDb() {
         var f = state.form;
+        //内置数据库模式下把表单收起来：绝大多数人根本不需要看见它。
+        var collapsed = state.builtin;
         var html = '' +
             '<span class="eyebrow">' + esc(t('db.eyebrow')) + '</span>' +
             '<h1>' + esc(t('db.h1')) + '</h1>' +
-            '<p class="lead">' + esc(t('db.lead')) + '</p>' +
-            '<form class="form" id="db-form" autocomplete="off" novalidate>' +
+            '<p class="lead">' + esc(collapsed ? t('db.builtin.desc') : t('db.lead')) + '</p>' +
+            (collapsed ? '<div style="margin-bottom:16px">' +
+                banner('ok', 'check_circle', esc(t('db.builtin.title')),
+                    '<code>' + esc(f.username) + '@' + esc(f.host) + ':' + esc(f.port) + '/' + esc(f.database) + '</code>') +
+                '<button type="button" class="btn btn-ghost" id="manual" style="height:36px;margin-top:12px">' +
+                '<span class="mi material-icons-outlined">tune</span><span>' + esc(t('db.builtin.manual')) + '</span></button>' +
+                '</div>' : '') +
+            '<form class="form" id="db-form" autocomplete="off" novalidate' + (collapsed ? ' hidden' : '') + '>' +
                 field({name: 'host', label: t('db.host'), icon: 'dns', value: f.host, help: t(env.docker ? 'db.host.help.docker' : 'db.host.help'), span: 'c4'}) +
                 field({name: 'port', label: t('db.port'), icon: 'tag', value: f.port, inputmode: 'numeric', span: 'c2'}) +
                 field({name: 'database', label: t('db.name'), icon: 'storage', value: f.database, help: t('db.name.help'), placeholder: 'acg_faka'}) +
                 field({name: 'username', label: t('db.user'), icon: 'person', value: f.username, span: 'c3'}) +
-                field({name: 'password', label: t('db.pass'), icon: 'key', value: f.password, password: true, span: 'c3', autocomplete: 'new-password'}) +
+                field({name: 'password', label: t('db.pass'), icon: 'key', value: f.password, password: true, span: 'c3', autocomplete: 'new-password',
+                    help: hasBuiltin ? t('db.builtin.pass') : ''}) +
                 field({name: 'prefix', label: t('db.prefix'), icon: 'label', value: f.prefix, help: t('db.prefix.help'), optional: true}) +
             '</form>' +
             '<div id="db-result"></div>' +
@@ -1082,6 +1109,24 @@
                 }
             });
             if (state.dbResult && dbFingerprint() === state.dbTestedFor) renderDbResult(view, state.dbResult);
+
+            //用户动了任何一项连接参数，就不再算"内置数据库"，改走他自己填的那套
+            ['host', 'port', 'database', 'username', 'password', 'prefix'].forEach(function (n) {
+                var i = view.querySelector('[name="' + n + '"]');
+                if (i) i.addEventListener('input', function () { state.builtin = false; });
+            });
+            var manual = view.querySelector('#manual');
+            if (manual) manual.addEventListener('click', function () {
+                state.builtin = false;
+                state.dbResult = null;
+                renderDb();
+            });
+
+            //内置数据库：进来就自动测一次，用户看到绿灯直接点下一步
+            if (state.builtin && !state.dbResult) {
+                testDb(view, false);
+            }
+
             view.querySelector('#back').addEventListener('click', function () { setStep(0); });
             view.querySelector('#test').addEventListener('click', function () { testDb(view, false); });
             view.querySelector('#next').addEventListener('click', function () {
@@ -1110,6 +1155,7 @@
         nextBtn.disabled = true;
         var fp = dbFingerprint();
         var data = {host: state.form.host, port: state.form.port, database: state.form.database, username: state.form.username, password: state.form.password, prefix: state.form.prefix};
+        if (state.builtin) data.use_builtin = '1';
         if (create) data.create = '1';
         post('/install/testDatabase', data).then(function (res) {
             if (!res || res.code !== 200 || !res.data) throw new Error((res && res.msg) || t('err.server'));
@@ -1258,7 +1304,9 @@
             var timer = setInterval(function () { if (i < items.length - 1) tick(); }, 900);
             var f = state.form;
             var started = Date.now();
-            post('/install/submit', {host: f.host, port: f.port, database: f.database, username: f.username, password: f.password, prefix: f.prefix, email: f.email, nickname: f.nickname, login_password: f.login_password})
+            var payload = {host: f.host, port: f.port, database: f.database, username: f.username, password: f.password, prefix: f.prefix, email: f.email, nickname: f.nickname, login_password: f.login_password};
+            if (state.builtin) payload.use_builtin = '1';
+            post('/install/submit', payload)
                 .then(function (res) {
                     clearInterval(timer);
                     if (res && res.code === 200) {

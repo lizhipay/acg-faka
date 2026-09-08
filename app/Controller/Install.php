@@ -130,6 +130,8 @@ class Install extends User
             'install' => $phpOk && $missing === [] && $unwritable === [],
             //容器里数据库地址通常是 compose 的服务名而不是 127.0.0.1，页面据此换默认值和提示
             'docker' => is_file('/.dockerenv') || is_file('/run/.containerenv'),
+            //官方镜像自带 MySQL，连接信息由 compose 通过环境变量注入，向导直接填好
+            'prefill' => $this->prefill(),
         ];
     }
 
@@ -322,6 +324,68 @@ class Install extends User
     }
 
     /**
+     * 内置数据库的连接信息（官方镜像 / compose 注入的环境变量）。
+     *
+     * **故意不包含密码**：这一页在装完之前是公开可访问的，没必要把密码渲染进 HTML。
+     * 页面只要把密码留空，提交时带上 use_builtin=1，由服务端自己去环境变量里取。
+     *
+     * @return array 没有内置数据库时返回空数组
+     */
+    private function prefill(): array
+    {
+        $builtin = $this->builtin();
+        if ($builtin === null) {
+            return [];
+        }
+
+        unset($builtin['password']);
+        return $builtin;
+    }
+
+    /**
+     * 解析内置数据库的完整连接信息（含密码）。
+     *
+     * 密码优先读 *_FILE 指向的文件 —— compose 里那是首次启动随机生成、
+     * 挂进来的密钥卷，镜像本身不带任何默认密码。
+     *
+     * @return array|null 没配置就返回 null
+     */
+    private function builtin(): ?array
+    {
+        $get = static function (string $key): string {
+            $v = getenv($key);
+            return is_string($v) ? trim($v) : '';
+        };
+
+        $host = $get('ACG_DB_HOST');
+        $database = $get('ACG_DB_DATABASE');
+        $username = $get('ACG_DB_USERNAME');
+        if ($host === '' || $database === '' || $username === '') {
+            return null;
+        }
+
+        $password = '';
+        $file = $get('ACG_DB_PASSWORD_FILE');
+        if ($file !== '' && is_readable($file)) {
+            $password = trim((string)file_get_contents($file));
+        }
+        if ($password === '') {
+            $password = $get('ACG_DB_PASSWORD');
+        }
+
+        $port = (int)($get('ACG_DB_PORT') ?: '3306');
+
+        return [
+            'host' => $host,
+            'port' => $port > 0 && $port <= 65535 ? $port : 3306,
+            'database' => $database,
+            'username' => $username,
+            'password' => $password,
+            'prefix' => $get('ACG_DB_PREFIX') ?: 'acg_',
+        ];
+    }
+
+    /**
      * 用刚写入的凭据重建全局 Eloquent 连接。
      *
      * setAsGlobal() 会替换 Capsule 的静态实例，Kernel\Util\Lang 里的
@@ -357,6 +421,15 @@ class Install extends User
      */
     private function databaseInput(): array
     {
+        //页面没动过任何一项、密码也留空时会带上这个标记：整套连接信息由服务端从
+        //环境变量取，密码始终不经过浏览器。
+        if (($_POST['use_builtin'] ?? '') === '1') {
+            $builtin = $this->builtin();
+            if ($builtin !== null) {
+                return $builtin;
+            }
+        }
+
         $get = static fn(string $k): string => trim((string)($_POST[$k] ?? ''));
 
         $host = $get('host');
