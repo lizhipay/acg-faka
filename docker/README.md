@@ -69,6 +69,43 @@ docker compose exec mysql cat /secrets/mysql_root
 `X-Forwarded-For` 会被正确转成 `$_SERVER['HTTPS']` 与真实来访 IP —— 只信任私有网段，
 公网伪造的头不生效。
 
+## 线程管理器插件
+
+在应用商店装好插件后，进容器执行一次（只需一次，二进制会落在数据卷里）：
+
+```bash
+docker compose exec app ./app/Plugin/ThreadManager/service.sh install
+# 单容器：docker exec -it acg-faka ./app/Plugin/ThreadManager/service.sh install
+```
+
+之后**不用再管** —— 容器每次启动都会自动把它的守护进程交给 supervisord 拉起，
+不需要 `service.sh start`。
+
+> GitHub 直连不稳导致下载不完整时，脚本会自动换镜像源重试；还是不行就手动指定：
+> `TM_MIRRORS="https://ghfast.top/" ./app/Plugin/ThreadManager/service.sh install`
+
+## 线程管理器（如果你装了）
+
+镜像会自动接管它：容器启动时若检测到 `app/Plugin/ThreadManager/swoole-cli`，
+就把守护进程注册成 supervisord 的程序，和 nginx / php-fpm 一个待遇 ——
+**容器起来自动拉起、崩溃自动重启、`docker stop` 时按 `stop_timeout` 优雅收尾**。
+
+注意：托管是在**容器启动时**登记的，所以插件装好、二进制下完之后要
+**重启一次容器**才会生效（`docker restart <容器名>`）。在那之前 `service.sh start`
+起的进程照常能用，只是活不过容器重建。
+
+### el9 系宿主机的 xz 坑
+
+在 RHEL 9 / AlmaLinux 9 / Rocky 9（内核 `5.14.x.el9`）上，容器里任何 `xz` 操作都会报：
+
+```
+xz: Failed to enable the sandbox
+```
+
+原因是这类内核回移 Landlock 时**版本号谎报**（`landlock_create_ruleset` 查询返回 ABI 6，
+实际建规则集却 `EINVAL`），而 xz 5.6+ 把沙箱失败当致命错误。**跟下载的包无关**，
+包是好的。线程管理器 1.0.7 起会在这种情况下自动改用 python3 的 `lzma` 解包，无需干预。
+
 ## 已知限制
 
 - **默认 PHP 8.2**（Debian bookworm，仍在支持期）。需要贴合旧线上环境时可以降版本：

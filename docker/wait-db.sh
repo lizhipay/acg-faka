@@ -7,9 +7,10 @@
 set -e
 
 if [ "${ACG_WAIT_DB:-0}" = "1" ]; then
+    # 用裸 TCP 探活而不是 mariadb-admin ping：后者不带凭据连上去，MariaDB 每次都会
+    # 往日志里记一条 "Access denied for user ..."，容器启动日志上看着像出了事。
     i=0
-    until mariadb-admin --protocol=tcp \
-            -h "${ACG_DB_HOST:-127.0.0.1}" -P "${ACG_DB_PORT:-3306}" ping >/dev/null 2>&1; do
+    until php -r 'exit(@fsockopen(getenv("ACG_DB_HOST") ?: "127.0.0.1", (int)(getenv("ACG_DB_PORT") ?: 3306), $e, $s, 2) ? 0 : 1);' >/dev/null 2>&1; do
         i=$((i + 1))
         if [ "${i}" -ge 90 ]; then
             echo "[acg-faka] 等待内置数据库超时，仍继续启动" >&2

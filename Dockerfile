@@ -33,6 +33,10 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends \
         nginx \
         supervisor \
+        # 解 .tar.xz 用（线程管理器下载 swoole-cli 时要）。必须显式装：
+        # 它本来只是被别的包顺带拉进来的，apt purge --auto-remove 一不小心就连坐删掉，
+        # 之后 tar 会报 "xz: Cannot exec"，而调用方只看到"解包失败"。
+        xz-utils \
         # 单容器全自动模式用的内置数据库与缓存。外接数据库时它们不会启动，
         # 只占镜像体积，不占运行时资源。
         mariadb-server \
@@ -99,6 +103,7 @@ COPY docker/php-fpm.conf     /usr/local/etc/php-fpm.d/zz-acg-faka.conf
 COPY docker/php.ini          /usr/local/etc/php/conf.d/acg-faka.ini
 COPY docker/entrypoint.sh    /usr/local/bin/acg-faka-entrypoint
 COPY docker/wait-db.sh       /usr/local/bin/acg-wait-db
+COPY docker/supervise-threadmanager.sh /usr/local/bin/acg-supervise-threadmanager
 
 COPY . ${ACG_HOME}
 
@@ -149,7 +154,7 @@ RUN set -eux; \
     fi; \
     chown -R www-data:www-data ${ACG_HOME}; \
     chmod -R ug+rwX ${ACG_HOME}; \
-    chmod +x /usr/local/bin/acg-faka-entrypoint /usr/local/bin/acg-wait-db; \
+    chmod +x /usr/local/bin/acg-faka-entrypoint /usr/local/bin/acg-wait-db /usr/local/bin/acg-supervise-threadmanager; \
     nginx -t -c /etc/nginx/nginx.conf
 
 # 所有会被写入的目录统一搬到 /data 并软链回去 —— 挂一个卷就能保住全部数据

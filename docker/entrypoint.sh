@@ -147,6 +147,17 @@ else
     printf 'session.save_handler = files\nsession.save_path = "/var/www/html/runtime/session"\n' > "${SESSION_INI}"
 fi
 
+# ── 4) 线程管理器：装了就交给 supervisord 托管 ──────────────────────────────
+#
+# 插件自带的 `service.sh start` 是 nohup 甩出去的野进程：容器一重建就没了、
+# 崩了也没人拉、docker stop 时直接被 SIGKILL（任务不收尾）。
+# 这个钩子把它登记成 supervisord 的程序，和 nginx / php-fpm 一个待遇。
+#
+# 同一个脚本插件那边装完也会调一次，所以「装完立刻被托管」，不用重启容器。
+if [ -x /usr/local/bin/acg-supervise-threadmanager ]; then
+    /usr/local/bin/acg-supervise-threadmanager || true
+fi
+
 # 内置数据库的密码放在只读的密钥文件里，读出来变成普通环境变量交给 php-fpm
 # （pool 里 clear_env=no），安装向导才拿得到。
 if [ -n "${ACG_DB_PASSWORD_FILE:-}" ] && [ -r "${ACG_DB_PASSWORD_FILE}" ]; then
