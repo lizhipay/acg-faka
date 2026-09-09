@@ -74,6 +74,21 @@ final class Schema
         });
     }
 
+    /**
+     * 上游协议代次（店铺共享）。
+     *
+     * `/shared/commodity/item` 的入参与返回形状在 3.1.2 变过，`stock`/`draft`/`valuation`
+     * 三个端点也是那之后才有的。每次都先打一发新端点再吃 404 的话，商品详情页每次访问
+     * 都要多一次往返；探明一次记在店铺档案上，之后直奔正确的那条路。
+     * 0=未探明，1=3.1.2 及以后，2=3.1.1 及更老。
+     */
+    public static function ensureSharedProtocol(): void
+    {
+        self::ensureColumn('shared', 'protocol', static function (Blueprint $table): void {
+            $table->unsignedTinyInteger('protocol')->default(0)->comment('上游协议代次：0=未探明，1=3.1.2+，2=3.1.1及更老');
+        });
+    }
+
     /** @var array<string, bool> 本次请求内已确认过的表 */
     private static array $tableKnown = [];
 

@@ -24,24 +24,21 @@
             done: res => {
                 if (!controllerActive) return;
                 const impact = res?.data || {};
+                const n = v => escapeHtml(v ?? 0);
+                const line = (label, value, unit, note) =>
+                    `<div><b>${i18n(label)}</b>${n(value)} ${i18n(unit)}${note ? `<span style="opacity:.65;"> ${i18n(note)}</span>` : ''}</div>`;
+                // 这些引用全部会被自动清理，不再是「阻止删除」的理由；弹窗只负责把代价说清楚
                 const impactSummary = `<div style="text-align:left;line-height:1.8;">
                     <div><b>${i18n('所选分类：')}</b>${names.join('、') || i18n('当前所选分类')}${more}</div>
                     <div style="margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.09);">
-                        <div><b>${i18n('明确选择：')}</b>${escapeHtml(impact.category_count ?? 0)} ${i18n('个分类')}</div>
-                        <div><b>${i18n('未选择的下级分类：')}</b>${escapeHtml(impact.unselected_descendant_count ?? 0)} ${i18n('个')}</div>
-                        <div><b>${i18n('分类内商品：')}</b>${escapeHtml(impact.commodity_count ?? 0)} ${i18n('个')}</div>
-                        <div><b>${i18n('分类优惠券：')}</b>${escapeHtml(impact.coupon_count ?? 0)} ${i18n('张')}</div>
-                        <div><b>${i18n('商户分类映射：')}</b>${escapeHtml(impact.user_category_count ?? 0)} ${i18n('条')}</div>
-                        <div><b>${i18n('网站默认分类引用：')}</b>${escapeHtml(impact.config_reference_count ?? 0)} ${i18n('条')}</div>
-                        <div><b>ThirdDockManage ${i18n('克隆规则：')}</b>${escapeHtml(impact.third_dock_rule_count ?? 0)} ${i18n('条')}</div>
+                        ${line('将删除分类：', impact.scope_count ?? impact.category_count, '个', (impact.descendant_count ?? 0) > 0 ? `（${i18n('含下级')} ${escapeHtml(impact.descendant_count)} ${i18n('个')}）` : '')}
+                        ${line('连带删除商品：', impact.commodity_count, '个')}
+                        ${line('连带删除订单：', impact.order_count, '笔')}
+                        ${line('连带删除卡密：', impact.card_count, '张')}
+                        ${line('连带删除优惠券：', impact.coupon_count, '张')}
+                        ${line('自动解除商户分类映射：', impact.user_category_count, '条')}
+                        ${line('自动清空网站默认分类引用：', impact.config_reference_count, '条')}
                     </div>`;
-                if (impact.can_delete !== true) {
-                    message.alert(
-                        `${impactSummary}<div style="margin-top:10px;color:#d14343;">${i18n('系统已阻止删除，未删除任何数据。请先处理分类内商品、未选择的下级分类及上述直接引用；系统不会级联删除商品、优惠券、插件规则或历史数据。')}</div></div>`,
-                        'warning'
-                    );
-                    return;
-                }
                 const previewToken = String(impact.preview_token || '');
                 if (!previewToken) {
                     message.error('服务器未返回有效的删除预览凭证，已阻止删除');
@@ -49,7 +46,7 @@
                 }
                 Swal.fire({
                     title: selected.length > 1 ? `${i18n('确认删除')} ${selected.length} ${i18n('个所选分类')}` : i18n('确认删除分类'),
-                    html: `${impactSummary}<div style="margin-top:10px;color:#d14343;">${i18n('只会删除明确选择且不含商品、下级分类或任何业务引用的空分类。预览凭证')} 3 ${i18n('分钟内有效，范围变化会自动阻止删除；操作不可撤销。')}</div></div>`,
+                    html: `${impactSummary}<div style="margin-top:10px;color:#d14343;">${i18n('分类连同其下级分类、分类内商品及这些商品的订单、工单、卡密、优惠券会被一并删除。预览凭证')} 3 ${i18n('分钟内有效，范围在此期间变化会要求重新预览；操作不可撤销。')}</div></div>`,
                     icon: 'warning',
                     showCancelButton: true,
                     cancelButtonText: i18n('取消'),

@@ -212,7 +212,11 @@ class Index extends User
                 //原始配置不能给前端：里面有成本价、种类单价、SKU 加价等定价结构
                 $data[$key]['config'],
                 $data[$key]['seckill_start_time'],
-                $data[$key]['seckill_end_time']
+                $data[$key]['seckill_end_time'],
+                //shared_id 只用于上面那段库存分支。它一旦出现在响应里，任何人（本接口
+                //免登录）都能一眼看出哪些商品是从别处转售来的、共几家上游——
+                //这是转售身份的泄露面，见 App\Util\SharedPayload
+                $data[$key]['shared_id']
             );
 
             if (!$val['cover']) {

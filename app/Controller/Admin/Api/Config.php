@@ -761,16 +761,19 @@ class Config extends Manage
             LinkDomainGuard::ENABLED_CONFIG => $this->settingBoolean($post, 'link_domain_filter'),
             LinkDomainGuard::WHITELIST_CONFIG => implode("\n", array_keys($normalized)),
             \App\Util\Csp::MODE_CONFIG => in_array(($m = trim($this->settingString($post, 'csp_mode', 16))), ['off', 'report', 'enforce'], true) ? $m : 'report',
+            //受信代理清单和 IP 获取方式必须一起落库：分两次写的话，前者成后者败会留下
+            //「模式改了、清单没改」的半截状态，而这两个值只有配套才有意义（#928）
+            Client::TRUSTED_PROXY_CONFIG => $trustedProxyConfig,
         ];
 
         try {
-            Client::setTrustedProxyConfig($trustedProxyConfig);
             CFG::putMany($settings);
         } catch (\Throwable $e) {
             throw new JSONException("保存失败，请检查原因");
         }
 
         Client::resetModeCache();
+        Client::resetTrustedProxyCache();
         LinkDomainGuard::resetCache();
         \App\Util\Csp::resetCache();
         ManageLog::log($this->getManage(), "修改了安全设置");

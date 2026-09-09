@@ -483,6 +483,7 @@ CREATE TABLE `__PREFIX__shared`  (
                                      `balance` decimal(14, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '余额(缓存)',
                                      `currency` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'CNY' COMMENT '上游站点货币代码',
                                      `currency_rate` decimal(18, 6) NOT NULL DEFAULT 0.000000 COMMENT '结算汇率：1 上游货币 = ? 本站货币；0 = 按站点汇率自动',
+                                     `protocol` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '上游协议代次：0=未探明，1=3.1.2+，2=3.1.1及更老',
                                      PRIMARY KEY (`id`) USING BTREE,
                                      UNIQUE INDEX `domain`(`domain` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;

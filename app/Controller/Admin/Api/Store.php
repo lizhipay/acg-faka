@@ -262,10 +262,7 @@ class Store extends Manage
             if (!is_array($group) || !is_scalar($group['name'] ?? null) || !is_array($group['children'] ?? null)) {
                 throw new JSONException('远端商品分类结构不正确');
             }
-            $name = trim(strip_tags((string)$group['name']));
-            if ($name === '' || mb_strlen($name, 'UTF-8') > 128 || preg_match('/[\x00-\x1F\x7F]/u', $name)) {
-                throw new JSONException('远端商品分类名称不正确');
-            }
+            $name = $this->remoteName($group['name'], 128, '商品分类名称');
 
             $children = [];
             foreach ($group['children'] as $item) {
@@ -275,10 +272,7 @@ class Store extends Manage
                     }
                     $id = $this->positiveRemoteItemId($item['id'] ?? null);
                     $code = $this->remoteItemCode($item['code'] ?? $item['id'] ?? null);
-                    $itemName = is_scalar($item['name'] ?? null) ? trim(strip_tags((string)$item['name'])) : '';
-                    if ($itemName === '' || mb_strlen($itemName, 'UTF-8') > 255 || preg_match('/[\x00-\x1F\x7F]/u', $itemName)) {
-                        throw new JSONException('远端商品名称不正确');
-                    }
+                    $itemName = $this->remoteName($item['name'] ?? null, 255, '商品名称');
                     if (isset($seenIds[$id]) || isset($seenCodes[$code])) {
                         throw new JSONException('远端商品 ID 或编号重复');
                     }
@@ -298,6 +292,45 @@ class Store extends Manage
             $result[] = ['id' => 0, 'name' => $name, 'children' => $children];
         }
         return $result;
+    }
+
+    /**
+     * 远端「名称」类文本的归一与校验：**去标签 → 折叠控制字符/空白 → trim → 量长度**。
+     *
+     * 商品树（列表）与入库以前各写了一套，口径正好相反：树是 `strip_tags` **之后**量
+     * 长度，入库是把**原始串**（含 HTML）丢给 remoteText 量。于是给商品名套彩色
+     * HTML 的上游（`<span style="background-image:linear-gradient(...);-webkit-...">名字</span>`
+     * 光包装就两百多字符）会出现「列表里能选、点入库全部报 name 内容不正确」——
+     * 3.7.0 对接 3.0 的线上报障就是这个。名称只有一套口径，两边都必须走这里。
+     *
+     * 控制字符与空白折叠**不带 /u**：非法 UTF-8 会让带 /u 的 preg_replace 直接返回
+     * null，整个名字变空串。ASCII 控制字节不可能出现在合法 UTF-8 的多字节序列里，
+     * 按字节替换是安全的。合法性另外用 mb_check_encoding 显式判，免得脏字节流到
+     * utf8mb4 列上炸成一条看不懂的数据库错误。
+     *
+     * @throws JSONException
+     */
+    private function remoteName(mixed $value, int $max, string $label): string
+    {
+        if (!is_scalar($value)) {
+            throw new JSONException("远端{$label}格式不正确");
+        }
+
+        $text = trim((string)preg_replace(['/[\x00-\x1F\x7F]+/', '/\s+/'], ' ', strip_tags((string)$value)));
+
+        if ($text === '') {
+            throw new JSONException("远端{$label}不能为空");
+        }
+        if (!mb_check_encoding($text, 'UTF-8')) {
+            throw new JSONException("远端{$label}不是合法的 UTF-8 文本");
+        }
+
+        $length = mb_strlen($text, 'UTF-8');
+        if ($length > $max) {
+            throw new JSONException("远端{$label}过长（去除 HTML 标签后 {$length} 字，上限 {$max} 字）");
+        }
+
+        return $text;
     }
 
     /** @throws JSONException */
@@ -436,8 +469,17 @@ class Store extends Manage
             throw new JSONException("远端商品字段 {$field} 格式不正确");
         }
         $value = trim((string)($item[$field] ?? ''));
-        if (($required && $value === '') || mb_strlen($value, 'UTF-8') > $maxLength || preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', $value)) {
-            throw new JSONException("远端商品字段 {$field} 内容不正确");
+        //三种失败分开报：这条报错是站长排障时唯一的线索，"内容不正确"什么也没说，
+        //上一次线上报障（3.7.0 对接 3.0）就是靠不出这句话才查了半天
+        if ($required && $value === '') {
+            throw new JSONException("远端商品字段 {$field} 不能为空");
+        }
+        $length = mb_strlen($value, 'UTF-8');
+        if ($length > $maxLength) {
+            throw new JSONException("远端商品字段 {$field} 过长（{$length} 字，上限 {$maxLength} 字）");
+        }
+        if (preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', $value)) {
+            throw new JSONException("远端商品字段 {$field} 含控制字符");
         }
         return $value;
     }
@@ -698,10 +740,9 @@ class Store extends Manage
      */
     private function remoteItem(Shared $shared, array $item, string $requestedCode, bool $downloadImages): array
     {
-        $name = trim(strip_tags($this->remoteText($item, 'name', 255, true)));
-        if ($name === '') {
-            throw new JSONException('远端商品名称不正确');
-        }
+        //与 remoteItemTree() 同一口径（去标签后再量长度）。这里以前量的是原始串，
+        //名字带 HTML 包装的上游会「列表能选、入库全失败」。
+        $name = $this->remoteName($item['name'] ?? null, 255, '商品名称');
         $description = $this->remoteDescription($shared, $this->remoteText($item, 'description', 1048576), $downloadImages);
         $coverSource = $this->remoteText($item, 'cover', 2048);
         $cover = '/favicon.ico';
@@ -908,6 +949,12 @@ class Store extends Manage
         $identity = $this->sharedConnectResult($connect);
 
         $store = $existing ?? new Shared();
+        //换了地址或协议就等于换了一家上游，之前探明的协议代次立刻作废，
+        //否则新上游会被按旧记忆直接走死路（见 Bind\Shared::protocolOf）
+        if ($existing && ((string)$existing->domain !== $domain || (int)$existing->type !== $type)) {
+            \App\Util\Schema::ensureSharedProtocol();
+            $store->protocol = \App\Service\Bind\Shared::PROTOCOL_UNKNOWN;
+        }
         $store->type = $type;
         $store->domain = $domain;
         $store->app_id = $appId;

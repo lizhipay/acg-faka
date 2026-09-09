@@ -42,6 +42,15 @@ class Config extends Model
     private const NEVER_CACHE = ['request_log_key', 'csp_nonce_secret'];
     private const CONTEXT_SNAPSHOT = '_DB_CONFIG_SNAPSHOT';
     private const CONTEXT_EXCLUSIVE_LOCK = '_DB_CONFIG_EXCLUSIVE_LOCK';
+    private const CONTEXT_REPAIRED = '_DB_CONFIG_REPAIRED';
+
+    /**
+     * 快照完整性标记。带着它，说明这份 runtime/config 是从 list() **整表**重建出来的，
+     * 于是「缓存里没有这个键」= 库里也没有；不带，说明快照是残缺的，缺什么都说明不了。
+     *
+     * 用 NUL 开头：真实配置键不可能长这样，也绝不会出现在 list() 交给模板的 $config 里。
+     */
+    private const SNAPSHOT_COMPLETE = "\0complete";
 
     /**
      * Read the cache from the start of a handle whose lock is already held.
@@ -69,9 +78,35 @@ class Config extends Model
         try {
             $binary = Binary::inst();
             $configs = @$binary->unpack($contents);
-            return is_array($configs) ? $configs : [];
+            if (is_array($configs)) {
+                return $configs;
+            }
         } catch (\Throwable) {
-            return [];
+            //落到下面统一报告
+        }
+
+        //文件非空却解不开：缓存密钥是 md5(库名+口令+账号+前缀+Binary.php 路径) 推出来的，
+        //改数据库口令、换账号、改表前缀、把站点挪个目录，都会让整份缓存作废。
+        //以前这里静默返回空数组，于是所有只走 cached() 的配置（IP 获取方式、CSP、外链
+        //白名单…）会无声无息地退回默认值，站长只能看见"设置自己变回去了"。
+        self::reportUnreadableCache();
+        return [];
+    }
+
+    /** 每个请求只报一次，别让坏缓存把日志刷爆 */
+    private static function reportUnreadableCache(): void
+    {
+        if (Context::get('_DB_CONFIG_UNREADABLE') === true) {
+            return;
+        }
+        Context::set('_DB_CONFIG_UNREADABLE', true);
+        try {
+            \Kernel\Util\Log::inst()->error(
+                'runtime/config 无法解密（数据库口令/账号/库名/表前缀变更，或站点目录被移动过），'
+                . '本次已按整表重建。若反复出现，请检查 config/database.php 是否与建立缓存时一致。'
+            );
+        } catch (\Throwable) {
+            //日志不可用不能影响配置读取
         }
     }
 
@@ -239,7 +274,72 @@ class Config extends Model
             return (string)$configs[$key];
         }
 
-        return null;
+        //快照不是整表重建出来的（被清过、或换了数据库口令/站点目录导致解不开）时，
+        //「缓存里没有」什么也说明不了——库里很可能有值。先把整份快照修好再回答。
+        //修完的快照带完整性标记，之后的未命中就是真未命中，一次数据库都不会碰。
+        $repaired = self::repairSnapshot($configs);
+        if ($repaired === null || !array_key_exists($key, $repaired)) {
+            return null;
+        }
+
+        Context::set($cacheKey, $repaired[$key]);
+        return (string)$repaired[$key];
+    }
+
+    /**
+     * 把 runtime/config 从数据库整表重建一次，返回重建后的快照；做不了就返回 null。
+     *
+     * 只在快照缺少完整性标记时才做，且**一个请求最多做一次**。数据库还没连上
+     * （Request 构造期、站点未安装）时静静返回 null——那条「全程不碰数据库」的路径
+     * 正是 cached() 存在的理由，不能为了修缓存把它弄挂。
+     *
+     * @param array<string, string|int> $current
+     * @return array<string, string|int>|null
+     */
+    private static function repairSnapshot(array $current): ?array
+    {
+        if (array_key_exists(self::SNAPSHOT_COMPLETE, $current)) {
+            return null;
+        }
+        if (Context::get(self::CONTEXT_REPAIRED) === true) {
+            return null;
+        }
+        Context::set(self::CONTEXT_REPAIRED, true);
+
+        try {
+            return self::useExclusiveLock(static function (LockedFile $file): array {
+                //拿到锁后重读：并发的另一个请求可能已经修好了，别白重建一次
+                $configs = self::decodeCache(self::lockedCacheContents($file));
+                if (array_key_exists(self::SNAPSHOT_COMPLETE, $configs)) {
+                    self::publishContextSnapshot($configs);
+                    return $configs;
+                }
+
+                $snapshot = self::completeSnapshot(self::list());
+                $encoded = Binary::inst()->pack($snapshot);
+                if ($encoded === '') {
+                    throw new RuntimeException('could not encode configuration cache');
+                }
+                self::replaceCacheContents($file, $encoded);
+                self::publishContextSnapshot($snapshot);
+                return $snapshot;
+            });
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * 给整表快照盖上完整性标记。只加在**落盘与进 Context 的那一份**上，
+     * list() 本身保持干净——它的返回值会作为 $config 直接进模板。
+     *
+     * @param array<string, string|int> $snapshot
+     * @return array<string, string|int>
+     */
+    private static function completeSnapshot(array $snapshot): array
+    {
+        $snapshot[self::SNAPSHOT_COMPLETE] = '1';
+        return $snapshot;
     }
 
     /**
@@ -264,18 +364,27 @@ class Config extends Model
         // overwritten with an older value fetched before its cache publish.
         $configs = self::useExclusiveLock(function (LockedFile $file) use ($key): array {
             $configs = self::decodeCache(self::lockedCacheContents($file));
-            if (!array_key_exists($key, $configs)) {
-                $cfg = self::query()->where('key', $key)->first();
-                if (!$cfg) {
-                    self::publishContextSnapshot($configs);
-                    return $configs;
-                }
-                $configs[$key] = (string)$cfg->value;
+
+            //**绝不能在残缺的快照上做增量写回**。这里以前是「解出什么就在什么上加一个键
+            //再整份覆盖」——只要 decodeCache 失败过一次（文件被截断、或换了数据库口令/
+            //站点目录导致解不开），这一次写回就会把整份缓存**替换成只有一个键的文件**，
+            //其余几十个键就此消失，而只走 cached() 读取的设置（IP 获取方式、CSP、外链
+            //白名单…）会因此静默退回默认值再也回不来。issue #928 就是这么来的。
+            //快照没有完整性标记 = 它不可信，直接按整表重建，只多一次全表查询。
+            if (!array_key_exists(self::SNAPSHOT_COMPLETE, $configs)) {
+                $configs = self::completeSnapshot(self::list());
                 $encoded = Binary::inst()->pack($configs);
                 if ($encoded === '') {
                     throw new RuntimeException('could not encode configuration cache');
                 }
                 self::replaceCacheContents($file, $encoded);
+                self::publishContextSnapshot($configs);
+                return $configs;
+            }
+
+            //快照是全量的：缺这个键就是库里真的没有，不必再查一次
+            if (!array_key_exists($key, $configs)) {
+                self::publishContextSnapshot($configs);
             }
             return $configs;
         });
@@ -449,7 +558,7 @@ class Config extends Model
                 }
             }
 
-            $newSnapshot = self::list();
+            $newSnapshot = self::completeSnapshot(self::list());
             $newCache = Binary::inst()->pack($newSnapshot);
             if ($newCache === '') {
                 throw new RuntimeException('could not encode configuration cache');
@@ -508,7 +617,7 @@ class Config extends Model
                 // from the rows that actually remain and align this request's
                 // Context before surfacing the fatal rollback failure.
                 try {
-                    $actualSnapshot = self::list();
+                    $actualSnapshot = self::completeSnapshot(self::list());
                     $actualCache = Binary::inst()->pack($actualSnapshot);
                     if ($actualCache === '') {
                         throw new RuntimeException('could not encode recovered configuration cache');

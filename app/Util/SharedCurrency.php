@@ -95,10 +95,14 @@ final class SharedCurrency
 
         if ($factor === null || $factor === '0') {
             $upCurrency = strtoupper(trim((string)($shared->currency ?? ''))) ?: Currency::DEFAULT_CODE;
-            throw new \Kernel\Exception\JSONException(
+            //这条异常会跑在**免登录的商品详情页**（syncRemoteItem）和**下游的接口响应**上，
+            //原文点名了上游店铺和「店铺共享」，等于把转售身份写在报错里。管理端会话保留
+            //原文（站长要靠它知道去哪儿改），其余场合只给通用文案、原文进日志。
+            throw new \Kernel\Exception\JSONException(SharedPayload::guardMessage(
                 "店铺[{$shared->name}]的货币为 {$upCurrency}，与本站 " . Currency::code()
-                . " 之间没有可用汇率：请到「店铺共享」编辑该店铺，填写结算汇率（1 {$upCurrency} = ? " . Currency::code() . "）"
-            );
+                . " 之间没有可用汇率：请到「店铺共享」编辑该店铺，填写结算汇率（1 {$upCurrency} = ? " . Currency::code() . "）",
+                "商品暂时无法购买，请稍后重试"
+            ));
         }
         return $factor;
     }

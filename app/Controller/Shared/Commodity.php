@@ -14,6 +14,7 @@ use App\Service\Order;
 use App\Service\Query;
 use App\Service\Shop;
 use App\Util\Ini;
+use App\Util\SharedPayload;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Kernel\Annotation\Inject;
@@ -47,45 +48,49 @@ class Commodity extends Shared
             $relation->where("api_status", 1)->where("status", 1);
         }])->where("status", 1)->get();
 
-
-        $list = $items->toArray();
         $userGroup = $this->getUserGroup();
+        $list = [];
 
-        foreach ($list as $key => $item) {
-            if (count($item['children']) == 0) {
-                unset($list[$key]);
-                continue;
-            }
-            foreach ($item['children'] as $index => $child) {
-                $commodity = $items[$key]['children'][$index]; //直接拿到商品对象
-                if (!$commodity || $commodity->id != $child['id']) {
-                    unset($list[$key]['children'][$index]);
+        foreach ($items as $item) {
+            $children = [];
+
+            foreach ($item->children as $commodity) {
+                $child = $commodity->toArray();
+
+                $parseGroupConfig = \App\Model\Commodity::parseGroupConfig($child['level_price'] ?? null, $userGroup);
+                if (($child['hide'] ?? 0) == 1 && (!$parseGroupConfig || !isset($parseGroupConfig['show']) || $parseGroupConfig['show'] != 1)) {
                     continue;
                 }
 
-                $parseGroupConfig = \App\Model\Commodity::parseGroupConfig($child['level_price'], $userGroup);
-                if ($child['hide'] == 1 && (!$parseGroupConfig || !isset($parseGroupConfig['show']) || $parseGroupConfig['show'] != 1)) {
-                    unset($list[$key]['children'][$index]);
-                    continue;
-                }
+                //出站前按白名单裁剪。这里以前是模型整行 toArray() 直接出站，于是
+                //shared_id / shared_code（转售身份与上游商品编号）、factory_price（成本）、
+                //level_price（会员定价结构）以及第三方面板往 commodity 表加的那些列
+                //全都发给了下游。见 App\Util\SharedPayload。
+                $row = SharedPayload::commodity($child);
 
-                if ($child['delivery_way'] == 0) { //stock
+                if (($child['delivery_way'] ?? 0) == 0) { //stock
                     //套娃商品（本站自己也是从别处对接来的）卡池恒为空，按卡数算会把整批
                     //有货商品报成 0 库存，下游只能全部判缺货下架。真实读数在 shared_stock
                     //缓存里（getItemStock 每次现拉后回写）。这里只读缓存不现拉：items()
                     //是整站商品的批量出口，逐个现拉会把一次请求放大成几百次上游 HTTP。
-                    $list[$key]['children'][$index]['stock'] = $commodity->shared_id
+                    $row['stock'] = $commodity->shared_id
                         ? $this->sharedStockSnapshot($commodity)
-                        : Card::query()->where("status", 0)->where("commodity_id", $child['id'])->count();
+                        : Card::query()->where("status", 0)->where("commodity_id", $commodity->id)->count();
                 }
 
-                unset($list[$key]['children'][$index]['leave_message'], $list[$key]['children'][$index]['delivery_message']);
+                $children[] = $row;
             }
-            //重组
-            $list[$key]['children'] = array_values($list[$key]['children']);
+
+            if (count($children) == 0) {
+                continue;
+            }
+
+            $group = SharedPayload::category($item->toArray());
+            $group['children'] = $children;
+            $list[] = $group;
         }
 
-        return array_values($list);
+        return $list;
     }
 
     /**
@@ -111,6 +116,52 @@ class Commodity extends Shared
     }
 
     /**
+     * 按对接 CODE 取商品，并校验「开放对接」开关（`api_status`）。
+     *
+     * 这个开关以前**只管住了 items() 的列表口径**：其余接口一律只按 code 查，
+     * 而商品 code 在免登录的前台详情里就是公开的——于是任何持有下游凭据的人，
+     * 都能对站长根本没开放对接的商品查价、查库存、拉预选卡，甚至直接下单进货。
+     * 这里把同一道闸补到每一个按 code 寻址的入口上。
+     *
+     * **刻意只校验 api_status**，不连带校验分类状态与 hide：那两条在本站前台也不拦
+     * 直链购买，跟着加会让「下游买得到的」比「买家自己买得到的」还少。
+     *
+     * 报错文案与「商品不存在」分开：下游要能分清是自己写错了 code，还是站长收回了
+     * 对接权限。这不构成新的信息面——商品 code 本来就是公开的。
+     *
+     * @throws JSONException
+     */
+    private function dockedCommodity(mixed $code, string $notFound = "商品不存在"): \App\Model\Commodity
+    {
+        $code = is_scalar($code) ? trim((string)$code) : '';
+
+        if ($code === '') {
+            throw new JSONException($notFound);
+        }
+
+        $commodity = \App\Model\Commodity::query()->where("code", $code)->first();
+
+        if (!$commodity) {
+            throw new JSONException($notFound);
+        }
+
+        if ((int)$commodity->api_status !== 1) {
+            throw new JSONException("该商品未开放对接");
+        }
+
+        return $commodity;
+    }
+
+    /**
+     * 只校验开放对接，不返回模型——调用方后面还要按自己的时机重新取一次。
+     * @throws JSONException
+     */
+    private function assertDocked(mixed $code): void
+    {
+        $this->dockedCommodity($code);
+    }
+
+    /**
      * @return array
      * @throws JSONException
      */
@@ -129,6 +180,11 @@ class Commodity extends Shared
         if (!$code) {
             throw new JSONException("对接CODE不能为空");
         }
+
+        //闸要在 getItem() 之前：它内部的 syncRemoteItem 会真的往上游发一次 HTTP，
+        //少了这道闸，拿本站任意商品 code 就能驱动我们去请求上游。
+        $this->assertDocked($code);
+
         $item = $this->shop->getItem($code);
 
         //#842 getItem() 的列白名单刻意不含 factory_price（那是本站自己的成本列，
@@ -185,11 +241,8 @@ class Commodity extends Shared
         if ($sharedCode == "") {
             throw new JSONException("商品代码不能为空");
         }
-        $commodity = \App\Model\Commodity::query()->where("code", $sharedCode)->first();
+        $commodity = $this->dockedCommodity($sharedCode);
 
-        if (!$commodity) {
-            throw new JSONException("商品不存在");
-        }
         if ($commodity->status != 1) {
             throw new JSONException("当前商品已停售");
         }
@@ -245,11 +298,7 @@ class Commodity extends Shared
             throw new JSONException("商品代码不能为空");
         }
 
-        $commodity = \App\Model\Commodity::query()->where("code", $sharedCode)->first();
-
-        if (!$commodity) {
-            throw new JSONException("商品不存在");
-        }
+        $commodity = $this->dockedCommodity($sharedCode);
 
         if ($commodity->status != 1) {
             throw new JSONException("当前商品已停售");
@@ -290,10 +339,10 @@ class Commodity extends Shared
         $factoryPrice = 0;
         $isCategory = false;
 
-        $configs = Ini::toArray((string)$commodity->config);
-        if (array_key_exists("category_factory", $configs)) {
-            unset($configs['category_factory']);
-        }
+        //出站前裁掉成本段：category_cost / sku_cost 是上游原价（我们的进货价），
+        //shared_mapping 是上游的 SKU 主键，*_factory 是本站自己那层的拿货价快照。
+        //陈旧的 category_factory 一律丢弃，只信下面按请求方身份现算的那份。
+        $configs = SharedPayload::configArray(Ini::toArray((string)$commodity->config));
 
         //检测是否设置了种类
         if (array_key_exists("category", $configs)) {
@@ -346,11 +395,7 @@ class Commodity extends Shared
         $map = $request->post(flags: Filter::NORMAL);
         $map['pay_id'] = 1; //强制走余额支付
 
-        $commodity = \App\Model\Commodity::query()->where("code", (string)$map['shared_code'])->first();
-
-        if (!$commodity) {
-            throw new JSONException("商品不存在");
-        }
+        $commodity = $this->dockedCommodity($map['shared_code'] ?? null);
         $map['item_id'] = $commodity->id;
         return $this->json(200, 'success', $this->order->trade($this->getUser(), $this->getUserGroup(), $map));
     }
@@ -366,12 +411,8 @@ class Commodity extends Shared
         /**
          * @var \App\Model\Commodity $commodity
          */
-        $commodity = \App\Model\Commodity::query()->where("code", $map['code'])->first();
+        $commodity = $this->dockedCommodity($map['code'] ?? null);
         $limit = $map['limit'] ?? 10;
-
-        if (!$commodity) {
-            throw new JSONException("商品不存在");
-        }
 
         if ($commodity->status != 1) {
             throw new JSONException("该商品暂未上架");
@@ -441,7 +482,9 @@ class Commodity extends Shared
     public function stock(): array
     {
         $map = $this->request->post(flags: Filter::NORMAL);
-        $stock = $this->shop->getItemStock($map['code'], $map['race'] ?? null, $map['sku'] ?? null);
+        //传模型而不是 code：闸校验时已经把行取出来了，getItemStock 不必再查一次
+        $commodity = $this->dockedCommodity($map['code'] ?? null);
+        $stock = $this->shop->getItemStock($commodity, $map['race'] ?? null, $map['sku'] ?? null);
         return $this->json(data: ["stock" => $stock]);
     }
 
@@ -451,11 +494,7 @@ class Commodity extends Shared
      */
     public function valuation(): array
     {
-        $commodity = \App\Model\Commodity::query()->where("code", $this->request->post("code"))->first();
-
-        if (!$commodity) {
-            throw new JSONException("商品不存在#0");
-        }
+        $commodity = $this->dockedCommodity($this->request->post("code"), "商品不存在#0");
 
         $price = $this->order->valuation(
             commodity: $commodity,
@@ -477,12 +516,13 @@ class Commodity extends Shared
     public function draft(): array
     {
         $map = $this->request->post(flags: Filter::NORMAL);
-        $commodity = \App\Model\Commodity::query()->where("code", $map['code'])->first();
+        $commodity = $this->dockedCommodity($map['code'] ?? null);
 
-        if (!$commodity) {
-            throw new JSONException("商品不存在");
-        }
+        //getDraft() 还带着 card.cost（预选成本），那是本站的成本口径，不出站。
+        //下游只读 draft_premium（见 Bind\Shared::getDraft 的消费点）。
+        $draft = $this->shop->getDraft($commodity, (int)$map['card_id']);
+        unset($draft['cost']);
 
-        return $this->json(data: $this->shop->getDraft($commodity, (int)$map['card_id']));
+        return $this->json(data: $draft);
     }
 }

@@ -243,5 +243,25 @@ interface Hook
      */
     public const CSP_SOURCE_ALLOW = 0x8102;
 
+    /**
+     * 商品分类即将被删除（在删除事务内、分类行落地删除之前广播）。
+     *
+     * 分类引用不一定是外键：插件常把 category_id 塞在自己的序列化配置里，核心的
+     * 通用扫描看不见。以前的做法是**核心直接伸手去读某个插件的表**，还把插件名写死在
+     * 后台提示里——公开版用户会看到一个自己根本没装的插件名（issue #918）。
+     * 现在改成谁的引用谁自己清。
+     *
+     *   #[Hook(point: \App\Consts\Hook::CATEGORY_DELETE_BEFORE)]
+     *   public function CATEGORY_DELETE_BEFORE(array $categoryIds): void
+     *   {
+     *       // 删掉/清空自己表里指向这些分类的行
+     *   }
+     *
+     * **订阅方抛异常不会阻断删除**：核心会记日志并继续。站长要删分类，插件没有否决权。
+     *
+     * @param int[] $categoryIds 本次会被删除的全部分类 id（含未被显式选中的下级分类）
+     */
+    public const CATEGORY_DELETE_BEFORE = 0x8103;
+
     public const LANG_MISS = 0x9100;
 }

@@ -26,8 +26,19 @@ class Client
     ];
 
     private const CHAIN_HEADER_MODES = [2, 4, 5, 6, 7];
-    private const TRUSTED_PROXY_FILE = BASE_PATH . '/runtime/trusted_proxies';
     public const MODE_CONFIG = 'ip_get_mode';
+
+    /**
+     * 受信代理清单的存放位置。
+     *
+     * 3.7.2 之前只写在 `runtime/trusted_proxies` 里。那是个所有人都当缓存看待、
+     * 部署/升级/重建容器随手就清掉的目录——清掉之后 isTrustedProxy() 恒为 false，
+     * getAddress() 会无条件退回 REMOTE_ADDR，站长配的「IP 获取方式」形同虚设，
+     * 订单 IP 全变成反代地址（issue #928）。安全配置必须落在配置表里。
+     * 老文件保留为读取兜底与一次性迁移来源。
+     */
+    public const TRUSTED_PROXY_CONFIG = 'trusted_proxy_ips';
+    private const LEGACY_TRUSTED_PROXY_FILE = BASE_PATH . '/runtime/trusted_proxies';
 
     private const LEGACY_MODE_FILE = BASE_PATH . '/runtime/mode';
 
@@ -216,12 +227,19 @@ class Client
     public static function setTrustedProxyConfig(string $config): void
     {
         $config = self::normalizeTrustedProxyConfig($config);
-        $written = file_put_contents(self::TRUSTED_PROXY_FILE, $config, LOCK_EX);
-        if ($written === false || $written !== strlen($config)) {
-            throw new \RuntimeException('受信代理清单写入失败');
-        }
-        self::$trustedProxyConfig = $config;
-        self::$trustedProxyRanges = $config === '' ? [] : explode("\n", $config);
+        Config::put(self::TRUSTED_PROXY_CONFIG, $config);
+        self::cacheTrustedProxyConfig($config);
+        //配置表已经是权威来源，老文件留着只会在 runtime 被清空时给出错误答案
+        @unlink(self::LEGACY_TRUSTED_PROXY_FILE);
+    }
+
+    /**
+     * 清掉进程内的受信代理缓存。配置在别处（批量保存）被改写后调用。
+     */
+    public static function resetTrustedProxyCache(): void
+    {
+        self::$trustedProxyConfig = null;
+        self::$trustedProxyRanges = null;
     }
 
     public static function getTrustedProxyConfig(): string
@@ -229,30 +247,62 @@ class Client
         if (self::$trustedProxyConfig !== null) {
             return self::$trustedProxyConfig;
         }
-        if (!file_exists(self::TRUSTED_PROXY_FILE)) {
-            self::$trustedProxyConfig = '';
-            self::$trustedProxyRanges = [];
-            return '';
+
+        $config = null;
+        if (self::configReadable()) {
+            try {
+                $config = Config::cached(self::TRUSTED_PROXY_CONFIG);
+            } catch (\Throwable) {
+                $config = null;
+            }
         }
 
-        $config = file_get_contents(self::TRUSTED_PROXY_FILE);
-        if ($config === false) {
-            self::$trustedProxyConfig = '';
-            self::$trustedProxyRanges = [];
-            return '';
+        if ($config === null) {
+            //老站的清单还在 runtime 文件里：读它，并趁这次把它搬进配置表。
+            //搬成功就删文件，所以整个站生命周期里最多发生一次。
+            $config = self::legacyTrustedProxyConfig();
+            if ($config !== '') {
+                self::migrateTrustedProxyConfig($config);
+            }
         }
 
         try {
-            self::$trustedProxyConfig = self::normalizeTrustedProxyConfig($config);
-            self::$trustedProxyRanges = self::$trustedProxyConfig === ''
-                ? []
-                : explode("\n", self::$trustedProxyConfig);
+            return self::cacheTrustedProxyConfig(self::normalizeTrustedProxyConfig($config));
         } catch (\InvalidArgumentException) {
             // A manually corrupted allowlist must fail closed.
-            self::$trustedProxyConfig = '';
-            self::$trustedProxyRanges = [];
+            return self::cacheTrustedProxyConfig('');
         }
-        return self::$trustedProxyConfig;
+    }
+
+    private static function cacheTrustedProxyConfig(string $config): string
+    {
+        self::$trustedProxyConfig = $config;
+        self::$trustedProxyRanges = $config === '' ? [] : explode("\n", $config);
+        return $config;
+    }
+
+    private static function legacyTrustedProxyConfig(): string
+    {
+        if (!is_file(self::LEGACY_TRUSTED_PROXY_FILE)) {
+            return '';
+        }
+        $config = @file_get_contents(self::LEGACY_TRUSTED_PROXY_FILE);
+        return $config === false ? '' : $config;
+    }
+
+    /**
+     * 一次性迁移：把落地文件里的清单写进配置表并删掉文件。
+     * 失败（数据库还没连上、没有写权限）就当无事发生——这次仍然按文件里的值放行，
+     * 下一个请求再试。
+     */
+    private static function migrateTrustedProxyConfig(string $config): void
+    {
+        try {
+            Config::put(self::TRUSTED_PROXY_CONFIG, self::normalizeTrustedProxyConfig($config));
+            @unlink(self::LEGACY_TRUSTED_PROXY_FILE);
+        } catch (\Throwable) {
+            //保持原样，下次请求再迁
+        }
     }
 
     private static function normalizeIp(string $value): ?string
