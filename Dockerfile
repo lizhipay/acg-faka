@@ -37,6 +37,9 @@ RUN set -eux; \
         # 它本来只是被别的包顺带拉进来的，apt purge --auto-remove 一不小心就连坐删掉，
         # 之后 tar 会报 "xz: Cannot exec"，而调用方只看到"解包失败"。
         xz-utils \
+        # 签 HTTPS 证书用。容器里自带才能做到「一条命令配好 SSL」，
+        # 不必让用户在宿主机另外装一套或再起一个反代。
+        certbot \
         # 单容器全自动模式用的内置数据库与缓存。外接数据库时它们不会启动，
         # 只占镜像体积，不占运行时资源。
         mariadb-server \
@@ -104,6 +107,8 @@ COPY docker/php.ini          /usr/local/etc/php/conf.d/acg-faka.ini
 COPY docker/entrypoint.sh    /usr/local/bin/acg-faka-entrypoint
 COPY docker/wait-db.sh       /usr/local/bin/acg-wait-db
 COPY docker/supervise-threadmanager.sh /usr/local/bin/acg-supervise-threadmanager
+COPY docker/acg-ssl.sh       /usr/local/bin/acg-ssl
+COPY docker/acg-ssl-renew.sh /usr/local/bin/acg-ssl-renew
 
 COPY . ${ACG_HOME}
 
@@ -154,7 +159,7 @@ RUN set -eux; \
     fi; \
     chown -R www-data:www-data ${ACG_HOME}; \
     chmod -R ug+rwX ${ACG_HOME}; \
-    chmod +x /usr/local/bin/acg-faka-entrypoint /usr/local/bin/acg-wait-db /usr/local/bin/acg-supervise-threadmanager; \
+    chmod +x /usr/local/bin/acg-faka-entrypoint /usr/local/bin/acg-wait-db /usr/local/bin/acg-supervise-threadmanager /usr/local/bin/acg-ssl /usr/local/bin/acg-ssl-renew; \
     nginx -t -c /etc/nginx/nginx.conf
 
 # 所有会被写入的目录统一搬到 /data 并软链回去 —— 挂一个卷就能保住全部数据
@@ -194,7 +199,7 @@ RUN set -eux; \
 
 VOLUME ["/data"]
 
-EXPOSE 80
+EXPOSE 80 443
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD php -r 'exit(trim((string)@file_get_contents("http://127.0.0.1/healthz")) === "pong" ? 0 : 1);'

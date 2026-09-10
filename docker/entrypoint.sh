@@ -31,6 +31,9 @@ if [ ! -L favicon.ico ]; then
     ln -s assets/cache/favicon.ico favicon.ico
 fi
 
+# HTTPS 相关：nginx 片段与证书都放数据卷，容器重建/换镜像后不丢。
+mkdir -p "${DATA}/nginx" "${DATA}/ssl"
+
 chown -R www-data:www-data \
     "${DATA}/config" "${DATA}/install" "${DATA}/assets_cache" \
     "${DATA}/plugins" "${DATA}/pay" "${DATA}/themes" "${DATA}/runtime"
