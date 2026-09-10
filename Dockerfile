@@ -107,8 +107,10 @@ COPY docker/php.ini          /usr/local/etc/php/conf.d/acg-faka.ini
 COPY docker/entrypoint.sh    /usr/local/bin/acg-faka-entrypoint
 COPY docker/wait-db.sh       /usr/local/bin/acg-wait-db
 COPY docker/supervise-threadmanager.sh /usr/local/bin/acg-supervise-threadmanager
-COPY docker/acg-ssl.sh       /usr/local/bin/acg-ssl
-COPY docker/acg-ssl-renew.sh /usr/local/bin/acg-ssl-renew
+COPY docker/acg-ssl-lib.sh    /usr/local/lib/acg-ssl-lib.sh
+COPY docker/acg-ssl.sh        /usr/local/bin/acg-ssl
+COPY docker/acg-ssl-import.sh /usr/local/bin/acg-ssl-import
+COPY docker/acg-ssl-renew.sh  /usr/local/bin/acg-ssl-renew
 
 COPY . ${ACG_HOME}
 
@@ -159,7 +161,7 @@ RUN set -eux; \
     fi; \
     chown -R www-data:www-data ${ACG_HOME}; \
     chmod -R ug+rwX ${ACG_HOME}; \
-    chmod +x /usr/local/bin/acg-faka-entrypoint /usr/local/bin/acg-wait-db /usr/local/bin/acg-supervise-threadmanager /usr/local/bin/acg-ssl /usr/local/bin/acg-ssl-renew; \
+    chmod +x /usr/local/bin/acg-faka-entrypoint /usr/local/bin/acg-wait-db /usr/local/bin/acg-supervise-threadmanager /usr/local/bin/acg-ssl /usr/local/bin/acg-ssl-import /usr/local/bin/acg-ssl-renew; \
     nginx -t -c /etc/nginx/nginx.conf
 
 # 所有会被写入的目录统一搬到 /data 并软链回去 —— 挂一个卷就能保住全部数据
