@@ -72,6 +72,9 @@ class Query implements \App\Service\Query
 
         if (count($get->leftJoinWhere) > 0) {
             $get->orderBy[0] = "{$tableName}.{$get->orderBy[0]}";
+            foreach ($get->thenOrderBy as $index => $then) {
+                $get->thenOrderBy[$index][0] = "{$tableName}.{$then[0]}";
+            }
             if ($get->columns === ["*"]) {
                 $get->columns = ["{$tableName}.*"];
             } else {
@@ -120,7 +123,11 @@ class Query implements \App\Service\Query
         }
 
 
-        $query = $query->orderBy($get->orderBy[0], $get->orderBy[1])->distinct();
+        $query = $query->orderBy($get->orderBy[0], $get->orderBy[1]);
+        foreach ($get->thenOrderBy as [$thenColumn, $thenRule]) {
+            $query = $query->orderBy($thenColumn, $thenRule);
+        }
+        $query = $query->distinct();
 
         if ($get->paginate) {
             $paginate = $query->paginate($get->paginate[1], $get->columns, '', $get->paginate[0]);

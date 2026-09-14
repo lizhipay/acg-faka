@@ -161,4 +161,13 @@ interface Shared
      * @return bool
      */
     public function syncRemoteItem(Commodity|int $commodity): bool;
+
+    /**
+     * 非种类商品在上游的拿货成本（已按汇率换算）。算不出来返回 null，调用方保持原值。
+     * @param \App\Model\Shared $shared
+     * @param Commodity $commodity 需带 shared_code
+     * @param array $remoteItem item() 的返回
+     * @return string|null
+     */
+    public function remoteCost(\App\Model\Shared $shared, Commodity $commodity, array $remoteItem): ?string;
 }

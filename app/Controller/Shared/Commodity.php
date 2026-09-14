@@ -185,7 +185,9 @@ class Commodity extends Shared
         //少了这道闸，拿本站任意商品 code 就能驱动我们去请求上游。
         $this->assertDocked($code);
 
-        $item = $this->shop->getItem($code);
+        //getItem() 同时服务本站前台，出参里的上游图片被换成了占位图（前台照常显示）；
+        //发给下游前要换成「没有图」，否则下游开着图片本地化会去下载本站 LOGO。见 SharedPayload::downstream()。
+        $item = SharedPayload::downstream($this->shop->getItem($code));
 
         //#842 getItem() 的列白名单刻意不含 factory_price（那是本站自己的成本列，
         //不能进前台详情），但对接语义里下游要的 factory_price 是"它在本站的拿货价"——

@@ -208,6 +208,7 @@
                 },
                 tab: submit,
                 autoPosition: true,
+                adaptiveHeight: true,
                 height: "auto",
                 assign: values.setting,
                 width: "660px",

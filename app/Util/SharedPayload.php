@@ -130,7 +130,46 @@ final class SharedPayload
             $out['cover'] = self::scrubUrl($out['cover']);
         }
 
-        return $out;
+        //commodity() 只用在发给下游店铺的出口（Shared\Commodity::getItems、SharedStock 插件），
+        //所以直接按下游口径收尾。SharedStock 走的也是这个核心类，升级核心即生效、插件不用重发。
+        return self::downstream($out);
+    }
+
+    /**
+     * 发给**下游店铺**的商品载荷收尾：把占位图换成下游认得的「没有图」。
+     *
+     * 上游直链被抹成 PLACEHOLDER_URL（/favicon.ico）之后，本站前台照常显示没问题，
+     * 但下游开着「远端图片本地化」时会把它当商品图去**下载**——下的其实是本站的 LOGO
+     * （后台设置 LOGO 会覆盖 /favicon.ico）：
+     *   - LOGO 是 BMP：下游 Image::realImageExtension 不认，报「伪造成一张图片」，整单接入失败；
+     *   - 站点没有 /favicon.ico、或被 CDN/防火墙拦：下载失败，整单接入失败；
+     *   - 就算下载成功，下游的商品封面和说明图也全变成了本站 LOGO。
+     * 3.7.2 之前这些地址是上上游的真实图片直链，下载得到；3.7.2 起全部指向占位图，
+     * 下游 3.6.0 ~ 3.7.2 的导入代码完全一样，所以**所有版本的下游**都会中招。
+     *
+     * 兼容性依据（下游 Admin\Api\Store::remoteItem / remoteDescription，3.6.0 起未变）：
+     *   - 封面为空：直接用下游自己的 /favicon.ico，不解析地址、不发起下载——安全；
+     *   - 说明里的 <img>：逐个解析 src，**空 src 会报「远端图片地址格式不正确」**，
+     *     所以占位图要把整个 <img> 标签删掉，不能只清空 src。
+     * 自动货源接入（AutoDock）对空封面同样回落到它自己的站点图标。
+     *
+     * getItem() 对空封面的兜底也是 /favicon.ico，一并转成空：对下游而言两者都是「没有封面」。
+     */
+    public static function downstream(array $row): array
+    {
+        if (($row['cover'] ?? null) === self::PLACEHOLDER_URL) {
+            $row['cover'] = '';
+        }
+        if (isset($row['description']) && is_string($row['description'])
+            && stripos($row['description'], self::PLACEHOLDER_URL) !== false) {
+            $path = preg_quote(self::PLACEHOLDER_URL, '#');
+            $row['description'] = (string)preg_replace(
+                '#<img\b[^>]*?\bsrc\s*=\s*(?:"' . $path . '"|\'' . $path . '\'|' . $path . '(?=[\s/>]))[^>]*>#i',
+                '',
+                $row['description']
+            );
+        }
+        return $row;
     }
 
     /**
@@ -239,11 +278,22 @@ final class SharedPayload
             $text
         );
 
-        //裸域名（"发货问题请联系 shop.example.com" 这种）
+        //裸域名（"发货问题请联系 shop.example.com" 这种）。必须按「整个域名」匹配。
+        //以前是 str_ireplace 子串替换，上游是 abc.com 时会把 cdn-abc.com、img.abc.com.cn、
+        //别家图床路径里的 /abc.com/ 统统改成 ***——跟上游毫无关系的图片地址被改坏，
+        //下游导入时解析这种地址直接报错（3.7.2 回归）。
+        //  前面：不能紧挨域名字符 / 点 / 横线 / 下划线 / 斜杠（那是别的域名的一部分，或别家 URL 的路径段）；
+        //        允许带子域（www.abc.com、shop.abc.com 同样是上游身份），允许 @（邮箱里的域名也是身份）。
+        //  后面：不能再接域名字符或「.字母数字」（那是 abc.com.cn 这种更长的域名）。
         foreach ($hosts as $host) {
-            if ($host !== '' && stripos($text, $host) !== false) {
-                $text = str_ireplace($host, self::PLACEHOLDER_HOST, $text);
+            if ($host === '' || stripos($text, $host) === false) {
+                continue;
             }
+            $text = (string)preg_replace(
+                '#(?<![a-z0-9._\-/])(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*' . preg_quote($host, '#') . '(?![a-z0-9\-]|\.[a-z0-9])#i',
+                self::PLACEHOLDER_HOST,
+                $text
+            );
         }
 
         return $text;
@@ -404,7 +454,10 @@ final class SharedPayload
             return '';
         }
         if (!preg_match('#^[a-z][a-z0-9+.-]*://#i', $value)) {
-            $value = (str_starts_with($value, '//') ? 'http:' : 'http://') . ltrim($value, '/');
+            //协议相对地址 //host/path 要保留两个斜杠再补协议。以前先 ltrim 掉斜杠再拼 'http:'，
+            //得到 'http:host/path'，parse_url 取不到 host——URL 那一轮对「//上游」从来不命中，
+            //全靠后面裸域名的子串替换兜着，兜出来的是 //***/path 这种坏地址。
+            $value = str_starts_with($value, '//') ? 'http:' . $value : 'http://' . ltrim($value, '/');
         }
         $host = parse_url($value, PHP_URL_HOST);
         if (!is_string($host) || $host === '') {

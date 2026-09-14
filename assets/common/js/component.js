@@ -438,6 +438,7 @@ const component = new class Component {
         const useAdminMobileFallback = window.AdminMobile?.isEnabled?.() === true;
         let legacyPopupIndex = null;
         let legacyResizeObserver = null;
+        let legacyAdaptiveFit = null;
         let legacySelectFloater = null;
         let legacyPopupDestroyed = false;
         let legacyEndCalled = false;
@@ -560,18 +561,28 @@ const component = new class Component {
                 }
 
                 if (opt.autoPosition && util.isPc() && !isDrawer && !useAdminMobileFallback) {
+                    // adaptiveHeight：高度跟着内容走，封顶到视口（100vh - 155px）才在内部滚动。
+                    // 只长不缩——切到内容少的标签页时弹窗不回缩，标签栏不会上下跳；
+                    // 最大化期间尺寸归 layer 管（它会立刻给最大化按钮加 layui-layer-maxmin）。
+                    let adaptiveSticky = 0;
+                    legacyAdaptiveFit = () => {
+                        if ($(lay).find(".layui-layer-max").hasClass("layui-layer-maxmin")) {
+                            return;
+                        }
+                        const content = $(lay).find(".layui-layer-content");
+                        content.css({height: "auto", minHeight: "", maxHeight: "calc(100vh - 155px)", overflowY: "auto"});
+                        adaptiveSticky = Math.max(adaptiveSticky, content.css("box-sizing") === "border-box" ? content.outerHeight() : content.height());
+                        content.css("minHeight", `min(${adaptiveSticky}px, calc(100vh - 155px))`);
+                        // layer 按打开瞬间的空盒子写死过外框/内容高度，这里交还给内容
+                        $(lay).css("height", "auto");
+                        that.offset();
+                    };
+
                     legacyResizeObserver = this.resizeObserver($(lay).find(".layui-layer-content"), event => {
                         const content = $(lay).find(".layui-layer-content");
 
                         if (opt.adaptiveHeight === true) {
-                            content.css({
-                                height: "auto",
-                                maxHeight: "calc(100vh - 155px)",
-                                overflowY: "auto"
-                            });
-
-                            layer.iframeAuto(layIndex);
-                            that.offset();
+                            legacyAdaptiveFit();
                             return;
                         }
 
@@ -607,11 +618,19 @@ const component = new class Component {
                 let $handle = layero.addClass("border-none");
                 $handle.find(".layui-layer-title").addClass("border-none");
                 $handle.find(".layui-layer-btn").addClass("border-none");
+                // 自适应的上下限会把铺满后的内容区卡住，最大化期间先撤掉
+                if (opt.adaptiveHeight === true) {
+                    $handle.find(".layui-layer-content").css({minHeight: "", maxHeight: ""});
+                }
             },
             restore: (layero, index, that) => {
                 let $handle = layero.removeClass("border-none");
                 $handle.find(".layui-layer-title").removeClass("border-none");
                 $handle.find(".layui-layer-btn").removeClass("border-none");
+                // 还原时 layer 写回的是最大化前的像素高度，重新交给内容自适应
+                if (opt.adaptiveHeight === true && legacyAdaptiveFit) {
+                    legacyAdaptiveFit();
+                }
             }
         };
 

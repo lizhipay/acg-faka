@@ -481,7 +481,7 @@
                         {title: false, name: "config", type: "textarea", placeholder: "配置参数", height: 480},
                         {
                             title: false, name: "config_tips", type: "custom", complete: (_, __) => {
-                                __.html(`<b style='color: red;'>${i18n('配置参数里面包括了商品种类，多')}SKU${i18n('等高阶功能，详细使用方法请查看文档：')}<a href='https://faka.wiki/#/zh-cn/goods-config' target='_blank'>https://faka.wiki/#/zh-cn/goods-config</a></b>`);
+                                __.html(`<b style='color: red;'>${i18n('配置参数里面包括了商品种类，多')}SKU${i18n('等高阶功能，详细使用方法请查看文档：')}<a href='https://faka.wiki/zh-cn/guide/goods-config.html' target='_blank'>https://faka.wiki/zh-cn/guide/goods-config.html</a></b>`);
                             }
                         },
                     ]
@@ -588,7 +588,7 @@
                                                                             name: "config_tips",
                                                                             type: "custom",
                                                                             complete: (_, __) => {
-                                                                                __.html(`<b style='color: red;'>${i18n('配置参数里面包括了商品种类，多')}SKU${i18n('等高阶功能，详细使用方法请查看文档：')}<a href='https://faka.wiki/#/zh-cn/goods-config' target='_blank'>https://faka.wiki/#/zh-cn/goods-config</a></b>`);
+                                                                                __.html(`<b style='color: red;'>${i18n('配置参数里面包括了商品种类，多')}SKU${i18n('等高阶功能，详细使用方法请查看文档：')}<a href='https://faka.wiki/zh-cn/guide/goods-config.html' target='_blank'>https://faka.wiki/zh-cn/guide/goods-config.html</a></b>`);
                                                                             }
                                                                         },
                                                                     ]
@@ -895,6 +895,11 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
         });
     }
 
+    // 拖动排序：公共实现在 drag-sort.js（与分类管理共用，行为一模一样）。电脑版拖手柄，手机版长按整张卡片。
+    // 商品列表分页且可筛选：后端只在「这一页商品当前占着的位置」里重排，其它商品原地不动，所以筛选、翻页时都能拖。
+    const dragEnabled = Boolean(window.MdTableDragSort);
+    let dragSort = null;
+
     table = new Table("/admin/api/commodity/data", "#commodity-table");
     table.setUpdate("/admin/api/commodity/save");
     table.setColumns([
@@ -931,6 +936,7 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
         , {field: 'order_yesterday_amount', title: '昨日'}
         , {field: 'order_week_amount', title: '本周'}
         , {field: 'order_all_amount', title: '全部'}
+        , ...(dragEnabled ? [MdTableDragSort.column()] : [])
         , {field: 'sort', title: '排序'}
         , {
             field: 'share_url', title: '推广链接', type: "button", buttons: [
@@ -1128,6 +1134,39 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
     ]);
     table.setState("status", "_commodity_status");
 
+    table.onComplete(() => dragSort?.sync());
+    if (dragEnabled) {
+        dragSort = MdTableDragSort.attach({
+            table,
+            selector: '#commodity-table',
+            namespace: namespace + 'Drag',
+            url: '/admin/api/commodity/reorder',
+            isActive: () => controllerActive,
+            hint: '按住拖动，调整商品顺序',
+            singleText: '这一页只有这一个商品，不需要排序',
+            blockedReason: () => {
+                // 按其它列排过序时，列表显示的不是实际顺序，拖完会把这个顺序当成实际顺序存进去
+                const sortField = String(table?.queryParams?.sort_field ?? '');
+                if (sortField !== '' && !(sortField === 'sort' && String(table?.queryParams?.sort_rule ?? '') === 'asc')) {
+                    return '列表正按其它列排序，显示的不是实际顺序，请刷新页面恢复默认排序后再拖动';
+                }
+                // 后端单次最多处理 500 个商品
+                if ((table?.getRows?.() || []).length > 500) {
+                    return '每页超过 500 个商品时不能拖动排序，请把每页条数调小';
+                }
+                return '';
+            },
+            // 卡片上显示商品主图和名称（名称单元格里还有分类路径，不能整格取文本）
+            describe: tr => {
+                const cell = tr.querySelector('.md-commodity-cell');
+                return {
+                    name: (cell?.querySelector('.md-commodity-cell__name')?.textContent || '').trim(),
+                    icon: cell?.querySelector('img.md-commodity-cell__cover')?.getAttribute('src') || ''
+                };
+            }
+        });
+    }
+
     table.render();
 
 
@@ -1313,6 +1352,8 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
         controllerActive = false;
         $('.btn-app-create, .delist, .listed, .btn-app-del, .handle').off(namespace);
         $(document).off(namespace);
+        dragSort?.destroy();
+        dragSort = null;
         if (table && !table.isDestroyed && typeof table.destroy === 'function') table.destroy();
         table = null;
         if (window.__mdTradeCommodityDestroy === destroy) delete window.__mdTradeCommodityDestroy;

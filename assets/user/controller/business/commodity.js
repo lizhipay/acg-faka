@@ -299,7 +299,7 @@
                         {title: false, name: "config", type: "textarea", placeholder: "配置参数", height: 480},
                         {
                             title: false, name: "config_tips", type: "custom", complete: (_, __) => {
-                                __.html(`<div class="uc-cardtip"><div class="uc-cardtip__warn"><span class="material-icons-outlined">info</span><span>${i18n('配置参数包含商品种类、多')} SKU ${i18n('等高级功能。修改前请先阅读')}<a href="https://faka.wiki/#/zh-cn/goods-config" target="_blank" rel="noopener noreferrer">${i18n('配置文档')}</a>。</span></div></div>`);
+                                __.html(`<div class="uc-cardtip"><div class="uc-cardtip__warn"><span class="material-icons-outlined">info</span><span>${i18n('配置参数包含商品种类、多')} SKU ${i18n('等高级功能。修改前请先阅读')}<a href="https://faka.wiki/zh-cn/guide/goods-config.html" target="_blank" rel="noopener noreferrer">${i18n('配置文档')}</a>。</span></div></div>`);
                             }
                         },
                     ]

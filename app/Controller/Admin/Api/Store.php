@@ -1241,7 +1241,11 @@ class Store extends Manage
 
                 $commodity->config = Ini::toConfig($config['config']);
                 $commodity->price = $config['price'];
-                $commodity->factory_price = 0;
+                //没配置参数的商品成本只能落在这一列（种类/SKU 商品的成本在 config 的 category_cost / sku_cost，
+                //首次同步时写入）。以前这里固定写 0、同步时也从来不写，这类商品的成本就永远是 0。
+                $commodity->factory_price = empty($_config['category'])
+                    ? ($this->shared->remoteCost($shared, $commodity, $remote) ?? 0)
+                    : 0;
                 $commodity->user_price = $config['user_price'];
                 //模板可以顺带把各会员等级的价格一次配好，这是普通加价做不到的
                 if (($config['level_price'] ?? '') !== '') {

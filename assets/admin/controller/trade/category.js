@@ -207,6 +207,11 @@
         });
     }
 
+    // 拖动排序：公共实现在 drag-sort.js（分类管理、商品管理共用，行为保持一模一样）。
+    // 电脑版拖「排序」列旁的手柄；手机版卡片列表长按整张卡片拖动（手柄列在手机版里自动隐藏）
+    const dragEnabled = Boolean(window.MdTableDragSort);
+    let dragSort = null;
+
     table = new Table("/admin/api/category/data", "#category-table");
     table.setUpdate(data => {
         const isStatus = Object.prototype.hasOwnProperty.call(data, 'status');
@@ -241,6 +246,29 @@
         submit();
     });
     table.setTree(3);
+    table.onComplete(() => dragSort?.sync());
+    if (dragEnabled) {
+        dragSort = MdTableDragSort.attach({
+            table,
+            selector: '#category-table',
+            namespace: namespace + 'Drag',
+            url: '/admin/api/category/reorder',
+            tree: true,
+            isActive: () => controllerActive,
+            hint: '按住拖动，调整同级分类的顺序',
+            singleText: '这一层级下只有这一个分类，不需要排序',
+            // 按名称搜索、按状态筛选时，列表里的同级分类不完整，拖了会把没显示的那几个的顺序写乱
+            blockedReason: () => {
+                if (String(table?.queryParams?.['search-name'] ?? '').trim() !== '') {
+                    return '正在按名称搜索，列表不完整，请先清空搜索再拖动排序';
+                }
+                if (String(table?.getState?.()?.value ?? '') !== '') {
+                    return '正在按状态筛选，列表不完整，请切到「全部」再拖动排序';
+                }
+                return '';
+            }
+        });
+    }
     table.setColumns([
         {checkbox: true},
         {field: 'icon', title: '', type: "image", style: "border-radius:25%;", width: 28},
@@ -254,7 +282,9 @@
                 return ownerId === 0 ? String(value ?? '') : escapeHtml(value);
             }
         }
-        , {field: 'sort', title: '排序(越小越前)', sort: true, type: "input", reload: true}
+        , ...(dragEnabled ? [MdTableDragSort.column()] : [])
+        //排序：拖动左侧手柄，或直接改数字（越小越前）。分类树始终按真实顺序展示，所以不再提供表头升降序切换
+        , {field: 'sort', title: '排序(越小越前)', type: "input", reload: true}
         , {
             field: 'share_url', title: '推广链接', type: "button", buttons: [
                 {
@@ -309,6 +339,8 @@
     ]);
     table.setState("status", "_common_status");
 
+    //分类是树：分页会把父级不在同一页的子分类整行丢掉，本身也没有意义，全量展示
+    table.disablePagination();
     table.render();
 
 
@@ -362,6 +394,8 @@
     function destroy() {
         if (!controllerActive) return;
         controllerActive = false;
+        dragSort?.destroy();
+        dragSort = null;
         $('.btn-app-create, .btn-app-del, .start, .stop').off(namespace);
         $(document).off('pjax:beforeReplace' + namespace);
         if (table && !table.isDestroyed && typeof table.destroy === 'function') table.destroy();

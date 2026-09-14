@@ -331,6 +331,8 @@ class Shared implements \App\Service\Shared
             //SharedStock 协议返回的就是一棵树，与老版本 item() 同形，识别逻辑共用一份。
             //原来盲取第一个 child，对方没按 code 过滤时会静默接错商品。
             $b = $this->unwrapRemoteItem($a, $code);
+            //这棵树的行同样是上游自己的成本列（老版 SharedStock 整行出站），不是拿货价
+            unset($b['factory_price']);
 
             if (!array_key_exists('name', $b) && !array_key_exists('price', $b)) {
                 //$code 是**上游的商品编号**：这条异常会出现在免登录的商品详情页和
@@ -358,6 +360,9 @@ class Shared implements \App\Service\Shared
         //响应形状就是协议代次的**免费探针**：树 = ≤3.1.1，单商品 = 3.1.2+。
         //认不出形状时什么都不记——宁可下次多探一次，也不能记错代次去走死路。
         if ($a !== $raw) {
+            //≤3.1.1 的 item() 实为整行 toArray 的分类树：这里的 factory_price 是**上游自己的成本列**，
+            //不是它按我们身份算出来的拿货价，不能当进货成本用。拿掉后 remoteCost() 会改问 inventory()。
+            unset($a['factory_price']);
             $this->rememberProtocol($shared, self::PROTOCOL_LEGACY);
         } elseif (array_key_exists('name', $raw) || array_key_exists('price', $raw)) {
             $this->rememberProtocol($shared, self::PROTOCOL_MODERN);
@@ -787,6 +792,31 @@ class Shared implements \App\Service\Shared
         return $this->AdjustmentAmount((int)$commodity->shared_premium_type, (float)$commodity->shared_premium, $amount);
     }
 
+    /**
+     * 非种类商品在上游的拿货成本，已按汇率换算。算不出来返回 null，调用方保持原值。
+     *
+     * 优先用 item() 里的 factory_price：3.6.5 起上游 item() 按请求方身份现算（calcAmount，
+     * 与 inventory() 同口径，#842），不用多发请求。更早的上游 item() 不带这个字段，就改问
+     * inventory()——它从老协议起就一直按请求方身份现算拿货价，所有版本都有，只是多一次请求。
+     * （≤3.1.1 与 SharedStock 协议里的 factory_price 是上游自己的成本列，已在 item() 里剔掉。）
+     */
+    public function remoteCost(\App\Model\Shared $shared, Commodity $commodity, array $remoteItem): ?string
+    {
+        $value = $remoteItem['factory_price'] ?? null;
+        if (!is_numeric($value)) {
+            try {
+                $value = $this->inventory($shared, $commodity)['factory_price'] ?? null;
+            } catch (\Throwable $e) {
+                return null;
+            }
+        }
+        //列是 decimal(10,2) UNSIGNED；汇率换算后可能出现科学计数法，先规整成定点小数再交给 bcmath
+        if (!is_numeric($value) || !is_finite((float)$value) || (float)$value < 0 || (float)$value > 99999999.99) {
+            return null;
+        }
+        return (new Decimal(sprintf('%.6F', (float)$value), 2))->getAmount();
+    }
+
     public function syncRemoteItem(Commodity|int $commodity): bool
     {
         if (is_int($commodity)) {
@@ -840,6 +870,19 @@ class Shared implements \App\Service\Shared
 
         if (!empty($_config['category'])) {
             $base['config']['category_cost'] = $_config['category'];
+        }
+
+        //没配置参数（非种类）商品的进货成本。种类/SKU 商品的成本就是上面写进 config 的
+        //category_cost / sku_cost，而没配置参数的商品成本只能落在 factory_price 这一列——
+        //以前这里从来不写、导入时又固定写 0，这类商品的成本就永远是 0。
+        //成本是上游的事实而不是加价，不受加价模板影响；但价格同步和配置同步都关着，
+        //说明站长要自己管，这里就不动它。
+        if (empty($_config['category'])
+            && ((int)$commodity->shared_amount_sync === 1 || (int)$commodity->shared_config_sync === 1)) {
+            $cost = $this->remoteCost($shared, $commodity, $remoteItem);
+            if ($cost !== null) {
+                $commodity->factory_price = $cost;
+            }
         }
 
         if ($priceSyncable && $commodity->shared_amount_sync === 1) {

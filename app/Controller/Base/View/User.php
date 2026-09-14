@@ -95,6 +95,8 @@ abstract class User extends \App\Controller\Base\User
             }
 
             $data['static'] = "/app/View/User/Theme/" . $theme;
+            //让 Helper::themeUrl() 跟随这次真正渲染的主题（会员中心可能不是商城主题），否则资源会指到别的主题目录
+            \App\Util\Context::set(\App\Util\Helper::CURRENT_THEME, $theme);
 
             $domain = Client::getDomain();
             $business = Business::query()->where("subdomain", $domain)->first() ?? Business::query()->where("topdomain", $domain)->first();

@@ -25,6 +25,12 @@ class Helper
      */
     const TYPE_THEME = 2;
 
+    /**
+     * 当前正在渲染的前台主题（由 Base\View\User::theme() 写入 Context）。
+     * 会员中心用的是 user_center_theme / user_center_mobile_theme，和商城主题可能不同。
+     */
+    const CURRENT_THEME = "CURRENT_USER_THEME";
+
 
     /**
      * 获取主题目录所在的URL地址
@@ -33,11 +39,16 @@ class Helper
      */
     public static function themeUrl(string $path, bool $debug = false): string
     {
-        $mobile = \App\Model\Config::get("user_mobile_theme");
-        $pc = \App\Model\Config::get("user_theme");
-        $theme = Client::isMobile() ? $mobile : $pc;
-        if ($theme == "0") {
-            $theme = $pc;
+        //优先跟随「当前正在渲染的主题」：会员中心页面用 user_center_theme，和商城主题可能不同，
+        //只认商城主题会把会员中心模板里的资源指到另一套主题目录（404 + MIME 报错）。渲染上下文缺失时才退回商城主题。
+        $theme = (string)(Context::get(self::CURRENT_THEME) ?? "");
+        if ($theme === "" || $theme === "0") {
+            $mobile = \App\Model\Config::get("user_mobile_theme");
+            $pc = \App\Model\Config::get("user_theme");
+            $theme = Client::isMobile() ? $mobile : $pc;
+            if ($theme == "0") {
+                $theme = $pc;
+            }
         }
         return "/app/View/User/Theme/" . $theme . "/{$path}?v=" . Theme::getConfig($theme)["info"]["VERSION"] . (!$debug ? "" : "&debug=" . Str::generateRandStr(16));
     }

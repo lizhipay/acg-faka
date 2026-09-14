@@ -288,6 +288,8 @@ class Commodity extends Manage
         $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
         $get->setWhere($map);
         $get->setOrderBy(...$this->query->getOrderBy($map, "sort", "asc"));
+        //排序值相同（绝大多数商品都是 0）时按 id 定先后：分页才不会漏行重行，拖动排序也要以这个顺序为准（见 reorder()）
+        $get->addOrderBy("id", "asc");
 
         $data = $this->query->get($get, function (Builder $builder) use ($map) {
             if (isset($map['display_scope'])) {
@@ -657,6 +659,103 @@ class Commodity extends Manage
         }
         unset($impact['commodity_ids'], $impact['deletable_ids'], $impact['missing_ids']);
         return $this->json(data: $impact);
+    }
+
+    /**
+     * 拖动排序：前端提交「当前这一页商品」拖完之后的顺序。
+     *
+     * 商品列表是分页 + 可筛选的：只重排这一页、给它们写 0..n-1，会和其它页的排序值撞号，全站顺序就乱了。
+     * 这里把全部商品按列表同一口径（sort 升序、id 升序）排成一条全局顺序，这一页的商品在里面占着若干个位置——
+     * **位置集合不变，只把这几个商品按新顺序填回这些位置**，其余商品原地不动；再把全局顺序落成连续的排序值。
+     * 分页、按分类 / 名称 / 状态 / 对接平台筛选时都成立。
+     *
+     * 第一次拖时大多数商品排序值都是 0（先后靠 id 兜底），要整体落一次号；之后每次只改这一页里真正换了位置的商品。
+     * 商品变更钩子**只报位置真的变了的商品**：一次性落号只是把隐式顺序写成显式数字，先后没变——
+     * 事件广播中心的指纹含 sort，全报的话下游会收到整站商品的变更事件（下游自动货源接入并不使用 sort）。
+     *
+     * @return array
+     * @throws JSONException
+     */
+    public function reorder(): array
+    {
+        $ids = $this->commodityIds($_POST['list'] ?? []);
+        if (count($ids) < 2) {
+            throw new JSONException('至少需要两个商品才能调整顺序');
+        }
+
+        $result = DB::transaction(function () use ($ids): array {
+            $rows = \App\Model\Commodity::query()->orderBy('sort')->orderBy('id')->lockForUpdate()->get(['id', 'sort']);
+            $order = [];
+            $current = [];
+            foreach ($rows as $row) {
+                $order[] = (int)$row->id;
+                $current[(int)$row->id] = (int)$row->sort;
+            }
+            //sort 列是 smallint unsigned，连续编号最多放得下 65536 个
+            if (count($order) > 65536) {
+                throw new JSONException('商品数量超过 65536 个，排序值放不下，无法拖动排序');
+            }
+
+            $position = array_flip($order);
+            $slots = [];
+            foreach ($ids as $id) {
+                if (!isset($position[$id])) {
+                    throw new JSONException('部分商品已不存在，请刷新后再调整顺序');
+                }
+                $slots[] = $position[$id];
+            }
+            sort($slots, SORT_NUMERIC);
+
+            $moved = [];
+            foreach ($slots as $k => $slot) {
+                if ($order[$slot] !== $ids[$k]) {
+                    $moved[] = $ids[$k];
+                }
+                $order[$slot] = $ids[$k];
+            }
+            if ($moved === []) {
+                //顺序和库里一致（比如别人刚排过同样的顺序）：什么都不写，把现有排序值还给前端显示
+                $sorts = [];
+                foreach ($ids as $id) {
+                    $sorts[$id] = $current[$id];
+                }
+                return ['moved' => [], 'updated' => 0, 'sorts' => $sorts];
+            }
+
+            $updates = [];
+            foreach ($order as $index => $id) {
+                if ($current[$id] !== $index) {
+                    $updates[$id] = $index;
+                }
+            }
+            //批量写：CASE 里只有整数，没有外部字符串，不存在注入面
+            foreach (array_chunk($updates, 500, true) as $chunk) {
+                $case = 'CASE `id`';
+                foreach ($chunk as $id => $sort) {
+                    $case .= ' WHEN ' . (int)$id . ' THEN ' . (int)$sort;
+                }
+                $case .= ' END';
+                \App\Model\Commodity::query()->whereIn('id', array_keys($chunk))->update(['sort' => DB::raw($case)]);
+            }
+
+            $newPosition = array_flip($order);
+            $sorts = [];
+            foreach ($ids as $id) {
+                $sorts[$id] = $newPosition[$id];
+            }
+            return ['moved' => $moved, 'updated' => count($updates), 'sorts' => $sorts];
+        });
+
+        if ($result['moved'] !== []) {
+            //hook() 的变参按引用接收，必须先落成变量
+            $ebIds = $result['moved'];
+            $ebAction = 'sort';
+            $ebBefore = null;
+            hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $ebIds, $ebAction, $ebBefore);
+            ManageLog::log($this->getManage(), "[拖动排序]商品，调整 " . count($result['moved']) . " 个，写入排序值 {$result['updated']} 个");
+        }
+
+        return $this->json(200, '排序已保存', ['sorts' => $result['sorts']]);
     }
 
     /**

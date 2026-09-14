@@ -342,7 +342,9 @@ class Category extends Manage
         $map = $_POST;
         $get = new Get(\App\Model\Category::class);
         $get->setWhere($map);
-        $get->setOrderBy(...$this->query->getOrderBy($map, "sort", "asc"));
+        //分类是树、支持拖动排序：列表必须永远按真实顺序（sort 升序）出，不接受前端改排序方向——
+        //否则拖动时看到的顺序和写进库的顺序对不上。
+        $get->setOrderBy("sort", "asc");
         $data = $this->query->get($get, function (Builder $builder) use ($map) {
             if (isset($map['user_id']) && $map['user_id'] > 0) {
                 $builder = $builder->where("owner", $map['user_id']);
@@ -355,11 +357,66 @@ class Category extends Manage
             }]);
         });
 
+        //分类不分页，全量在内存里排（代价可以忽略）：
+        //1. sort 相同的分类数据库不保证先后，每次刷新可能换位置，拖动排序据此算出的新顺序也跟着不稳定——按 id 补一个稳定次序；
+        //2. 按「父级在前、下级紧跟其后」的深度优先顺序出。电脑版树形表格自己会按层级重排行，但手机版卡片列表是按返回顺序直接画的：
+        //   不这样排，下级会跑到父级前面、和别的分类穿插，长按拖动时同级也不挨在一起。
+        $data['list'] = $this->treeOrder($data['list']);
+
         foreach ($data['list'] as &$item) {
             $item['share_url'] = Client::getUrl() . "/cat/{$item['id']}";
         }
 
         return $this->json(data: $data);
+    }
+
+    /**
+     * 分类树按深度优先排列：同级按 sort、id 升序，每个分类后面紧跟它的全部下级。
+     * 父级不在结果里的（按名称 / 状态筛掉了，或数据本身有问题）当顶级处理；互为父级的脏数据补在最后，不让它从列表里消失。
+     * @param array $rows
+     * @return array
+     */
+    private function treeOrder(array $rows): array
+    {
+        usort($rows, static fn(array $a, array $b): int
+            => [(int)$a['sort'], (int)$a['id']] <=> [(int)$b['sort'], (int)$b['id']]);
+
+        $present = [];
+        foreach ($rows as $row) {
+            $present[(int)$row['id']] = true;
+        }
+
+        $roots = [];
+        $children = [];
+        foreach ($rows as $row) {
+            $pid = (int)($row['pid'] ?? 0);
+            if ($pid > 0 && $pid !== (int)$row['id'] && isset($present[$pid])) {
+                $children[$pid][] = $row;
+            } else {
+                $roots[] = $row;
+            }
+        }
+
+        $ordered = [];
+        $visited = [];
+        $walk = static function (array $row) use (&$walk, &$ordered, &$visited, $children): void {
+            $id = (int)$row['id'];
+            if (isset($visited[$id])) {
+                return;
+            }
+            $visited[$id] = true;
+            $ordered[] = $row;
+            foreach ($children[$id] ?? [] as $child) {
+                $walk($child);
+            }
+        };
+        foreach ($roots as $row) {
+            $walk($row);
+        }
+        foreach ($rows as $row) {
+            $walk($row);
+        }
+        return $ordered;
     }
 
 
@@ -454,6 +511,64 @@ class Category extends Manage
 
         ManageLog::log($this->getManage(), "[新增/修改]商品分类");
         return $this->json(200, '（＾∀＾）保存成功');
+    }
+
+
+    /**
+     * 拖动排序：前端把「同一父级下的全部同级分类」按新顺序整组提交，按顺序重写 sort（0,1,2…）。
+     *
+     * 只收**完整的一组同级分类**：缺了、多了、混进别的父级或别的创建者一律拒绝。前端看到的列表
+     * 可能已经过期（另一个管理员刚新增/删除/挪动了分类），这时宁可让它刷新重来——只重写一部分
+     * 同级的 sort，会和没提交的那几个撞号，前台顺序就乱了。
+     *
+     * @return array
+     * @throws JSONException
+     */
+    public function reorder(): array
+    {
+        $ids = $this->categoryIds($_POST['list'] ?? []);
+        if (count($ids) < 2) {
+            throw new JSONException('至少需要两个同级分类才能调整顺序');
+        }
+
+        $rows = \App\Model\Category::query()->whereIn('id', $ids)->get(['id', 'pid', 'owner']);
+        if ($rows->count() !== count($ids)) {
+            throw new JSONException('部分分类已不存在，请刷新后再调整顺序');
+        }
+
+        $owner = (int)$rows->first()->owner;
+        $pid = (int)$rows->first()->pid;
+        foreach ($rows as $row) {
+            if ((int)$row->owner !== $owner || (int)$row->pid !== $pid) {
+                throw new JSONException('只能在同一个父级分类下调整顺序');
+            }
+        }
+
+        //顶级分类的 pid 历史上有 NULL 和 0 两种写法（save() 现在写 NULL），两种都算顶级
+        $siblingQuery = \App\Model\Category::query()->where('owner', $owner);
+        if ($pid > 0) {
+            $siblingQuery->where('pid', $pid);
+        } else {
+            $siblingQuery->where(function ($query) {
+                $query->whereNull('pid')->orWhere('pid', 0);
+            });
+        }
+        $siblingIds = array_map('intval', $siblingQuery->pluck('id')->all());
+        $submitted = $ids;
+        sort($siblingIds, SORT_NUMERIC);
+        sort($submitted, SORT_NUMERIC);
+        if ($siblingIds !== $submitted) {
+            throw new JSONException('同级分类已发生变化，请刷新后再调整顺序');
+        }
+
+        DB::transaction(function () use ($ids) {
+            foreach ($ids as $position => $id) {
+                \App\Model\Category::query()->where('id', $id)->update(['sort' => $position]);
+            }
+        });
+
+        ManageLog::log($this->getManage(), "[拖动排序]商品分类，同级 " . count($ids) . " 个");
+        return $this->json(200, '排序已保存');
     }
 
 
