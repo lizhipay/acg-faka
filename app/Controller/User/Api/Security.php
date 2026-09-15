@@ -44,6 +44,11 @@ class Security extends User
             throw new JSONException("不支持的结算方式");
         }
 
+        //wallet_address 是 varchar(64)，超长直接入库会触发 MySQL 1406→500。提前给出干净的业务错误。
+        if (mb_strlen((string)$user->wallet_address) > 64) {
+            throw new JSONException("钱包地址过长");
+        }
+
         $plugin = (array)$this->request->post("plugin");
 
         $fields = [
@@ -86,7 +91,9 @@ class Security extends User
                 throw new JSONException('非法字段名#0');
             }
 
-            if (!preg_match('/^[a-zA-Z0-9_]+$/', $key)) {
+            //必须是合法列名标识符（字母或下划线开头，不允许数字开头）。这样纯数字键（plugin 传标量时
+            //(array) 强转出的 "0"）会被干净拒绝，而不是走到 $user->{'0'} 生成非法列名→PDOException→500。
+            if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $key)) {
                 throw new JSONException('非法字段名#1');
             }
 

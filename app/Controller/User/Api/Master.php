@@ -6,17 +6,22 @@ namespace App\Controller\User\Api;
 use App\Controller\Base\API\User;
 use App\Entity\Query\Get;
 use App\Entity\Query\Save;
+use App\Interceptor\Store;
 use App\Interceptor\UserSession;
 use App\Interceptor\Waf;
 use App\Model\UserCategory;
 use App\Model\UserCommodity;
 use App\Service\Query;
+use App\Util\Throttle;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
 use Kernel\Waf\Filter;
 
-#[Interceptor([Waf::class, UserSession::class], Interceptor::TYPE_API)]
+//Master 是分站主(转售主站商品)配置售价/展示的接口，此前漏了店铺门禁：任何登录用户都能写
+//user_commodity/user_category 并触发 setCommodityAll* 全表遍历写。补 Store（=已开通店铺，与
+//Business::saveConfig 的 businessValidation 同口径；不用 Business 是因它还要 supplier，会误伤分站主）。
+#[Interceptor([Waf::class, UserSession::class, Store::class], Interceptor::TYPE_API)]
 class Master extends User
 {
     #[Inject]
@@ -104,12 +109,16 @@ class Master extends User
         $userId = $this->getUser()->id;
 
         if ($id == 0 || !($userCategory = UserCategory::query()->where("user_id", $userId)->find($id))) {
-            $userCategory = new UserCategory();
-            $userCategory->user_id = $userId;
-            $userCategory->category_id = $categoryId;
-            $userCategory->status = 0;
-            $userCategory->save();
-            return $this->json(200, "已生效");
+            //按 (user_id, category_id) 复用已有记录，避免 id=0 但记录已存在时 new+save 撞唯一键→500
+            $userCategory = UserCategory::query()->where("user_id", $userId)->where("category_id", $categoryId)->first();
+            if (!$userCategory) {
+                $userCategory = new UserCategory();
+                $userCategory->user_id = $userId;
+                $userCategory->category_id = $categoryId;
+                $userCategory->status = 0;
+                $userCategory->save();
+                return $this->json(200, "已生效");
+            }
         }
 
         $userCategory->status = $userCategory->status == 0 ? 1 : 0;
@@ -122,6 +131,10 @@ class Master extends User
      */
     public function setCategoryAllStatus(): array
     {
+        //全表遍历写：限流防止被反复调用堆大 user_category 表 / 压 DB（写放大 DoS）
+        if (Throttle::tooMany("master:bulk:" . $this->getUser()->id, 20, 60)) {
+            throw new JSONException("操作过于频繁，请稍后再试");
+        }
         $status = (int)$_POST['status'] == 0 ? 0 : 1;
         $category = \App\Model\Category::query()->where("owner", 0)->where("status", 1)->get();
 
@@ -236,12 +249,16 @@ class Master extends User
         $userId = $this->getUser()->id;
 
         if ($id == 0 || !($userCommodity = UserCommodity::query()->where("user_id", $userId)->find($id))) {
-            $userCommodity = new UserCommodity();
-            $userCommodity->user_id = $userId;
-            $userCommodity->commodity_id = $commodityId;
-            $userCommodity->status = 0;
-            $userCommodity->save();
-            return $this->json(200, "已生效");
+            //按 (user_id, commodity_id) 复用已有记录：id=0 但该商品已配置过时，盲目 new+save 会撞唯一键→500
+            $userCommodity = UserCommodity::query()->where("user_id", $userId)->where("commodity_id", $commodityId)->first();
+            if (!$userCommodity) {
+                $userCommodity = new UserCommodity();
+                $userCommodity->user_id = $userId;
+                $userCommodity->commodity_id = $commodityId;
+                $userCommodity->status = 0;
+                $userCommodity->save();
+                return $this->json(200, "已生效");
+            }
         }
 
         $userCommodity->status = $userCommodity->status == 0 ? 1 : 0;
@@ -255,6 +272,10 @@ class Master extends User
      */
     public function setCommodityAllStatus(): array
     {
+        //全表遍历写：限流防止被反复调用堆大 user_commodity 表 / 压 DB（写放大 DoS）
+        if (Throttle::tooMany("master:bulk:" . $this->getUser()->id, 20, 60)) {
+            throw new JSONException("操作过于频繁，请稍后再试");
+        }
         $status = (int)$_POST['status'] == 0 ? 0 : 1;
         $categoryId = (int)$_POST['category_id'];
         $commodity = \App\Model\Commodity::query()->where("owner", 0)->where("status", 1);
@@ -286,6 +307,10 @@ class Master extends User
      */
     public function setCommodityAllPremium(): array
     {
+        //全表遍历写：限流防止被反复调用堆大 user_commodity 表 / 压 DB（写放大 DoS）
+        if (Throttle::tooMany("master:bulk:" . $this->getUser()->id, 20, 60)) {
+            throw new JSONException("操作过于频繁，请稍后再试");
+        }
         $categoryId = (int)$_POST['category_id'];
         $premium = (int)$_POST['premium'];
         $rounding = (int)($_POST['rounding'] ?? UserCommodity::ROUNDING_NONE);

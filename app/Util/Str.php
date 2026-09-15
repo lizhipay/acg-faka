@@ -112,7 +112,15 @@ class Str
      */
     public static function generateTradeNo()
     {
-        return mt_rand(100, 999) . date("ymdHis", time()) . mt_rand(100, 999);
+        //全随机 18 位（CSPRNG）。旧实现是 mt_rand(3)+明文时间戳(12)+mt_rand(3)：熵只有 ~19.3bit、
+        //且下单时间明文可读，配合匿名 order/state 可按时间窗枚举订单号→拉卡密。改为 random_int 生成，
+        //去掉时间戳、不再用非密码学的 mt_rand。仍是 18 位纯数字（兼容 ^\d{18}$ 匹配与支付网关回传），
+        //首位取 1-9 避免前导零；trade_no 有唯一索引，极小概率撞号时入库失败、上层照旧重试/报错。
+        $tradeNo = (string)random_int(1, 9);
+        for ($i = 0; $i < 17; $i++) {
+            $tradeNo .= (string)random_int(0, 9);
+        }
+        return $tradeNo;
     }
 
     /**

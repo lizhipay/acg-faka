@@ -66,6 +66,12 @@ final class RichHtml
             . '.acg-rich :where(a){text-decoration:underline;text-underline-offset:2px}'
             . '</style>';
 
+        //商户描述里自带的 <style> 会经 IgnoreStyleTagFilter 原样放行 → 全页 CSS 注入（篡改/钓鱼浮层/
+        //外连信标）。展示层统一剥掉描述里的 <style>（含其占位形态），只保留上面这套可信排版样式；
+        //富文本标签（加粗/列表/图片/链接等）不受影响。
+        $html = (string)preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $html);
+        $html = (string)preg_replace('/\[STYLE-TAG\].*?\[\/STYLE-TAG\]/is', '', $html);
+
         return $style . '<div class="acg-rich">' . $html . '</div>';
     }
 

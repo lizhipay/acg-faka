@@ -76,14 +76,23 @@ class Upload implements \App\Service\Upload
      * @param string $path
      * @return void
      */
-    public function remove(string $path): void
+    public function remove(string $path, ?int $userId = null): void
     {
         if (!is_file(BASE_PATH . $path)) {
             return;
         }
 
         $hash = md5_file(BASE_PATH . $path);
-        \App\Model\Upload::query()->where("hash", $hash)->delete(); //删除数据库
+        $query = \App\Model\Upload::query()->where("hash", $hash);
+        if ($userId !== null) {
+            //按归属删除：全局去重(add())可能把 $path 换成他人/管理员的文件，若不校验归属，
+            //传一张同内容的图再触发缩略失败就能删掉别人的文件。只有确属本人的记录才允许删。
+            $query->where("user_id", $userId);
+            if (!$query->exists()) {
+                return; //不是自己的记录：既不删库、也不碰磁盘文件
+            }
+        }
+        $query->delete(); //删除数据库
         File::remove(BASE_PATH . $path);
     }
 
@@ -161,7 +170,7 @@ class Upload implements \App\Service\Upload
 
         //最后一个值必定是后缀
         $fix = $exp[count($exp) - 1];
-        if (!in_array(strtolower($fix), $type)) return '不支持该后缀的文件:' . $type;
+        if (!in_array(strtolower($fix), $type)) return '不支持的文件后缀「' . $fix . '」，仅支持：' . implode('、', $type);
 
         //文件大小限制
         $upload_size = $upload['size'] / 1024;
@@ -177,7 +186,9 @@ class Upload implements \App\Service\Upload
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
-        $names = date("YmdHis") . mt_rand(1000000, 9999999) . '.' . $array['fix'];
+        //随机文件名(CSPRNG)。旧实现是明文时间戳+mt_rand(7位)，上传时刻可推、搜索空间仅 900 万且非密码学随机，
+        //公开可读的上传物(头像/封面/凭证)因此可被按时间枚举。与工单上传一致改用 random_bytes。
+        $names = bin2hex(random_bytes(16)) . '.' . $array['fix'];
         if ($file_name != '') {
             $uniqueName = $dir . '/' . $file_name;
         } else {

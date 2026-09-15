@@ -153,6 +153,12 @@ class Order implements \App\Service\Order
             throw new JSONException("商品不存在#1");
         }
 
+        //数量必须为正。虽然 trade() 已有 num<=0 守卫，但 valuation() 也被前台询价/插件下单等路径调用，
+        //负数量会算出负价（前台展示 -6.66，且负价会命中 amount<=0 分支→免支付直发），这里统一兜底。
+        if ($num <= 0) {
+            throw new JSONException("至少购买1个");
+        }
+
         $commodity = clone $commodity;
         //会员价留空(0)时回退零售价，避免"忘填会员价 = 登录用户 0 元白嫖"
         $price = (new Decimal($group ? $commodity->memberPrice() : $commodity->price, 2));

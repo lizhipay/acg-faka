@@ -69,8 +69,13 @@ class Index extends User
         \App\Util\Schema::ensureCommodityTags();
 
         $keywords = (string)$_GET['keywords'];
+        //本方法走 $_GET 直连 paginate（未过 Get::setPaginate 的钳制）：limit 为负会让 paginate 生成
+        //take(-N) 非法 SQL→500（免登录可打）。limit=0 是「返回全部」的既有约定，负数归 0(与既有行为一致、不新增面)。
         $limit = (int)$_GET['limit'];
-        $page = (int)$_GET['page'];
+        if ($limit < 0) {
+            $limit = 0;
+        }
+        $page = max(1, (int)$_GET['page']);
         $categoryId = $_GET['categoryId'];
 
         $commodity = Commodity::query()
@@ -289,6 +294,9 @@ class Index extends User
         /**
          * @var Commodity $commodity
          */
+        //item_id 必须是标量：传数组会让 find([]) 返回集合，后面 ->status 抛异常→500（免登录可打）。
+        //归一化回 $map，供下方闭包 where("commodity_id",...) 与 shared 分支转发复用。
+        $map['item_id'] = is_scalar($map['item_id'] ?? null) ? (int)$map['item_id'] : 0;
         $commodity = Commodity::with(['shared'])->find($map['item_id']);
         $limit = $map['limit'] ?? 10;
 
@@ -396,6 +404,12 @@ class Index extends User
     function stock(): array
     {
         $commodity = Commodity::with(['shared'])->find((int)$this->request->post("item_id"));
+
+        //getItemStock 的入参不可空，商品不存在时传 null 会抛 TypeError 落到通用兜底=500。
+        //与同控制器 valuation() 一致，改为返回干净的业务错误（也避免免登录高频触发 500 与日志噪声）。
+        if (!$commodity) {
+            throw new JSONException("商品不存在");
+        }
 
         $_race = (string)$this->request->post("race");
         $_skus = (array)$this->request->post("sku") ?: [];

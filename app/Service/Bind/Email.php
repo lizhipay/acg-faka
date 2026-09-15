@@ -383,6 +383,8 @@ class Email implements \App\Service\Email
 
         if (Session::has($key)) {
             if (Session::get($key)['time'] + 60 > time()) {
+                //与短信版一致：60 秒冷却。原为空块=形同虚设，可对任意邮箱无限触发验证邮件(邮件轰炸/SMTP 成本)。
+                throw new JSONException("验证码发送频繁，请稍后再试");
             }
         }
 

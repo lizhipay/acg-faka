@@ -4,6 +4,8 @@
     let controllerActive = true;
     const mobileAdminEnabled = () => Boolean(window.AdminMobile && window.AdminMobile.isEnabled && window.AdminMobile.isEnabled());
     const escapeHtml = value => $('<div>').text(String(value ?? '')).html();
+    //属性上下文转义（escapeHtml 走 text()->html() 不编码引号，拼进 src="…" 会被属性突破）
+    const escapeAttr = value => String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const commodityDeleteNames = (values, fallback) => Array.isArray(values) && values.length
         ? values.map(escapeHtml).join(i18n('、'))
         : escapeHtml(fallback || i18n('所选商品'));
@@ -907,7 +909,7 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
         , {
             field: 'name', title: '商品', formatter: (val, item) => {
                 const cover = item.cover
-                    ? `<img src="${item.cover}" data-id="${item.id}" class="render-image md-commodity-cell__cover" alt="${i18n('放大图片')}">`
+                    ? `<img src="${escapeAttr(item.cover)}" data-id="${item.id}" class="render-image md-commodity-cell__cover" alt="${i18n('放大图片')}">`
                     : `<span class="md-commodity-cell__cover md-commodity-cell__cover--ph"><i class="fa-duotone fa-regular fa-image"></i></span>`;
                 const path = Array.isArray(item.category_path) ? item.category_path : [];
                 const sep = `<span class="md-commodity-cell__cat-sep">›</span>`;

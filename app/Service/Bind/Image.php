@@ -84,7 +84,9 @@ class Image implements \App\Service\Image
             case 'ico':
                 return $imagePath;
             default:
-                return false;
+                //不支持缩略的类型(如 bmp/tiff)不算失败：与上面缺 GD 扩展、ico 等分支一致返回原图路径。
+                //返回 false 会被上传控制器当作「缩略失败」→删除该文件，配合全局去重可删到他人文件。
+                return $imagePath;
         }
 
         if (!$source) {

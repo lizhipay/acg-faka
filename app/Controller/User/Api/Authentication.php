@@ -12,8 +12,10 @@ use App\Service\Email;
 use App\Service\Sms;
 use App\Service\UserSSO;
 use App\Util\Captcha;
+use App\Util\Client;
 use App\Util\Date;
 use App\Util\Str;
+use App\Util\Throttle;
 use App\Util\Validation;
 use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
@@ -298,6 +300,13 @@ class Authentication extends User
     {
         hook(Hook::USER_API_AUTH_LOGIN_BEGIN);
 
+        //登录爆破/撞库限流：验证码已改为一次性（见 Captcha::check），此处再加频率闸。
+        //按来源 IP 计数，挡住单一来源的横向喷洒；成功登录后清零。
+        $ip = Client::getAddress();
+        if (Throttle::tooMany("login:ip:{$ip}", 30, 300)) {
+            throw new JSONException("登录尝试过于频繁，请稍后再试");
+        }
+
         $loginVerification = (int)Config::get("login_verification");
 
         if ($loginVerification == 1 && (!isset($_POST['captcha']) || !Captcha::check((int)$_POST['captcha'], "login"))) {
@@ -306,6 +315,13 @@ class Authentication extends User
 
         if (!isset($_POST['username'])) {
             throw new JSONException("用户名输入错误");
+        }
+
+        //按「账号+IP」再加一道，挡住盯着某个账号猛试的爆破（跨 IP 分布式仍靠上面的 IP 闸兜底）
+        $username = (string)$_POST['username'];
+        $userThrottleKey = "login:user:" . md5(strtolower(trim($username))) . ":{$ip}";
+        if (Throttle::tooMany($userThrottleKey, 10, 300)) {
+            throw new JSONException("登录尝试过于频繁，请稍后再试");
         }
 
         //验证密码
@@ -337,6 +353,10 @@ class Authentication extends User
         $remember = (bool)$this->request->post("remember", Filter::BOOLEAN);
 
         $this->sso->loginSuccess($user, $remember);
+
+        //登录成功，清空该 IP / 账号的失败计数，避免影响后续正常登录
+        Throttle::clear("login:ip:{$ip}");
+        Throttle::clear($userThrottleKey);
 
         Captcha::destroy("login");
         return $this->json(200, "登录成功");

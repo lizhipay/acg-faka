@@ -31,6 +31,9 @@ class AgentMember extends User
         $get->setOrderBy(...$this->query->getOrderBy($map, "id", "desc"));
         $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
         $get->setWhere($map);
+        //只允许按「已随列表返回」的非敏感列过滤。否则客户端可用 betweenStart-password / search-salt
+        //之类，把 total 的 0/1 当布尔预言机，逐字符拖出下级用户的密码哈希与盐（离线爆破）。
+        $get->setFilterColumns(["id", "pid", "username", "email", "phone", "qq", "create_time", "status", "balance", "recharge"]);
         $get->setColumn("id", "pid", "username", "email", "phone", "qq", "avatar", "create_time", "status", "balance", "recharge");
         $data = $this->query->get($get, function (Builder $builder) {
             return $builder->where("pid", $this->getUser()->id);

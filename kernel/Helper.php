@@ -354,6 +354,10 @@ if (!function_exists("debug")) {
     function debug(string $message): void
     {
         $path = BASE_PATH . '/runtime.log';
+        //滚动：每个 500 都会追加这里，无上限会被免登录高频请求打满磁盘。超过 20MB 就滚动一份(只留最近一份历史)。
+        if (@filesize($path) > 20 * 1024 * 1024) {
+            @rename($path, $path . '.1');
+        }
         file_put_contents($path, "[" . date("Y-m-d H:i:s", time()) . "]:" . $message . PHP_EOL, FILE_APPEND);
     }
 }

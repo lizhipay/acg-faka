@@ -89,6 +89,17 @@ class Commodity extends User
     {
         $map = $request->post(flags: Filter::NORMAL);
         $user = $this->getUser();
+
+        //cover 会被前台各主题与后台商品列表直接拼进 <img src="…"> / style="url(…)" 等 HTML 属性，
+        //而输入侧净化（HTMLPurifier）不编码引号，商户可存 `x" onerror=…` 突破属性 → 存储型 XSS
+        //（商户→管理员可盗后台会话）。cover 语义就是图片地址，这里按 URL 收窄：剔除会突破属性的
+        //字符（引号/尖括号/反引号/反斜杠/空白/控制符），合法图片地址不含这些。
+        if (isset($map['cover']) && is_string($map['cover'])) {
+            //既会进 src="…"（需拦引号），也会进 style="…url(cover)…"（需拦括号/分号）。合法图片地址
+            //不含这些原始字符（真要用会做 %xx 编码）。一并剔除空白/控制符/尖括号/反引号/反斜杠。
+            $map['cover'] = preg_replace('/[\x00-\x20"\'<>`();\\\\\x7F]+/', '', $map['cover']);
+        }
+
         $id = isset($map['id']) ? (int)$map['id'] : 0;
         $isCreate = $id <= 0;
         $commodity = null;
@@ -110,9 +121,30 @@ class Commodity extends User
             throw new JSONException("商品名称不能为空哦(｡￫‿￩｡)");
         }
 
-        if ((isset($map['price']) && (float)$map['price'] < 0)
-            || (isset($map['user_price']) && (float)$map['user_price'] < 0)) {
-            throw new JSONException("商品单价不能低于0哦(｡￫‿￩｡)");
+        //name 是 varchar(255)：超长直接入库会触发 MySQL 1406→500，提前给干净的业务错误。
+        if (isset($map['name']) && mb_strlen(trim((string)$map['name'])) > 255) {
+            throw new JSONException("商品名称过长，请控制在255字以内");
+        }
+
+        //price/user_price/draft_premium 都是 decimal(10,2) UNSIGNED，取值范围 [0, 99999999.99]。
+        //缺范围校验时，负值(UNSIGNED)或超大值(超精度)都会让 INSERT/UPDATE 报错→未捕获→500。
+        foreach (['price' => '商品单价', 'user_price' => '会员单价', 'draft_premium' => '预选加价'] as $field => $label) {
+            if (isset($map[$field]) && $map[$field] !== '' && ((float)$map[$field] < 0 || (float)$map[$field] > 99999999.99)) {
+                throw new JSONException("{$label}需在 0 ~ 99999999.99 之间哦(｡￫‿￩｡)");
+            }
+        }
+
+        //stock 是有符号 int(负数能入库但语义错=自损);minimum/maximum 是 UNSIGNED(负数→500)。
+        if (isset($map['stock']) && $map['stock'] !== '' && (int)$map['stock'] < 0) {
+            throw new JSONException("库存不能为负数");
+        }
+        $minimum = isset($map['minimum']) && $map['minimum'] !== '' ? (int)$map['minimum'] : null;
+        $maximum = isset($map['maximum']) && $map['maximum'] !== '' ? (int)$map['maximum'] : null;
+        if (($minimum !== null && $minimum < 0) || ($maximum !== null && $maximum < 0)) {
+            throw new JSONException("购买数量限制不能为负数");
+        }
+        if ($minimum && $maximum && $minimum > $maximum) {
+            throw new JSONException("最低购买数量不能大于最大购买数量");
         }
 
         // widget 来自表单的 widget 组件，提交前恒做 encodeURIComponent（防输入清洗层伤 JSON）。
@@ -168,7 +200,26 @@ class Commodity extends User
 
         //解析配置文件
         if (array_key_exists('config', $map) && $map['config'] !== '') {
-            Ini::toArray((string)$map['config']);
+            //顶层 price/user_price 上面已校验非负，但真正决定成交价的是 config 里的 category/wholesale 单价。
+            //只做 Ini::toArray 语法解析、不校验取值，商户就能写负价 → valuation 算出负数金额 → trade() 命中
+            //amount<=0 免支付直发 → 买家 0 元拿卡；若是平台货源商品(shared_id>0)平台还要向上游代付=平台亏损。
+            //故与顶层同口径：category/wholesale/category_wholesale/sku 各价格档一律不得为负。
+            $parsedConfig = Ini::toArray((string)$map['config']);
+            foreach (['category', 'wholesale', 'category_wholesale', 'sku'] as $priceSection) {
+                if (!empty($parsedConfig[$priceSection]) && is_array($parsedConfig[$priceSection])) {
+                    array_walk_recursive($parsedConfig[$priceSection], static function ($value): void {
+                        //空值下游按 0(免费)处理，放行。其余必须是「不小于 0 的数字」：
+                        //只拦负数会漏掉 "abc-100"/"−100"(U+2212)/"- 100"/"--100"/"(+100)" 等畸形串，
+                        //它们能存进去、却在 valuation 里 (float)/Decimal 解析时抛异常→估价 500。
+                        if ($value === '' || $value === null) {
+                            return;
+                        }
+                        if (!is_numeric($value) || (float)$value < 0) {
+                            throw new JSONException("商品价格配置必须是不小于0的数字哦(｡￫‿￩｡)");
+                        }
+                    });
+                }
+            }
         }
 
         //校验会员等级独立配置，脏数据入库会导致登录用户的商品列表整体报错

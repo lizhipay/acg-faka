@@ -80,7 +80,11 @@ class Get
      */
     public function setPaginate(int $page, int $limit = 15): void
     {
-        $this->paginate = [$page, $limit];
+        //钳制分页参数：负数 limit 会让 Laravel forPage 生成 take(-N) 非法 SQL→PDOException→500
+        //（免登录接口如 index/commodity、index/card 可直接触发）；过大 limit 则把整表读进内存。
+        //负数/0 回落默认 15，上限 100（与 CommodityOrder::data 同口径）；page 至少为 1。
+        $limit = $limit > 0 ? min($limit, 100) : 15;
+        $this->paginate = [max(1, $page), $limit];
     }
 
     /**

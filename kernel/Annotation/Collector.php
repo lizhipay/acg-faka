@@ -147,7 +147,12 @@ class Collector
             "int" => (integer)$value,
             "float" => (double)$value,
             "string" => (string)$value,
-            "array" => (array)$value
+            "array" => (array)$value,
+            //类/接口类型（如 Request $request）但请求里带了同名非空参数：不能用请求值构造对象，
+            //回退到 DI/上下文实例。缺 default 时会抛 UnhandledMatchError→500（免登录传 request=1 即可触发）。
+            default => (class_exists($type) || interface_exists($type))
+                ? (Context::has($type) ? Context::get($type) : Di::instance()->make($type))
+                : $value,
         };
     }
 

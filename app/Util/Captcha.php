@@ -178,10 +178,11 @@ class Captcha
         if ($code == 0) {
             return false;
         }
-        if (Session::get($sessionName) != $code) {
-            return false;
-        }
-        return true;
+        //验证码一次性：取出即作废，无论本次校验成败。否则同一个码可被无限次重放——
+        //一次打码即可对登录/注册发起在线爆破（校验失败的分支在销毁之前就返回了）。
+        $stored = Session::get($sessionName);
+        Session::remove($sessionName);
+        return $stored !== null && $stored == $code;
     }
 
     /**

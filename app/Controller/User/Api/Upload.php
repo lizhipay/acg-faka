@@ -78,7 +78,8 @@ class Upload extends User
             $thumbUrl = $this->image->createThumbnail($fileName, $thumbHeight);
             if (!$thumbUrl) {
                 if (is_file($imageFile)) {
-                    $this->upload->remove($fileName);
+                    //按归属删除：$fileName 经全局去重可能已指向他人文件，只删本人的记录+文件
+                    $this->upload->remove($fileName, $this->getUser()->id);
                 }
                 throw new JSONException("图片上传失败，原因：生成缩略图失败");
             }

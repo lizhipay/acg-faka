@@ -29,6 +29,10 @@ class SharedValidation implements InterceptorInterface
     public function handle(int $type): void
     {
         $appId = $this->request->unsafePost("app_id");
+        //app_id 必须是标量：传数组会让 find([]) 返回集合，后续 ->app_key 抛异常→500（免登录可打）
+        if (!is_scalar($appId)) {
+            throw new JSONException("商户ID不存在");
+        }
         $user = User::query()->find($appId);
         if (!$user) {
             throw new JSONException("商户ID不存在");
