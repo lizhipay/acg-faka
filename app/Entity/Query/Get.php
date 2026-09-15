@@ -52,6 +52,19 @@ class Get
     public array $leftJoinWhere = [];
 
     /**
+     * 允许客户端过滤的列白名单。null=不限制（默认，保持既有行为）。
+     *
+     * 一旦设为数组，{@see \App\Service\Bind\Query::get()} 只接受 `<操作符>-<列>` 里列名在此表内的
+     * 客户端过滤条件，其余静默丢弃。用于**匿名/低权限**接口：客户端能任意指定过滤列时，`total`
+     * 的 0/1 就是一个布尔预言机——攻击者用 `search-secret` / `betweenStart-secret` 之类逐字符盲注，
+     * 能把未售卡密的 secret 拖出来。白名单只放行确实要暴露给该接口的非敏感列（如预选预览 draft）。
+     * 注意：只约束来自 {@see setWhere} 的客户端条件，不影响 get() 里服务端自己追加的 append 闭包。
+     *
+     * @var string[]|null
+     */
+    public ?array $filterColumns = null;
+
+    /**
      * @param string $class
      */
     public function __construct(string $class)
@@ -95,6 +108,18 @@ class Get
             }
         }
         $this->where = $map;
+    }
+
+    /**
+     * 限定客户端可过滤的列（白名单）。只影响 {@see setWhere} 带进来的客户端过滤条件，
+     * 不影响 get() 的 append 闭包里服务端追加的条件。匿名/低权限接口用它杜绝任意列盲注预言机。
+     *
+     * @param string[] $columns 允许出现在 `<操作符>-<列>` 里的列名
+     * @return void
+     */
+    public function setFilterColumns(array $columns): void
+    {
+        $this->filterColumns = $columns;
     }
 
     /**

@@ -430,6 +430,10 @@ class Commodity extends Shared
             $get = new Get(Card::class);
             $get->setPaginate((int)$this->request->post("page"), (int)$limit);
             $get->setWhere($map);
+            //与 User/Api/Index::card() 同源：强制 status=0（未售库存），客户端唯一合法过滤是 search-draft
+            //（draft 是本就随列表返回的预览）。不设白名单，search-secret/betweenStart-secret 会让 total 的
+            //0/1 变成布尔预言机，被下游转发上来匿名逐字符拖走上游未售卡密的 secret。故只白名单 draft。
+            $get->setFilterColumns(['draft']);
             $get->setColumn('id', 'draft', 'draft_premium');
 
             $data = $this->query->get($get, function (Builder $builder) use ($map, $commodity) {

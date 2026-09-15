@@ -443,7 +443,10 @@ class Shared implements \App\Service\Shared
 
     public function draftCard(\App\Model\Shared $shared, string $code, array $map = []): array
     {
-        $post = array_merge(["code" => $code], $map);
+        //转发前剔除 draft 以外的 <操作符>-<列> 过滤：预选列表只该按预览内容 draft 搜。否则会把访客构造的
+        //search-secret/betweenStart-secret 原样转发到上游 /shared/commodity/draftCard，成为上游卡密盲注
+        //预言机的跳板（哪怕上游没打补丁，本站也不当放大器）。
+        $post = array_merge(["code" => $code], $this->onlyDraftFilters($map));
 
         //≤3.1.1 的 draftCard 是 `#[Post] string $sharedCode, int $page, int $limit, string $race`
         //四个强类型注入参数，名字和必填性都和今天不一样。四个都补齐，新版本会忽略多出来的。
@@ -455,6 +458,27 @@ class Shared implements \App\Service\Shared
         $card = $this->post($shared->domain . "/shared/commodity/draftCard", $shared->app_id, $shared->app_key, $post);
 
         return SharedCurrency::draftPremiums($this->normalizeDraftCards((array)$card), SharedCurrency::factor($shared));
+    }
+
+    /**
+     * 只保留预选卡列表允许的过滤键：`<操作符>-<列>` 里仅 draft 放行，其余（尤其 secret）一律剔除。
+     * 非过滤键（code/page/limit/race/sku 等）原样保留。与 {@see \App\Service\Bind\Query::get()} 的
+     * 列白名单、{@see \App\Controller\Shared\Commodity::draftCard()} 的 setFilterColumns(['draft']) 同规则。
+     *
+     * @param array $map
+     * @return array
+     */
+    private function onlyDraftFilters(array $map): array
+    {
+        $operators = ['equal', 'search', 'betweenStart', 'betweenEnd'];
+        foreach (array_keys($map) as $key) {
+            $args = explode('-', (string)$key);
+            $len = count($args);
+            if ($len >= 2 && $len <= 3 && in_array($args[0], $operators, true) && $args[1] !== 'draft') {
+                unset($map[$key]);
+            }
+        }
+        return $map;
     }
 
     /**

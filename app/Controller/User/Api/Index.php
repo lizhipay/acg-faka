@@ -303,6 +303,12 @@ class Index extends User
             throw new JSONException("该商品不支持预选");
         }
 
+        //限流：本接口免登录，纵深防御挡住对预选库存的高频枚举/盲注（主防线是下方 setFilterColumns 列白名单）。
+        //阈值给得比订单/卡密查询宽松，正常买家翻页+搜索预选内容够用，脚本化刷库会被拦。
+        if (Throttle::tooMany("draft:ip:" . Client::getAddress(), 60, 60)) {
+            throw new JSONException("请求过于频繁，请稍后再试");
+        }
+
         if ($commodity->shared) {
             $data = $this->shared->draftCard($commodity->shared, $commodity->shared_code, $map);
             //加价算法
@@ -315,6 +321,10 @@ class Index extends User
             $get = new Get(Card::class);
             $get->setPaginate((int)$this->request->post("page"), (int)$limit);
             $get->setWhere($map);
+            //本接口免登录、且强制 status=0（未售库存）。客户端唯一合法的过滤是「搜索可选内容」= search-draft，
+            //draft 是本就随列表返回的预览内容。若放任客户端过滤任意列，search-secret / betweenStart-secret
+            //会把 total 的 0/1 变成布尔预言机，匿名逐字符盲注拖走未售卡密的 secret。故只白名单 draft。
+            $get->setFilterColumns(['draft']);
             $get->setColumn('id', 'draft', 'draft_premium');
 
             $data = $this->query->get($get, function (Builder $builder) use ($map) {
