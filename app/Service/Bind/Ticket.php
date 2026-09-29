@@ -552,6 +552,7 @@ class Ticket implements \App\Service\Ticket
 
     private function visibleCommodityQuery(User $user): Builder
     {
+        \App\Util\Schema::ensureCommodityControl();
         $query = Commodity::query()->where('status', 1);
         $business = Business::get();
 
@@ -568,7 +569,10 @@ class Ticket implements \App\Service\Ticket
                 if ($hidden) {
                     $query->whereNotIn('id', $hidden);
                 }
-                $query->whereIn('owner', [0, (int)$business->user_id]);
+                $query->where(function (Builder $scope) use ($business) {
+                    $scope->where('owner', (int)$business->user_id)
+                        ->orWhere(fn(Builder $master) => $master->where('owner', 0)->where('substation_disable', 0));
+                });
             }
         } elseif ((int)Config::get('substation_display') === 1) {
             $owners = [0];

@@ -1321,11 +1321,37 @@
 :root[data-theme] .ev2-preview-toggle.active { color: var(--md-primary); background: rgba(var(--md-primary-rgb), .1); }
 :root[data-theme] .ev2-mode-toggle { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border: none; background: transparent; color: var(--md-on-surface-med); border-radius: var(--md-radius); font-size: 13px; cursor: pointer; transition: background-color var(--md-dur-fast) var(--md-ease), color var(--md-dur-fast) var(--md-ease); }
 :root[data-theme] .ev2-mode-toggle:hover { background: var(--md-hover-overlay); color: var(--md-primary); }
+:root[data-theme] .ev2-tb svg { display: block; width: 18px; height: 18px; fill: currentColor; }
+:root[data-theme] .ev2-tb[aria-expanded="true"] { color: var(--md-primary); background: rgba(var(--md-primary-rgb), .1); }
+:root[data-theme] .ev2-pop { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; background: var(--md-surface-2); border-bottom: 1px solid var(--md-divider); font-size: 12px; color: var(--md-on-surface-med); }
+:root[data-theme] .ev2-pop[hidden] { display: none; }
+:root[data-theme] .ev2-pop-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+:root[data-theme] .ev2-pop-label { min-width: 56px; }
+:root[data-theme] .ev2-swatch { width: 20px; height: 20px; padding: 0; border: 1px solid var(--md-divider); border-radius: 50%; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35); }
+:root[data-theme] .ev2-swatch:hover { outline: 2px solid var(--md-primary); outline-offset: 1px; }
+:root[data-theme] .ev2-pop-btn { height: 26px; padding: 0 10px; border: 1px solid var(--md-divider); border-radius: var(--md-radius); background: var(--md-surface); color: var(--md-on-surface); font-size: 12px; line-height: 24px; cursor: pointer; }
+:root[data-theme] .ev2-pop-btn:hover { border-color: var(--md-primary); color: var(--md-primary); }
+:root[data-theme] .ev2-pop-picker { width: 30px; height: 24px; padding: 1px; border: 1px solid var(--md-divider); border-radius: 6px; background: var(--md-surface); cursor: pointer; }
+:root[data-theme] .ev2-linkwarn { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; background: rgba(var(--md-warning-rgb), .1); border-bottom: 1px solid rgba(var(--md-warning-rgb), .32); color: var(--md-on-surface); font-size: 12.5px; line-height: 1.6; }
+:root[data-theme] .ev2-linkwarn[hidden] { display: none; }
+:root[data-theme] .ev2-linkwarn.is-ok { background: rgba(var(--md-success-rgb), .1); border-bottom-color: rgba(var(--md-success-rgb), .32); }
+:root[data-theme] .ev2-linkwarn-text { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; }
+:root[data-theme] .ev2-linkwarn-text b { font-weight: 600; }
+:root[data-theme] .ev2-linkwarn-actions { display: flex; flex: 0 0 auto; gap: 6px; }
+:root[data-theme] .ev2-linkwarn-btn { height: 28px; padding: 0 12px; border: 1px solid var(--md-divider); border-radius: var(--md-radius); background: var(--md-surface); color: var(--md-on-surface); font-size: 12px; line-height: 26px; cursor: pointer; }
+:root[data-theme] .ev2-linkwarn-btn.is-primary { border-color: var(--md-primary); background: var(--md-primary); color: var(--md-on-primary); }
+:root[data-theme] .ev2-linkwarn-btn:disabled { opacity: .6; cursor: default; }
+@media (pointer: coarse) {
+    :root[data-theme] .ev2-pop-row { gap: 8px; }
+    :root[data-theme] .ev2-swatch { width: 28px; height: 28px; }
+    :root[data-theme] .ev2-pop-btn { height: 32px; line-height: 30px; }
+    :root[data-theme] .ev2-pop-picker { width: 36px; height: 30px; }
+}
 
 /* body: split source | preview */
 :root[data-theme] .ev2-body { display: flex; align-items: stretch; }
 :root[data-theme] .ev2-cm { position: relative; flex: 1 1 50%; min-width: 0; border-right: 1px solid var(--md-divider); }
-:root[data-theme] .ev2-preview { flex: 1 1 50%; min-width: 0; overflow: auto; padding: 14px 16px; color: var(--md-on-surface); background: var(--md-surface); }
+:root[data-theme] .ev2-preview { flex: 1 1 50%; min-width: 0; box-sizing: border-box; max-height: var(--ev2-height, none); overflow: auto; padding: 14px 16px; color: var(--md-on-surface); background: var(--md-surface); }
 :root[data-theme] .ev2-editor[data-preview="off"] .ev2-preview { display: none; }
 :root[data-theme] .ev2-editor[data-preview="off"] .ev2-cm { border-right: none; }
 

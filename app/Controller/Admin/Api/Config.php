@@ -115,6 +115,7 @@ class Config extends Manage
         'cname',
         'substation_display',
         'force_login',
+        'promote_state',
         'recharge_min',
         'recharge_max',
         'recharge_welfare',
@@ -140,6 +141,7 @@ class Config extends Manage
         'callback_ip_whitelist',
         'substation_display',
         'force_login',
+        'promote_state',
         'recharge_welfare',
         'cash_type_alipay',
         'cash_type_wechat',
@@ -833,10 +835,10 @@ class Config extends Manage
     }
 
     /**
-     * 把一条违规记录加进外部脚本放行清单。
+     * 把一条违规记录加进对应种类的外部资源放行清单。
      *
      * 关键：入参是**违规记录的分组 key**，不是站长自己敲的域名。服务端拿 key 去违规库里
-     * 反查，只有本站真实请求过、真的被拦下来、且发生在前台的脚本类违规才允许放行——
+     * 反查，只有本站真实请求过、真的被拦下来的外部地址才允许放行（脚本还必须发生在前台）——
      * 站长因此填不宽也填不错，这是这套机制唯一的安全支点（GitHub #909）。
      *
      * @return array
@@ -866,20 +868,21 @@ class Config extends Manage
         if ($row === null) {
             throw new JSONException('这条违规记录不存在，可能已被清空，请刷新后重试');
         }
-        if (!\App\Util\Csp::allowable($row)) {
+        $kind = \App\Util\Csp::kindOf((string)($row['directive'] ?? ''));
+        if ($kind === null || !\App\Util\Csp::allowable($row)) {
             throw new JSONException(
-                str_starts_with((string)($row['document'] ?? ''), '/admin')
+                $kind === 'script' && str_starts_with((string)($row['document'] ?? ''), '/admin')
                     ? '后台页面的脚本不能在这里放行。后台一律不加载第三方脚本；确有需要请用插件订阅 CSP_SOURCE_ALLOW 钩子。'
-                    : '这条违规不是外部脚本被拦（比如内联脚本、eval），加白名单解决不了它。'
+                    : '这条违规不是外部地址被拦（比如内联脚本、eval），加白名单解决不了它。'
             );
         }
 
-        $source = \App\Util\Csp::deriveSource((string)$row['blocked'], $grain);
+        $source = \App\Util\Csp::deriveSource((string)$row['blocked'], $grain, $kind);
         if ($source === '') {
             throw new JSONException('无法从这条记录里解析出可放行的地址');
         }
 
-        $list = \App\Util\Csp::allowList();
+        $list = \App\Util\Csp::allowList($kind);
         if (in_array($source, $list, true)) {
             return $this->json(200, '这个地址已经在放行清单里了', ['list' => $list]);
         }
@@ -888,10 +891,11 @@ class Config extends Manage
         }
 
         $list[] = $source;
-        $list = \App\Util\Csp::saveAllowList($list);
+        $list = \App\Util\Csp::saveAllowList($list, $kind);
 
-        ManageLog::log($this->getManage(), "[CSP]放行外部脚本源 {$source}");
-        return $this->json(200, "已放行 {$source}，刷新前台页面即可生效", ['list' => $list]);
+        $label = \App\Util\Csp::KINDS[$kind]['label'];
+        ManageLog::log($this->getManage(), "[CSP]放行外部{$label}源 {$source}");
+        return $this->json(200, $kind === 'script' ? "已放行 {$source}，刷新前台页面即可生效" : "已放行 {$source}，刷新页面即可生效", ['list' => $list]);
     }
 
     /**
@@ -908,14 +912,153 @@ class Config extends Manage
         }
 
         $source = trim((string)($_POST['source'] ?? ''));
-        $list = \App\Util\Csp::allowList();
+        $kind = trim((string)($_POST['kind'] ?? 'script'));
+        if (!isset(\App\Util\Csp::KINDS[$kind])) {
+            throw new JSONException('这条放行记录不存在');
+        }
+        $list = \App\Util\Csp::allowList($kind);
         if ($source === '' || !in_array($source, $list, true)) {
             throw new JSONException('这条放行记录不存在');
         }
 
-        $list = \App\Util\Csp::saveAllowList(array_values(array_diff($list, [$source])));
-        ManageLog::log($this->getManage(), "[CSP]移除外部脚本源 {$source}");
+        $list = \App\Util\Csp::saveAllowList(array_values(array_diff($list, [$source])), $kind);
+        $label = \App\Util\Csp::KINDS[$kind]['label'];
+        ManageLog::log($this->getManage(), "[CSP]移除外部{$label}源 {$source}");
         return $this->json(200, "已移除 {$source}", ['list' => $list]);
+    }
+
+    #[Interceptor(Owner::class, Interceptor::TYPE_API)]
+    public function cspAllowBlocked(): array
+    {
+        if (strtoupper($this->request->method()) !== 'POST') {
+            throw new JSONException('仅接受 POST 请求');
+        }
+
+        $directive = trim((string)($_POST['directive'] ?? ''));
+        $blocked = trim((string)($_POST['blocked'] ?? ''));
+        $kind = \App\Util\Csp::kindOf($directive);
+        if ($kind === null || $kind === 'script') {
+            throw new JSONException('这类内容不能在编辑器里放行，请到「安全设置 → 违规统计」里处理');
+        }
+
+        $source = \App\Util\Csp::deriveSource($blocked, 'host', $kind);
+        if ($source === '') {
+            throw new JSONException('无法从被拦地址里解析出可放行的域名');
+        }
+
+        $recorded = false;
+        foreach (\App\Util\Csp::violations(1000) as $row) {
+            if (($row['kind'] ?? '') === $kind && !empty($row['allowable'])
+                && \App\Util\Csp::deriveSource((string)($row['blocked'] ?? ''), 'host', $kind) === $source) {
+                $recorded = true;
+                break;
+            }
+        }
+        if (!$recorded) {
+            throw new JSONException('还没收到浏览器的拦截记录，请过几秒再试');
+        }
+
+        $list = \App\Util\Csp::allowList($kind);
+        if (!in_array($source, $list, true)) {
+            if (count($list) >= \App\Util\Csp::MAX_ALLOW) {
+                throw new JSONException('放行清单最多 ' . \App\Util\Csp::MAX_ALLOW . ' 条，请先到安全设置里移除不用的');
+            }
+            $list[] = $source;
+            $list = \App\Util\Csp::saveAllowList($list, $kind);
+            $label = \App\Util\Csp::KINDS[$kind]['label'];
+            ManageLog::log($this->getManage(), "[CSP]放行外部{$label}源 {$source}");
+        }
+
+        return $this->json(200, "已放行 {$source}，刷新页面后生效", ['source' => $source, 'list' => $list]);
+    }
+
+    public function linkDomainCheck(): array
+    {
+        if (strtoupper($this->request->method()) !== 'POST') {
+            throw new JSONException('仅接受 POST 请求');
+        }
+
+        $enabled = LinkDomainGuard::enabled();
+        $blocked = [];
+        if ($enabled) {
+            foreach ($this->linkDomainHosts() as $host) {
+                if (!LinkDomainGuard::allows($host)) {
+                    $blocked[] = $host;
+                }
+            }
+        }
+
+        return $this->json(200, 'success', [
+            'enabled' => $enabled,
+            'blocked' => $blocked,
+            'can_add' => (int)($this->getManage()?->type ?? -1) === 0,
+        ]);
+    }
+
+    #[Interceptor(Owner::class, Interceptor::TYPE_API)]
+    public function linkDomainAllow(): array
+    {
+        if (strtoupper($this->request->method()) !== 'POST') {
+            throw new JSONException('仅接受 POST 请求');
+        }
+
+        $hosts = $this->linkDomainHosts();
+        if ($hosts === []) {
+            throw new JSONException('没有可以加入白名单的域名');
+        }
+
+        $list = [];
+        foreach (preg_split('/[\r\n,]+/', (string)(CFG::cached(LinkDomainGuard::WHITELIST_CONFIG) ?? '')) ?: [] as $line) {
+            $line = trim((string)$line);
+            if ($line !== '') {
+                $list[$line] = true;
+            }
+        }
+
+        $added = [];
+        foreach ($hosts as $host) {
+            if (!LinkDomainGuard::allows($host)) {
+                $list[$host] = true;
+                $added[] = $host;
+            }
+        }
+        if ($added === []) {
+            return $this->json(200, '这些域名已经在白名单里了', ['added' => []]);
+        }
+
+        try {
+            CFG::put(LinkDomainGuard::WHITELIST_CONFIG, implode("\n", array_keys($list)));
+        } catch (\Throwable) {
+            throw new JSONException('保存失败，请检查原因');
+        }
+        LinkDomainGuard::resetCache();
+
+        ManageLog::log($this->getManage(), '[外链白名单]加入 ' . implode('、', $added));
+        return $this->json(200, '已加入外链白名单：' . implode('、', $added), ['added' => $added]);
+    }
+
+    private function linkDomainHosts(): array
+    {
+        $raw = $this->request->post('hosts');
+        if (!is_array($raw)) {
+            $raw = is_scalar($raw) && (string)$raw !== '' ? [$raw] : [];
+        }
+
+        $hosts = [];
+        foreach ($raw as $host) {
+            if (!is_scalar($host)) {
+                continue;
+            }
+            $host = strtolower(trim((string)$host, " \t\n\r\0\x0B."));
+            if ($host === '' || !preg_match('/^[a-z0-9._-]{1,253}$/', $host)) {
+                continue;
+            }
+            $hosts[$host] = true;
+            if (count($hosts) >= 50) {
+                break;
+            }
+        }
+        return array_keys($hosts);
     }
 
     public function other(): array

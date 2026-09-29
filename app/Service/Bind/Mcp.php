@@ -90,7 +90,7 @@ class Mcp implements \App\Service\Mcp
             ],
             [
                 "name" => "upload_install_kit",
-                "description" => "为一个处于「开发中」(status=0) 或「审核驳回」(status=2) 的插件上传安装包并提交审核，提交后状态变为审核中(3)。插件被驳回后，按 error_reason 里的原因改好，用这个工具直接重新提交即可，不需要新建插件（重新提交会自动清掉上次的驳回原因）。默认由服务端直接从本机插件目录自动打包，不需要你自己压缩、更不需要传 base64——只给 plugin_id 即可。打包时会自动排除日志等运行态文件，并把 Config.php 写成空的 return []; （绝不会带上本站的密钥和启用状态，也不会改动本机那份配置）。填了 version 就会先把该版本号写回插件自己的 Info，保证包内版本与商店一致。",
+                "description" => "为一个处于「开发中」(status=0) 或「审核驳回」(status=2) 的插件上传安装包并提交审核，提交后状态变为审核中(3)。插件被驳回后，按 error_reason 里的原因改好，用这个工具直接重新提交即可，不需要新建插件（重新提交会自动清掉上次的驳回原因）。默认由服务端直接从本机插件目录自动打包，不需要你自己压缩、更不需要传 base64——只给 plugin_id 即可。打包时会自动排除日志等运行态文件，并把 Config/Config.php 写成空的 return []; （绝不会带上本站的密钥和启用状态，也不会改动本机那份配置）；网站模版的 Setting.php 原样打包，作为新站点的默认设置。填了 version 就会先把该版本号写回插件自己的 Info，保证包内版本与商店一致。",
                 "inputSchema" => [
                     "type" => "object",
                     "properties" => [
@@ -103,7 +103,7 @@ class Mcp implements \App\Service\Mcp
             ],
             [
                 "name" => "submit_update",
-                "description" => "为一个「已上架」(status=1) 的插件提交更新包进入审核。默认由服务端直接从本机插件目录自动打包，不需要你自己压缩、更不需要传 base64。audit_version 会先被写回插件自己的 Info 再打包，所以包内版本号与提交版本号必定一致。更新包会自动剔除 Config.php（不能覆盖用户站点的配置）和日志等运行态文件。更新包若改动数据库，需自行在插件根目录放好累计的 update.sql，它会被一起打进去。",
+                "description" => "为一个「已上架」(status=1) 的插件提交更新包进入审核。默认由服务端直接从本机插件目录自动打包，不需要你自己压缩、更不需要传 base64。audit_version 会先被写回插件自己的 Info 再打包，所以包内版本号与提交版本号必定一致。更新包会自动剔除站点配置文件（扩展的 Config/Config.php、网站模版的 Setting.php，不能覆盖用户站点的设置）和日志等运行态文件。更新包若改动数据库，需自行在插件根目录放好累计的 update.sql，它会被一起打进去。",
                 "inputSchema" => [
                     "type" => "object",
                     "properties" => [
@@ -464,13 +464,14 @@ class Mcp implements \App\Service\Mcp
         }
 
         $bytes = PluginPacker::pack($dir, $type, $key, $isUpdate);
-        $info = PluginPacker::inspect($bytes);
+        $entry = PluginPacker::liveConfigEntry($type);
+        $info = PluginPacker::inspect($bytes, $entry);
 
         $summary['files'] = $info['files'];
         $summary['size'] = round($info['bytes'] / 1024, 1) . " KB";
-        $summary['config_php'] = $isUpdate
+        $summary['live_config'] = $entry . "：" . ($isUpdate
             ? ($info['has_config'] ? "⚠ 仍在包内（不该出现）" : "已剔除")
-            : ($info['has_config'] ? "已清空为 return [];" : "无此文件");
+            : ($info['has_config'] ? ($type === PluginPacker::TYPE_THEME ? "原样打包" : "已清空为 return [];") : "无此文件"));
 
         $upload = $this->app->upload([
             [

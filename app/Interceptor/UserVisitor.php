@@ -19,7 +19,7 @@ class UserVisitor implements InterceptorInterface
 {
     public function handle(int $type): void
     {
-        if (isset($_GET['from']) && \App\Model\User::query()->where("id", $_GET['from'])->exists()) {
+        if (isset($_GET['from']) && \App\Util\Promotion::enabled() && \App\Model\User::query()->where("id", $_GET['from'])->exists()) {
             setcookie("promotion_from", $_GET['from'], time() + 10 * 365 * 24 * 60 * 60, "/");
         }
 

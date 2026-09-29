@@ -231,6 +231,10 @@
                 ? i18n('Config.php 整个剔除，不会覆盖用户站点的配置')
                 : i18n('Config.php 清空为 return []; 不会带上本站密钥'));
 
+        const settingLine = !isTheme ? '' : `<li>${isUpdate
+            ? i18n('Setting.php 整个剔除，不会覆盖用户站点的模版设置')
+            : i18n('Setting.php 原样打包，作为新站点的默认设置')}</li>`;
+
         // 原本挂在「自带压缩包」上传框 tips 里的数据库说明；上传入口已移除，信息挪到这里
         const sqlLine = isUpdate
             ? i18n('需要改数据库时，把 update.sql 放在插件根目录（从最初版本累计、先检测再更改、不要写注释）')
@@ -249,6 +253,7 @@
                 <b>${util.icon("fa-duotone fa-regular fa-wand-magic-sparkles")} ${i18n('服务器自动打包')}</b>
                 <div style="margin-top:4px">${i18n('无需自己压缩，提交后直接从本机目录打包上传：')}<code>${dir}</code></div>
                 <ul>
+                    ${settingLine}
                     <li>${configLine}</li>
                     <li>${i18n('自动排除 runtime.log 等日志与运行态文件')}</li>
                     <li>${i18n('填写的版本号会写回插件的 Info，保证包内版本与提交一致')}</li>

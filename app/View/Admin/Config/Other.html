@@ -163,6 +163,20 @@
                             </div>
                             <!--end::Input group-->
 
+                            <div class="row mb-6">
+                                <label class="col-lg-4 col-form-label fw-bold fs-6" for="promote-state">#{t("推广功能")}</label>
+                                <div class="col-lg-8 d-flex align-items-center">
+                                    <div class="form-check form-check-solid form-switch fv-row">
+                                        <input class="form-check-input w-45px h-30px" type="checkbox"
+                                               id="promote-state"
+                                               name="promote_state"
+                                               value="1" #{if $config.promote_state != '0'} checked #{/if}/>
+                                        <label class="form-check-label" for="promote-state"></label>
+                                    </div>
+                                    <div class="form-text ms-4 mt-0">#{t("关闭后，会员中心不再显示推广中心，推广链接不再记录来源，新订单不再产生推广分成；已有的上下级关系和历史分成不受影响。")}</div>
+                                </div>
+                            </div>
+
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <!--begin::Label-->

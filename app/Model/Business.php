@@ -60,4 +60,22 @@ class Business extends Model
     {
         return $this->hasOne(User::class, "id", "user_id");
     }
+
+    public function sells(Commodity $commodity): bool
+    {
+        $owner = (int)$commodity->owner;
+        if ($owner === $this->user_id) {
+            return true;
+        }
+
+        if ($owner !== 0 || $this->master_display === 0 || (int)$commodity->substation_disable === 1) {
+            return false;
+        }
+
+        if (UserCommodity::query()->where("user_id", $this->user_id)->where("commodity_id", $commodity->id)->where("status", 0)->exists()) {
+            return false;
+        }
+
+        return !UserCategory::query()->where("user_id", $this->user_id)->where("category_id", $commodity->category_id)->where("status", 0)->exists();
+    }
 }

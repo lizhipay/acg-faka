@@ -30,6 +30,10 @@ class Agent extends User
      */
     public function promote(): string
     {
+        if (!\App\Util\Promotion::enabled()) {
+            Client::redirect("/user/dashboard/index", "推广功能已关闭");
+        }
+
         $user = $this->getUser();
         $monthStart = date("Y-m-01 00:00:00");
         $data = [];

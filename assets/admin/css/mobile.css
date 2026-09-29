@@ -6789,6 +6789,35 @@
         grid-column: 1 / -1;
         grid-row: auto;
     }
+    :is(
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-recipe="admin-config-website"],
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-recipe="admin-config-sms"],
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-recipe="admin-config-email"],
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-recipe="admin-config-other"]
+    ) .md-settings .card-body > .row.mb-6:has(.form-switch) > :has(> .form-switch + .form-text) {
+        display: contents !important;
+    }
+    :is(
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-recipe="admin-config-website"],
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-recipe="admin-config-sms"],
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-recipe="admin-config-email"],
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-recipe="admin-config-other"]
+    ) .md-settings .card-body > .row.mb-6:has(.form-switch) > :has(> .form-switch + .form-text) > .form-switch {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: center;
+        justify-self: end;
+    }
+    :is(
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-recipe="admin-config-website"],
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-recipe="admin-config-sms"],
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-recipe="admin-config-email"],
+        html[data-admin-layout="mobile"][data-theme][data-admin-mobile-recipe="admin-config-other"]
+    ) .md-settings .card-body > .row.mb-6:has(.form-switch) > :has(> .form-switch + .form-text) > .form-text {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        margin: 0 !important;
+    }
 
     :is(
         html[data-admin-layout="mobile"][data-theme][data-admin-mobile-recipe="admin-config-website"],

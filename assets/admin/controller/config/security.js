@@ -89,17 +89,38 @@
     //把一条违规记录加进外部脚本放行清单。
     //注意这里提交的是违规记录的 key，不是域名——服务端会拿它反查违规库，
     //所以白名单里只可能出现本站真实被拦过的地址，站长填不宽也填不错（GitHub #909）。
+    const cspKindTitles = {
+        script: '放行外部脚本',
+        frame: '放行外部框架',
+        style: '放行外部样式',
+        font: '放行外部字体',
+        media: '放行外部音视频',
+        connect: '放行外部网络请求'
+    };
+
     $('.csp-allow').off('click' + namespace).on('click' + namespace, function () {
         const key = $(this).data('key');
+        const kind = cspKindTitles[$(this).data('kind')] ? String($(this).data('kind')) : 'script';
         const blocked = String($(this).data('blocked') || '');
+        const file = String($(this).data('file') || '');
         //目录级默认：厂商发版换文件名(hash)时不用反复加白，又不是整站放行
-        const dir = blocked.replace(/[?#].*$/, '').replace(/[^/]*$/, '');
-        const host = (blocked.match(/^https?:\/\/[^/]+/) || [''])[0];
+        const dir = String($(this).data('dir') || '');
+        const host = String($(this).data('host') || '');
+        const script = kind === 'script';
+        const grains = script ? [
+            {id: 'file', name: i18n('只这个文件') + '（' + file + '）'},
+            {id: 'dir', name: i18n('该目录（推荐）') + '（' + dir + '）'},
+            {id: 'host', name: i18n('整个域名（风险最大）') + '（' + host + '）'}
+        ] : [
+            ...(file && file !== host ? [{id: 'file', name: i18n('只这个地址') + '（' + file + '）'}] : []),
+            ...(dir && dir !== host + '/' ? [{id: 'dir', name: i18n('该目录') + '（' + dir + '）'}] : []),
+            {id: 'host', name: i18n('整个域名（推荐）') + '（' + host + '）'}
+        ];
 
         component.popup({
             submit: '/admin/api/config/cspAllow',
             tab: [{
-                name: util.icon('fa-duotone fa-regular fa-shield-check') + i18n(' 放行外部脚本'),
+                name: util.icon('fa-duotone fa-regular fa-shield-check') + ' ' + i18n(cspKindTitles[kind]),
                 form: [
                     {title: 'key', name: 'key', type: 'input', hide: true, default: key},
                     {
@@ -114,13 +135,11 @@
                         }
                     },
                     {
-                        title: '放行范围', name: 'grain', type: 'radio', default: 'dir',
-                        dict: [
-                            {id: 'file', name: i18n('只这个文件') + '（' + blocked.replace(/[?#].*$/, '') + '）'},
-                            {id: 'dir', name: i18n('该目录（推荐）') + '（' + dir + '）'},
-                            {id: 'host', name: i18n('整个域名（风险最大）') + '（' + host + '）'}
-                        ],
-                        tips: '选「该目录」：厂商换了文件名也不用再来加白，同时不会把该域名下其它脚本一起放行。选「整个域名」等于允许那台服务器上任何脚本在你站上执行，除非必要不要选。'
+                        title: '放行范围', name: 'grain', type: 'radio', default: script ? 'dir' : 'host',
+                        dict: grains,
+                        tips: script
+                            ? '选「该目录」：厂商换了文件名也不用再来加白，同时不会把该域名下其它脚本一起放行。选「整个域名」等于允许那台服务器上任何脚本在你站上执行，除非必要不要选。'
+                            : '框架、样式、字体、音视频和网络请求不能在你站上执行脚本，放行整个域名即可，放行后前后台都生效。'
                     }
                 ]
             }],
@@ -133,10 +152,11 @@
 
     $('.csp-allow-remove').off('click' + namespace).on('click' + namespace, function () {
         const source = $(this).data('source');
-        message.ask(i18n('移除后该地址的脚本会重新被拦下，确认？'), () => {
+        const kind = String($(this).data('kind') || 'script');
+        message.ask(i18n('移除后该地址会重新被拦下，确认？'), () => {
             util.post({
                 url: '/admin/api/config/cspAllowRemove',
-                data: {source: source},
+                data: {source: source, kind: kind},
                 done: res => {
                     layer.msg(res.msg || i18n('已移除'));
                     setTimeout(() => window.location.reload(), 600);

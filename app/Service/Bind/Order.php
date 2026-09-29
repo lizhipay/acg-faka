@@ -61,6 +61,7 @@ class Order implements \App\Service\Order
         'level_price',
         'level_disable',
         'config',
+        'substation_disable',
     ];
 
     public const CALLBACK_REJECT = "fail";
@@ -571,6 +572,11 @@ class Order implements \App\Service\Order
             $from = $user->pid;
         }
 
+        $promotion = \App\Util\Promotion::enabled();
+        if (!$promotion) {
+            $from = 0;
+        }
+
         if ($commodityId == 0) {
             throw new JSONException("请选择商品");
         }
@@ -579,6 +585,7 @@ class Order implements \App\Service\Order
             throw new JSONException("至少购买1个");
         }
 
+        \App\Util\Schema::ensureCommodityControl();
         $commodity = Commodity::with(['shared'])->find($commodityId);
 
         if (!$commodity) {
@@ -587,6 +594,11 @@ class Order implements \App\Service\Order
 
         if ($commodity->status != 1) {
             throw new JSONException("当前商品已停售");
+        }
+
+        $substation = Business::get();
+        if ($substation && !$substation->sells($commodity)) {
+            throw new JSONException("商品不存在");
         }
 
         if (Config::get("force_login") == 1 || $commodity->only_user == 1 || $commodity->purchase_count > 0) {
@@ -774,7 +786,7 @@ class Order implements \App\Service\Order
         }
 
         DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
-        $result = Db::transaction(function () use ($commodity, $rent, $rebate, $divideAmount, $business, $sku, $requestNo, $user, $userGroup, $num, $contact, $device, $amount, $owner, $pay, $cardId, $password, $coupon, $from, $widget, $race, $callbackDomain, $clientDomain) {
+        $result = Db::transaction(function () use ($commodity, $rent, $rebate, $divideAmount, $business, $sku, $requestNo, $user, $userGroup, $num, $contact, $device, $amount, $owner, $pay, $cardId, $password, $coupon, $from, $promotion, $widget, $race, $callbackDomain, $clientDomain) {
             $lockedCommodity = $this->lockCommodityForOrder($commodity);
 
             if ((int)$lockedCommodity->status !== 1) {
@@ -906,7 +918,7 @@ class Order implements \App\Service\Order
                         throw new JSONException("You have been banned");
                     }
                     $parent = $session->parent;
-                    if ($parent && $order->user_id != $from) {
+                    if ($promotion && $parent && $order->user_id != $from) {
                         $order->from = $parent->id;
                     }
 

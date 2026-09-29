@@ -24,8 +24,14 @@ final class Csp
     /** 单站最多放行多少条，防止越攒越乱 */
     public const MAX_ALLOW = 30;
 
-    /** 只有这些指令的违规可以被加白：放行的永远只是"脚本能从哪来" */
-    public const ALLOWABLE_DIRECTIVES = ['script-src', 'script-src-elem', 'worker-src'];
+    public const KINDS = [
+        'script' => ['directives' => ['script-src', 'script-src-elem', 'worker-src'], 'feeds' => ['script-src', 'worker-src'], 'config' => self::ALLOW_CONFIG, 'label' => '脚本', 'frontOnly' => true],
+        'frame' => ['directives' => ['frame-src', 'child-src'], 'feeds' => ['frame-src'], 'config' => 'csp_frame_allow', 'label' => '框架', 'frontOnly' => false],
+        'style' => ['directives' => ['style-src', 'style-src-elem'], 'feeds' => ['style-src'], 'config' => 'csp_style_allow', 'label' => '样式', 'frontOnly' => false],
+        'font' => ['directives' => ['font-src'], 'feeds' => ['font-src'], 'config' => 'csp_font_allow', 'label' => '字体', 'frontOnly' => false],
+        'media' => ['directives' => ['media-src'], 'feeds' => ['media-src'], 'config' => 'csp_media_allow', 'label' => '音视频', 'frontOnly' => false],
+        'connect' => ['directives' => ['connect-src'], 'feeds' => ['connect-src'], 'config' => 'csp_connect_allow', 'label' => '网络请求', 'frontOnly' => false],
+    ];
 
     public const REPORT_PATH = '/csp/report';
 
@@ -217,10 +223,15 @@ final class Csp
             //站长在「违规记录」里点允许的外部脚本源。
             //**只在前台生效**：后台 XSS 直接拿管理员会话，代价比前台高一个量级，而挂件、
             //统计脚本这类需求 100% 在前台模板里。后台真要加载第三方脚本，走下面那个插件钩子。
-            if (!str_starts_with((string)getLocalRouter(), '/admin')) {
-                foreach (self::allowList() as $source) {
-                    $sources['script-src'][] = $source;
-                    $sources['worker-src'][] = $source;
+            $admin = str_starts_with((string)getLocalRouter(), '/admin');
+            foreach (self::KINDS as $kind => $spec) {
+                if ($spec['frontOnly'] && $admin) {
+                    continue;
+                }
+                foreach (self::allowList($kind) as $source) {
+                    foreach ($spec['feeds'] as $feed) {
+                        $sources[$feed][] = $source;
+                    }
                 }
             }
 
@@ -330,33 +341,38 @@ final class Csp
         foreach ($store as $key => $row) {
             //把分组 key 带出去，前端「允许」按钮要靠它指回这一条
             $row['key'] = (string)$key;
+            $row['kind'] = self::kindOf((string)($row['directive'] ?? '')) ?? '';
             $row['allowable'] = self::allowable($row);
+            if ($row['allowable']) {
+                foreach (['file', 'dir', 'host'] as $grain) {
+                    $row['grains'][$grain] = self::deriveSource((string)($row['blocked'] ?? ''), $grain, $row['kind']);
+                }
+            }
             $rows[] = $row;
         }
         return array_slice($rows, 0, max(1, $limit));
     }
 
-    /**
-     * 这条违规能不能加白。
-     *
-     * 三个条件缺一不可：
-     *  - 是脚本类指令（放行的只该是"脚本能从哪来"）
-     *  - **不是后台页面**：后台 XSS 直接拿管理员会话，代价比前台高一个量级；
-     *    后台真要加载第三方脚本，走 CSP_SOURCE_ALLOW 插件钩子，那条路是给开发者的
-     *  - 被拦对象是个正常的 http(s) 绝对地址（inline / eval 这类拦不是靠加域名解决的）
-     *
-     * @param array $row
-     * @return bool
-     */
+    public static function kindOf(string $directive): ?string
+    {
+        foreach (self::KINDS as $kind => $spec) {
+            if (in_array($directive, $spec['directives'], true)) {
+                return $kind;
+            }
+        }
+        return null;
+    }
+
     public static function allowable(array $row): bool
     {
-        if (!in_array((string)($row['directive'] ?? ''), self::ALLOWABLE_DIRECTIVES, true)) {
+        $kind = self::kindOf((string)($row['directive'] ?? ''));
+        if ($kind === null) {
             return false;
         }
-        if (str_starts_with((string)($row['document'] ?? ''), '/admin')) {
+        if (self::KINDS[$kind]['frontOnly'] && str_starts_with((string)($row['document'] ?? ''), '/admin')) {
             return false;
         }
-        return self::deriveSource((string)($row['blocked'] ?? ''), 'dir') !== '';
+        return self::deriveSource((string)($row['blocked'] ?? ''), 'dir', $kind) !== '';
     }
 
     /**
@@ -366,7 +382,7 @@ final class Csp
      * @param string $grain file=只这个文件 / dir=该目录（默认）/ host=整个域名
      * @return string 非法返回空串
      */
-    public static function deriveSource(string $blocked, string $grain = 'dir'): string
+    public static function deriveSource(string $blocked, string $grain = 'dir', string $kind = 'script'): string
     {
         $parts = parse_url(trim($blocked));
         if (!is_array($parts)) {
@@ -387,11 +403,12 @@ final class Csp
             return '';
         }
 
-        //一律按 https 放行：http 脚本在 https 站上本来就会被混合内容拦掉，
+        //脚本一律按 https 放行：http 脚本在 https 站上本来就会被混合内容拦掉，
         //不写 scheme 的话 CSP 会把 http 一起放行，白扩一片匹配面
-        $origin = 'https://' . $host;
+        $scheme = $kind === 'script' ? 'https' : $scheme;
+        $origin = $scheme . '://' . $host;
         $port = (int)($parts['port'] ?? 0);
-        if ($port > 0 && $port !== 443) {
+        if ($port > 0 && $port !== ($scheme === 'https' ? 443 : 80)) {
             $origin .= ':' . $port;
         }
 
@@ -406,14 +423,13 @@ final class Csp
         return preg_match(self::SOURCE_PATTERN, $source) ? $source : '';
     }
 
-    /**
-     * 站长已放行的脚本源
-     * @return string[]
-     */
-    public static function allowList(): array
+    public static function allowList(string $kind = 'script'): array
     {
+        if (!isset(self::KINDS[$kind])) {
+            return [];
+        }
         try {
-            $raw = (string)(Config::cached(self::ALLOW_CONFIG) ?? '');
+            $raw = (string)(Config::cached(self::KINDS[$kind]['config']) ?? '');
         } catch (\Throwable) {
             return [];
         }
@@ -433,8 +449,11 @@ final class Csp
      * @param string[] $sources
      * @return string[] 实际落库的清单
      */
-    public static function saveAllowList(array $sources): array
+    public static function saveAllowList(array $sources, string $kind = 'script'): array
     {
+        if (!isset(self::KINDS[$kind])) {
+            throw new \InvalidArgumentException('unknown csp allow kind');
+        }
         $clean = [];
         foreach ($sources as $source) {
             if (!is_string($source)) {
@@ -447,7 +466,7 @@ final class Csp
         }
         $clean = array_slice(array_keys($clean), 0, self::MAX_ALLOW);
 
-        Config::put(self::ALLOW_CONFIG, implode("\n", $clean));
+        Config::put(self::KINDS[$kind]['config'], implode("\n", $clean));
         self::$extraCache = null;
         return $clean;
     }

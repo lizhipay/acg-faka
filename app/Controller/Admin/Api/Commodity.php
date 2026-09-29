@@ -283,6 +283,7 @@ class Commodity extends Manage
      */
     public function data(): array
     {
+        \App\Util\Schema::ensureCommodityControl();
         $map = $_POST;
         $get = new Get(\App\Model\Commodity::class);
         $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
@@ -364,6 +365,7 @@ class Commodity extends Manage
      */
     public function save(Request $request): array
     {
+        \App\Util\Schema::ensureCommodityControl();
         $raw = $request->post(flags: Filter::NORMAL);
         $allowed = [
             'id', 'category_id', 'name', 'description', 'cover', 'factory_price', 'price', 'user_price',
@@ -374,7 +376,7 @@ class Commodity extends Manage
             'draft_premium', 'inventory_hidden', 'leave_message', 'recommend', 'send_email', 'only_user',
             'purchase_count', 'widget', 'level_price', 'level_disable', 'minimum', 'maximum', 'shared_sync',
             'config', 'hide', 'stock', 'inventory_sync', 'shared_amount_sync', 'shared_config_sync',
-            'tags',
+            'tags', 'substation_disable',
             'pay_intercept',
             'dock_g_id', 'dock_mode', 'dock_mode_value', 'dock_lucky_decimal', 'dock_sync_price',
             'dock_sync_content', 'dock_sync_title', 'dock_sync_now',
@@ -528,6 +530,9 @@ class Commodity extends Manage
                     ->first();
                 if (!$lockedCommodity) {
                     throw new JSONException('商品不存在');
+                }
+                if ((int)$lockedCommodity->ban === 1 && (int)($map['status'] ?? 0) === 1) {
+                    throw new JSONException('该商品已被平台下架，请先解除平台下架');
                 }
             }
 
@@ -765,7 +770,11 @@ class Commodity extends Manage
             throw new JSONException('商品状态请求参数不正确');
         }
         $status = (int)$rawStatus;
-        $count = \App\Model\Commodity::query()->whereIn('id', $list)->update(['status' => $status]);
+        \App\Util\Schema::ensureCommodityControl();
+        $count = \App\Model\Commodity::query()
+            ->whereIn('id', $list)
+            ->when($status === 1, fn(Builder $builder) => $builder->where('ban', 0))
+            ->update(['status' => $status]);
         if ($count > 0) {
             $ebAction = 'status';
             $ebBefore = null;
@@ -773,6 +782,49 @@ class Commodity extends Manage
         }
         ManageLog::log($this->getManage(), "[批量更新]商品启停状态，共计：{$count}");
         return $this->json(200, $count > 0 ? '商品状态已经更新' : '商品状态无需更新', ['count' => $count]);
+    }
+
+    public function ban(): array
+    {
+        \App\Util\Schema::ensureCommodityControl();
+        $id = (int)($_POST['id'] ?? 0);
+        $reason = trim(strip_tags(html_entity_decode((string)($_POST['reason'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+        if (mb_strlen($reason) > 200) {
+            throw new JSONException('下架原因最多 200 个字');
+        }
+
+        $commodity = \App\Model\Commodity::query()->find($id);
+        if (!$commodity) {
+            throw new JSONException('商品不存在');
+        }
+        if ((int)$commodity->owner === 0) {
+            throw new JSONException('主站商品直接下架即可');
+        }
+
+        \App\Model\Commodity::query()->whereKey($id)->update([
+            'ban' => 1,
+            'ban_reason' => $reason === '' ? null : $reason,
+            'status' => 0,
+        ]);
+
+        $ebIds = [$id];
+        $ebAction = 'status';
+        $ebBefore = null;
+        hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $ebIds, $ebAction, $ebBefore);
+        ManageLog::log($this->getManage(), "[平台下架]商品：{$id}");
+        return $this->json(200, '已下架，商户无法自行重新上架');
+    }
+
+    public function unban(): array
+    {
+        \App\Util\Schema::ensureCommodityControl();
+        $id = (int)($_POST['id'] ?? 0);
+        $count = \App\Model\Commodity::query()->whereKey($id)->where('ban', 1)->update(['ban' => 0, 'ban_reason' => null]);
+        if ($count < 1) {
+            throw new JSONException('该商品不在平台下架状态');
+        }
+        ManageLog::log($this->getManage(), "[解除平台下架]商品：{$id}");
+        return $this->json(200, '已解除，商户可以重新上架');
     }
 
 

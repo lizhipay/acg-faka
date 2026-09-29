@@ -462,6 +462,15 @@
                             tips: "隐藏商品后，游客将看不见该商品，但你可以通过下面的《会员配置》来进行对指定的会员等级显示。"
                         },
                         {
+                            title: "禁止分站销售",
+                            name: "substation_disable",
+                            type: "switch",
+                            text: "禁止",
+                            default: 0,
+                            hide: owner !== 0,
+                            tips: "开启后分站不再展示该商品，直接访问链接也无法购买，只在主站销售"
+                        },
+                        {
                             title: "禁用折扣",
                             name: "level_disable",
                             type: "switch",
@@ -897,6 +906,48 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
         });
     }
 
+    const banCommodity = row => {
+        if (!controllerActive) return;
+        component.popup({
+            submit: '/admin/api/commodity/ban',
+            tab: [
+                {
+                    name: util.icon("fa-duotone fa-regular fa-ban") + i18n(" 平台下架"),
+                    form: [
+                        {title: "", name: "id", type: "input", hide: true, default: row.id},
+                        {
+                            title: false,
+                            name: "ban_tips",
+                            type: "custom",
+                            complete: (form, dom) => {
+                                dom.html(`<div style="font-size:13px;line-height:1.7">${i18n('下架后商户不能自行上架，解除前一直保持下架。')}</div>`);
+                            }
+                        },
+                        {title: "下架原因", name: "reason", type: "textarea", placeholder: "商户在商品列表里能看到，可留空", height: 90}
+                    ]
+                }
+            ],
+            autoPosition: true,
+            height: "auto",
+            width: "380px",
+            maxmin: false,
+            done: () => {
+                if (controllerActive && table) table.refresh();
+            }
+        });
+    };
+
+    const unbanCommodity = row => {
+        if (!controllerActive) return;
+        message.ask(i18n('解除后商户可以自行重新上架，商品目前仍是下架状态。'), () => {
+            util.post('/admin/api/commodity/unban', {id: row.id}, res => {
+                if (!controllerActive || !table) return;
+                message.success(res.msg || i18n('已解除'));
+                table.refresh();
+            });
+        }, i18n('解除平台下架'), i18n('确认解除'));
+    };
+
     // 拖动排序：公共实现在 drag-sort.js（与分类管理共用，行为一模一样）。电脑版拖手柄，手机版长按整张卡片。
     // 商品列表分页且可筛选：后端只在「这一页商品当前占着的位置」里重排，其它商品原地不动，所以筛选、翻页时都能拖。
     const dragEnabled = Boolean(window.MdTableDragSort);
@@ -916,7 +967,16 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
                 const cat = path.length
                     ? `<span class="md-commodity-cell__cat">${path.map(s => `<span class="md-commodity-cell__cat-seg">${s}</span>`).join(sep)}</span>`
                     : '';
-                return `<div class="md-commodity-cell">${cover}<div class="md-commodity-cell__text"><span class="md-commodity-cell__name">${val ?? ''}</span>${cat}</div></div>`;
+                const flags = [];
+                if (Number(item.ban) === 1) {
+                    flags.push(`<span class="badge badge-light-danger">${i18n('平台下架')}</span>`);
+                    if (item.ban_reason) flags.push(`<small class="text-muted">${escapeHtml(item.ban_reason)}</small>`);
+                }
+                if (!item.owner && Number(item.substation_disable) === 1) {
+                    flags.push(`<span class="badge badge-light-info">${i18n('仅主站')}</span>`);
+                }
+                const flag = flags.length ? `<span style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:2px">${flags.join('')}</span>` : '';
+                return `<div class="md-commodity-cell">${cover}<div class="md-commodity-cell__text"><span class="md-commodity-cell__name">${val ?? ''}</span>${flag}${cat}</div></div>`;
             }
         }
         , {
@@ -987,6 +1047,20 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
                         delete clone.shared;
                         modal(util.icon("fa-duotone fa-regular fa-copy me-1") + i18n("克隆商品"), clone);
                     }
+                },
+                {
+                    icon: 'fa-duotone fa-regular fa-ban',
+                    class: "text-danger",
+                    title: '平台下架',
+                    show: row => Number(row.owner?.id || 0) > 0 && Number(row.ban) !== 1,
+                    click: (event, value, row) => banCommodity(row)
+                },
+                {
+                    icon: 'fa-duotone fa-regular fa-lock-open',
+                    class: "text-success",
+                    title: '解除平台下架',
+                    show: row => Number(row.ban) === 1,
+                    click: (event, value, row) => unbanCommodity(row)
                 },
                 {
                     icon: 'fa-duotone fa-regular fa-trash-can',
@@ -1133,6 +1207,7 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
         },
         {title: "商品名称(模糊搜索)", name: "search-name", type: "input"},
         {title: "对接平台", name: "equal-shared_id", type: "select", dict: "shared,id,name", search: true},
+        {title: "平台下架", name: "equal-ban", type: "select", dict: [{id: 1, name: "仅看平台下架"}]},
     ]);
     table.setState("status", "_commodity_status");
 

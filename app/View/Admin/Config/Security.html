@@ -289,7 +289,11 @@
                                                             #{if $v.allowable}
                                                                 <button type="button" class="btn btn-sm btn-light-primary py-1 px-3 csp-allow"
                                                                         data-key="#{$v.key|escape:'html'}"
-                                                                        data-blocked="#{$v.blocked|escape:'html'}">#{t("允许")}</button>
+                                                                        data-kind="#{$v.kind|escape:'html'}"
+                                                                        data-blocked="#{$v.blocked|escape:'html'}"
+                                                                        data-file="#{$v.grains.file|escape:'html'}"
+                                                                        data-dir="#{$v.grains.dir|escape:'html'}"
+                                                                        data-host="#{$v.grains.host|escape:'html'}">#{t("允许")}</button>
                                                             #{else}
                                                                 <span class="text-muted fs-8">—</span>
                                                             #{/if}
@@ -311,13 +315,14 @@
                             <!--begin::Input group-->
                             <div class="row mb-6">
                                 <div class="col-lg-12 fv-row">
-                                    <div class="security-heading fw-bold fs-5 mb-4">#{t("已放行的外部脚本")}</div>
+                                    <div class="security-heading fw-bold fs-5 mb-4">#{t("已放行的外部资源")}</div>
                                     #{if $csp_allow}
                                         <div class="table-responsive">
                                             <table class="table table-row-bordered table-row-gray-200 align-middle gs-0 gy-2">
                                                 <tbody>
                                                 #{foreach $csp_allow as $a}
                                                     <tr>
+                                                        <td style="width:90px;white-space:nowrap;"><span class="badge badge-light-primary">#{t($a.label)}</span></td>
                                                         <td style="word-break:break-all;">
                                                             <code>#{$a.source|escape:'html'}</code>
                                                             #{if $a.broad}
@@ -326,6 +331,7 @@
                                                         </td>
                                                         <td class="text-end" style="width:120px;white-space:nowrap;">
                                                             <button type="button" class="btn btn-sm btn-light-danger py-1 px-3 csp-allow-remove"
+                                                                    data-kind="#{$a.kind|escape:'html'}"
                                                                     data-source="#{$a.source|escape:'html'}">#{t("移除")}</button>
                                                         </td>
                                                     </tr>
@@ -334,11 +340,11 @@
                                             </table>
                                         </div>
                                         <div class="form-text">
-                                            #{t("这些地址被允许在「前台」加载脚本。后台一律不加载第三方脚本——后台的 XSS 能直接拿到管理员会话，代价比前台高得多。")}
+                                            #{t("脚本只允许在「前台」加载，后台一律不加载第三方脚本——后台的 XSS 能直接拿到管理员会话，代价比前台高得多。框架、样式、字体、音视频和网络请求不能在你站上执行脚本，放行后前后台都生效。")}
                                         </div>
                                     #{else}
                                         <div class="form-text fw-bold">
-                                            #{t("还没有放行任何外部脚本。需要在模板里挂客服组件、统计代码时：先把代码贴进模板，打开一次前台页面，被拦下的地址就会出现在上面的违规统计里，点「允许」即可——不用也不能手填，这样白名单里只会出现你自己站点真实请求过的地址。")}
+                                            #{t("还没有放行任何外部资源。需要在模板里挂客服组件、统计代码或嵌入外部播放器时：先把代码贴进去，打开一次页面，被拦下的地址就会出现在上面的违规统计里，点「允许」即可——不用也不能手填，这样白名单里只会出现你自己站点真实请求过的地址。")}
                                         </div>
                                     #{/if}
                                 </div>
@@ -356,5 +362,5 @@
     </div>
 </div>
 <!--end::Content-->
-#{ready("/assets/admin/controller/config/security.js?rev=csp-allow-909")}
+#{ready("/assets/admin/controller/config/security.js?rev=csp-allow-kinds")}
 #{include file="../Footer.html"}

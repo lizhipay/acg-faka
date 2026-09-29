@@ -123,6 +123,19 @@ class Config extends Manage
             $modes[$i] = $modes[$i] . " - " . ($ip ?: "此模式不适用");
         }
 
+        $cspAllow = [];
+        foreach (\App\Util\Csp::KINDS as $kind => $spec) {
+            foreach (\App\Util\Csp::allowList($kind) as $src) {
+                $cspAllow[] = [
+                    'source' => $src,
+                    'kind' => $kind,
+                    'label' => $spec['label'],
+                    //只填到域名的条目范围最大，界面上要标出来
+                    'broad' => $kind === 'script' && !str_contains(preg_replace('#^https?://#', '', $src) ?? $src, '/'),
+                ];
+            }
+        }
+
         return $this->render("安全设置", "Config/Security.html", [
             "toolbar" => $this->TOOLBAR,
             "ip_get_mode" => $modes,
@@ -134,11 +147,7 @@ class Config extends Manage
             "request_log_summary" => \Kernel\Util\RequestLogger::summary(),
             "csp_summary" => \App\Util\Csp::summary(),
             "csp_violations" => \App\Util\Csp::violations(30),
-            "csp_allow" => array_map(static fn(string $src): array => [
-                'source' => $src,
-                //只填到域名的条目范围最大，界面上要标出来
-                'broad' => !str_contains(preg_replace('#^https?://#', '', $src) ?? $src, '/'),
-            ], \App\Util\Csp::allowList()),
+            "csp_allow" => $cspAllow,
         ]);
     }
 

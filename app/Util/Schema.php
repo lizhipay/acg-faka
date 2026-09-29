@@ -63,6 +63,19 @@ final class Schema
         });
     }
 
+    public static function ensureCommodityControl(): void
+    {
+        self::ensureColumn('commodity', 'substation_disable', static function (Blueprint $table): void {
+            $table->unsignedTinyInteger('substation_disable')->default(0)->comment('禁止分站销售：0=否，1=是');
+        });
+        self::ensureColumn('commodity', 'ban', static function (Blueprint $table): void {
+            $table->unsignedTinyInteger('ban')->default(0)->comment('平台下架：0=否，1=是');
+        });
+        self::ensureColumn('commodity', 'ban_reason', static function (Blueprint $table): void {
+            $table->string('ban_reason', 255)->charset('utf8mb4')->collation('utf8mb4_general_ci')->nullable()->comment('平台下架原因');
+        });
+    }
+
     /** 店铺共享的对方货币与结算汇率：非 CNY 站点接入 CNY 货源时按此换算金额 */
     public static function ensureSharedCurrency(): void
     {

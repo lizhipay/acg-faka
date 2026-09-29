@@ -29,7 +29,10 @@ class AdminEntrance
             return; //未配置安全入口 → 不启用
         }
 
-        $segments = explode("/", trim((string)($_GET['s'] ?? ''), "/"));
+        //逐段 trim 后再比对：分发器构造控制器时对每段都做了 trim，本门禁必须用同一口径，
+        //否则 admin 段里夹一个可被 trim 的空白字符就能骗过门禁却仍命中后台控制器（CWE-436）。
+        $segments = array_map(static fn($seg): string => trim((string)$seg), explode("/", (string)($_GET['s'] ?? '')));
+        $segments = array_values(array_filter($segments, static fn(string $seg): bool => $seg !== ''));
         $route = strtolower((string)($segments[0] ?? ''));
 
         //命中安全入口 → 放行会话并跳转后台

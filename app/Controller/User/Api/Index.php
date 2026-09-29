@@ -67,6 +67,7 @@ class Index extends User
     public function commodity(): array
     {
         \App\Util\Schema::ensureCommodityTags();
+        \App\Util\Schema::ensureCommodityControl();
 
         $keywords = (string)$_GET['keywords'];
         //本方法走 $_GET 直连 paginate（未过 Get::setPaginate 的钳制）：limit 为负会让 paginate 生成
@@ -116,7 +117,7 @@ class Index extends User
                     }
                 }
 
-                $commodity = $commodity->whereNotIn("id", $hideCommodity)->whereRaw("(`owner`=0 or `owner`={$bus->user_id})");
+                $commodity = $commodity->whereNotIn("id", $hideCommodity)->whereRaw("((`owner`=0 and `substation_disable`=0) or `owner`={$bus->user_id})");
             }
         } else {
             //主站

@@ -44,7 +44,7 @@ class Master extends User
         //树形表格靠 pid 拼父子关系，必须一次返回全部；分页会把父分类不在同一页的子分类整行丢掉(#922)
         $get->setWhere($map);
         $get->setOrderBy('sort', 'asc');
-        $get->setColumn('id', 'icon', 'name', 'pid');
+        $get->setColumn('id', 'icon', 'name', 'pid', 'sort');
         $data = $this->query->get($get);
 
         $ids = array_map('intval', array_column($data['list'], 'id'));
@@ -162,10 +162,12 @@ class Master extends User
      */
     public function commodity(): array
     {
+        \App\Util\Schema::ensureCommodityControl();
         $map = [];
         $map['equal-status'] = 1;
         $map['equal-owner'] = 0;
         $map['equal-hide'] = 0;
+        $map['equal-substation_disable'] = 0;
 
         $categoryId = (int)$_POST['category_id'];
 

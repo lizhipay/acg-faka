@@ -120,7 +120,7 @@ class Authentication extends User
         //分站上级
         if ($business = \App\Model\Business::get()) {
             $user->pid = $business->user_id;
-        } elseif (isset($_COOKIE['promotion_from']) && \App\Model\User::query()->where("id", $_COOKIE['promotion_from'])->exists()) {
+        } elseif (isset($_COOKIE['promotion_from']) && \App\Util\Promotion::enabled() && \App\Model\User::query()->where("id", $_COOKIE['promotion_from'])->exists()) {
             $user->pid = $_COOKIE['promotion_from'];
         }
 

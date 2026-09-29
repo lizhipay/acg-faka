@@ -1843,6 +1843,9 @@ class Table {
             util.post(this.updateUrl, data, res => {
                 message.success("已更新 (｡•ᴗ-)");
                 reload && this.refresh(true);
+            }, res => {
+                message.error(res?.msg);
+                this.refresh(true);
             });
         }
     }

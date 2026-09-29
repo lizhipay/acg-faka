@@ -193,11 +193,16 @@ class PluginPacker
         return ['file' => self::relative($file), 'old' => $old, 'new' => $version, 'changed' => true];
     }
 
+    public static function liveConfigEntry(int $type): string
+    {
+        return $type === self::TYPE_THEME ? 'Setting.php' : 'Config/Config.php';
+    }
+
     /**
      * 打包。返回 zip 的原始字节。
      *
-     * @param bool $isUpdate true=更新包，false=安装包。差别只在 Config.php：
-     *   - 安装包：写成空的 `return [];`（要有这个文件，但绝不能带作者自己的密钥和状态）
+     * @param bool $isUpdate true=更新包，false=安装包。差别只在 Config.php（模版是 Setting.php）：
+     *   - 安装包：写成空的 `return [];`（要有这个文件，但绝不能带作者自己的密钥和状态）；模版的 Setting.php 原样带
      *   - 更新包：整个不进包（商店硬性要求，装到用户站上不能覆盖人家的配置）
      * @throws JSONException
      */
@@ -219,18 +224,14 @@ class PluginPacker
             throw new JSONException("创建临时 zip 失败，请检查 runtime/tmp 写入权限");
         }
 
-        //只有通用/支付扩展才有「用户配置」这一说；
-        //模版的 Config.php 是接口定义（const INFO 就在里面），清空会直接毁掉模版
-        $configRelative = in_array($type, [self::TYPE_PLUGIN, self::TYPE_PAY], true)
-            ? 'Config/Config.php'
-            : null;
+        $configRelative = self::liveConfigEntry($type);
+        $emptyConfig = !$isUpdate && $type !== self::TYPE_THEME;
 
         $excludes = array_merge(
             self::GLOBAL_EXCLUDES,
             self::PLUGIN_EXCLUDES[$pluginKey] ?? []
         );
 
-        $hasConfig = false;
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::SELF_FIRST
@@ -254,8 +255,7 @@ class PluginPacker
                 continue;
             }
 
-            if ($configRelative !== null && $rel === $configRelative) {
-                $hasConfig = true;
+            if ($rel === $configRelative && ($isUpdate || $emptyConfig)) {
                 //更新包直接跳过；安装包稍后统一写一份空的
                 continue;
             }
@@ -264,7 +264,7 @@ class PluginPacker
         }
 
         //安装包补一份空配置。没有原文件也补 —— 插件装到用户站上本来就该是空配置起步
-        if ($configRelative !== null && !$isUpdate) {
+        if ($emptyConfig) {
             $zip->addFromString($configRelative, self::emptyConfig());
         }
 
@@ -283,7 +283,6 @@ class PluginPacker
             throw new JSONException("打出来的包 " . round(strlen($bytes) / 1024 / 1024, 1) . "MB，超过 15MB 上限");
         }
 
-        unset($hasConfig);
         return $bytes;
     }
 
@@ -292,7 +291,7 @@ class PluginPacker
      *
      * @return array{files: int, bytes: int, has_config: bool, entries: array}
      */
-    public static function inspect(string $bytes): array
+    public static function inspect(string $bytes, string $configEntry = 'Config/Config.php'): array
     {
         $tmp = BASE_PATH . '/runtime/tmp/mcp_inspect_' . getmypid() . '.zip';
         file_put_contents($tmp, $bytes);
@@ -304,7 +303,7 @@ class PluginPacker
             for ($i = 0; $i < $zip->numFiles; $i++) {
                 $name = (string)$zip->getNameIndex($i);
                 $entries[] = $name;
-                if ($name === 'Config/Config.php') {
+                if ($name === $configEntry) {
                     $hasConfig = true;
                 }
             }

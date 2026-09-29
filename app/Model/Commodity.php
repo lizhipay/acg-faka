@@ -108,6 +108,8 @@ class Commodity extends Model
         'shared_amount_sync' => 'integer',
         'shared_config_sync' => 'integer',
         'shared_sync' => 'integer',
+        'substation_disable' => 'integer',
+        'ban' => 'integer',
         'shared_stock' => 'json'
     ];
 

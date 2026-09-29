@@ -120,9 +120,11 @@
                         <span class="material-icons-outlined uc-caret">expand_more</span>
                     </a>
                     <div class="uc-submenu">
+                        #{if $config.promote_state != '0'}
                         <a class="uc-subitem" href="/user/agent/promote" data-match="/user/agent/promote">
                             <span class="material-icons-outlined">share</span>#{t("推广中心")}
                         </a>
+                        #{/if}
                         <a class="uc-subitem" href="/user/agent/member" data-match="/user/agent/member">
                             <span class="material-icons-outlined">groups</span>#{t("我的下级")}
                         </a>
@@ -226,7 +228,7 @@
         </div>
         <div class="uc-drawer__group">
             <div class="uc-drawer__gtitle">#{t("推广")}</div>
-            <a class="uc-drawer__link" href="/user/agent/promote" data-match="/user/agent/promote"><span class="material-icons-outlined">share</span>#{t("推广中心")}</a>
+            #{if $config.promote_state != '0'}<a class="uc-drawer__link" href="/user/agent/promote" data-match="/user/agent/promote"><span class="material-icons-outlined">share</span>#{t("推广中心")}</a>#{/if}
             <a class="uc-drawer__link" href="/user/agent/member" data-match="/user/agent/member"><span class="material-icons-outlined">groups</span>#{t("我的下级")}</a>
         </div>
         <div class="uc-drawer__group">

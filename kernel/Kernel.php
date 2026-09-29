@@ -52,8 +52,12 @@ try {
     }
 
     $routePath = (string)($_GET['s'] ?? '');
-    if (trim($routePath, "/ \t\n\r\0\x0B") === '') {
-        $routePath = "/user/index/index";
+    $routePath = implode("/", array_filter(
+        array_map(static fn($seg): string => trim((string)$seg), explode("/", $routePath)),
+        static fn(string $seg): bool => $seg !== ''
+    ));
+    if ($routePath === '') {
+        $routePath = "user/index/index";
     }
     $_GET['s'] = $routePath;
     Context::set(\Kernel\Context\Interface\Request::class, new Request());

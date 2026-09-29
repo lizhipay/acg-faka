@@ -115,9 +115,6 @@ class Client
     }
 
     /**
-     * 取值发生在 Request 构造期间——那时数据库连接还没建立，未安装的站点连库都没有。
-     * 所以这里走只读缓存，拿不到就退回旧的落地文件，任何一步失败都当作默认值 0。
-     *
      * @return int
      */
     private static function resolveClientMode(): int

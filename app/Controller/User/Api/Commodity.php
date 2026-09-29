@@ -35,6 +35,7 @@ class Commodity extends User
      */
     public function data(): array
     {
+        \App\Util\Schema::ensureCommodityControl();
         $map = $_POST;
         $map['equal-owner'] = $this->getUser()->id;
         $get = new Get(\App\Model\Commodity::class);
@@ -87,6 +88,7 @@ class Commodity extends User
      */
     public function save(Request $request): array
     {
+        \App\Util\Schema::ensureCommodityControl();
         $map = $request->post(flags: Filter::NORMAL);
         $user = $this->getUser();
 
@@ -276,6 +278,9 @@ class Commodity extends User
                     ->first();
                 if (!$lockedCommodity) {
                     throw new JSONException('该商品不存在');
+                }
+                if ((int)$lockedCommodity->ban === 1 && (int)($map['status'] ?? 0) === 1) {
+                    throw new JSONException('该商品已被平台下架，无法自行上架，如有疑问请联系平台');
                 }
             }
 

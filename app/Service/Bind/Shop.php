@@ -124,6 +124,7 @@ class Shop implements \App\Service\Shop
     public function getItem(int|string $commodityId, ?User $user = null, ?UserGroup $group = null): array
     {
         \App\Util\Schema::ensureCommodityTags();
+        \App\Util\Schema::ensureCommodityControl();
 
         $commodity = Commodity::query()->with(['owner' => function (Relation $relation) {
             $relation->select(["id", "username", "avatar"]);
@@ -134,7 +135,7 @@ class Shop implements \App\Service\Shop
                 "level_disable", "coupon", "shared_id", "shared_code", "shared_premium", "shared_premium_type", "seckill_status",
                 "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden",
                 "widget", "minimum", "maximum", "shared_sync", "config", "stock", "code", "shared_amount_sync", "shared_config_sync",
-                "tags"])
+                "tags", "substation_disable"])
             ->withCount(['order as order_sold' => function (Builder $relation) {
                 $relation->where("delivery_status", 1);
             }]);
@@ -151,6 +152,11 @@ class Shop implements \App\Service\Shop
 
         if ($commodity->status != 1) {
             throw new JSONException("该商品暂未上架");
+        }
+
+        $substation = Business::get();
+        if ($substation && !$substation->sells($commodity)) {
+            throw new JSONException("商品不存在");
         }
 
         $shared = \App\Model\Shared::query()->find($commodity->shared_id);
