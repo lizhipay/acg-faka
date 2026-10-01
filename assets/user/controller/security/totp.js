@@ -6,6 +6,14 @@
     if (!document.getElementById('totp-app')) return;
 
     const T = (s) => (typeof i18n === 'function' ? i18n(s) : s);
+    const escapeText = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'}[c]));
+    //本脚本由 ready() 以 ?v=版本 载入；按需加载 ipwhitelist.js 时沿用同一参数
+    const scriptQuery = (() => {
+        const el = document.currentScript;
+        const src = (el && (el.getAttribute('data-ready-src') || el.getAttribute('src'))) || '';
+        const at = src.indexOf('?');
+        return at >= 0 ? src.slice(at) : '';
+    })();
     let pendingSecret = '';
     let confirmMode = '';
     let fundOn = false;
@@ -73,6 +81,17 @@
         .totp-codes__grid{display:grid;grid-template-columns:repeat(2,minmax(0,180px));gap:10px;margin-bottom:6px}
         .totp-codes__grid code{font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(125,125,135,.14);border-radius:8px;padding:10px;text-align:center;letter-spacing:2px;font-size:15px;color:inherit}
         @media(max-width:560px){.totp-codes__grid{grid-template-columns:1fr}.totp-setup__right{max-width:none}}
+        /* 对接白名单入口（主题有独立页面时）：资金开关下方的提示条，外框沿用 .totp-on__fund 保持同宽 */
+        .totp-ipwl-link{margin-top:-8px;gap:10px;font-size:12.5px;line-height:1.7;color:var(--totp-muted,#8a8f99)}
+        .totp-ipwl-link>.material-icons-outlined{font-size:18px;flex:0 0 18px;width:18px;overflow:hidden}
+        .totp-ipwl-link__text{flex:1 1 auto;min-width:0}
+        .totp-ipwl-link__go{flex:0 0 auto;display:inline-flex;align-items:center;font-weight:600;white-space:nowrap;color:var(--totp-accent,#5b7cfa);text-decoration:none}
+        .totp-ipwl-link__go .material-icons-outlined{font-size:18px;margin-right:-4px;transition:transform .15s ease}
+        .totp-ipwl-link__go:hover .material-icons-outlined{transform:translateX(2px)}
+        .totp-ipwl-link.is-warn{background:rgba(245,166,35,.1);border-color:rgba(245,166,35,.3);color:#b07d10}
+        :root[data-theme=dark] .totp-ipwl-link.is-warn{color:#f0b54a}
+        @media(prefers-color-scheme:dark){:root:not([data-theme=light]) .totp-ipwl-link.is-warn{color:#f0b54a}}
+        @media(max-width:560px){.totp-ipwl-link{flex-wrap:wrap;align-items:flex-start}.totp-ipwl-link>.material-icons-outlined{margin-top:2px}.totp-ipwl-link__text{flex-basis:calc(100% - 28px)}.totp-ipwl-link__go{margin-left:28px}}
         `;
         document.head.appendChild(css);
     }
@@ -101,8 +120,10 @@
                 $('#totp-fund-switch').toggleClass('is-on', fundOn).attr('aria-checked', fundOn ? 'true' : 'false');
                 closeConfirm();
                 show('totp-on');
+                ipwlEntry.sync(true, fundOn, Number(d.ip_whitelist || 0));
             } else {
                 show('totp-off');
+                ipwlEntry.sync(false, false, Number(d.ip_whitelist || 0));
             }
         });
     }
@@ -134,6 +155,67 @@
         document.getElementById('totp-codes-done').dataset.plain = (codes || []).join('\n');
         show('totp-codes');
     }
+
+    // 对接白名单入口（白名单与两步验证无关：登记了就生效；开了资金操作二次验证时清单为空一律拒绝）：
+    //  - 主题放了 #totp-ipwl-link（有独立的「对接白名单」页）：资金开关下方给提示 + 跳转
+    //  - 否则把白名单卡片内嵌在本页（已开启时接在资金开关后，未开启时放在页尾），由 ipwhitelist.js 渲染
+    //    （按需加载，沿用本脚本的版本参数破缓存）
+    const ipwlEntry = (() => {
+        const PAGE_URL = '/user/security/ipWhitelist';
+        let inlineRoot = null;
+        let loading = false;
+
+        function hint(box, fundOn, count) {
+            if (!fundOn && count <= 0) {
+                box.style.display = 'none';
+                return;
+            }
+            const none = count <= 0;
+            box.className = 'totp-on__fund totp-ipwl-link' + (none ? ' is-warn' : '');
+            box.innerHTML = `<span class="material-icons-outlined" aria-hidden="true">${none ? 'info' : 'fact_check'}</span>`
+                + `<span class="totp-ipwl-link__text">${escapeText(none
+                    ? T('对接接口（店铺共享、API）只放行白名单里的服务器 IP 用余额下单。你还没有添加，目前对接下单会被拒绝。')
+                    : T('对接白名单已启用：对接接口（店铺共享、API）只放行其中的 %d 个来源用余额下单。')
+                        .replace(/\s*%d\s*/, (m) => m.replace(/\s/g, '\u00a0').replace('%d', String(count))))}</span>`
+                + `<a class="totp-ipwl-link__go" href="${PAGE_URL}">${escapeText(none ? T('去添加') : T('管理白名单'))}`
+                + '<span class="material-icons-outlined" aria-hidden="true">chevron_right</span></a>';
+            box.style.display = '';
+        }
+
+        function inline(bound) {
+            const pane = document.getElementById(bound ? 'totp-on' : 'totp-off');
+            if (!pane) return;
+            if (!inlineRoot) {
+                inlineRoot = document.createElement('section');
+                inlineRoot.dataset.ipwl = 'inline';
+            }
+            const fund = bound ? pane.querySelector('.totp-on__fund') : null;
+            if (fund) {
+                if (fund.nextElementSibling !== inlineRoot) fund.after(inlineRoot);
+            } else if (inlineRoot.parentElement !== pane) {
+                if (!bound) inlineRoot.style.marginTop = '22px';
+                pane.appendChild(inlineRoot);
+            }
+            if (bound) inlineRoot.style.marginTop = '';
+            if (window.IpWhitelistPanel) {
+                window.IpWhitelistPanel.refresh(inlineRoot);
+            } else if (!loading && typeof ready === 'function') {
+                loading = true;
+                ready('/assets/user/controller/security/ipwhitelist.js' + scriptQuery);
+            }
+        }
+
+        return {
+            sync(bound, fundOn, count) {
+                const box = document.getElementById('totp-ipwl-link');
+                if (box) {
+                    hint(box, bound && fundOn, count);
+                } else {
+                    inline(bound);
+                }
+            }
+        };
+    })();
 
     // 开启：拉密钥 → 显示二维码
     $('#totp-start').on('click', function () {

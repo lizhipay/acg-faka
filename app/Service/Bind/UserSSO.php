@@ -83,7 +83,7 @@ class UserSSO implements \App\Service\UserSSO
             $user,
             $passkey ? 'login_passkey' : 'login',
             $passkey ? '通行密钥登录成功' : '登录成功',
-            ($user->last_login_ip !== '' && $user->last_login_ip !== $user->login_ip) ? 1 : 0
+            ((string)$user->last_login_ip !== '' && (string)$user->last_login_ip !== (string)$user->login_ip) ? 1 : 0
         );
     }
 }

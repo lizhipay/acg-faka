@@ -173,6 +173,51 @@ final class Schema
         }
     }
 
+    /**
+     * 会员对接白名单 IP 表（user_ip_whitelist）。白名单读写与对接下单放行判定前兜底建表。
+     * 与 kernel/Install/Install.sql、version/3.8.2/update.php 三处定义保持一致。
+     */
+    public static function ensureUserIpWhitelistTable(): void
+    {
+        $key = 'user_ip_whitelist';
+        if (isset(self::$checked[$key])) {
+            return;
+        }
+        self::$checked[$key] = true;
+
+        $mark = self::MARK_DIR . '/' . $key;
+        if (is_file($mark)) {
+            return;
+        }
+
+        try {
+            $schema = Manager::schema();
+            if (!$schema->hasTable('user_ip_whitelist')) {
+                $foreignPrefix = (string)Manager::connection()->getTablePrefix();
+                $schema->create('user_ip_whitelist', function (Blueprint $table) use ($foreignPrefix): void {
+                    $table->engine = 'InnoDB';
+                    $table->charset = 'utf8mb4';
+                    $table->collation = 'utf8mb4_general_ci';
+                    $table->increments('id')->comment('主键id');
+                    $table->unsignedInteger('user_id')->comment('会员id');
+                    $table->string('ip', 64)->comment('IP或CIDR网段(规范化)');
+                    $table->string('note', 32)->default('')->comment('备注');
+                    $table->dateTime('create_time')->comment('添加时间');
+                    $table->dateTime('last_used_time')->nullable()->default(null)->comment('最近一次放行时间');
+                    $table->unique(['user_id', 'ip'], 'user_ip');
+                    $table->foreign('user_id', $foreignPrefix . 'user_ip_whitelist_ibfk_1')
+                        ->references('id')->on('user')->onDelete('cascade')->onUpdate('restrict');
+                });
+            }
+            if (!is_dir(self::MARK_DIR)) {
+                @mkdir(self::MARK_DIR, 0755, true);
+            }
+            @file_put_contents($mark, (string)time());
+        } catch (\Throwable $e) {
+            //建表失败（权限不足等）不写标记，下次再试
+        }
+    }
+
     /** 后台会话闲置锁屏所需的最近活动时间列。签发/校验会话前兜一次。 */
     public static function ensureManageSessionActivity(): void
     {

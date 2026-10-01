@@ -538,10 +538,11 @@ class User extends Manage
         return $this->json(200, '更新成功', ['count' => $update]);
     }
     /**
-     * 会员安全稽核日志（按会员归属分页）。仅站长可见（ManageSession）。
+     * 会员安全稽核日志（按会员归属分页）。含逐条 IP/UA/资金动作明细，收敛到站长(type==0)本人。
      * @return array
      * @throws JSONException
      */
+    #[Interceptor(Owner::class, Interceptor::TYPE_API)]
     public function log(): array
     {
         \App\Util\Schema::ensureUserLogTable();

@@ -397,12 +397,9 @@ class Commodity extends Shared
         $map = $request->post(flags: Filter::NORMAL);
         $map['pay_id'] = 1; //强制走余额支付
 
-        // 对接接口是服务器对服务器调用、以 app_key 鉴权，无法做交互式二次验证：
-        // 若付款账号开启了「资金操作二次验证」，一律拒绝用其余额经对接下单。否则会话被盗者
-        // 读到 / 重置 app_key 后即可绕过 TOTP 盗刷余额（FundGuard 只守前台会话入口）。
-        if (\App\Util\FundGuard::required($this->getUser())) {
-            throw new JSONException("该账号已开启资金二次验证，无法通过对接接口消费余额");
-        }
+        // 对接白名单：会员登记了来源 IP 就只放行清单内的来源；开启「资金操作二次验证」的账号清单为空时一律拒绝
+        // （对接接口以 app_key 鉴权、无法交互式验证，否则会话被盗者读到 / 重置 app_key 即可绕过 TOTP 盗刷余额）。
+        \App\Util\IpWhitelist::guardApiTrade($this->getUser());
 
         $commodity = $this->dockedCommodity($map['shared_code'] ?? null);
         $map['item_id'] = $commodity->id;

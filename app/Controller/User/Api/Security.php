@@ -275,6 +275,7 @@ class Security extends User
             "bound" => !empty($user->totp_secret),
             "recovery_left" => \App\Util\RecoveryCode::remaining((string)$user->totp_recovery),
             "fund_2fa" => (int)$user->fund_2fa === 1,
+            "ip_whitelist" => \App\Util\IpWhitelist::count((int)$user->id),
         ]);
     }
 
@@ -434,6 +435,69 @@ class Security extends User
         $user->save();
         \App\Model\UserLog::write($user, $enable ? 'fund_2fa_on' : 'fund_2fa_off', $enable ? '开启了资金操作二次验证' : '关闭了资金操作二次验证', $enable ? 0 : 1);
         return $this->json(200, $enable ? "资金操作二次验证已开启" : "资金操作二次验证已关闭");
+    }
+
+    /**
+     * 对接白名单 IP：清单 + 最近被拒的来源（开了资金操作二次验证后，对接接口只放行清单内的来源用余额下单）。
+     * @return array
+     */
+    public function ipWhitelist(): array
+    {
+        \App\Util\Schema::ensureUserTotp();
+        $user = $this->getUser();
+        return $this->json(data: \App\Util\IpWhitelist::overview((int)$user->id) + [
+            'bound' => !empty($user->totp_secret),
+            'fund_2fa' => (int)$user->fund_2fa === 1,
+        ]);
+    }
+
+    /**
+     * 对接白名单 IP：新增。开了两步验证校验动态码，没开校验账号密码。只靠会话不能加：否则会话被盗者
+     * 先加自己的 IP 再用 app_key 下单，等于绕过资金验证。
+     * @return array
+     * @throws JSONException
+     */
+    public function ipWhitelistAdd(): array
+    {
+        if (strtoupper($this->request->method()) !== 'POST') {
+            throw new JSONException("请求方式不正确");
+        }
+        \App\Util\Schema::ensureUserTotp();
+        $user = \App\Model\User::query()->find($this->getUser()->id);
+        $ip = \App\Util\IpWhitelist::prepare((int)$user->id, (string)($_POST['ip'] ?? ''));
+
+        $throttleKey = "ipwhitelist:uid:" . (int)$user->id;
+        if (\App\Util\Throttle::tooMany($throttleKey, 10, 300)) {
+            throw new JSONException("验证过于频繁，请稍后再试");
+        }
+        if (!empty($user->totp_secret)) {
+            if (!\App\Util\Totp::verify((string)$user->totp_secret, trim((string)($_POST['code'] ?? '')))) {
+                throw new JSONException("验证码错误");
+            }
+        } elseif (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)($_POST['password'] ?? ''), (string)$this->request->unsafePost('password'))) {
+            throw new JSONException("账号密码不正确");
+        }
+        \App\Util\Throttle::clear($throttleKey);
+
+        $entry = \App\Util\IpWhitelist::add((int)$user->id, $ip, (string)$this->request->unsafePost('note'));
+        \App\Model\UserLog::write($user, 'ip_whitelist_add', '添加了对接白名单 IP：' . $entry->ip . ($entry->note !== '' ? '（' . $entry->note . '）' : ''), 1);
+        return $this->json(200, "已加入白名单", \App\Util\IpWhitelist::overview((int)$user->id));
+    }
+
+    /**
+     * 对接白名单 IP：移除（只会缩小放行范围，不需要动态码）。
+     * @return array
+     * @throws JSONException
+     */
+    public function ipWhitelistRemove(): array
+    {
+        if (strtoupper($this->request->method()) !== 'POST') {
+            throw new JSONException("请求方式不正确");
+        }
+        $user = $this->getUser();
+        $entry = \App\Util\IpWhitelist::remove((int)$user->id, (int)($_POST['id'] ?? 0));
+        \App\Model\UserLog::write($user, 'ip_whitelist_remove', '移除了对接白名单 IP：' . $entry->ip);
+        return $this->json(200, "已移出白名单", \App\Util\IpWhitelist::overview((int)$user->id));
     }
 
     /**

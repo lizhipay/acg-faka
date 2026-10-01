@@ -80,6 +80,14 @@ class Security extends User
     /**
      * @throws \Kernel\Exception\ViewException
      */
+    public function ipWhitelist(): string
+    {
+        return $this->theme("对接白名单", "IP_WHITELIST", "User/IpWhitelist.html");
+    }
+
+    /**
+     * @throws \Kernel\Exception\ViewException
+     */
     public function log(): string
     {
         return $this->theme("安全日志", "SECURITY_LOG", "User/SecurityLog.html");

@@ -62,6 +62,7 @@ interface Config
         "TWO_FACTOR" => "User/TwoFactor.html", //会员-两步验证
         "PASSKEY" => "User/Passkey.html", //会员-通行密钥
         "DEVICE" => "User/Device.html", //会员-登录设备
+        "IP_WHITELIST" => "User/IpWhitelist.html", //会员-对接白名单
         "SECURITY_LOG" => "User/SecurityLog.html", //会员-安全日志
         "ORDER" => "User/Order.html", //会员-密码设置
         "TICKET" => "User/Ticket.html", //会员-我的工单

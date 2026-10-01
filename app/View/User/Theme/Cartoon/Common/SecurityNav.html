@@ -5,6 +5,7 @@
     <a href="/user/security/twoFactor" #{if active('/user/security/twoFactor')}class="active"#{/if}><span class="material-icons-outlined">shield</span>#{t("两步验证")}</a>
     <a href="/user/security/passkey" #{if active('/user/security/passkey')}class="active"#{/if}><span class="material-icons-outlined">fingerprint</span>#{t("通行密钥")}</a>
     <a href="/user/security/device" #{if active('/user/security/device')}class="active"#{/if}><span class="material-icons-outlined">devices</span>#{t("登录设备")}</a>
+    <a href="/user/security/ipWhitelist" #{if active('/user/security/ipWhitelist')}class="active"#{/if}><span class="material-icons-outlined">fact_check</span>#{t("对接白名单")}</a>
     <a href="/user/security/log" #{if active('/user/security/log')}class="active"#{/if}><span class="material-icons-outlined">history</span>#{t("安全日志")}</a>
     #{if $config.registered_type == 2}
     <a href="/user/security/email" #{if active('/user/security/email')}class="active"#{/if}><span class="material-icons-outlined">mail</span>#{t("邮箱设置")}</a>

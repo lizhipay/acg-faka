@@ -302,7 +302,8 @@ class Client
         }
     }
 
-    private static function normalizeIp(string $value): ?string
+    //公开给对接白名单（IpWhitelist）复用，保证会员登记的 IP 与 getAddress() 同一规范化口径
+    public static function normalizeIp(string $value): ?string
     {
         $value = trim($value, " \t\n\r\0\x0B\"");
         if ($value === '' || strtolower($value) === 'unknown' || str_starts_with($value, '_')) {
@@ -383,7 +384,7 @@ class Client
         return $candidates;
     }
 
-    private static function ipMatchesRange(string $ip, string $range): bool
+    public static function ipMatchesRange(string $ip, string $range): bool
     {
         $parts = explode('/', $range, 2);
         $network = self::normalizeIp($parts[0]);

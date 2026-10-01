@@ -42,7 +42,8 @@
         totp_on: '开启两步验证', totp_off: '关闭两步验证', totp_recovery: '重置备用恢复码',
         fund_2fa_on: '开启资金二次验证', fund_2fa_off: '关闭资金二次验证', fund_verify: '通过资金二次验证',
         device_revoke: '退出设备', cash: '申请兑现', transfer: '下级转账',
-        passkey_add: '添加通行密钥', passkey_remove: '删除通行密钥'
+        passkey_add: '添加通行密钥', passkey_remove: '删除通行密钥', app_key_reset: '重置对接密钥',
+        ip_whitelist_add: '添加对接白名单 IP', ip_whitelist_remove: '移除对接白名单 IP', api_ip_denied: '对接下单被拒'
     };
     const ICONS = {
         login: 'login', login_passkey: 'fingerprint', login_fail: 'gpp_bad', logout: 'logout',
@@ -50,12 +51,13 @@
         totp_on: 'verified_user', totp_off: 'gpp_bad', totp_recovery: 'vpn_key',
         fund_2fa_on: 'shield', fund_2fa_off: 'remove_moderator', fund_verify: 'verified',
         device_revoke: 'devices', cash: 'payments', transfer: 'swap_horiz',
-        passkey_add: 'fingerprint', passkey_remove: 'fingerprint'
+        passkey_add: 'fingerprint', passkey_remove: 'fingerprint', app_key_reset: 'key',
+        ip_whitelist_add: 'dns', ip_whitelist_remove: 'dns', api_ip_denied: 'gpp_maybe'
     };
     const TONES = {
         login: 'success', login_passkey: 'success', logout: 'success',
-        login_fail: 'danger', totp_off: 'danger', fund_2fa_off: 'danger',
-        password: 'warning', cash: 'warning', transfer: 'warning', device_revoke: 'warning', passkey_remove: 'warning',
+        login_fail: 'danger', totp_off: 'danger', fund_2fa_off: 'danger', api_ip_denied: 'danger',
+        password: 'warning', cash: 'warning', transfer: 'warning', device_revoke: 'warning', passkey_remove: 'warning', app_key_reset: 'warning', ip_whitelist_add: 'warning', ip_whitelist_remove: 'warning',
         email: 'primary', phone: 'primary', settlement: 'primary',
         totp_on: 'primary', totp_recovery: 'primary', fund_2fa_on: 'primary', fund_verify: 'primary', passkey_add: 'primary'
     };

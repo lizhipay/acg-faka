@@ -516,6 +516,7 @@ CREATE TABLE `__PREFIX__shared`  (
 DROP TABLE IF EXISTS `__PREFIX__user_session`;
 DROP TABLE IF EXISTS `__PREFIX__user_log`;
 DROP TABLE IF EXISTS `__PREFIX__user_webauthn`;
+DROP TABLE IF EXISTS `__PREFIX__user_ip_whitelist`;
 DROP TABLE IF EXISTS `__PREFIX__user`;
 CREATE TABLE `__PREFIX__user`  (
                                    `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
@@ -611,6 +612,18 @@ CREATE TABLE `__PREFIX__user_webauthn` (
                                              UNIQUE INDEX `credential_id`(`credential_id` ASC) USING BTREE,
                                              INDEX `user_id`(`user_id` ASC) USING BTREE,
                                              CONSTRAINT `__PREFIX__user_webauthn_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `__PREFIX__user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
+
+CREATE TABLE `__PREFIX__user_ip_whitelist` (
+                                             `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
+                                             `user_id` int UNSIGNED NOT NULL COMMENT '会员id',
+                                             `ip` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'IP或CIDR网段(规范化)',
+                                             `note` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '备注',
+                                             `create_time` datetime NOT NULL COMMENT '添加时间',
+                                             `last_used_time` datetime NULL DEFAULT NULL COMMENT '最近一次放行时间',
+                                             PRIMARY KEY (`id`) USING BTREE,
+                                             UNIQUE INDEX `user_ip`(`user_id` ASC, `ip` ASC) USING BTREE,
+                                             CONSTRAINT `__PREFIX__user_ip_whitelist_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `__PREFIX__user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
 
 

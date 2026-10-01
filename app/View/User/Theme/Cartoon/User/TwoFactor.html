@@ -61,6 +61,8 @@
                         </div>
                         <span class="totp-switch" id="totp-fund-switch" role="switch" aria-label="#{t('资金操作二次验证')}"><i></i></span>
                     </div>
+                    <!-- 对接白名单入口：资金操作二次验证开启时由 totp.js 渲染提示与跳转（白名单本身在独立的「对接白名单」页） -->
+                    <div id="totp-ipwl-link" class="totp-on__fund totp-ipwl-link" style="display:none;"></div>
                     <div class="totp-on__ops">
                         <button type="button" class="totp-ghost" id="totp-regen">#{t("重新生成恢复码")}</button>
                         <button type="button" class="totp-danger" id="totp-disable">#{t("关闭两步验证")}</button>

@@ -1,0 +1,15 @@
+#{include file="../Common/Header.html"}
+<div class="uc-main">
+    <div class="uc-card">
+        <div class="uc-card__body">
+            #{include file="../Common/SecurityNav.html"}
+
+            <section id="ipwl-app" data-ipwl="page">
+                <div class="ipwl__loading">#{t("正在读取对接白名单…")}</div>
+            </section>
+        </div>
+    </div>
+</div>
+
+#{ready("/assets/user/controller/security/ipwhitelist.js")}
+#{include file="../Common/Footer.html"}
