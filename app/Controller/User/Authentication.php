@@ -79,7 +79,17 @@ class Authentication extends User
      */
     public function logout(): void
     {
-        setcookie(\App\Consts\User::SESSION, "", time() - 3600, "/");
+        if (isset($_COOKIE[\App\Consts\User::SESSION])) {
+            $cookie = (string)$_COOKIE[\App\Consts\User::SESSION];
+            //先按 cookie 解析出会员再吊销，才能把「退出登录」记到对应会员名下（logout 不走鉴权拦截器）。
+            $logoutResolved = \App\Service\UserSessionManager::authenticate($cookie, false);
+            \App\Service\UserSessionManager::revokeEncodedToken($cookie);
+            //authenticate 返回 ['user'=>User, 'session'=>...]，UserLog::write 要的是 User 本体，别把整个数组传进去。
+            if ($logoutResolved && isset($logoutResolved['user'])) {
+                \App\Model\UserLog::write($logoutResolved['user'], 'logout', '退出登录');
+            }
+        }
+        \App\Service\UserSessionManager::clearCookie();
         Client::redirect("/user/authentication/login", "注销成功", 1);
     }
 }

@@ -260,7 +260,7 @@ class Install extends User
         $sqlFile = BASE_PATH . '/kernel/Install/Install.sql';
 
         $salt = Str::generateRandStr(32);
-        $pw = Str::generatePassword($login_password, $salt);
+        $pw = Str::hashPassword($login_password);
 
         $sqlSrc = (string)file_get_contents($sqlFile);
         $sqlSrc = str_replace('__MANAGE_EMAIL__', $email, $sqlSrc);

@@ -1,0 +1,27 @@
+#{include file="../Common/Header.html"}
+<div class="uc-main">
+    <div class="uc-card">
+        <div class="uc-card__body">
+            #{include file="../Common/SecurityNav.html"}
+
+            <div id="dev-app" class="dev-app">
+                <div class="dev-head">
+                    <div>
+                        <div class="dev-head__title">#{t("登录设备")}</div>
+                        <div class="dev-head__desc">#{t("每台设备独立登录，可随时退出不再使用的设备。发现陌生设备请立即退出，并修改密码。")}</div>
+                    </div>
+                    <div class="dev-head__ops">
+                        <button type="button" class="totp-ghost" id="dev-refresh">#{t("刷新")}</button>
+                        <button type="button" class="totp-ghost" id="dev-revoke-others">#{t("退出其他设备")}</button>
+                        <button type="button" class="totp-danger" id="dev-revoke-all">#{t("退出全部设备")}</button>
+                    </div>
+                </div>
+                <div id="dev-status" class="dev-status">#{t("正在读取登录设备…")}</div>
+                <div id="dev-list" class="dev-list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+#{ready("/assets/user/controller/security/device.js")}
+#{include file="../Common/Footer.html"}

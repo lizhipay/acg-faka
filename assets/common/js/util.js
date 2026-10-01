@@ -243,6 +243,9 @@ const util = new class Util {
             enable: true,
             autoClose: true
         };
+        //资金操作二次验证：重放原请求时带上此标记，避免验证后仍 42002 造成弹框死循环
+        let fundRetried = false;
+        let fundOpts = null;
         if (typeof url == "object") {
             data = url.hasOwnProperty("data") ? url.data : {};
             done = url.hasOwnProperty("done") ? url.done : null;
@@ -252,10 +255,12 @@ const util = new class Util {
                 enable: false,
                 autoClose: false
             }) : loader;
+            fundRetried = url._fundRetried === true;
             url = url.hasOwnProperty("url") ? url.url : {};
         } else if (typeof data === "function") {
             done = data;
         }
+        fundOpts = {url: url, data: data, done: done, error: error, fail: fail, loader: loader, _fundRetried: true};
 
         loader.enable ? Loading.show() : 0;
         util.debugRedacted("POST(↑):" + url, "#ff4f33", data, url, "request");
@@ -267,6 +272,11 @@ const util = new class Util {
                 Loading.hide();
                 try {
                     util.debugRedacted("POST(↓):" + url, "#0bbf4a", res, url, "response");
+                    //资金操作需二次验证：弹码→/fundVerify→通过后自动重放原请求一次（覆盖所有资金接口/主题）
+                    if (res && res.code === 42002 && !fundRetried) {
+                        util.fundVerify(() => util.post(fundOpts));
+                        return;
+                    }
                     if (res.code !== 200) {
                         if (typeof error === 'function') {
                             error(res);
@@ -291,6 +301,197 @@ const util = new class Util {
                 typeof fail === 'function' && fail(xhr, status, error);
             }
         });
+    }
+
+    /**
+     * 资金操作二次验证弹窗（统一的 macOS 液态玻璃样式，自适应白天/黑夜）：
+     * 输入动态码 → /user/api/security/fundVerify，成功后回调 retry 重放原请求。
+     * 自带 DOM 与样式，不依赖 message/SweetAlert，前台任意主题下观感一致。
+     * @param retry
+     */
+    fundVerify(retry) {
+        const T = (s) => (typeof i18n === "function" ? i18n(s) : s);
+        if (document.getElementById("fv-mask")) {
+            return; //已有一个验证框时不重复弹（多个请求同时撞上 42002）
+        }
+        util._fundVerifyStyle();
+
+        const mask = document.createElement("div");
+        mask.id = "fv-mask";
+        mask.className = "fv-mask";
+        mask.setAttribute("role", "dialog");
+        mask.setAttribute("aria-modal", "true");
+        mask.setAttribute("aria-label", T("资金操作验证"));
+        mask.innerHTML =
+            '<div class="fv-card" role="document">'
+            + '<div class="fv-title"></div>'
+            + '<input class="fv-input" type="text" inputmode="numeric" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="6">'
+            + '<div class="fv-err" aria-live="polite"></div>'
+            + '<div class="fv-acts">'
+            + '<button type="button" class="fv-btn fv-btn--ghost fv-cancel"></button>'
+            + '<button type="button" class="fv-btn fv-btn--primary fv-ok"></button>'
+            + '</div>'
+            + '</div>';
+        document.body.appendChild(mask);
+
+        const card = mask.querySelector(".fv-card");
+        const input = mask.querySelector(".fv-input");
+        const errEl = mask.querySelector(".fv-err");
+        const okBtn = mask.querySelector(".fv-ok");
+        const cancelBtn = mask.querySelector(".fv-cancel");
+        mask.querySelector(".fv-title").textContent = T("资金操作验证");
+        input.placeholder = T("请输入验证器上的 6 位动态码");
+        okBtn.textContent = T("验证");
+        cancelBtn.textContent = T("取消");
+
+        let busy = false;
+        let closed = false;
+
+        const close = (after) => {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            mask.classList.add("fv-out");
+            document.removeEventListener("keydown", onKey, true);
+            setTimeout(() => {
+                mask.remove();
+                typeof after === "function" && after();
+            }, 180);
+        };
+
+        const showErr = (msg) => {
+            errEl.textContent = msg || "";
+            errEl.classList.toggle("is-show", !!msg);
+            card.classList.remove("fv-shake");
+            void card.offsetWidth; //重启抖动动画
+            card.classList.add("fv-shake");
+        };
+
+        const submit = () => {
+            if (busy) {
+                return;
+            }
+            const code = (input.value || "").replace(/\D/g, "");
+            if (code.length === 0) {
+                showErr(T("请输入验证器上的 6 位动态码"));
+                input.focus();
+                return;
+            }
+            busy = true;
+            okBtn.classList.add("is-loading");
+            okBtn.disabled = cancelBtn.disabled = input.disabled = true;
+            util.post({
+                url: "/user/api/security/fundVerify",
+                data: {code: code},
+                loader: false,
+                done: () => close(() => retry && retry()),
+                error: (res) => {
+                    busy = false;
+                    okBtn.classList.remove("is-loading");
+                    okBtn.disabled = cancelBtn.disabled = input.disabled = false;
+                    showErr((res && res.msg) ? res.msg : T("验证码错误"));
+                    input.value = "";
+                    input.focus();
+                },
+                fail: () => {
+                    busy = false;
+                    okBtn.classList.remove("is-loading");
+                    okBtn.disabled = cancelBtn.disabled = input.disabled = false;
+                    showErr(T("网络异常，请稍后重试"));
+                }
+            });
+        };
+
+        function onKey(e) {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                close();
+            } else if (e.key === "Enter") {
+                e.preventDefault();
+                submit();
+            }
+        }
+
+        input.addEventListener("input", () => {
+            input.value = input.value.replace(/\D/g, "").slice(0, 6);
+            if (errEl.classList.contains("is-show")) {
+                showErr("");
+            }
+            if (input.value.length === 6) {
+                submit(); //输满 6 位自动提交
+            }
+        });
+        okBtn.addEventListener("click", submit);
+        cancelBtn.addEventListener("click", () => close());
+        mask.addEventListener("mousedown", (e) => {
+            if (e.target === mask) {
+                close();
+            }
+        });
+        document.addEventListener("keydown", onKey, true);
+        requestAnimationFrame(() => {
+            mask.classList.add("fv-in");
+            input.focus();
+        });
+    }
+
+    /**
+     * 注入资金验证弹窗样式（只注一次）。放 JS 里是为了不依赖任何主题 CSS，任意前台主题下样式一致。
+     * style-src 允许 'unsafe-inline'，故可直接注入 <style>。
+     */
+    _fundVerifyStyle() {
+        if (document.getElementById("fv-style")) {
+            return;
+        }
+        const css =
+            '.fv-mask{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:20px;'
+            + 'background:rgba(16,14,30,.32);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;transition:opacity .22s cubic-bezier(.22,1,.36,1);'
+            + 'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,"PingFang SC","Microsoft YaHei",sans-serif}'
+            + '.fv-mask.fv-in{opacity:1}.fv-mask.fv-out{opacity:0}'
+            + '.fv-card{--fv-accent:var(--uc-primary,var(--md-primary,#6a5cff));--fv-tint:rgba(255,255,255,.62);--fv-fg:#14121f;--fv-fg-soft:rgba(20,18,31,.56);'
+            + '--fv-field:rgba(255,255,255,.5);--fv-field-line:rgba(20,18,31,.14);--fv-ghost:rgba(20,18,31,.06);--fv-rim:rgba(255,255,255,.9);'
+            + 'position:relative;width:min(380px,100%);box-sizing:border-box;padding:26px 24px 22px;border-radius:26px;isolation:isolate;'
+            + 'background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 52%),var(--fv-tint);'
+            + '-webkit-backdrop-filter:blur(34px) saturate(180%);backdrop-filter:blur(34px) saturate(180%);color:var(--fv-fg);'
+            + 'box-shadow:0 30px 70px -24px rgba(16,14,40,.55),inset 0 1px 0 rgba(255,255,255,.6);'
+            + 'transform:translateY(10px) scale(.96);opacity:0;transition:transform .32s cubic-bezier(.34,1.36,.64,1),opacity .22s cubic-bezier(.22,1,.36,1)}'
+            + '.fv-in .fv-card{transform:none;opacity:1}.fv-out .fv-card{transform:translateY(8px) scale(.98);opacity:0}'
+            + '.fv-card::before{content:"";position:absolute;inset:0;z-index:2;padding:1px;border-radius:inherit;pointer-events:none;'
+            + 'background:linear-gradient(150deg,var(--fv-rim),rgba(255,255,255,0) 44%,rgba(255,255,255,0) 60%,var(--fv-rim));'
+            + '-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);opacity:.7}'
+            + '.fv-title{text-align:center;font-size:19px;font-weight:700;letter-spacing:.02em;margin:0 0 18px}'
+            + '.fv-input{display:block;width:100%;box-sizing:border-box;height:52px;padding:0 16px;margin:0;border:0;border-radius:15px;outline:none;'
+            + 'background:var(--fv-field);box-shadow:inset 0 0 0 1px var(--fv-field-line);color:var(--fv-fg);font-size:18px;letter-spacing:.32em;text-align:center;'
+            + '-webkit-appearance:none;appearance:none;transition:box-shadow .2s ease,background-color .2s ease}'
+            + '.fv-input::placeholder{color:var(--fv-fg-soft);letter-spacing:normal;font-size:15px}'
+            + '.fv-input:focus{background:rgba(255,255,255,.66);box-shadow:inset 0 0 0 1px var(--fv-field-line),0 0 0 3.5px color-mix(in srgb,var(--fv-accent) 32%,transparent)}'
+            + '.fv-err{max-height:0;overflow:hidden;opacity:0;color:#ff3b30;font-size:13px;text-align:center;transition:max-height .2s ease,opacity .2s ease,margin .2s ease}'
+            + '.fv-err.is-show{max-height:40px;opacity:1;margin-top:10px}'
+            + '.fv-acts{display:flex;gap:12px;margin-top:20px}'
+            + '.fv-btn{flex:1;height:46px;border:0;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;transition:transform .15s ease,filter .2s ease,background-color .2s ease;font-family:inherit}'
+            + '.fv-btn:active{transform:scale(.97)}.fv-btn:focus-visible{outline:2px solid var(--fv-accent);outline-offset:2px}'
+            + '.fv-btn--ghost{background:var(--fv-ghost);color:var(--fv-fg)}.fv-btn--ghost:hover{background:color-mix(in srgb,var(--fv-fg) 12%,transparent)}'
+            + '.fv-btn--primary{position:relative;background:var(--fv-accent);color:#fff;box-shadow:0 10px 22px -10px var(--fv-accent)}.fv-btn--primary:hover{filter:brightness(1.06)}'
+            + '.fv-btn--primary.is-loading{color:transparent;pointer-events:none}'
+            + '.fv-btn--primary.is-loading::after{content:"";position:absolute;top:50%;left:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:fv-spin .7s linear infinite}'
+            + '@keyframes fv-spin{to{transform:rotate(360deg)}}'
+            + '@keyframes fv-shake{10%,90%{transform:translateX(-1px)}30%,70%{transform:translateX(-4px)}50%{transform:translateX(4px)}}'
+            + '.fv-card.fv-shake{animation:fv-shake .4s cubic-bezier(.36,.07,.19,.97)}'
+            + '@supports (corner-shape:squircle){.fv-card,.fv-card::before{corner-shape:squircle;border-radius:34px}.fv-input{corner-shape:squircle;border-radius:19px}.fv-btn{corner-shape:squircle;border-radius:18px}}'
+            + '@media (prefers-reduced-motion:reduce){.fv-mask,.fv-card,.fv-card.fv-shake{transition:none;animation:none}}';
+        // 暗色：跟随系统，或站点在 <html> 上显式标注的主题（Cartoon 用 data-theme；显式 light 时不转暗）。
+        const dark =
+            '@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fv-card{--fv-tint:rgba(30,30,38,.58);--fv-fg:#f5f5f7;--fv-fg-soft:rgba(235,235,245,.56);--fv-field:rgba(255,255,255,.08);--fv-field-line:rgba(255,255,255,.14);--fv-ghost:rgba(255,255,255,.1);--fv-rim:rgba(255,255,255,.3);'
+            + 'background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,0) 52%),var(--fv-tint);box-shadow:0 30px 70px -24px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.16)}'
+            + ':root:not([data-theme="light"]) .fv-input:focus{background:rgba(255,255,255,.12)}}'
+            + 'html[data-theme="dark"] .fv-card{--fv-tint:rgba(30,30,38,.58);--fv-fg:#f5f5f7;--fv-fg-soft:rgba(235,235,245,.56);--fv-field:rgba(255,255,255,.08);--fv-field-line:rgba(255,255,255,.14);--fv-ghost:rgba(255,255,255,.1);--fv-rim:rgba(255,255,255,.3);'
+            + 'background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,0) 52%),var(--fv-tint);box-shadow:0 30px 70px -24px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.16)}'
+            + 'html[data-theme="dark"] .fv-input:focus{background:rgba(255,255,255,.12)}';
+        const style = document.createElement("style");
+        style.id = "fv-style";
+        style.textContent = css + dark;
+        document.head.appendChild(style);
     }
 
     /**

@@ -27,6 +27,8 @@ final class ManageSessionManager
             throw new \InvalidArgumentException('Session expiry must be in the future.');
         }
 
+        \App\Util\Schema::ensureManageSessionActivity();
+
         $now = Date::current();
         $ip = self::clientIp();
         $userAgent = self::userAgent();
@@ -43,6 +45,7 @@ final class ManageSessionManager
         $session->last_ip = $ip;
         $session->created_time = $now;
         $session->last_seen_time = $now;
+        $session->last_active_time = $now;
         $session->expires_time = date('Y-m-d H:i:s', $expiresAt);
         $session->revoked_time = null;
         $session->saveOrFail();

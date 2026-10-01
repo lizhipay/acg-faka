@@ -80,6 +80,7 @@ class Config extends Manage
         'link_domain_filter',
         'link_domain_whitelist',
         'csp_mode',
+        'admin_lock_timeout',
     ];
 
     private const SMS_REQUEST_FIELDS = [
@@ -715,6 +716,8 @@ class Config extends Manage
         $post = $this->configPost(self::SECURITY_REQUEST_FIELDS, '安全设置');
 
         $ipGetMode = $this->settingInteger($post, 'ip_get_mode', 0, 8, 'CDN 获取 IP 方式');
+        //后台闲置锁屏分钟数：0=关闭，最长 1440(24 小时)；留空视为默认 15 分钟
+        $lockTimeout = $this->settingInteger($post, 'admin_lock_timeout', 0, 1440, '后台锁屏闲置分钟', 15);
         try {
             $trustedProxyConfig = Client::normalizeTrustedProxyConfig(
                 array_key_exists('trusted_proxy_ips', $post)
@@ -783,6 +786,7 @@ class Config extends Manage
             //受信代理清单和 IP 获取方式必须一起落库：分两次写的话，前者成后者败会留下
             //「模式改了、清单没改」的半截状态，而这两个值只有配套才有意义（#928）
             Client::TRUSTED_PROXY_CONFIG => $trustedProxyConfig,
+            'admin_lock_timeout' => (string)$lockTimeout,
         ];
 
         try {

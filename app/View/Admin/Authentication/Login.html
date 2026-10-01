@@ -1,15 +1,16 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="#{lang_code()}">
 <head>
     <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <meta name="color-scheme" content="light dark"/>
+    <meta name="robots" content="noindex, nofollow"/>
     <title>#{t("登录")} - #{$config.title}</title>
     <script>(function(){try{var p=localStorage.getItem('admin-theme')||'auto';var d=p==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p;var e=document.documentElement;e.setAttribute('data-theme',d);e.setAttribute('data-theme-pref',p);}catch(_){document.documentElement.setAttribute('data-theme','light');}})();</script>
     #{css(
     [
     "/assets/common/css/_.css",
-    "/assets/admin/css/auth.css",
-    "/assets/admin/css/_material-auth.css"
+    "/assets/admin/css/_login.css"
     ],
     [
     "/assets/admin/css/style.bundle.css",
@@ -20,129 +21,196 @@
     "/assets/common/css/toastr.min.css",
     "/assets/common/js/table/bootstrap-table.css",
     "/assets/common/js/layer/theme/default/layer.css",
-    "/assets/admin/css/auth.css",
-    "/assets/common/css/md-tokens.css",
-    "/assets/admin/css/material-auth.css"
+    "/assets/admin/css/login/base.css",
+    "/assets/admin/css/login/glass.css",
+    "/assets/admin/css/login/lock.css",
+    "/assets/admin/css/login/app.css"
     ])}
 
     #{js("/assets/common/js/ready.js")}
     #{admin_var()}
 </head>
-<body class="ay-bg" style="background-image: linear-gradient(180deg, rgb(255 255 255 / 0%), rgb(255 255 255 / 71%)), url('#{$config.background_url}')">
-<div class="ay-dim" aria-hidden="true"></div>
-<div class="ay-petals" aria-hidden="true">
-    <i style="left:6%; top:-8vh; animation-duration:11s"></i>
-    <i style="left:24%; top:-12vh; animation-duration:13s"></i>
-    <i style="left:52%; top:-16vh; animation-duration:12s"></i>
-    <i style="left:72%; top:-10vh; animation-duration:10s"></i>
-    <i style="left:86%; top:-18vh; animation-duration:14s"></i>
+<!-- The default wallpaper path is served as the built-in light/dark/portrait set -->
+#{if !$config.background_url || $config.background_url == '/assets/admin/images/login/bg.jpg'}
+<body class="lk lk--builtin">
+<div class="lk-wall" aria-hidden="true">
+#{else}
+<body class="lk lk--custom">
+<div class="lk-wall" aria-hidden="true" data-lk-src="#{$config.background_url}" style="--lk-wall: url('#{$config.background_url}')">
+#{/if}
+    <div class="lk-wall__img"></div>
+    <div class="lk-wall__blur"></div>
+    <div class="lk-wall__shade"></div>
 </div>
 
-<main class="ay-wrap">
-
-
-    <section class="ay-card" role="dialog" aria-labelledby="ay-title" aria-describedby="ay-sub">
-        <button type="button" class="ay-theme" id="ay-theme" aria-label="#{t('切换明暗主题')}" title="#{t('切换明暗主题')}">
-            <svg class="ico-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>
-            </svg>
-            <svg class="ico-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<div class="lk-extras">
+    <div class="lk-extra">
+        <button type="button" class="lk-orb lk-glass" id="lk-lang-btn" data-lk-menu="lk-lang-menu"
+                aria-haspopup="menu" aria-expanded="false" aria-controls="lk-lang-menu"
+                aria-label="#{t('切换语言')}" title="#{t('语言')}">
+            <span class="lk-orb__text" data-lang-label>#{foreach lang_menu() as $l}#{if $l.active}#{$l.short}#{/if}#{/foreach}</span>
+        </button>
+        <div class="lk-menu lk-glass" id="lk-lang-menu" role="menu" aria-labelledby="lk-lang-btn">
+            <div class="lk-menu__title" aria-hidden="true">#{t("语言")}</div>
+            #{foreach lang_menu() as $l}
+            <button type="button" class="lk-menu__item" role="menuitemradio" tabindex="-1"
+                    aria-checked="#{if $l.active}true#{else}false#{/if}" data-lang-value="#{$l.code}" lang="#{$l.tag}">
+                <svg class="lk-menu__check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                <span>#{$l.name}</span>
+            </button>
+            #{/foreach}
+        </div>
+    </div>
+    <div class="lk-extra">
+        <button type="button" class="lk-orb lk-glass" id="lk-theme-btn" data-lk-menu="lk-theme-menu"
+                aria-haspopup="menu" aria-expanded="false" aria-controls="lk-theme-menu"
+                aria-label="#{t('外观模式')}" title="#{t('外观模式')}">
+            <svg class="lk-orb__ico" data-pref="light" viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="12" cy="12" r="4"/>
-                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+                <path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/>
+            </svg>
+            <svg class="lk-orb__ico" data-pref="dark" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z"/>
+            </svg>
+            <svg class="lk-orb__ico" data-pref="auto" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="8.5"/>
+                <path d="M12 3.5v17a8.5 8.5 0 0 0 0-17Z" class="lk-orb__fill"/>
             </svg>
         </button>
-        <header class="ay-head">
-            <div class="ay-logo" aria-hidden="true"></div>
-            <h1 id="ay-title" class="ay-title">#{t("欢迎回来，指挥官")}</h1>
-            <p id="ay-sub" class="ay-sub">#{t("正在验证您的管理员身份")}</p>
+        <div class="lk-menu lk-glass" id="lk-theme-menu" role="menu" aria-labelledby="lk-theme-btn">
+            <div class="lk-menu__title" aria-hidden="true">#{t("外观模式")}</div>
+            <button type="button" class="lk-menu__item" role="menuitemradio" tabindex="-1" aria-checked="false" data-lk-theme="light">
+                <svg class="lk-menu__check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                <span>#{t("亮色")}</span>
+            </button>
+            <button type="button" class="lk-menu__item" role="menuitemradio" tabindex="-1" aria-checked="false" data-lk-theme="dark">
+                <svg class="lk-menu__check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                <span>#{t("暗色")}</span>
+            </button>
+            <button type="button" class="lk-menu__item" role="menuitemradio" tabindex="-1" aria-checked="false" data-lk-theme="auto">
+                <svg class="lk-menu__check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                <span>#{t("跟随系统")}</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<main class="lk-main">
+    <div class="lk-clock" aria-hidden="true" data-lk-clock>
+        <div class="lk-date" data-lk-date></div>
+        <div class="lk-time" data-lk-time></div>
+    </div>
+
+    <section class="lk-auth" aria-labelledby="lk-name">
+        <header class="lk-id">
+            <div class="lk-avatar lk-glass">
+                <img src="/favicon.ico" alt="" width="96" height="96" decoding="async">
+            </div>
+            <h1 class="lk-sr" id="lk-name">#{$config.shop_name}</h1>
         </header>
 
-        <div class="ay-body">
-            <form id="ay-form" method="post" novalidate>
-                <div class="ay-field has-ico">
-                    <input id="ay-user" name="username" class="ay-input" type="text" placeholder=" "
-                           autocomplete="username" autofocus required>
-                    <span class="ay-label">#{t("邮箱")}</span>
-                    <span class="ay-ico" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                    </span>
+        <form id="lk-form" class="lk-form" method="post" novalidate>
+            <div class="lk-fields lk-glass#{if $config.admin_login_verification != '0'} has-captcha#{/if}">
+                <div class="lk-field lk-field--user">
+                    <label class="lk-sr" for="lk-user">#{t("邮箱")}</label>
+                    <svg class="lk-field__ico" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="8" r="3.6"/>
+                        <path d="M4.8 19.6c1.2-3.3 4-5 7.2-5s6 1.7 7.2 5"/>
+                    </svg>
+                    <input id="lk-user" name="username" class="lk-input" type="email" inputmode="email"
+                           autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false"
+                           placeholder="#{t('邮箱')}" required>
                 </div>
-                <div class="ay-field has-ico">
-                    <input id="ay-pass" name="password" class="ay-input" type="password" placeholder=" "
-                           autocomplete="current-password" required>
-                    <span class="ay-label">#{t("密码")}</span>
-                    <span class="ay-ico" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        </svg>
+                <div class="lk-field lk-field--pass">
+                    <label class="lk-sr" for="lk-pass">#{t("密码")}</label>
+                    <svg class="lk-field__ico" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="4.8" y="10.4" width="14.4" height="9.8" rx="2.6"/>
+                        <path d="M8.2 10.4V7.9a3.8 3.8 0 0 1 7.6 0v2.5"/>
+                    </svg>
+                    <input id="lk-pass" name="password" class="lk-input" type="password"
+                           autocomplete="current-password" placeholder="#{t('密码')}" required>
+                    <span class="lk-caps" id="lk-caps" role="img" aria-label="#{t('大写锁定已开启')}" title="#{t('大写锁定已开启')}" hidden>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5 4.8 12.2h4v4.2h6.4v-4.2h4L12 4.5Z"/><path d="M8.8 19.5h6.4"/></svg>
                     </span>
-                    <button type="button" class="ay-eye" id="ay-eye" aria-label="#{t('显示密码')}" aria-controls="ay-pass">
-                        <svg class="ay-eye-open" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"/>
-                            <circle cx="12" cy="12" r="3"/>
+                    <button type="button" class="lk-eye" id="lk-eye" aria-controls="lk-pass" aria-pressed="false"
+                            aria-label="#{t('显示密码')}" title="#{t('显示密码')}">
+                        <svg data-eye="open" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M2.8 12s3.4-6.2 9.2-6.2 9.2 6.2 9.2 6.2-3.4 6.2-9.2 6.2S2.8 12 2.8 12Z"/>
+                            <circle cx="12" cy="12" r="2.8"/>
                         </svg>
-                        <svg class="ay-eye-shut" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                            <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
-                            <path d="m1 1 22 22"/>
+                        <svg data-eye="shut" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M9.9 5.9A9.6 9.6 0 0 1 12 5.8c5.8 0 9.2 6.2 9.2 6.2a16.4 16.4 0 0 1-2.4 3.2M6.6 7.3A16.1 16.1 0 0 0 2.8 12s3.4 6.2 9.2 6.2a9.3 9.3 0 0 0 4.4-1.1"/>
+                            <path d="M10 10a2.8 2.8 0 0 0 4 4M4 4l16 16"/>
                         </svg>
                     </button>
-                    <span class="ay-caps" id="ay-caps" hidden>#{t("大写锁定已开启")}</span>
                 </div>
                 #{if $config.admin_login_verification != '0'}
-                <div class="ay-field has-ico">
-                    <input id="ay-captcha" name="captcha" class="ay-input" type="text" inputmode="numeric"
-                           maxlength="4" autocomplete="off" placeholder=" " required>
-                    <span class="ay-label">#{t("验证码")}</span>
-                    <span class="ay-ico" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>
-                        </svg>
-                    </span>
-                    <img id="ay-captcha-img" class="ay-captcha" src="/user/captcha/image?action=adminLogin"
-                         data-acg-refresh="/user/captcha/image?action=adminLogin"
-                         title="#{t('看不清？点我刷新')}" alt="#{t('验证码')}">
+                <div class="lk-field lk-field--captcha">
+                    <label class="lk-sr" for="lk-captcha">#{t("验证码")}</label>
+                    <svg class="lk-field__ico" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3.6 5.2 6.2v5.1c0 4.4 2.9 7.6 6.8 9.1 3.9-1.5 6.8-4.7 6.8-9.1V6.2L12 3.6Z"/>
+                        <path d="m9.1 12.1 2.1 2.1 3.8-4"/>
+                    </svg>
+                    <input id="lk-captcha" name="captcha" class="lk-input lk-input--digits" type="text" inputmode="numeric"
+                           pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="#{t('验证码')}" required>
+                    <button type="button" class="lk-captcha" id="lk-captcha-btn"
+                            aria-label="#{t('看不清？点我刷新')}" title="#{t('看不清？点我刷新')}">
+                        <img id="lk-captcha-img" src="/user/captcha/image?action=adminLogin" alt="" width="50" height="24">
+                    </button>
                 </div>
                 #{/if}
-                <div class="ay-field has-ico ay-2fa is-hidden">
-                    <input id="ay-code" name="code" class="ay-input" type="text" inputmode="numeric"
-                           autocomplete="one-time-code" maxlength="6" placeholder=" ">
-                    <span class="ay-label">#{t("谷歌验证码")}</span>
-                    <span class="ay-ico" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-                        </svg>
-                    </span>
+                <div class="lk-field lk-field--code" id="lk-code-row" hidden>
+                    <label class="lk-sr" for="lk-code">#{t("谷歌验证器")}</label>
+                    <svg class="lk-field__ico" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="6.4" y="2.8" width="11.2" height="18.4" rx="2.8"/>
+                        <path d="M10.6 17.8h2.8M9.4 9.4h.01M12 9.4h.01M14.6 9.4h.01M9.4 12.4h.01M12 12.4h.01M14.6 12.4h.01"/>
+                    </svg>
+                    <input id="lk-code" name="code" class="lk-input lk-input--digits" type="text" inputmode="numeric"
+                           pattern="[0-9]*" maxlength="6" autocomplete="one-time-code"
+                           placeholder="#{t('请输入 6 位数字动态码')}">
                 </div>
+                <button type="submit" class="lk-go" aria-label="#{t('登录')}" title="#{t('登录')}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13.5M13 6.5l5.5 5.5-5.5 5.5"/></svg>
+                </button>
+            </div>
 
-                <div class="ay-row">
-                    <label class="ay-check"><input type="checkbox" id="ay-remember" name="remember" value="1">#{t("保持登录(365天)")}</label>
-                    <a class="ay-link" href="javascript:void(0)" data-acg-action="message.info" data-acg-args='["查看官方文档重置密码方法"]'>#{t("忘记密码？")}</a>
+            <div class="lk-note" id="lk-note" role="status" aria-live="polite">
+                <div class="lk-note__inner">
+                    <p class="lk-note__pill lk-glass">
+                        <span class="lk-note__icon" aria-hidden="true"></span>
+                        <span class="lk-note__text" id="lk-note-text"></span>
+                    </p>
                 </div>
+            </div>
 
-                <!--start::HOOK-->
-                #{hook(\App\Consts\Hook::ADMIN_VIEW_AUTH_LOGIN_FORM)}
-                <!--end::HOOK-->
+            <!--start::HOOK-->
+            #{hook(\App\Consts\Hook::ADMIN_VIEW_AUTH_LOGIN_FORM)}
+            <!--end::HOOK-->
 
-                <button class="ay-btn" type="submit" id="ay-submit">#{t("确认登入")}</button>
-            </form>
-            <div class="ay-foot">© #{$config.shop_name}</div>
-        </div>
+            <div class="lk-row lk-row--pair">
+                <button type="button" class="lk-passkey" id="lk-passkey" hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.6" cy="12" r="3.6"/><path d="M11.2 12H20M17.4 12v2.6M20 12v2"/></svg>
+                    <span>#{t("使用通行密钥登录")}</span>
+                </button>
+                <label class="lk-check">
+                    <input type="checkbox" id="lk-remember" name="remember" value="1">
+                    <span>#{t("保持登录")}</span>
+                </label>
+            </div>
+            <!-- Same test as AdminWebAuthn.supported(): reveal before first paint so the pair never reflows -->
+            <script>if (window.PublicKeyCredential && navigator.credentials && window.isSecureContext) document.getElementById('lk-passkey').hidden = false;</script>
+
+            <button type="submit" class="lk-submit">
+                <span class="lk-submit__label" data-lk-label="#{t('确认登入')}">#{t("确认登入")}</span>
+            </button>
+
+
+        </form>
     </section>
 </main>
 
+#{js("/assets/admin/js/login/scene.js")}
+#{js("/assets/admin/js/webauthn.js")}
 #{ready("/assets/admin/controller/auth/login.js")}
 
 #{js(

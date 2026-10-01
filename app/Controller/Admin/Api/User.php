@@ -206,7 +206,9 @@ class User extends Manage
             }
 
             if (!empty($saveMap['password'])) {
-                $saveMap['password'] = Str::generatePassword((string)$saveMap['password'], $user->salt);
+                $saveMap['password'] = Str::hashPassword((string)$saveMap['password']);
+                //站长改了会员密码：吊销该会员所有在线会话，旧 cookie 立即失效
+                \App\Service\UserSessionManager::revokeAll((int)$user->id);
             }
 
             if ($businessLevelId > 0 && !Business::query()->where("user_id", $user->id)->first()) {
@@ -240,6 +242,9 @@ class User extends Manage
             return $savedUser;
         });
 
+        if (!empty($map['password'])) {
+            \App\Model\UserLog::write($user, 'password', '管理员重置了登录密码', 1);
+        }
         ManageLog::log($this->getManage(), "修改了会员($user->username)的信息。");
         return $this->json(200, '（＾∀＾）保存成功');
     }
@@ -532,4 +537,42 @@ class User extends Manage
         ManageLog::log($this->getManage(), "批量操作了会员的等级，共计：{$update}");
         return $this->json(200, '更新成功', ['count' => $update]);
     }
+    /**
+     * 会员安全稽核日志（按会员归属分页）。仅站长可见（ManageSession）。
+     * @return array
+     * @throws JSONException
+     */
+    public function log(): array
+    {
+        \App\Util\Schema::ensureUserLogTable();
+        $userId = (int)$this->request->post('user_id');
+        if ($userId <= 0) {
+            throw new JSONException("会员ID无效");
+        }
+        $map = array_intersect_key($_POST, array_flip([
+            'equal-action',
+            'search-content',
+            'equal-create_ip',
+            // 前端日期区间控件发送 betweenStart-/betweenEnd-（见 search.js），Query 也只认这两个运算子；
+            // 旧的 between-create_time 匹配不到任何键，日期筛选被静默忽略。
+            'betweenStart-create_time',
+            'betweenEnd-create_time',
+            'equal-risk',
+        ]));
+        $page = max(1, (int)$this->request->post('page'));
+        $limit = (int)$this->request->post('limit');
+        if (!in_array($limit, [15, 30, 50], true)) {
+            $limit = 15;
+        }
+        $get = new Get(\App\Model\UserLog::class);
+        $get->setOrderBy('id', 'desc');
+        $get->setPaginate($page, $limit);
+        $get->setWhere($map);
+        //强制按会员归属过滤（独立 AND 闭包，不受客户端筛选覆盖）
+        $data = $this->query->get($get, function (Builder $builder) use ($userId) {
+            return $builder->where('user_id', $userId);
+        });
+        return $this->json(data: $data);
+    }
+
 }

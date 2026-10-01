@@ -14,7 +14,7 @@
 
 
                 <div class="col-12 col-lg-6 d-flex">
-                    <div class="flex-fill">
+                    <div class="flex-fill item-buy">
                         <h4>#{lang($item.name)}</h4>
                         <div class="d-flex align-items-center gap-2 mb-2">
                             #{if $item.seckill_status == 1}
@@ -29,6 +29,7 @@
                         <div class="d-flex align-items-baseline gap-2 mb-3 abacus">
                             <div class="price"><i class="fa-duotone fa-regular fa-spinner-third icon-spin fs-6"></i></div>
                         </div>
+                        <div class="buy-divider"></div>
                         <form method="post" class="vstack gap-3">
                             #{if !empty($item.config.category)}
                                 <div>
@@ -112,7 +113,7 @@
                             #{if $item.trade_captcha == 1}
                                 <div>
                                     <label class="form-label mb-1">#{t("人机验证")}</label>
-                                    <div class="input-group" style="width: 240px;">
+                                    <div class="input-group captcha-group" style="width: 240px;">
                                         <input type="text" class="form-control captcha-input" placeholder="#{t('图形验证码')}"
                                                name="captcha">
                                         <div class="input-group-append">
@@ -123,7 +124,7 @@
                                 </div>
                             #{/if}
 
-                            <div class="cash-pay p-2" style="display: none;">
+                            <div class="cash-pay" style="display: none;">
                                 <label class="form-label mb-2"><i class="fa-duotone fa-regular fa-cart-shopping"></i>
                                     #{t("付款")}</label>
                                 <div class="pay-list">

@@ -116,7 +116,34 @@ let acg = {
             acg.loadScript("/assets/static/clipboard.js", callback);
         });
         // });
-    }, $post(url, data, done, error = null, cache = 0, cache_expire = 0) {
+    }, fundVerify(retry) {
+        //资金操作二次验证：弹出动态码输入 → /user/api/security/fundVerify → 通过后重放原请求。
+        //这些主题页只加载 layer（无 util/SweetAlert），故用 layer.prompt 自带输入框。
+        layer.prompt({
+            formType: 0,
+            maxlength: 6,
+            title: "请输入验证器上的 6 位动态码"
+        }, (val, idx) => {
+            val = (val || "").trim();
+            if (val === "") {
+                return;
+            }
+            let li = layer.load(2, {shade: ['0.3', '#fff']});
+            $.post("/user/api/security/fundVerify", {code: val}, r => {
+                layer.close(li);
+                if (!r || r.code !== 200) {
+                    layer.msg((r && r.msg) ? r.msg : "验证失败");
+                    return;
+                }
+                layer.close(idx);
+                layer.msg("验证成功");
+                typeof retry === 'function' && retry();
+            }, "json").fail(() => {
+                layer.close(li);
+                layer.msg("网络错误");
+            });
+        });
+    }, $post(url, data, done, error = null, cache = 0, cache_expire = 0, fundRetried = false) {
         if (cache == 1) {
             let cacheRes = acg.getCache(url + encodeURIComponent(JSON.stringify(data)));
             if (cacheRes) {
@@ -128,6 +155,11 @@ let acg = {
         let loaderIndex = layer.load(2, {shade: ['0.3', '#fff']});
         $.post(url, data, res => {
             layer.close(loaderIndex);
+            //资金操作需二次验证：弹码→验证→重放一次原请求（fundRetried 防重放后再弹造成死循环）。
+            if (res.code === 42002 && !fundRetried) {
+                acg.fundVerify(() => acg.$post(url, data, done, error, cache, cache_expire, true));
+                return;
+            }
             if (res.code !== 200) {
                 layer.msg(res.msg);
                 typeof error === 'function' ? error(res) : layer.msg(res.msg);

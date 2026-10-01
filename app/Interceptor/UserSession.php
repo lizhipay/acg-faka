@@ -5,10 +5,9 @@ namespace App\Interceptor;
 
 
 use App\Consts\User;
+use App\Service\UserSessionManager;
 use App\Util\Client;
 use App\Util\Context;
-use App\Util\JWT;
-use Firebase\JWT\Key;
 use JetBrains\PhpStorm\NoReturn;
 use Kernel\Annotation\Interceptor;
 use Kernel\Annotation\InterceptorInterface;
@@ -37,37 +36,14 @@ class UserSession implements InterceptorInterface
             $this->kick($type);
         }
 
-        $userToken = base64_decode((string)$_COOKIE[User::SESSION]);
-
-        if (!$userToken) {
-            $this->kick($type);
-        }
-
-        $head = JWT::getHead($userToken);
-        if (!isset($head['uid'])) {
-            $this->kick($type);
-        }
-
-        $user = \App\Model\User::query()->find($head['uid']);
-
-
-        if (!$user) {
-            $this->kick($type);
-        }
-
-        try {
-            $jwt = \Firebase\JWT\JWT::decode($userToken, new Key($user->password, 'HS256'));
-        } catch (\Exception $e) {
-            $this->kick($type);
-        }
-
-
-        if ($jwt->expire <= time() || $user->login_time != $jwt->loginTime || $user->status != 1) {
+        $resolved = UserSessionManager::authenticate((string)$_COOKIE[User::SESSION]);
+        if (!$resolved) {
             $this->kick($type);
         }
 
         //保存会话
-        Context::set(User::SESSION, $user);
+        Context::set(User::SESSION, $resolved['user']);
+        Context::set(User::SESSION_RECORD, $resolved['session']);
     }
 
     /**

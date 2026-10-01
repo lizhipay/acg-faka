@@ -1,0 +1,103 @@
+#{include file="../Common/Header.html"}
+<div class="uc-main">
+    <div class="uc-card">
+        <div class="uc-card__body">
+            #{include file="../Common/SecurityNav.html"}
+
+            <div id="totp-app" class="totp-app">
+                <div id="totp-loading" class="totp-hint">#{t("正在读取两步验证状态…")}</div>
+
+                <!-- 未开启 -->
+                <div id="totp-off" class="totp-pane" style="display:none;">
+                    <div class="totp-intro">
+                        <div class="totp-intro__title">#{t("两步验证（2FA）")}</div>
+                        <div class="totp-intro__desc">#{t("开启后，登录时除了密码，还需要输入验证器 App 上的 6 位动态码，账号更安全。推荐使用 Google Authenticator、微软 Authenticator 等。")}</div>
+                    </div>
+                    <button type="button" class="uc-cta" id="totp-start"><span class="material-icons-outlined">shield</span>#{t("开启两步验证")}</button>
+                </div>
+
+                <!-- 绑定流程 -->
+                <div id="totp-setup" class="totp-pane" style="display:none;">
+                    <div class="totp-setup">
+                        <div class="totp-setup__left">
+                            <div class="totp-qr" id="totp-qr" role="img" aria-label="#{t('两步验证二维码')}"></div>
+                            <div class="totp-secret">
+                                <div class="totp-secret__top">
+                                    <span>#{t("密钥")}</span>
+                                    <button type="button" class="totp-mini" id="totp-copy">#{t("复制")}</button>
+                                </div>
+                                <code id="totp-secret-text"></code>
+                            </div>
+                        </div>
+                        <div class="totp-setup__right">
+                            <ol class="totp-steps">
+                                <li>#{t("用验证器 App 扫描左侧二维码，或手动输入密钥。")}</li>
+                                <li>#{t("输入 App 上显示的 6 位动态码和你的账号密码。")}</li>
+                            </ol>
+                            <div class="totp-field">
+                                <label>#{t("动态码")}</label>
+                                <input type="text" id="totp-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="layui-input" placeholder="#{t('验证器上的 6 位数字')}">
+                            </div>
+                            <div class="totp-field">
+                                <label>#{t("账号密码")}</label>
+                                <input type="password" id="totp-pw" autocomplete="current-password" class="layui-input" placeholder="#{t('请输入你的登录密码')}">
+                            </div>
+                            <div class="totp-actions">
+                                <button type="button" class="uc-cta" id="totp-enable"><span class="material-icons-outlined">check</span>#{t("确认开启")}</button>
+                                <button type="button" class="totp-ghost" id="totp-cancel">#{t("取消")}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 已开启 -->
+                <div id="totp-on" class="totp-pane" style="display:none;">
+                    <div class="totp-on__badge"><span class="material-icons-outlined">verified_user</span>#{t("两步验证已开启")}</div>
+                    <div class="totp-on__recovery">#{t("剩余备用恢复码")}：<b id="totp-recovery-left">-</b> #{t("个")}</div>
+                    <div class="totp-on__fund">
+                        <div class="totp-on__fund-text">
+                            <span class="totp-on__fund-title">#{t("资金操作二次验证")}</span>
+                            <span class="totp-on__fund-desc">#{t("开启后，余额支付下单、提现、下级转账前需要输入动态码（5 分钟内免重复）。")}</span>
+                        </div>
+                        <span class="totp-switch" id="totp-fund-switch" role="switch" aria-label="#{t('资金操作二次验证')}"><i></i></span>
+                    </div>
+                    <div class="totp-on__ops">
+                        <button type="button" class="totp-ghost" id="totp-regen">#{t("重新生成恢复码")}</button>
+                        <button type="button" class="totp-danger" id="totp-disable">#{t("关闭两步验证")}</button>
+                    </div>
+                    <!-- 关闭 / 重新生成的行内表单 -->
+                    <div class="totp-confirm" id="totp-confirm">
+                        <div class="totp-confirm__inner">
+                            <div class="totp-confirm__title" id="totp-confirm-title"></div>
+                            <div class="totp-field">
+                                <label>#{t("账号密码")}</label>
+                                <input type="password" id="totp-confirm-pw" autocomplete="current-password" class="layui-input" placeholder="#{t('请输入你的登录密码')}">
+                            </div>
+                            <div class="totp-field">
+                                <label>#{t("动态码 / 恢复码")}</label>
+                                <input type="text" id="totp-confirm-code" inputmode="numeric" autocomplete="one-time-code" class="layui-input" placeholder="#{t('动态码或一条备用恢复码')}">
+                            </div>
+                            <div class="totp-actions">
+                                <button type="button" class="uc-cta" id="totp-confirm-ok"><span class="material-icons-outlined">check</span>#{t("确认")}</button>
+                                <button type="button" class="totp-ghost" id="totp-confirm-cancel">#{t("取消")}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 恢复码展示（开启/重新生成后一次性显示） -->
+                <div id="totp-codes" class="totp-pane" style="display:none;">
+                    <div class="totp-codes__warn"><span class="material-icons-outlined">key</span>#{t("请把这些备用恢复码保存到安全的地方。每条只能用一次，手机丢失时可用它登录或关闭两步验证。它们只显示这一次。")}</div>
+                    <div class="totp-codes__grid" id="totp-codes-grid"></div>
+                    <div class="totp-actions">
+                        <button type="button" class="totp-ghost" id="totp-codes-copy">#{t("复制全部")}</button>
+                        <button type="button" class="uc-cta" id="totp-codes-done"><span class="material-icons-outlined">done</span>#{t("我已保存")}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+#{ready("/assets/user/controller/security/totp.js")}
+#{include file="../Common/Footer.html"}

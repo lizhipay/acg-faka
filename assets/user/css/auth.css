@@ -278,3 +278,88 @@
 a {
     text-decoration: none;
 }
+
+/* 通行密钥登录：次要操作，比主按钮轻一档——细框玻璃（与输入框同一套描边），图标放进与主按钮同色的渐变圆片；
+   默认 hidden，浏览器支持时由 login.js 显示 */
+.btn-passkey {
+    --bs-btn-color: #3b4660;
+    --bs-btn-bg: rgba(255, 255, 255, .2);
+    --bs-btn-border-color: rgba(148, 163, 184, .36);
+    --bs-btn-hover-color: #4338ca;
+    --bs-btn-hover-bg: rgba(255, 255, 255, .62);
+    --bs-btn-hover-border-color: rgba(99, 102, 241, .36);
+    --bs-btn-active-color: #4338ca;
+    --bs-btn-active-bg: rgba(255, 255, 255, .86);
+    --bs-btn-active-border-color: rgba(99, 102, 241, .44);
+    --bs-btn-disabled-color: #3b4660;
+    --bs-btn-disabled-bg: rgba(255, 255, 255, .2);
+    --bs-btn-disabled-border-color: rgba(148, 163, 184, .36);
+    --bs-btn-disabled-opacity: .75;
+    --bs-btn-focus-box-shadow: 0 0 0 .25rem rgba(99, 102, 241, .22);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35);
+    transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .12s ease;
+}
+
+.btn-passkey:hover {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 8px 20px rgba(99, 102, 241, .12);
+    transform: translateY(-1px);
+}
+
+.btn-passkey:active {
+    transform: none;
+}
+
+.btn-passkey__badge {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #fff;
+    background-image: linear-gradient(135deg, #6366F1, #22D3EE);
+    box-shadow: 0 3px 10px rgba(99, 102, 241, .3);
+    transition: box-shadow .2s ease;
+}
+
+.btn-passkey:hover .btn-passkey__badge {
+    box-shadow: 0 4px 14px rgba(99, 102, 241, .42);
+}
+
+.btn-passkey__icon {
+    width: 17px;
+    height: 17px;
+}
+
+.btn-passkey.is-busy .btn-passkey__badge {
+    animation: passkey-pulse 1s ease-in-out infinite;
+}
+
+@keyframes passkey-pulse {
+    50% {
+        opacity: .45;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn-passkey,
+    .btn-passkey:hover {
+        transition: none;
+        transform: none;
+    }
+
+    .btn-passkey.is-busy .btn-passkey__badge {
+        animation: none;
+    }
+}

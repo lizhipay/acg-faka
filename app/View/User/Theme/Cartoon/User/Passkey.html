@@ -1,0 +1,59 @@
+#{include file="../Common/Header.html"}
+<div class="uc-main">
+    <div class="uc-card">
+        <div class="uc-card__body">
+            #{include file="../Common/SecurityNav.html"}
+
+            <div id="pk-app" class="pk-app">
+                <div class="pk-head">
+                    <div>
+                        <div class="pk-head__title" role="heading" aria-level="2">#{t("通行密钥")}<span class="pk-count" id="pk-count"></span></div>
+                        <div class="pk-head__desc">#{t("用指纹、面容或设备锁屏密码代替密码登录。通行密钥保存在你的设备或密码管理器里，不会被钓鱼网站骗走，也不用再记密码。")}</div>
+                    </div>
+                    <div class="pk-head__ops">
+                        <button type="button" class="uc-cta" id="pk-add" aria-expanded="false" aria-controls="pk-form"><span class="material-icons-outlined" aria-hidden="true">add</span>#{t("添加通行密钥")}</button>
+                    </div>
+                </div>
+
+                <div class="pk-notice" id="pk-unsupported" role="status" hidden>
+                    <span class="material-icons-outlined" aria-hidden="true">info</span>
+                    <span>#{t("当前浏览器不支持通行密钥（需使用系统浏览器并通过 HTTPS 域名访问），暂时无法添加；已添加的通行密钥仍可在这里管理。")}</span>
+                </div>
+
+                <!-- 添加：先确认账号密码，再交给设备完成验证 -->
+                <div class="pk-form" id="pk-form" inert>
+                    <div class="pk-form__inner">
+                        <div class="pk-form__title">#{t("添加通行密钥")}</div>
+                        <div class="pk-form__desc">#{t("先确认账号密码，再按设备提示完成指纹、面容或锁屏密码验证。名称会自动识别，之后可以修改。")}</div>
+                        <div class="pk-field">
+                            <label for="pk-pw">#{t("账号密码")}</label>
+                            <input type="password" id="pk-pw" class="layui-input" autocomplete="current-password" placeholder="#{t('请输入你的登录密码')}">
+                        </div>
+                        <div class="pk-actions">
+                            <button type="button" class="uc-cta" id="pk-go"><span class="material-icons-outlined" aria-hidden="true">fingerprint</span><span id="pk-go-text">#{t("继续")}</span></button>
+                            <button type="button" class="pk-ghost" id="pk-cancel">#{t("取消")}</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pk-status" id="pk-status" role="status">#{t("正在读取通行密钥…")}</div>
+                <div class="pk-list" id="pk-list"></div>
+
+                <div class="pk-empty" id="pk-empty" hidden>
+                    <div class="pk-empty__art" aria-hidden="true"><span class="material-icons-outlined">fingerprint</span></div>
+                    <div class="pk-empty__title">#{t("还没有通行密钥")}</div>
+                    <div class="pk-empty__desc">#{t("添加后，在登录页点「使用通行密钥登录」，验证一下指纹或面容就能直接进入。")}</div>
+                </div>
+
+                <div class="pk-tip" id="pk-tip-2fa" hidden>
+                    <span class="material-icons-outlined" aria-hidden="true">verified_user</span>
+                    <span>#{t("你已开启两步验证：用通行密钥登录时，只要在设备上完成了指纹、面容或 PIN 验证，就不用再输入动态码。")}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+#{ready("/assets/user/js/webauthn.js")}
+#{ready("/assets/user/controller/security/passkey.js")}
+#{include file="../Common/Footer.html"}

@@ -84,6 +84,14 @@ class ManageSSO implements \App\Service\ManageSSO
                     throw new JSONException("您是夜班哦，请注意休息。");
                 }
 
+                //密码校验通过：旧格式哈希透明升级为 bcrypt。会话 JWT 以密码哈希为签名密钥，
+                //哈希一变，其它设备上用旧哈希签发的 cookie 立即失效，故一并吊销，保持设备列表如实。
+                if (Str::passwordNeedsUpgrade((string)$manage->password)) {
+                    $manage->password = Str::hashPassword($password);
+                    $manage->saveOrFail();
+                    ManageSessionManager::revokeAll((int)$manage->id);
+                }
+
                 $manage->last_login_time = $manage->login_time;
                 $manage->last_login_ip = $manage->login_ip;
                 $manage->login_time = Date::current();
@@ -108,11 +116,72 @@ class ManageSSO implements \App\Service\ManageSSO
             throw $e;
         }
 
+        return $this->finalizeSession($login);
+    }
+
+    /**
+     * passkey(WebAuthn) 登入：断言已在控制器校验通过，这里只做与密码登入相同的
+     * 状态/班次检查、登录时间更新、会话签发与收尾（记录 + 下发 cookie）。
+     *
+     * @param Manage $manage 已通过断言校验的管理员
+     * @param bool $remember
+     * @return array
+     * @throws JSONException
+     */
+    public function issueForManage(Manage $manage, bool $remember = false): array
+    {
+        $login = DB::transaction(function () use ($manage, $remember): array {
+            $m = Manage::query()->where('id', (int)$manage->id)->lockForUpdate()->first();
+            if (!$m) {
+                throw new JSONException("账号不存在");
+            }
+            if ($m->status != 1) {
+                throw new JSONException("账号已被暂停使用");
+            }
+            if ($m->type == 2 && Date::isNight()) {
+                throw new JSONException("您是白班哦，请注意休息。");
+            }
+            if ($m->type == 3 && !Date::isNight()) {
+                throw new JSONException("您是夜班哦，请注意休息。");
+            }
+
+            $m->last_login_time = $m->login_time;
+            $m->last_login_ip = $m->login_ip;
+            $m->login_time = Date::current();
+            $m->login_ip = Client::getAddress();
+            $m->saveOrFail();
+
+            $expire = $remember ? 86400 * 365 : 86400;
+            $expiresAt = time() + $expire;
+            $issued = ManageSessionManager::issue($m, $expiresAt);
+
+            return [
+                'manage' => $m,
+                'expires_at' => $expiresAt,
+                'cookie' => $issued['cookie'],
+                'session_id' => (int)$issued['session']->id,
+            ];
+        });
+
+        return $this->finalizeSession($login, "使用通行密钥登录了后台");
+    }
+
+    /**
+     * 登入收尾：写审计日志（失败则补偿撤销已签发会话）、下发会话 cookie、触发登录后钩子。
+     * 密码登入与 passkey 登入共用。
+     *
+     * @param array{manage:Manage,expires_at:int,cookie:string,session_id:int} $login
+     * @param string $logText 审计日志文案
+     * @return array
+     * @throws JSONException
+     */
+    private function finalizeSession(array $login, string $logText = "登录了后台"): array
+    {
         // manage_log is MyISAM on existing installations. Writing it inside
         // the InnoDB login transaction violates MySQL GTID consistency after
         // the account/session rows have changed, so audit only after commit.
         try {
-            ManageLog::log($login['manage'], "登录了后台");
+            ManageLog::log($login['manage'], $logText);
         } catch (\Throwable) {
             // The cookie has not been sent yet. Revoke the committed session
             // so an audit failure cannot leave a valid, unreachable login.

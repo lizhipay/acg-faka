@@ -54,6 +54,15 @@ class User extends Model
     protected $casts = ['id' => 'integer', 'settlement' => 'integer', 'business_level' => 'integer', 'balance' => 'float', 'coin' => 'float', 'total_coin' => 'float', 'integral' => 'integer', 'pid' => 'integer', 'recharge' => 'float', 'status' => 'integer'];
 
     /**
+     * 这些列绝不能随 toArray()/toJson() 外泄（后台会员列表 /admin/api/user/data 会整行序列化）：
+     * 密码哈希+salt 泄露可离线爆破；app_key 泄露可被用来经对接 API 冒用会员下单/扣余额。
+     * 注意 $hidden 只作用于 toArray/jsonSerialize：模板 #{$user.app_key}、resetKey 走 ArrayAccess/属性
+     * 读取不受影响，会员本人仍能看到自己的 app_key；JWT 签名读 $user->password 也照常。
+     * @var string[]
+     */
+    protected $hidden = ['password', 'salt', 'app_key', 'totp_secret', 'totp_recovery'];
+
+    /**
      * @var string[]
      */
     protected $appends = ['group'];

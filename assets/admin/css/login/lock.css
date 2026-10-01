@@ -1,0 +1,328 @@
+/*!
+ * Admin sign-in — desktop / tablet lock screen layout (≥641px).
+ * Clock on top, identity + glass field group in the lower third, like the macOS lock screen.
+ */
+
+@media (min-width: 641px) {
+  .lk-main {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: clamp(40px, 8.5vh, 104px) 24px clamp(36px, 10.5vh, 128px);
+  }
+
+  /* ---------- clock ---------- */
+  .lk-clock {
+    color: var(--lk-ink);
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+  }
+
+  .lk-date {
+    min-height: 1.2em;
+    font: 600 clamp(17px, 1.5vw, 23px)/1.2 var(--lk-font-display);
+    letter-spacing: .01em;
+    opacity: .95;
+    text-shadow: var(--lk-ink-shadow);
+  }
+
+  .lk-time {
+    display: flex;
+    justify-content: center;
+    min-height: 1em;
+    margin-top: .02em;
+    font: 600 clamp(76px, min(10.4vw, 17.5vh), 156px)/1 var(--lk-font-display);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em;
+    filter: var(--lk-ink-glow);
+  }
+
+  /* glass-lit digits: bright crown fading into the wallpaper, each glyph clips its own light */
+  .lk-time > span {
+    display: inline-block;
+    color: var(--lk-ink-hi);
+    background: linear-gradient(180deg, var(--lk-ink-hi) 12%, var(--lk-ink-lo) 96%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .lk-time > .lk-time__sep {
+    margin: 0 .01em;
+    transform: translateY(-.06em);
+  }
+
+  .lk-time > .is-tick {
+    animation: lk-tick .7s var(--lk-ease) both;
+  }
+
+  /* ---------- identity & form ---------- */
+  .lk-auth {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: min(320px, 100%);
+  }
+
+  .lk-id {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 26px;
+    text-align: center;
+  }
+
+  .lk-form {
+    width: 100%;
+  }
+
+  /* options sit in a clear capsule so they stay legible on busy wallpapers */
+  .lk-row {
+    width: max-content;
+    max-width: calc(100vw - 48px);
+    margin: 16px 0 0 50%;
+    translate: -50% 0;
+    padding: 6px 16px 6px 11px;
+    border-radius: 999px;
+    background: var(--lk-clear-tint);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .34), inset 0 1px 1px rgba(255, 255, 255, .3), 0 10px 26px -14px rgba(10, 8, 30, .55);
+  }
+
+  /* actions variant (lock page): each link is its own capsule, no shared pill/sep */
+  .lk-row--split {
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    margin: 16px auto 0;
+    translate: none;
+    padding: 0;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+    gap: 12px;
+  }
+
+  .lk-row--split .lk-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 20px;
+    border-radius: 999px;
+    color: var(--lk-ink);
+    background: var(--lk-clear-tint);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .34), inset 0 1px 1px rgba(255, 255, 255, .3), 0 10px 26px -14px rgba(10, 8, 30, .55);
+    transition: box-shadow .2s var(--lk-ease), transform .2s var(--lk-ease), opacity .2s var(--lk-ease);
+  }
+
+  .lk-row--split .lk-link:hover {
+    box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .5), inset 0 1px 1px rgba(255, 255, 255, .42), 0 12px 30px -12px rgba(10, 8, 30, .62);
+    transform: translateY(-1px);
+  }
+
+  .lk-row--split .lk-link:active {
+    transform: translateY(0) scale(.98);
+  }
+
+  /* options variant (sign-in page): passkey and remember are twin capsules on one line,
+     each hugging its label, centered as a pair */
+  .lk-row--pair {
+    display: grid;
+    grid-auto-flow: column;
+    gap: 10px;
+    padding: 0;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  .lk-row--pair > * {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 30px;
+    margin: 0;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--lk-clear-tint);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .34), inset 0 1px 1px rgba(255, 255, 255, .3), 0 10px 26px -14px rgba(10, 8, 30, .55);
+    color: inherit;
+    font: inherit;
+    text-shadow: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    transition: box-shadow .2s var(--lk-ease), transform .2s var(--lk-ease);
+  }
+
+  .lk-passkey svg {
+    width: 17px;
+    height: 17px;
+    filter: drop-shadow(0 1px 2px rgba(10, 8, 30, .25));
+  }
+
+  @media (hover: hover) {
+    .lk-row--pair > :hover {
+      box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .5), inset 0 1px 1px rgba(255, 255, 255, .42), 0 12px 30px -12px rgba(10, 8, 30, .62);
+      transform: translateY(-1px);
+    }
+  }
+
+  .lk-row--pair > :active {
+    transform: scale(.98);
+  }
+
+  /* the remember capsule takes the checkbox focus ring, like the passkey button */
+  .lk-row--pair > :focus-visible,
+  .lk-row--pair > .lk-check:has(input:focus-visible) {
+    outline: 2px solid var(--lk-accent);
+    outline-offset: 3px;
+  }
+
+  .lk-row--pair .lk-check:has(input:focus-visible) input {
+    outline: none;
+  }
+
+  /* ---------- entrance ---------- */
+  @media (prefers-reduced-motion: no-preference) {
+    .lk-clock {
+      animation: lk-drop 1s var(--lk-ease) .08s both;
+    }
+
+    .lk-avatar {
+      animation: lk-rise .9s var(--lk-ease) .16s both;
+    }
+
+    .lk-fields {
+      animation: lk-rise .9s var(--lk-ease) .3s both;
+    }
+
+    /* separate capsules fade one by one: a fading row would become their backdrop root */
+    .lk-row:not(.lk-row--split, .lk-row--pair),
+    :is(.lk-row--split, .lk-row--pair) > *,
+    .lk .turnstile-guard-slot {
+      animation: lk-fade .9s var(--lk-ease) .44s both;
+    }
+
+    .lk-orb {
+      animation: lk-fade 1s var(--lk-ease) .5s both;
+    }
+  }
+
+  /* ---------- unlocking ---------- */
+  .lk.is-unlocking :is(.lk-clock, .lk-avatar, .lk-fields, .lk-note, .lk-row:not(.lk-row--split, .lk-row--pair), :is(.lk-row--split, .lk-row--pair) > *, .lk-orb) {
+    animation: lk-leave .55s var(--lk-ease) both;
+    pointer-events: none;
+  }
+}
+
+/* touch screens on the lock layout (tablets, phones in landscape): no focus zoom, roomier targets */
+@media (min-width: 641px) and (pointer: coarse) {
+  .lk {
+    --lk-row: 52px;
+    --lk-go: 34px;
+  }
+
+  .lk-input {
+    font-size: 16px;
+  }
+
+  .lk-eye {
+    width: 36px;
+    height: 36px;
+    margin-right: -6px;
+  }
+
+  .lk-orb {
+    width: 44px;
+    height: 44px;
+  }
+
+  .lk-row--pair > * {
+    height: 38px;
+  }
+}
+
+/* short windows: keep the form in view first, the clock shrinks and then steps aside */
+@media (min-width: 641px) and (max-height: 760px) {
+  .lk-main {
+    gap: 20px;
+    padding-top: clamp(28px, 6vh, 56px);
+    padding-bottom: clamp(24px, 6vh, 56px);
+  }
+
+  .lk-avatar {
+    width: 76px;
+    height: 76px;
+  }
+
+  .lk-id {
+    margin-bottom: 20px;
+  }
+}
+
+@media (min-width: 641px) and (max-height: 600px) {
+  .lk-time {
+    font-size: 64px;
+  }
+
+  .lk-date {
+    font-size: 16px;
+  }
+
+  .lk-avatar {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+@media (min-width: 641px) and (max-height: 500px) {
+  .lk-main {
+    justify-content: center;
+  }
+
+  .lk-clock {
+    display: none;
+  }
+}
+
+@media (min-width: 641px) and (prefers-reduced-transparency: reduce) {
+  .lk-row {
+    color: var(--lk-glass-fg);
+    text-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .lk-row .lk-link {
+    color: var(--lk-glass-fg);
+  }
+
+  .lk-row--split .lk-link,
+  .lk-row--pair > * {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .lk-passkey svg {
+    filter: none;
+  }
+}

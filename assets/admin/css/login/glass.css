@@ -1,0 +1,910 @@
+/*!
+ * Admin sign-in — liquid glass material and components.
+ * A glass element must not nest another backdrop-filtered element: it would become the
+ * backdrop root and the inner glass would lose the wallpaper. Containers paint glass in ::before.
+ */
+
+/* ---------- material ---------- */
+.lk-glass {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(180deg, var(--lk-glass-sheen), rgba(255, 255, 255, 0) 58%), var(--lk-glass-tint);
+  -webkit-backdrop-filter: blur(var(--lk-glass-blur)) saturate(var(--lk-glass-sat));
+  backdrop-filter: blur(var(--lk-glass-blur)) saturate(var(--lk-glass-sat));
+  box-shadow: 0 0 0 .5px var(--lk-glass-edge), var(--lk-glass-shadow), inset 0 1px 0 var(--lk-glass-inner), inset 0 -1px 0 var(--lk-glass-return);
+}
+
+/* specular rim: bright where the light hits (top-left), a faint return on the far edge */
+.lk-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(var(--lk-rim-angle, 150deg),
+  var(--lk-glass-rim-hi) 0%,
+  var(--lk-glass-rim-lo) 30%,
+  rgba(255, 255, 255, 0) 52%,
+  var(--lk-glass-rim-lo) 76%,
+  var(--lk-glass-rim-hi) 100%);
+  opacity: .9;
+  pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+/* moving highlight; scene.js feeds --lk-px/--lk-py on fine pointers */
+.lk-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(260px 160px at var(--lk-px, 18%) var(--lk-py, -18%), rgba(255, 255, 255, .26), rgba(255, 255, 255, 0) 72%);
+  pointer-events: none;
+  transition: opacity .4s var(--lk-ease);
+}
+
+html[data-theme="dark"] .lk-glass::after {
+  background: radial-gradient(260px 160px at var(--lk-px, 18%) var(--lk-py, -18%), rgba(255, 255, 255, .09), rgba(255, 255, 255, 0) 72%);
+}
+
+/* ---------- identity ---------- */
+.lk-avatar {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  padding: 3px;
+  border-radius: 50%;
+  --lk-glass-tint: var(--lk-clear-tint);
+  --lk-rim-angle: 160deg;
+}
+
+.lk-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* ---------- field group ---------- */
+.lk-fields {
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--lk-radius);
+  --lk-glass-tint: var(--lk-field-tint);
+  --lk-glass-sat: var(--lk-field-sat);
+  --lk-glass-blur: var(--lk-field-blur);
+  outline: 3.5px solid rgba(var(--lk-accent-rgb), 0);
+  outline-offset: 8px;
+  transition: outline-color .3s var(--lk-ease), outline-offset .42s var(--lk-ease);
+}
+
+/* focus ring settles onto the group from just outside, like an AppKit focus ring */
+.lk-fields:focus-within {
+  outline-color: rgba(var(--lk-accent-rgb), .5);
+  outline-offset: 0;
+}
+
+.lk-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--lk-row);
+  padding: 0 10px 0 14px;
+  transition: background-color .25s var(--lk-ease), padding-right .3s var(--lk-ease);
+}
+
+.lk-field[hidden] {
+  display: none;
+}
+
+/* hairline separator aligned with the text column; it steps back next to the active row */
+.lk-field + .lk-field::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 40px;
+  height: 1px;
+  background: var(--lk-glass-line);
+  transform: scaleY(.5);
+  transform-origin: top;
+  transition: opacity .25s var(--lk-ease);
+}
+
+.lk-field:focus-within::before,
+.lk-field:focus-within + .lk-field::before,
+.lk-field.is-invalid::before,
+.lk-field.is-invalid + .lk-field::before {
+  opacity: 0;
+}
+
+@media (hover: hover) {
+  .lk-field:hover {
+    background: var(--lk-field-hover);
+  }
+}
+
+.lk-field:focus-within {
+  background: var(--lk-field-focus);
+}
+
+.lk-field__ico {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--lk-glass-fg-soft);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke .25s var(--lk-ease);
+}
+
+.lk-field:focus-within .lk-field__ico {
+  stroke: var(--lk-glass-fg);
+}
+
+.lk-field.is-invalid {
+  background: rgba(var(--lk-danger-rgb), .1);
+}
+
+.lk-field.is-invalid .lk-field__ico {
+  stroke: var(--lk-danger);
+}
+
+.lk-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+  color: var(--lk-glass-fg);
+  font: 400 14.5px/1.25 var(--lk-font);
+  letter-spacing: 0;
+  caret-color: var(--lk-accent);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.lk-input::placeholder {
+  color: var(--lk-glass-fg-soft);
+  opacity: 1;
+}
+
+.lk-input::selection {
+  background: rgba(var(--lk-accent-rgb), .32);
+}
+
+.lk-input[type="password"]:not(:placeholder-shown) {
+  letter-spacing: .12em;
+}
+
+.lk-input--digits:not(:placeholder-shown) {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .2em;
+}
+
+/* keep autofill on the glass instead of the browser's opaque tint */
+.lk-input:-webkit-autofill,
+.lk-input:-webkit-autofill:hover,
+.lk-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--lk-glass-fg);
+  caret-color: var(--lk-accent);
+  transition: background-color 600000s 0s, color 600000s 0s;
+}
+
+.lk-caps {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--lk-glass-line);
+  animation: lk-fade .2s var(--lk-ease);
+}
+
+.lk-caps[hidden] {
+  display: none;
+}
+
+.lk-caps svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: var(--lk-glass-fg);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.lk-eye {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin: 0 -2px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--lk-glass-fg-soft);
+  cursor: pointer;
+  transition: opacity .22s var(--lk-ease), transform .4s var(--lk-spring), visibility 0s, background-color .2s var(--lk-ease), color .2s var(--lk-ease);
+}
+
+.lk-eye:hover {
+  background: var(--lk-glass-line);
+  color: var(--lk-glass-fg);
+}
+
+/* nothing to reveal yet: the empty field stays calm */
+.lk-field--pass:has(.lk-input:placeholder-shown) .lk-eye:not([aria-pressed="true"]) {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(.7);
+  transition: opacity .15s var(--lk-ease), transform .2s var(--lk-ease), visibility 0s linear .2s;
+}
+
+.lk-eye:focus-visible,
+.lk-captcha:focus-visible {
+  outline: 2px solid var(--lk-accent);
+  outline-offset: 1px;
+}
+
+.lk-eye svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lk-eye [data-eye="shut"],
+.lk-eye[aria-pressed="true"] [data-eye="open"] {
+  display: none;
+}
+
+.lk-eye[aria-pressed="true"] [data-eye="shut"] {
+  display: block;
+}
+
+.lk-captcha {
+  display: grid;
+  place-items: center;
+  flex: none;
+  height: 30px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--lk-captcha-bg);
+  box-shadow: 0 0 0 .5px rgba(0, 0, 0, .12), 0 1px 3px rgba(0, 0, 0, .1);
+  cursor: pointer;
+  transition: transform .3s var(--lk-spring), filter .2s var(--lk-ease), opacity .2s var(--lk-ease);
+}
+
+.lk-captcha:hover {
+  filter: brightness(1.03);
+}
+
+.lk-captcha:active {
+  transform: scale(.94);
+}
+
+.lk-captcha img {
+  display: block;
+  width: auto;
+  height: 24px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.lk-captcha.is-loading {
+  opacity: .5;
+}
+
+/* ---------- submit arrow (last visible row) ---------- */
+.lk-go {
+  position: absolute;
+  right: 9px;
+  bottom: calc((var(--lk-row) - var(--lk-go)) / 2);
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: var(--lk-go);
+  height: var(--lk-go);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--lk-accent);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .16), 0 5px 14px -5px rgba(var(--lk-accent-rgb), .8), inset 0 .5px 0 rgba(255, 255, 255, .45);
+  cursor: pointer;
+  transition: opacity .22s var(--lk-ease), transform .45s var(--lk-spring), visibility 0s, filter .2s var(--lk-ease);
+}
+
+.lk-go svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity .2s var(--lk-ease), transform .3s var(--lk-spring);
+}
+
+.lk-go::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1.8px solid rgba(255, 255, 255, .38);
+  border-top-color: #fff;
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.lk-go:hover {
+  filter: brightness(1.08);
+  transform: scale(1.06);
+}
+
+.lk-go:active {
+  transform: scale(.9);
+}
+
+.lk-go:focus-visible {
+  outline: 2px solid var(--lk-accent);
+  outline-offset: 2px;
+}
+
+/* the arrow shows up once there is a password to send, as on the Mac lock screen */
+.lk-fields:has(#lk-pass:placeholder-shown) .lk-go {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(.5);
+  transition: opacity .15s var(--lk-ease), transform .2s var(--lk-ease), visibility 0s linear .2s;
+}
+
+.lk-fields:not(.has-captcha):not(.has-code) .lk-field--pass,
+.lk-fields.has-code .lk-field--code {
+  padding-right: calc(var(--lk-go) + 18px);
+}
+
+/* 验证码行：默认让验证码贴右（更利落）；只有在密码已填、提交箭头出现时才给它让出位置，
+   否则空表单时箭头是隐藏的，预留的空位会让验证码看起来悬在中间。 */
+.lk-fields.has-captcha:not(.has-code):has(#lk-pass:not(:placeholder-shown)) .lk-field--captcha {
+  padding-right: calc(var(--lk-go) + 18px);
+}
+
+.lk-form.is-busy .lk-go {
+  opacity: 1;
+  visibility: visible;
+  cursor: progress;
+  transform: none;
+}
+
+.lk-form.is-busy .lk-go svg {
+  opacity: 0;
+  transform: scale(.4);
+}
+
+.lk-form.is-busy .lk-go::after {
+  opacity: 1;
+  animation: lk-spin .7s linear infinite;
+}
+
+.lk-field--code.is-unfolding {
+  overflow: hidden;
+  animation: lk-unfold .42s var(--lk-ease) both;
+}
+
+/* ---------- inline status ---------- */
+.lk-note {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-top: 0;
+  transition: grid-template-rows .38s var(--lk-ease), margin-top .38s var(--lk-ease);
+}
+
+.lk-note.is-shown {
+  grid-template-rows: 1fr;
+  margin-top: 12px;
+}
+
+.lk-note__inner {
+  display: flex;
+  justify-content: center;
+  min-height: 0;
+  margin: 0 -24px;
+  padding: 0 24px;
+  overflow: hidden;
+}
+
+.lk-note__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  margin: 2px 0 10px;
+  padding: 6px 13px 6px 7px;
+  border-radius: 999px;
+  color: var(--lk-glass-fg);
+  font: 500 12.5px/1.4 var(--lk-font);
+  opacity: 0;
+  transform: translateY(-6px) scale(.97);
+  transition: opacity .25s var(--lk-ease), transform .45s var(--lk-spring);
+  --lk-glass-sat: 150%;
+  --lk-glass-shadow: 0 4px 10px -4px rgba(22, 14, 64, .34);
+}
+
+.lk-note.is-shown .lk-note__pill {
+  opacity: 1;
+  transform: none;
+}
+
+.lk-note__icon {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--lk-tone, var(--lk-danger));
+}
+
+.lk-note__icon::before,
+.lk-note__icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: #fff;
+}
+
+.lk-note__icon::before {
+  top: 4.5px;
+  height: 6.5px;
+}
+
+.lk-note__icon::after {
+  bottom: 4px;
+  height: 2px;
+}
+
+.lk-note[data-tone="info"] {
+  --lk-tone: var(--lk-info);
+}
+
+.lk-note[data-tone="info"] .lk-note__icon::before {
+  top: auto;
+  bottom: 4px;
+  height: 6.5px;
+}
+
+.lk-note[data-tone="info"] .lk-note__icon::after {
+  top: 4px;
+  bottom: auto;
+}
+
+.lk-note__text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- options row ---------- */
+.lk-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 14px;
+  color: var(--lk-ink-soft);
+  font: 500 13px/1.4 var(--lk-font);
+  text-shadow: var(--lk-ink-shadow);
+}
+
+.lk-row__sep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .55;
+}
+
+.lk-check,
+.lk-link {
+  white-space: nowrap;
+}
+
+.lk-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.lk-check input {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  border: 0;
+  border-radius: 5px;
+  background: var(--lk-clear-tint);
+  box-shadow: inset 0 0 0 1.25px rgba(255, 255, 255, .72), 0 1px 4px rgba(10, 8, 30, .2);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background-color .2s var(--lk-ease), box-shadow .2s var(--lk-ease), transform .3s var(--lk-spring);
+}
+
+html[data-ink="dark"]:not([data-theme="dark"]) .lk-check input {
+  box-shadow: inset 0 0 0 1.25px rgba(10, 10, 24, .38), 0 1px 3px rgba(10, 8, 30, .12);
+}
+
+.lk-check input::after {
+  content: "";
+  width: 11px;
+  height: 11px;
+  background: #fff;
+  transform: scale(0);
+  transition: transform .32s var(--lk-spring);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.2 6.3 4.8 8.8 9.8 3.4' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.2 6.3 4.8 8.8 9.8 3.4' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.lk-check input:checked {
+  background: var(--lk-accent);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22), 0 3px 10px -3px rgba(var(--lk-accent-rgb), .85);
+}
+
+.lk-check input:checked::after {
+  transform: scale(1);
+}
+
+.lk-check input:active {
+  transform: scale(.88);
+}
+
+.lk-check input:focus-visible,
+.lk-link:focus-visible {
+  outline: 2px solid var(--lk-accent);
+  outline-offset: 3px;
+}
+
+.lk-link {
+  margin: 0;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--lk-ink);
+  font: inherit;
+  text-decoration: none;
+  text-shadow: inherit;
+  cursor: pointer;
+  box-shadow: inset 0 -1px 0 transparent;
+  transition: box-shadow .2s var(--lk-ease), opacity .2s var(--lk-ease);
+}
+
+.lk-link:hover {
+  box-shadow: inset 0 -1px 0 currentColor;
+}
+
+/* passkey sign-in stays out until WebAuthn is known to work; lock.css / app.css shape it */
+.lk-passkey[hidden] {
+  display: none;
+}
+
+/* mobile-only full width button; app.css reveals it */
+.lk-submit {
+  display: none;
+}
+
+/* ---------- menu extras (top right) ---------- */
+.lk-extras {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(18px, env(safe-area-inset-right));
+  z-index: 40;
+  display: flex;
+  gap: 10px;
+}
+
+.lk-extra {
+  position: relative;
+}
+
+.lk-orb {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--lk-orb-fg, var(--lk-ink));
+  cursor: pointer;
+  --lk-glass-tint: var(--lk-clear-tint);
+  --lk-glass-blur: 16px;
+  --lk-glass-sat: 140%;
+  --lk-glass-shadow: 0 8px 22px -10px rgba(10, 8, 30, .5);
+  transition: transform .35s var(--lk-spring), background-color .2s var(--lk-ease);
+}
+
+.lk-orb:hover {
+  transform: scale(1.06);
+}
+
+.lk-orb:active {
+  transform: scale(.93);
+}
+
+.lk-orb:focus-visible {
+  outline: 2px solid var(--lk-accent);
+  outline-offset: 3px;
+}
+
+.lk-orb[aria-expanded="true"] {
+  --lk-clear-tint: rgba(255, 255, 255, .34);
+}
+
+.lk-orb__text {
+  font: 600 13px/1 var(--lk-font);
+  letter-spacing: .02em;
+  text-shadow: var(--lk-ink-shadow);
+}
+
+.lk-orb__ico {
+  display: none;
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 2px rgba(10, 8, 30, .25));
+}
+
+.lk-orb__fill {
+  fill: currentColor;
+  stroke: none;
+}
+
+html[data-theme-pref="light"] .lk-orb__ico[data-pref="light"],
+html[data-theme-pref="dark"] .lk-orb__ico[data-pref="dark"],
+html[data-theme-pref="auto"] .lk-orb__ico[data-pref="auto"],
+html:not([data-theme-pref]) .lk-orb__ico[data-pref="auto"] {
+  display: block;
+}
+
+.lk-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 176px;
+  padding: 5px;
+  border-radius: 14px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px) scale(.94);
+  transform-origin: top right;
+  --lk-glass-tint: var(--lk-menu-tint);
+  --lk-glass-blur: 30px;
+  --lk-glass-shadow: 0 22px 50px -16px rgba(10, 8, 30, .5), 0 2px 8px -2px rgba(10, 8, 30, .16);
+  transition: opacity .16s var(--lk-ease), transform .26s var(--lk-ease), visibility 0s linear .26s;
+}
+
+.lk-menu.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity .16s var(--lk-ease), transform .34s var(--lk-spring), visibility 0s;
+}
+
+.lk-menu__title {
+  padding: 6px 10px 5px;
+  color: var(--lk-glass-fg-soft);
+  font: 600 11.5px/1.3 var(--lk-font);
+  letter-spacing: .03em;
+}
+
+.lk-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+  padding: 6px 12px 6px 8px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--lk-glass-fg);
+  font: 500 13.5px/1.25 var(--lk-font);
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.lk-menu__item:hover,
+.lk-menu__item:focus-visible {
+  outline: none;
+  background: var(--lk-accent);
+  color: #fff;
+}
+
+.lk-menu__check {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  visibility: hidden;
+}
+
+.lk-menu__item[aria-checked="true"] .lk-menu__check {
+  visibility: visible;
+}
+
+/* ---------- notifications (toastr) as glass banners ---------- */
+.lk #toast-container {
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+}
+
+.lk #toast-container > .toast {
+  position: relative;
+  display: block;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  margin: 0 0 10px;
+  padding: 14px 16px 14px 48px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 18px;
+  background: var(--lk-menu-tint) none !important;
+  color: var(--lk-glass-fg);
+  font: 500 13.5px/1.45 var(--lk-font);
+  opacity: 1;
+  box-shadow: 0 22px 50px -18px rgba(10, 8, 30, .55), inset 0 1px 1px var(--lk-glass-inner), inset 0 0 0 .5px var(--lk-glass-line);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(30px) saturate(180%);
+}
+
+.lk #toast-container > .toast:hover {
+  opacity: 1;
+  box-shadow: 0 24px 54px -18px rgba(10, 8, 30, .6), inset 0 1px 1px var(--lk-glass-inner), inset 0 0 0 .5px var(--lk-glass-line);
+}
+
+.lk #toast-container > .toast::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  width: 22px;
+  height: 22px;
+  margin-top: -11px;
+  border-radius: 50%;
+  background: var(--lk-tone, var(--lk-info));
+  box-shadow: 0 3px 8px -3px var(--lk-tone, var(--lk-info));
+}
+
+.lk #toast-container > .toast-success {
+  --lk-tone: var(--lk-ok);
+}
+
+.lk #toast-container > .toast-error {
+  --lk-tone: var(--lk-danger);
+}
+
+.lk #toast-container > .toast-warning {
+  --lk-tone: var(--lk-warn);
+}
+
+.lk #toast-container > .toast .toast-progress {
+  height: 2px;
+  background: var(--lk-tone, var(--lk-info));
+  opacity: .55;
+}
+
+/* ---------- plugin slots (Turnstile etc.) ---------- */
+.lk .turnstile-guard-slot,
+.lk #turnstile-guard-inline,
+.lk .turnstile-guard-anchor {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0 0 !important;
+}
+
+.lk .turnstile-guard-slot:empty,
+.lk .turnstile-guard-anchor:empty {
+  display: none;
+}
+
+/* ---------- continuous (squircle) corners where the engine supports them ---------- */
+@supports (corner-shape: squircle) {
+  .lk-fields,
+  .lk-fields::before,
+  .lk-fields::after,
+  .lk-menu,
+  .lk-menu::before,
+  .lk-menu::after,
+  .lk-menu__item {
+    corner-shape: squircle;
+  }
+
+  .lk-fields {
+    border-radius: calc(var(--lk-radius) * 1.5);
+  }
+
+  .lk-menu {
+    border-radius: 21px;
+  }
+
+  .lk-menu__item {
+    border-radius: 14px;
+  }
+}
+
+/* ---------- system settings ---------- */
+@media (prefers-reduced-transparency: reduce) {
+  .lk {
+    --lk-orb-fg: var(--lk-glass-fg);
+  }
+
+  .lk-glass,
+  .lk #toast-container > .toast {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .lk-orb__text,
+  .lk-orb__ico {
+    text-shadow: none;
+    filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lk-glass,
+  .lk-go,
+  .lk-submit,
+  .lk-passkey,
+  .lk-check input {
+    border: 1px solid CanvasText;
+  }
+
+  .lk-glass::before,
+  .lk-glass::after {
+    display: none;
+  }
+}

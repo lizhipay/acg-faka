@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $last_seen_time
  * @property string $expires_time
  * @property string|null $revoked_time
+ * @property string|null $last_active_time
  */
 class ManageSession extends Model
 {

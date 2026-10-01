@@ -46,4 +46,42 @@ class Security extends User
     {
         return $this->theme("密码设置", "PASSWORD", "User/Password.html");
     }
+
+    /**
+     * @return string
+     * @throws \Kernel\Exception\ViewException
+     */
+    public function twoFactor(): string
+    {
+        \App\Util\Schema::ensureUserTotp();
+        return $this->theme("两步验证", "TWO_FACTOR", "User/TwoFactor.html", [
+            "totp_bound" => !empty($this->getUser()->totp_secret),
+        ]);
+    }
+
+    /**
+     * @return string
+     * @throws \Kernel\Exception\ViewException
+     */
+    public function passkey(): string
+    {
+        return $this->theme("通行密钥", "PASSKEY", "User/Passkey.html");
+    }
+
+    /**
+     * @return string
+     * @throws \Kernel\Exception\ViewException
+     */
+    public function device(): string
+    {
+        return $this->theme("登录设备", "DEVICE", "User/Device.html");
+    }
+
+    /**
+     * @throws \Kernel\Exception\ViewException
+     */
+    public function log(): string
+    {
+        return $this->theme("安全日志", "SECURITY_LOG", "User/SecurityLog.html");
+    }
 }

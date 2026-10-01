@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="#{lang_code()}">
+<html lang="#{lang_code()}" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="keywords" content="#{$config.keywords}"/>
     <meta name="description" content="#{$config.description}"/>
     <link href="#{$favicon}?v=#{$app.version}" rel="icon">
@@ -11,6 +11,8 @@
     [
     "/assets/common/css/bootstrap.min.css",
     "/assets/common/css/_.css",
+    "/assets/user/css/_glass.css",
+    "/assets/common/fonts/material-icons.css",
     "/assets/user/css/index.css"
     ],
     [
@@ -22,104 +24,175 @@
     "/assets/common/js/layer/theme/default/layer.css",
     "/assets/common/css/bootstrap.min.css",
     "/assets/common/css/toastr.min.css",
+    "/assets/user/css/_glass.css",
+    "/assets/common/fonts/material-icons.css",
     "/assets/user/css/index.css"
     ])}
     #{js("/assets/common/js/ready.js")}
     #{index_var()}
+    <script>(function(){try{var t=localStorage.getItem('uc-theme')||'auto';var d=t==='dark'||(t==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
     <!--start::HOOK-->
     #{hook(\App\Consts\Hook::USER_GLOBAL_VIEW_HEADER)}
     #{hook(\App\Consts\Hook::USER_VIEW_INDEX_HEADER)}
     <!--end::HOOK-->
 </head>
-<body style="background-size: cover;background-image: linear-gradient(180deg, rgb(255 255 255 / 0%), rgb(255 255 255 / 71%)), url('#{$config.background_url}')">
-<nav class="navbar navbar-expand-lg navbar-acg">
-    <div class="container">
-        <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
-            <img src="/favicon.ico" alt="ACG Logo" class="brand-logo me-2">
-            <span style="color: #1396558a;">#{$config.shop_name}</span>
-        </a>
+<body class="uc-body" style="background-image: url('#{$config.background_url}')">
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+<div class="uc-topbar">
+    <div class="uc-topbar__inner">
+        <nav class="shop-nav">
+            <a class="shop-brand" href="/">
+                <img src="#{$favicon}" alt="logo">
+                <span class="shop-brand__name">#{$config.shop_name}</span>
+            </a>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto mb-lg-0">
+            <ul class="shop-nav__list">
                 #{foreach user_header_nav() as $nav}
-                    <li class="nav-item"><a class="nav-link #{if $nav.match}#{active($nav.match)}#{/if}"
-                                            href="#{$nav.url}" target="#{$nav.target}">#{user_nav_icon($nav, 'nav-icon')}#{$nav.name}</a></li>
+                    <li><a class="shop-nav__item #{if $nav.match}#{active($nav.match)}#{/if}" href="#{$nav.url}" target="#{$nav.target}">#{user_nav_icon($nav, 'nav-icon')}#{$nav.name}</a></li>
                 #{/foreach}
             </ul>
-            <div class="d-none d-lg-flex search-input" role="search">
-                <div class="input-group">
-                    <span class="input-group-text"><i
-                                class="fa-duotone fa-regular fa-magnifying-glass nav-icon"></i></span>
-                    <input class="form-control item-search-input" type="search" placeholder="#{t('搜索商品关键词..')}"
-                           aria-label="Search">
-                </div>
+
+            <div class="shop-search">
+                <label class="shop-search__box">
+                    <i class="fa-duotone fa-regular fa-magnifying-glass"></i>
+                    <input class="item-search-input" type="search" placeholder="#{t('搜索商品关键词..')}" aria-label="#{t('搜索商品关键词..')}">
+                </label>
             </div>
-        </div>
 
-        <div class="ms-2 dropdown lang-switch">
-            <button class="btn lang-switch__btn" type="button" id="langDropdown"
-                    data-bs-toggle="dropdown" aria-expanded="false" title="#{t('语言')}">
-                <i class="fa-duotone fa-regular fa-globe"></i>
-                <span class="lang-switch__code" data-lang-label></span>
-                <i class="fa-duotone fa-regular fa-chevron-down lang-switch__caret"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end lang-switch__menu" aria-labelledby="langDropdown">
-                #{foreach $langs as $l}
-                    <li><a class="dropdown-item" href="javascript:;" data-lang-value="#{$l.code}">#{$l.name}</a></li>
-                #{/foreach}
-            </ul>
-        </div>
+            <div class="shop-nav__right">
+                <button class="shop-icon-btn shop-theme-btn" type="button" title="#{t('主题模式')}" aria-label="#{t('主题模式')}">
+                    <span class="material-icons-outlined shop-theme-ico">brightness_auto</span>
+                </button>
 
-        #{if $user}
-            <div class="ms-2 user-info-box">
-                <div class="dropdown">
-                    <button class="btn btn-link text-decoration-none dropdown-toggle d-flex align-items-center"
-                            type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img id="user-avatar"
-                             src="#{$user.avatar}"
-                             alt="#{t('用户头像')}" class="rounded-circle me-2"
-                             style="width: 32px; height: 32px; object-fit: cover; background-color: #f8f9fa;">
-                        <div class="d-flex flex-column align-items-start me-2">
-                                <span id="username" class="fw-bold text-dark"
-                                      style="font-size: 14px; line-height: 1.2;">#{$user.username}</span>
-                            <span id="user-balance" class="text-muted" style="font-size: 12px; line-height: 1.2;">#{t("余额:")} <span
-                                        class="text-success">#{$config.currency_symbol}#{$user.balance}</span></span>
-                        </div>
+                <div class="shop-lang">
+                    <button class="shop-icon-btn shop-lang__btn" type="button" title="#{t('语言')}" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa-duotone fa-regular fa-globe"></i>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                        <li><a class="dropdown-item" href="/user/dashboard/index"><i
-                                        class="fa-duotone fa-regular fa-user me-2"></i>#{t("个人中心")}</a></li>
-                        <li><a class="dropdown-item" href="/user/recharge/index"><i
-                                        class="fa-duotone fa-regular fa-wallet me-2"></i>#{t("钱包充值")}</a></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li><a class="dropdown-item" href="/user/personal/purchaseRecord"><i
-                                        class="fa-duotone fa-regular fa-receipt me-2"></i>#{t("我的订单")}</a></li>
-                        <li><a class="dropdown-item" href="/user/security/personal"><i
-                                        class="fa-duotone fa-regular fa-gear me-2"></i>#{t("设置")}</a></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li><a class="dropdown-item text-danger" href="/user/authentication/logout"><i
-                                        class="fa-duotone fa-regular fa-sign-out me-2"></i>#{t("退出登录")}</a></li>
-                    </ul>
+                    <div class="shop-lang__menu">
+                        #{foreach $langs as $l}
+                            <a class="shop-menu__item" href="javascript:;" data-lang-value="#{$l.code}">#{$l.name}</a>
+                        #{/foreach}
+                    </div>
                 </div>
-            </div>
-        #{else}
-            <div class="ms-2 user-login-box">
-                <a class="btn btn-outline-secondary btn-sm br-12" href="/user/authentication/login"><i
-                            class="fa-duotone fa-regular fa-right-to-bracket nav-icon"></i>#{t("登录")}</a>
-                <a class="btn btn-primary btn-sm br-12" href="/user/authentication/register"><i
-                            class="fa-duotone fa-regular fa-user-plus nav-icon"></i>#{t("创建账号")}</a>
-            </div>
-        #{/if}
 
+                #{if $user}
+                    <div class="shop-user">
+                        <button class="shop-user__btn" type="button" aria-haspopup="true" aria-expanded="false">
+                            <div class="shop-user__meta">
+                                <span class="shop-user__name" id="username">#{$user.username}</span>
+                                <span class="shop-user__balance" id="user-balance">#{t("余额:")} <b>#{$config.currency_symbol}#{$user.balance}</b></span>
+                            </div>
+                            <img class="shop-user__avatar" id="user-avatar" src="#{$user.avatar}" alt="#{t('用户头像')}">
+                        </button>
+                        <div class="shop-user__menu">
+                            <a class="shop-menu__item" href="/user/dashboard/index"><i class="fa-duotone fa-regular fa-user"></i>#{t("个人中心")}</a>
+                            <a class="shop-menu__item" href="/user/recharge/index"><i class="fa-duotone fa-regular fa-wallet"></i>#{t("钱包充值")}</a>
+                            <a class="shop-menu__item" href="/user/personal/purchaseRecord"><i class="fa-duotone fa-regular fa-receipt"></i>#{t("我的订单")}</a>
+                            <a class="shop-menu__item" href="/user/security/personal"><i class="fa-duotone fa-regular fa-gear"></i>#{t("设置")}</a>
+                            <div class="shop-menu__sep"></div>
+                            <a class="shop-menu__item is-danger" href="/user/authentication/logout"><i class="fa-duotone fa-regular fa-right-from-bracket"></i>#{t("退出登录")}</a>
+                        </div>
+                    </div>
+                #{else}
+                    <div class="shop-auth">
+                        <a class="shop-btn shop-btn--ghost" href="/user/authentication/login"><i class="fa-duotone fa-regular fa-right-to-bracket"></i>#{t("登录")}</a>
+                        <a class="shop-btn shop-btn--primary" href="/user/authentication/register"><i class="fa-duotone fa-regular fa-user-plus"></i>#{t("创建账号")}</a>
+                    </div>
+                #{/if}
+
+                <button class="shop-burger" type="button" aria-label="menu"><span class="material-icons-outlined">menu</span></button>
+            </div>
+        </nav>
     </div>
-</nav>
+</div>
+
+<!-- 窄屏 / 溢出抽屉 -->
+<div class="shop-drawer">
+    <a class="shop-drawer__brand" href="/"><img src="#{$favicon}" alt="logo"><span>#{$config.shop_name}</span></a>
+    #{foreach user_header_nav() as $nav}
+        <a class="shop-drawer__link #{if $nav.match}#{active($nav.match)}#{/if}" href="#{$nav.url}" target="#{$nav.target}">#{user_nav_icon($nav, 'nav-icon')}#{$nav.name}</a>
+    #{/foreach}
+    #{if $user}
+        <a class="shop-drawer__link" href="/user/dashboard/index"><i class="fa-duotone fa-regular fa-user"></i>#{t("个人中心")}</a>
+        <a class="shop-drawer__link" href="/user/recharge/index"><i class="fa-duotone fa-regular fa-wallet"></i>#{t("钱包充值")}</a>
+        <a class="shop-drawer__link is-danger" href="/user/authentication/logout"><i class="fa-duotone fa-regular fa-right-from-bracket"></i>#{t("退出登录")}</a>
+    #{else}
+        <a class="shop-drawer__link" href="/user/authentication/login"><i class="fa-duotone fa-regular fa-right-to-bracket"></i>#{t("登录")}</a>
+        <a class="shop-drawer__link" href="/user/authentication/register"><i class="fa-duotone fa-regular fa-user-plus"></i>#{t("创建账号")}</a>
+    #{/if}
+</div>
+<div class="shop-drawer__shade"></div>
+
+<script>
+(function () {
+    var html = document.documentElement, body = document.body;
+
+    // 主题：亮/暗/跟随系统 三态切换（与会员中心同一 localStorage 键 uc-theme）
+    (function () {
+        var KEY = 'uc-theme';
+        var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+        function cur() { try { return localStorage.getItem(KEY) || 'auto'; } catch (e) { return 'auto'; } }
+        function apply(mode) {
+            var dark = mode === 'dark' || (mode === 'auto' && mq && mq.matches);
+            html.setAttribute('data-theme', dark ? 'dark' : 'light');
+            var ico = document.querySelector('.shop-theme-ico');
+            if (ico) ico.textContent = mode === 'dark' ? 'dark_mode' : (mode === 'light' ? 'light_mode' : 'brightness_auto');
+        }
+        apply(cur());
+        var btn = document.querySelector('.shop-theme-btn');
+        if (btn) btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var order = ['light', 'dark', 'auto'];
+            var next = order[(order.indexOf(cur()) + 1) % 3];
+            try { localStorage.setItem(KEY, next); } catch (err) {}
+            apply(next);
+        });
+        if (mq && mq.addEventListener) mq.addEventListener('change', function () { if (cur() === 'auto') apply('auto'); });
+    })();
+
+    // 下拉：语言 / 用户
+    function bindDrop(wrap) {
+        if (!wrap) return;
+        var btn = wrap.querySelector('button');
+        if (!btn) return;
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var open = wrap.classList.contains('is-open');
+            document.querySelectorAll('.shop-lang.is-open, .shop-user.is-open').forEach(function (x) { if (x !== wrap) x.classList.remove('is-open'); });
+            wrap.classList.toggle('is-open', !open);
+            btn.setAttribute('aria-expanded', (!open).toString());
+        });
+    }
+    bindDrop(document.querySelector('.shop-lang'));
+    bindDrop(document.querySelector('.shop-user'));
+    document.addEventListener('click', function () {
+        document.querySelectorAll('.shop-lang.is-open, .shop-user.is-open').forEach(function (x) { x.classList.remove('is-open'); });
+    });
+
+    // 汉堡抽屉
+    document.addEventListener('click', function (e) {
+        var b = e.target.closest && e.target.closest('.shop-burger');
+        if (b) { e.preventDefault(); body.classList.toggle('shop-drawer-open'); return; }
+        if (e.target.closest && e.target.closest('.shop-drawer__shade')) body.classList.remove('shop-drawer-open');
+        var link = e.target.closest && e.target.closest('.shop-drawer__link');
+        if (link && link.getAttribute('href') && link.getAttribute('href') !== 'javascript:;') body.classList.remove('shop-drawer-open');
+    });
+
+    // 放不下就收进抽屉（任何语言/宽度通用）
+    var nav = document.querySelector('.shop-nav');
+    function fit() {
+        if (!nav) return;
+        html.classList.remove('shop-compact');
+        if (nav.scrollWidth > nav.clientWidth + 2) html.classList.add('shop-compact');
+        else body.classList.remove('shop-drawer-open');
+    }
+    fit();
+    var t;
+    window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(fit, 120); });
+    window.addEventListener('load', fit);
+    if (document.fonts && document.fonts.ready && document.fonts.ready.then) document.fonts.ready.then(fit).catch(function () {});
+    if (window.jQuery) jQuery(document).on('pjax:complete', function () { setTimeout(fit, 0); });
+})();
+</script>
+
 <div id="pjax-container">

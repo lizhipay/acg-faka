@@ -55,6 +55,9 @@ class Cash extends User
 
         $u = $this->getUser();
 
+        //资金操作二次验证：开启了两步验证并打开开关的会员，提现前需通过 TOTP（步进窗口内免重复）
+        \App\Util\FundGuard::assert($u);
+
         //提现频率闸（纵深防御）：正常用户不会高频提现，挡住脚本化并发刷单。
         //真正的并发一致性靠下方事务的 serializable + lockForUpdate 保证，这里只做限速。
         if (Throttle::tooMany("cash:submit:" . $u->id . ":" . Client::getAddress(), 10, 60)) {
@@ -133,6 +136,7 @@ class Cash extends User
             $cash->save();
         });
 
+        \App\Model\UserLog::write($u, 'cash', '申请兑现：金额 ' . $amount);
         return $this->json(200, "兑现成功");
     }
 

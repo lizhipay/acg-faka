@@ -60,6 +60,9 @@ class AgentMember extends User
             throw new JSONException("不能给自己转账");
         }
 
+        //资金操作二次验证：开启了两步验证并打开开关的会员，转账前需通过 TOTP（步进窗口内免重复）
+        \App\Util\FundGuard::assert($this->getUser());
+
         $rawAmount = $this->request->post("amount", Filter::NORMAL);
         $rawAmount = is_scalar($rawAmount) ? trim((string)$rawAmount) : '';
         if (!preg_match('/^\d+(\.\d{1,2})?$/', $rawAmount) || (float)$rawAmount <= 0) {
@@ -73,6 +76,7 @@ class AgentMember extends User
             \App\Model\Bill::create($to, $amount, 1, "来自ID:{$userId}的转账", 0, false);
         });
 
+        \App\Model\UserLog::write($this->getUser(), 'transfer', '转账给 ID:' . $to . ' 金额 ' . $amount);
         return $this->json();
     }
 }

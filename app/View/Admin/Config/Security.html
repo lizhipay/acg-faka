@@ -138,6 +138,24 @@
                             </div>
                             <!--end::Input group-->
 
+                            <!--begin::Input group 后台闲置锁屏-->
+                            <div class="row mb-6">
+                                <div class="col-lg-12 fv-row">
+                                    <div class="security-heading fw-bold fs-6 mb-3">#{t("后台闲置锁屏")}</div>
+                                    <div style="display:flex;align-items:center;gap:10px;">
+                                        <input type="number" name="admin_lock_timeout" min="0" max="1440" step="1"
+                                               class="form-control form-control-lg form-control-solid"
+                                               style="max-width:150px;flex:0 0 auto;"
+                                               value="#{$config.admin_lock_timeout|default:'15'}"/>
+                                        <span class="fw-bold fs-6 text-muted">#{t("分钟")}</span>
+                                    </div>
+                                    <div class="form-text fw-bold">
+                                        #{t("管理员在后台超过该时长无操作即自动锁屏，需重新输入密码或用通行密钥解锁。填 0 关闭此功能。")}
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Input group 后台闲置锁屏-->
+
                             <h2 class="admin-mobile-settings-section-title" id="mobile-security-ip"
                                 data-admin-mobile-description="站点如何识别访客真实 IP。填错会让限流、封禁、风控全部失准。">#{t("来源 IP")}</h2>
 <!--begin::Input group-->

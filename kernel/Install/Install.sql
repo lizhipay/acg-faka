@@ -302,6 +302,7 @@ CREATE TABLE `__PREFIX__coupon`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 
+DROP TABLE IF EXISTS `__PREFIX__manage_webauthn`;
 DROP TABLE IF EXISTS `__PREFIX__manage_session`;
 DROP TABLE IF EXISTS `__PREFIX__manage`;
 CREATE TABLE `__PREFIX__manage`  (
@@ -342,11 +343,31 @@ CREATE TABLE `__PREFIX__manage_session` (
                                              `last_seen_time` datetime NOT NULL COMMENT '最近活跃时间',
                                              `expires_time` datetime NOT NULL COMMENT '过期时间',
                                              `revoked_time` datetime NULL DEFAULT NULL COMMENT '撤销时间',
+                                             `last_active_time` datetime NULL DEFAULT NULL COMMENT '最近活动时间(闲置锁屏用)',
                                              PRIMARY KEY (`id`) USING BTREE,
                                              UNIQUE INDEX `session_hash`(`session_hash` ASC) USING BTREE,
                                              INDEX `manage_active`(`manage_id` ASC, `revoked_time` ASC, `expires_time` ASC) USING BTREE,
                                              INDEX `last_seen_time`(`last_seen_time` ASC) USING BTREE,
                                              CONSTRAINT `__PREFIX__manage_session_ibfk_1` FOREIGN KEY (`manage_id`) REFERENCES `__PREFIX__manage` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
+
+
+CREATE TABLE `__PREFIX__manage_webauthn` (
+                                             `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
+                                             `manage_id` int UNSIGNED NOT NULL COMMENT '管理员id',
+                                             `credential_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '凭证ID(base64url)',
+                                             `public_key` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '凭证公钥(PEM)',
+                                             `sign_count` bigint UNSIGNED NOT NULL DEFAULT 0 COMMENT '签名计数器',
+                                             `transports` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '传输方式',
+                                             `aaguid` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '认证器AAGUID',
+                                             `name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '凭证标签',
+                                             `created_time` datetime NOT NULL COMMENT '创建时间',
+                                             `last_used_time` datetime NULL DEFAULT NULL COMMENT '最近使用时间',
+                                             `last_used_ip` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '最近使用IP',
+                                             PRIMARY KEY (`id`) USING BTREE,
+                                             UNIQUE INDEX `credential_id`(`credential_id` ASC) USING BTREE,
+                                             INDEX `manage_id`(`manage_id` ASC) USING BTREE,
+                                             CONSTRAINT `__PREFIX__manage_webauthn_ibfk_1` FOREIGN KEY (`manage_id`) REFERENCES `__PREFIX__manage` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
 
 
@@ -492,6 +513,9 @@ CREATE TABLE `__PREFIX__shared`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 
+DROP TABLE IF EXISTS `__PREFIX__user_session`;
+DROP TABLE IF EXISTS `__PREFIX__user_log`;
+DROP TABLE IF EXISTS `__PREFIX__user_webauthn`;
 DROP TABLE IF EXISTS `__PREFIX__user`;
 CREATE TABLE `__PREFIX__user`  (
                                    `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
@@ -521,6 +545,9 @@ CREATE TABLE `__PREFIX__user`  (
                                    `wechat` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '微信收款二维码',
                                    `wallet_address` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '钱包地址',
                                    `settlement` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '自动结算：0=支付宝，1=微信',
+                                   `totp_secret` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '两步验证TOTP密钥(Base32)',
+                                   `totp_recovery` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '两步验证备用恢复码(bcrypt哈希JSON)',
+                                   `fund_2fa` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '资金操作二次验证：0=关，1=开(开启2FA时默认开)',
                                    PRIMARY KEY (`id`) USING BTREE,
                                    UNIQUE INDEX `username`(`username` ASC) USING BTREE,
                                    UNIQUE INDEX `email`(`email` ASC) USING BTREE,
@@ -529,6 +556,62 @@ CREATE TABLE `__PREFIX__user`  (
                                    INDEX `business_level`(`business_level` ASC) USING BTREE,
                                    INDEX `coin`(`coin` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1000 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
+
+CREATE TABLE `__PREFIX__user_session` (
+                                             `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
+                                             `user_id` int UNSIGNED NOT NULL COMMENT '会员id',
+                                             `session_hash` char(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '会话标识SHA-256哈希',
+                                             `device_type` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '设备类型',
+                                             `device_name` varchar(96) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '设备名称',
+                                             `user_agent` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '登录User-Agent',
+                                             `login_ip` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '登录IP',
+                                             `last_ip` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '最近IP',
+                                             `created_time` datetime NOT NULL COMMENT '登录时间',
+                                             `last_seen_time` datetime NOT NULL COMMENT '最近活跃时间',
+                                             `expires_time` datetime NOT NULL COMMENT '过期时间',
+                                             `revoked_time` datetime NULL DEFAULT NULL COMMENT '撤销时间',
+                                             PRIMARY KEY (`id`) USING BTREE,
+                                             UNIQUE INDEX `session_hash`(`session_hash` ASC) USING BTREE,
+                                             INDEX `user_active`(`user_id` ASC, `revoked_time` ASC, `expires_time` ASC) USING BTREE,
+                                             INDEX `last_seen_time`(`last_seen_time` ASC) USING BTREE,
+                                             CONSTRAINT `__PREFIX__user_session_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `__PREFIX__user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
+
+CREATE TABLE `__PREFIX__user_log` (
+                                             `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
+                                             `user_id` int UNSIGNED NOT NULL COMMENT '会员id',
+                                             `username` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '会员用户名快照',
+                                             `action` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '事件类型码',
+                                             `content` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '日志详情',
+                                             `create_time` datetime NOT NULL COMMENT '创建时间',
+                                             `create_ip` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'IP地址',
+                                             `ua` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '浏览器UA',
+                                             `risk` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '风险：0=正常，1=异常',
+                                             PRIMARY KEY (`id`) USING BTREE,
+                                             INDEX `user_id`(`user_id` ASC) USING BTREE,
+                                             INDEX `create_time`(`create_time` ASC) USING BTREE,
+                                             INDEX `action`(`action` ASC) USING BTREE,
+                                             INDEX `risk`(`risk` ASC) USING BTREE,
+                                             CONSTRAINT `__PREFIX__user_log_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `__PREFIX__user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
+
+CREATE TABLE `__PREFIX__user_webauthn` (
+                                             `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
+                                             `user_id` int UNSIGNED NOT NULL COMMENT '会员id',
+                                             `credential_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '凭证ID(base64url)',
+                                             `public_key` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '凭证公钥(PEM)',
+                                             `sign_count` bigint UNSIGNED NOT NULL DEFAULT 0 COMMENT '签名计数器',
+                                             `transports` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '传输方式',
+                                             `aaguid` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '认证器AAGUID',
+                                             `name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '凭证标签',
+                                             `created_time` datetime NOT NULL COMMENT '创建时间',
+                                             `last_used_time` datetime NULL DEFAULT NULL COMMENT '最近使用时间',
+                                             `last_used_ip` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '最近使用IP',
+                                             PRIMARY KEY (`id`) USING BTREE,
+                                             UNIQUE INDEX `credential_id`(`credential_id` ASC) USING BTREE,
+                                             INDEX `user_id`(`user_id` ASC) USING BTREE,
+                                             CONSTRAINT `__PREFIX__user_webauthn_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `__PREFIX__user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
 
 
 DROP TABLE IF EXISTS `__PREFIX__user_category`;

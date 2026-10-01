@@ -69,6 +69,12 @@
 "/assets/admin/js/mobile/workflows.js"
 ])}
 
+#{* 通行密钥公共封装 + 闲置锁屏（独立载入，不进 bundle；在 #pjax-container 之外，pjax 换页不销毁） *}
+#{js(
+["/assets/admin/js/webauthn.js", "/assets/admin/js/lock.js"],
+["/assets/admin/js/webauthn.js", "/assets/admin/js/lock.js"]
+)}
+
 <!--start::HOOK-->
 #{hook(\App\Consts\Hook::ADMIN_VIEW_BODY)}
 <!--end::HOOK-->

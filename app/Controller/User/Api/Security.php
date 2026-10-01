@@ -8,6 +8,7 @@ use App\Interceptor\UserSession;
 use App\Interceptor\Waf;
 use App\Service\Email;
 use App\Service\Sms;
+use App\Service\UserWebauthnService;
 use App\Util\Captcha;
 use App\Util\QrCode;
 use App\Util\Str;
@@ -77,6 +78,9 @@ class Security extends User
             'alipay',
             'wechat',
             'settlement',
+            'totp_secret',
+            'totp_recovery',
+            'fund_2fa',
             'id'
         ];
 
@@ -121,6 +125,7 @@ class Security extends User
         }
 
         $user->save();
+        \App\Model\UserLog::write($user, 'settlement', '修改了个人资料/结算方式');
         return $this->json(200, "修改成功");
     }
 
@@ -141,6 +146,7 @@ class Security extends User
         }
         $user->email = $_POST['email'];
         $user->save();
+        \App\Model\UserLog::write($user, 'email', '修改了绑定邮箱');
 
         $this->email->destroyCaptcha($user->email, Email::CAPTCHA_BIND_NEW);
         return $this->json(200, "修改成功");
@@ -162,6 +168,7 @@ class Security extends User
         }
         $user->phone = $_POST['phone'];
         $user->save();
+        \App\Model\UserLog::write($user, 'phone', '修改了绑定手机号');
 
         $this->sms->destroyCaptcha($user->phone, Sms::CAPTCHA_BIND_NEW);
         return $this->json(200, "修改成功");
@@ -188,8 +195,11 @@ class Security extends User
             throw new JSONException("新密码格式不正确，密码必须6位以上");
         }
 
-        $user->password = Str::generatePassword($password, $user->salt);
+        $user->password = Str::hashPassword($password);
         $user->save();
+        //改密后吊销本账号其它设备的会话，仅保留当前会话
+        \App\Service\UserSessionManager::revokeAll((int)$user->id, \App\Service\UserSessionManager::currentSessionId());
+        \App\Model\UserLog::write($user, 'password', '修改了登录密码');
         return $this->json(200, "修改成功");
     }
 
@@ -242,11 +252,403 @@ class Security extends User
      */
     public function resetKey(): array
     {
+        // 仅接受 POST：避免被 <img src="/user/api/security/resetKey"> 这类同源注入以 GET 触发（CSRF）。
+        if (strtoupper($this->request->method()) !== 'POST') {
+            throw new JSONException("请求方式不正确");
+        }
         $user = \App\Model\User::query()->find($this->getUser()->id);
-        $user->app_key = strtoupper(Str::generateRandStr(16));;
+        $user->app_key = strtoupper(Str::generateRandStr(16));
         $user->save();
+        \App\Model\UserLog::write($user, 'app_key_reset', '重置了对接密钥(app_key)', 1);
         return $this->json(200, "重置成功", ["app_key" => $user->app_key]);
     }
 
+    /**
+     * 两步验证：当前是否已开启 + 剩余恢复码数量
+     * @return array
+     */
+    public function totpStatus(): array
+    {
+        \App\Util\Schema::ensureUserTotp();
+        $user = $this->getUser();
+        return $this->json(data: [
+            "bound" => !empty($user->totp_secret),
+            "recovery_left" => \App\Util\RecoveryCode::remaining((string)$user->totp_recovery),
+            "fund_2fa" => (int)$user->fund_2fa === 1,
+        ]);
+    }
+
+    /**
+     * 两步验证：生成待绑定密钥（不落库，前端据 uri 出二维码/手动录入）
+     * @return array
+     */
+    public function totpSecret(): array
+    {
+        $user = $this->getUser();
+        if (!empty($user->totp_secret)) {
+            throw new JSONException("已开启两步验证，请先关闭再重新绑定");
+        }
+        $secret = \App\Util\Totp::generateSecret();
+        $issuer = (string)(\App\Model\Config::get("shop_name") ?: "ACGFAKA");
+        $account = (string)($user->email ?: $user->username);
+        $uri = \App\Util\Totp::keyUri($secret, $account, $issuer);
+        return $this->json(data: ["secret" => $secret, "uri" => $uri]);
+    }
+
+    /**
+     * 两步验证：开启（校验账号密码 + 一次动态码后保存密钥，并一次性返回备用恢复码）
+     * @return array
+     * @throws JSONException
+     */
+    public function totpEnable(): array
+    {
+        \App\Util\Schema::ensureUserTotp();
+        $user = \App\Model\User::query()->find($this->getUser()->id);
+        if (!empty($user->totp_secret)) {
+            throw new JSONException("已开启两步验证，请先关闭再重新绑定");
+        }
+        //要求账号密码：只有会话也不能开启/改动两步验证（与改邮箱/手机同口径，防会话被盗后接管）
+        if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)($_POST['password'] ?? ''), (string)$this->request->unsafePost('password'))) {
+            throw new JSONException("账号密码不正确");
+        }
+        $secret = strtoupper(trim((string)($_POST['secret'] ?? '')));
+        if (!preg_match('/^[A-Z2-7]{16,64}$/', $secret)) {
+            throw new JSONException("密钥格式错误，请刷新后重试");
+        }
+        if (!\App\Util\Totp::verify($secret, (string)($_POST['code'] ?? ''))) {
+            throw new JSONException("验证码错误，请确认手机时间已同步后重试");
+        }
+
+        $recovery = \App\Util\RecoveryCode::generate(8);
+        $user->totp_secret = $secret;
+        $user->totp_recovery = \App\Util\RecoveryCode::hashAll($recovery);
+        //开启两步验证时，默认一并开启「资金操作二次验证」
+        $user->fund_2fa = 1;
+        $user->save();
+        //开启后吊销其它设备会话，仅留当前
+        \App\Service\UserSessionManager::revokeAll((int)$user->id, \App\Service\UserSessionManager::currentSessionId());
+        \App\Model\UserLog::write($user, 'totp_on', '开启了两步验证（含资金操作二次验证）');
+
+        return $this->json(200, "两步验证已开启", ["recovery" => $recovery]);
+    }
+
+    /**
+     * 两步验证：关闭（校验账号密码 + 动态码或恢复码）
+     * @return array
+     * @throws JSONException
+     */
+    public function totpDisable(): array
+    {
+        \App\Util\Schema::ensureUserTotp();
+        $user = \App\Model\User::query()->find($this->getUser()->id);
+        if (empty($user->totp_secret)) {
+            throw new JSONException("尚未开启两步验证");
+        }
+        if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)($_POST['password'] ?? ''), (string)$this->request->unsafePost('password'))) {
+            throw new JSONException("账号密码不正确");
+        }
+        $code = trim((string)($_POST['code'] ?? ''));
+        $ok = \App\Util\Totp::verify((string)$user->totp_secret, $code)
+            || \App\Util\RecoveryCode::consume((string)$user->totp_recovery, $code) !== null;
+        if (!$ok) {
+            throw new JSONException("验证码错误");
+        }
+
+        $user->totp_secret = null;
+        $user->totp_recovery = null;
+        $user->fund_2fa = 0;
+        $user->save();
+        \App\Model\UserLog::write($user, 'totp_off', '关闭了两步验证', 1);
+        return $this->json(200, "两步验证已关闭");
+    }
+
+    /**
+     * 两步验证：重新生成备用恢复码（校验账号密码 + 动态码，旧恢复码全部作废）
+     * @return array
+     * @throws JSONException
+     */
+    public function totpRecovery(): array
+    {
+        \App\Util\Schema::ensureUserTotp();
+        $user = \App\Model\User::query()->find($this->getUser()->id);
+        if (empty($user->totp_secret)) {
+            throw new JSONException("尚未开启两步验证");
+        }
+        if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)($_POST['password'] ?? ''), (string)$this->request->unsafePost('password'))) {
+            throw new JSONException("账号密码不正确");
+        }
+        if (!\App\Util\Totp::verify((string)$user->totp_secret, (string)($_POST['code'] ?? ''))) {
+            throw new JSONException("验证码错误");
+        }
+        $recovery = \App\Util\RecoveryCode::generate(8);
+        $user->totp_recovery = \App\Util\RecoveryCode::hashAll($recovery);
+        $user->save();
+        \App\Model\UserLog::write($user, 'totp_recovery', '重新生成了备用恢复码');
+        return $this->json(200, "已重新生成", ["recovery" => $recovery]);
+    }
+
+    /**
+     * 资金操作二次验证：校验一次动态码，开启步进窗口（窗口内的资金操作免重复验证）。
+     * @return array
+     * @throws JSONException
+     */
+    public function fundVerify(): array
+    {
+        \App\Util\Schema::ensureUserTotp();
+        $user = $this->getUser();
+        if (empty($user->totp_secret)) {
+            throw new JSONException("尚未开启两步验证");
+        }
+        if (\App\Util\Throttle::tooMany("fundverify:uid:" . (int)$user->id, 10, 300)) {
+            throw new JSONException("验证过于频繁，请稍后再试");
+        }
+        if (!\App\Util\Totp::verify((string)$user->totp_secret, trim((string)($_POST['code'] ?? '')))) {
+            throw new JSONException("验证码错误");
+        }
+        \App\Util\FundGuard::markVerified((int)$user->id);
+        \App\Util\Throttle::clear("fundverify:uid:" . (int)$user->id);
+        \App\Model\UserLog::write($user, 'fund_verify', '通过了资金操作二次验证');
+        return $this->json(200, "验证成功");
+    }
+
+    /**
+     * 资金操作二次验证开关（校验账号密码 + 动态码后切换）。
+     * @return array
+     * @throws JSONException
+     */
+    public function fundGuardSet(): array
+    {
+        \App\Util\Schema::ensureUserTotp();
+        $user = \App\Model\User::query()->find($this->getUser()->id);
+        if (empty($user->totp_secret)) {
+            throw new JSONException("请先开启两步验证");
+        }
+        if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)($_POST['password'] ?? ''), (string)$this->request->unsafePost('password'))) {
+            throw new JSONException("账号密码不正确");
+        }
+        if (!\App\Util\Totp::verify((string)$user->totp_secret, trim((string)($_POST['code'] ?? '')))) {
+            throw new JSONException("验证码错误");
+        }
+        $enable = (string)($_POST['enable'] ?? '') === '1';
+        $user->fund_2fa = $enable ? 1 : 0;
+        $user->save();
+        \App\Model\UserLog::write($user, $enable ? 'fund_2fa_on' : 'fund_2fa_off', $enable ? '开启了资金操作二次验证' : '关闭了资金操作二次验证', $enable ? 0 : 1);
+        return $this->json(200, $enable ? "资金操作二次验证已开启" : "资金操作二次验证已关闭");
+    }
+
+    /**
+     * 当前会员的在线设备（会话）列表。响应不含会话标识/哈希/完整 UA。
+     * @return array
+     */
+    public function deviceSessions(): array
+    {
+        $uid = (int)$this->getUser()->id;
+        return $this->json(data: ['list' => \App\Service\UserSessionManager::listActive($uid)]);
+    }
+
+    /**
+     * 退出指定的其他设备。
+     * @return array
+     * @throws JSONException
+     */
+    public function revokeDeviceSession(): array
+    {
+        if (strtoupper($this->request->method()) !== 'POST') {
+            throw new JSONException("请求方式不正确");
+        }
+        $uid = (int)$this->getUser()->id;
+        $rawId = $this->request->post('id');
+        if ((!is_int($rawId) && !(is_string($rawId) && ctype_digit(trim($rawId)))) || (int)$rawId <= 0) {
+            throw new JSONException('设备会话参数无效');
+        }
+        $sessionId = (int)$rawId;
+        if ($sessionId === \App\Service\UserSessionManager::currentSessionId()) {
+            throw new JSONException('当前设备请使用「退出登录」退出');
+        }
+        if (!\App\Service\UserSessionManager::revokeSession($uid, $sessionId)) {
+            throw new JSONException('设备会话不存在或已经退出');
+        }
+        \App\Model\UserLog::write($this->getUser(), 'device_revoke', '退出了一台其他设备（会话#' . $sessionId . '）');
+        return $this->json(200, '该设备已退出');
+    }
+
+    /**
+     * 退出当前设备以外的全部设备。
+     * @return array
+     * @throws JSONException
+     */
+    public function revokeOtherDeviceSessions(): array
+    {
+        if (strtoupper($this->request->method()) !== 'POST') {
+            throw new JSONException("请求方式不正确");
+        }
+        $uid = (int)$this->getUser()->id;
+        $currentId = \App\Service\UserSessionManager::currentSessionId();
+        if ($currentId <= 0) {
+            throw new JSONException('当前设备会话无效，请重新登录');
+        }
+        $count = \App\Service\UserSessionManager::revokeAll($uid, $currentId);
+        if ($count > 0) {
+            \App\Model\UserLog::write($this->getUser(), 'device_revoke', '退出了其他全部设备（' . $count . ' 台）');
+        }
+        return $this->json(200, $count > 0 ? '其他设备已全部退出' : '没有其他在线设备', ['count' => $count]);
+    }
+
+    /**
+     * 退出全部设备（含当前）。
+     * @return array
+     */
+    public function revokeAllDeviceSessions(): array
+    {
+        if (strtoupper($this->request->method()) !== 'POST') {
+            throw new JSONException("请求方式不正确");
+        }
+        $uid = (int)$this->getUser()->id;
+        $count = \App\Service\UserSessionManager::revokeAll($uid);
+        \App\Model\UserLog::write($this->getUser(), 'device_revoke', '退出了全部设备（含当前，' . $count . ' 台）', 1);
+        \App\Service\UserSessionManager::clearCookie();
+        return $this->json(200, '全部设备已退出', ['count' => $count, 'reauthenticate' => true]);
+    }
+
+
+    /**
+     * 当前会员的通行密钥列表。
+     * @return array
+     */
+    public function passkeyList(): array
+    {
+        $user = $this->getUser();
+        return $this->json(data: [
+            'list' => UserWebauthnService::listForUser($user),
+            'max' => UserWebauthnService::MAX_PER_USER,
+            'totp' => !empty($user->totp_secret),
+            //供前端调用 WebAuthn Signal API，让密码管理器隐藏已在本站删除的通行密钥
+            'rp_id' => \App\Util\WebAuthn::relyingParty()[0],
+            'user_handle' => UserWebauthnService::userHandle($user),
+        ]);
+    }
+
+    /**
+     * 添加通行密钥第一步：校验账号密码后下发注册选项。挑战只在密码校验通过后签发且绑定本会员，
+     * 第二步 passkeyRegister 凭它完成——只有会话（可能被窃）加不了新的登录凭证（同 F-33 口径）。
+     * @return array
+     * @throws JSONException
+     */
+    public function passkeyRegisterOptions(): array
+    {
+        $user = \App\Model\User::query()->find($this->getUser()->id);
+        $key = "passkeyreg:uid:" . (int)$user->id;
+        if (\App\Util\Throttle::tooMany($key, 10, 300)) {
+            throw new JSONException("尝试过于频繁，请稍后再试");
+        }
+        if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)($_POST['password'] ?? ''), (string)$this->request->unsafePost('password'))) {
+            throw new JSONException("账号密码不正确");
+        }
+        \App\Util\Throttle::clear($key);
+        return $this->json(data: UserWebauthnService::registerOptions($user));
+    }
+
+    /**
+     * 添加通行密钥第二步：校验认证器回传并保存。
+     * @return array
+     * @throws JSONException
+     */
+    public function passkeyRegister(): array
+    {
+        $user = $this->getUser();
+        $attestationObject = (string)$this->request->post("attestationObject");
+        $clientDataJSON = (string)$this->request->post("clientDataJSON");
+        $rawId = (string)$this->request->post("id");
+        foreach ([$attestationObject, $clientDataJSON, $rawId] as $part) {
+            if (!preg_match('/^[A-Za-z0-9_-]+={0,2}$/', $part)) {
+                throw new JSONException("通行密钥数据不完整，请重试");
+            }
+        }
+        $saved = UserWebauthnService::register(
+            $user,
+            (string)$this->request->unsafePost("name"),
+            $attestationObject,
+            $clientDataJSON,
+            $rawId,
+            (string)$this->request->post("transports")
+        );
+        \App\Model\UserLog::write($user, 'passkey_add', '添加了通行密钥「' . $saved['name'] . '」');
+        return $this->json(200, "通行密钥已添加", $saved);
+    }
+
+    /**
+     * 重命名通行密钥。
+     * @return array
+     * @throws JSONException
+     */
+    public function passkeyRename(): array
+    {
+        $id = (int)$this->request->post("id", Filter::INTEGER);
+        if ($id <= 0) {
+            throw new JSONException("参数无效");
+        }
+        $name = UserWebauthnService::rename($this->getUser(), $id, (string)$this->request->unsafePost("name"));
+        return $this->json(200, "已重命名", ['name' => $name]);
+    }
+
+    /**
+     * 删除通行密钥。
+     * @return array
+     * @throws JSONException
+     */
+    public function passkeyDelete(): array
+    {
+        $id = (int)$this->request->post("id", Filter::INTEGER);
+        if ($id <= 0) {
+            throw new JSONException("参数无效");
+        }
+        $user = $this->getUser();
+        $name = UserWebauthnService::delete($user, $id);
+        \App\Model\UserLog::write($user, 'passkey_remove', '删除了通行密钥「' . $name . '」');
+        return $this->json(200, "已删除");
+    }
+
+    /**
+     * 会员自己的安全稽核日志（仅本人，分页）。对用户只展示「浏览器 · 系统」，绝不直出原始 UA。
+     * @return array
+     */
+    public function logs(): array
+    {
+        \App\Util\Schema::ensureUserLogTable();
+        $uid = (int)$this->getUser()->id;
+        $page = max(1, (int)($_POST['page'] ?? 1));
+        $limit = 15;
+        $onlyRisk = (string)($_POST['risk'] ?? '') === '1';
+
+        $q = \App\Model\UserLog::query()->where('user_id', $uid);
+        if ($onlyRisk) {
+            $q->where('risk', 1);
+        }
+        $total = (clone $q)->count();
+        $rows = $q->orderByDesc('id')->forPage($page, $limit)->get();
+
+        $list = $rows->map(static function ($r): array {
+            $d = \App\Util\UserAgent::describe((string)$r->ua);
+            return [
+                'action' => (string)$r->action,
+                'content' => (string)$r->content,
+                'create_time' => (string)$r->create_time,
+                'create_relative' => \App\Util\Date::sauce((string)$r->create_time),
+                'ip' => (string)$r->create_ip,
+                'browser' => $d['browser_full'],
+                'os' => $d['os'],
+                'client' => $d['label_full'],
+                'device_type' => $d['type'],
+                'risk' => (int)$r->risk,
+            ];
+        })->all();
+
+        return $this->json(data: [
+            'list' => $list,
+            'page' => $page,
+            'total' => $total,
+            'more' => ($page * $limit) < $total,
+        ]);
+    }
 
 }

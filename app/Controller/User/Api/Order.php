@@ -42,6 +42,17 @@ class Order extends User
     public function trade(Request $request): array
     {
         $map = $request->post(flags: Filter::NORMAL);
+
+        //资金操作二次验证：仅余额支付(#system)且登录会员适用；开启开关的会员下单扣余额前需过 TOTP（步进窗口内免重复）。
+        //必须放在验证码校验之前：42002 会让前端弹码后重放原请求，若此处先 Captcha::destroy，一次性验证码在重放时已失效。
+        $fundUser = $this->getUser();
+        if ($fundUser) {
+            $pay = Pay::query()->find((int)($map['pay_id'] ?? 0));
+            if ($pay && (string)$pay->handle === '#system') {
+                \App\Util\FundGuard::assert($fundUser);
+            }
+        }
+
         if (Config::get("trade_verification") == 1) {
             if (!Captcha::check((int)$map['captcha'], "trade")) {
                 throw new JSONException("验证码错误");
@@ -52,6 +63,7 @@ class Order extends User
         $map['device'] = Client::getDeviceTypeByUa($request->header("User-Agent"));
 
         hook(Hook::USER_API_ORDER_TRADE_BEGIN, $map);
+
         $trade = $this->order->trade($this->getUser(), $this->getUserGroup(), $map);
         return $this->json(200, '下单成功', $trade);
     }

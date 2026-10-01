@@ -343,6 +343,76 @@
             }
         });
     }
+    const USER_LOG_LABELS = {
+        login: '登录成功', login_passkey: '通行密钥登录', login_fail: '登录失败', logout: '退出登录',
+        password: '修改密码', email: '修改邮箱', phone: '修改手机', settlement: '资料/结算',
+        totp_on: '开启两步验证', totp_off: '关闭两步验证', totp_recovery: '重置恢复码',
+        fund_2fa_on: '开启资金验证', fund_2fa_off: '关闭资金验证', fund_verify: '资金验证通过',
+        device_revoke: '退出设备', cash: '申请兑现', transfer: '转账',
+        passkey_add: '添加通行密钥', passkey_remove: '删除通行密钥'
+    };
+    const USER_LOG_TONE = {
+        login: 'success', login_passkey: 'success', logout: 'success',
+        login_fail: 'danger', totp_off: 'danger', fund_2fa_off: 'danger',
+        password: 'warning', cash: 'warning', transfer: 'warning', device_revoke: 'warning', passkey_remove: 'warning',
+        email: 'primary', phone: 'primary', settlement: 'primary',
+        totp_on: 'primary', totp_recovery: 'primary', fund_2fa_on: 'primary', fund_verify: 'primary', passkey_add: 'primary'
+    };
+    // 会员安全日志：就地弹层内挂一张自包含的 Table（复用后台通用表格组件），关闭时销毁
+    const openUserLog = (row) => {
+        const uid = Number(row.id) || 0;
+        if (uid <= 0) return;
+        const uname = escapeHtml(row.username || ('#' + uid));
+        const mobile = mobileAdminEnabled();
+        let logTable = null;
+        openControllerLayer({
+            type: 1,
+            title: `${util.icon('fa-duotone fa-regular fa-shield-halved')} ${i18n('安全日志')} · ${uname}`,
+            area: mobile ? ['100%', '100%'] : [Math.min(1160, Math.max(920, Math.floor(window.innerWidth * 0.94))) + 'px', '82%'],
+            shadeClose: true,
+            content: `<div class="md-user-log-wrap" style="padding:14px 16px 4px;"><table id="user-log-table"></table></div>`,
+            success: () => {
+                if (!controllerActive) return;
+                logTable = new Table('/admin/api/user/log', '#user-log-table');
+                logTable.setWhere('user_id', uid);
+                logTable.setColumns([
+                    {
+                        field: 'action', title: '类型', width: 116, formatter: (val) => {
+                            const tone = USER_LOG_TONE[val] || 'secondary';
+                            const label = i18n(USER_LOG_LABELS[val] || val || '-');
+                            return `<span class="badge badge-light-${tone}" style="white-space:nowrap;">${escapeHtml(label)}</span>`;
+                        }
+                    },
+                    {field: 'content', title: '详情', width: 240, formatter: (val) => escapeHtml(val)},
+                    {field: 'create_time', title: '时间', width: 172, formatter: (val) => `<span style="white-space:nowrap;">${escapeHtml(val)}</span>`},
+                    {field: 'create_ip', title: 'IP', width: 140, formatter: (val) => `<span style="white-space:nowrap;">${escapeHtml(val)}</span>`},
+                    {field: 'ua', title: '浏览器', formatter: (val) => escapeHtml(val)},
+                    {
+                        field: 'risk', title: '评估', width: 100, formatter: (val, item) => Number(item.risk) === 1
+                            ? `<span class="badge badge-light-danger" style="white-space:nowrap;">${i18n('风险较高')}</span>`
+                            : `<span class="badge badge-light-success" style="white-space:nowrap;">${i18n('无风险')}</span>`
+                    }
+                ]);
+                logTable.setPagination(15, [15, 30, 50]);
+                logTable.setSearch([
+                    {title: '类型', name: 'equal-action', type: 'select', dict: Object.keys(USER_LOG_LABELS).map(k => ({id: k, name: USER_LOG_LABELS[k]}))},
+                    {title: '详情', name: 'search-content', type: 'input'},
+                    {title: 'IP地址', name: 'equal-create_ip', type: 'input'},
+                    {title: '时间', name: 'between-create_time', type: 'date'}
+                ]);
+                logTable.setState('risk', [
+                    {id: 0, name: '无风险'},
+                    {id: 1, name: '风险较高'}
+                ]);
+                logTable.render();
+            },
+            end: () => {
+                if (logTable && !logTable.isDestroyed && typeof logTable.destroy === 'function') logTable.destroy();
+                logTable = null;
+            }
+        });
+    };
+
     table.setColumns([
         {checkbox: true},
         {field: 'id', title: 'ID', width: 80, visible: false}
@@ -499,6 +569,13 @@
                     tips: '修改',
                     click: (event, value, row, index) => {
                         modal(`<i class="fa-duotone fa-regular fa-user-pen"></i> ${i18n('修改用户')}`, row);
+                    }
+                },
+                {
+                    icon: 'fa-duotone fa-regular fa-shield-halved text-primary',
+                    tips: '安全日志',
+                    click: (event, value, row, index) => {
+                        openUserLog(row);
                     }
                 },
                 {

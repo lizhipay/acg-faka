@@ -136,6 +136,41 @@
               </div>
               <!--end::Input group 谷歌验证器-->
 
+              <!--begin::Input group 通行密钥（跨整行；用普通标题而非浮动 col-form-label，避免 md-settings 把标签浮到内容上重叠）-->
+              <!-- data-admin-mobile-action-placement=inline：本卡片内的新增/重命名/删除都是「针对某个通行密钥」的内联操作，
+                   不能被手机版壳的 discoverActions 当成页面级动作抽进「更多操作」弹层（删除 title 命中 ACTION_HINT）。 -->
+              <div class="row mb-6" style="grid-column: 1 / -1;">
+                <div class="col-lg-12 fv-row" data-admin-mobile-action-placement="inline">
+                  <style>
+                    #passkey-list .pk-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--bs-gray-300);border-radius:12px;background:var(--bs-body-bg);transition:border-color .15s}
+                    #passkey-list .pk-item + .pk-item{margin-top:8px}
+                    #passkey-list .pk-item:hover{border-color:var(--bs-gray-400)}
+                    #passkey-list .pk-item__ico{flex:0 0 auto;width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:rgba(var(--bs-primary-rgb),.1);color:var(--bs-primary);font-size:16px}
+                    #passkey-list .pk-item__main{flex:1 1 auto;min-width:0}
+                    #passkey-list .pk-item__name{font-weight:600;font-size:13.5px;color:var(--bs-gray-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+                    #passkey-list .pk-item__meta{font-size:11.5px;color:var(--bs-gray-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+                    #passkey-list .pk-item__ico .material-icons-outlined{font-size:20px}
+                    #passkey-list .pk-item__acts{flex:0 0 auto;display:flex;gap:2px}
+                    #passkey-list .pk-item__acts .btn{width:34px;height:34px;color:var(--bs-gray-500)}
+                    #passkey-list .pk-item__acts .btn .material-icons-outlined{font-size:19px}
+                    #passkey-list .pk-empty{padding:16px;border:1px dashed var(--bs-gray-300);border-radius:12px;text-align:center}
+                    @media (max-width:767.98px){
+                      #passkey-list .pk-item{padding:12px;gap:10px}
+                      #passkey-list .pk-item__acts .btn{width:40px;height:40px}
+                      #passkey-list .pk-item__acts .btn .material-icons-outlined{font-size:21px}
+                      #passkey-list .pk-item__name{font-size:15px}
+                      #passkey-list .pk-item__meta{font-size:12px}
+                    }
+                  </style>
+                  <div class="fw-bold fs-6 mb-1">#{t("通行密钥")}</div>
+                  <div class="text-muted fs-8 mb-4">#{t("Touch ID / Windows Hello / 安全密钥，免密码登录与解锁")}</div>
+                  <div id="passkey-list" class="mb-3"></div>
+                  <button type="button" id="passkey-add-btn" class="btn btn-sm btn-light-primary"><span class="material-icons-outlined fs-6 align-middle me-1">vpn_key</span>#{t("添加通行密钥")}</button>
+                  <div id="passkey-hint" class="text-muted fs-8 mt-2" style="display:none;"></div>
+                </div>
+              </div>
+              <!--end::Input group 通行密钥-->
+
 
             </div>
             <!--end::Card body-->
@@ -186,4 +221,5 @@
 
 #{ready("/assets/admin/controller/manage/set.js")}
 #{ready("/assets/admin/controller/config/google2fa.js")}
+#{ready("/assets/admin/controller/manage/passkey.js")}
 #{include file="../Footer.html"}

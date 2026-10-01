@@ -21,7 +21,7 @@
       <div class="mb-3">
         <div class="chip-list">
             #{foreach $category as $cate}
-                <a data-id="#{$cate.id}" class="switch-category chip #{if $cate@first && $categoryId == 0} is-primary #{elseif $cate.id == $categoryId} is-primary #{/if}" href="javascript:void(0);">#{if $cate.id != 'recommend'}<span class="chip-icon" style="background: url('#{$cate.icon}') center/cover no-repeat;"></span>#{/if}#{lang($cate.name)}</a>
+                <a data-id="#{$cate.id}" class="switch-category chip #{if $cate.id != 'recommend' && $cate.commodity_count == 0}is-disabled #{/if}#{if $cate@first && $categoryId == 0} is-primary #{elseif $cate.id == $categoryId} is-primary #{/if}" href="javascript:void(0);">#{if $cate.id != 'recommend'}<span class="chip-icon" style="background: url('#{$cate.icon}') center/cover no-repeat;"></span>#{/if}#{lang($cate.name)}</a>
             #{/foreach}
         </div>
       </div>

@@ -450,7 +450,7 @@
   "保持会话": "Stay Signed In",
   "保持原备注": "Keep Original Note",
   "保持原设置": "Keep Current Setting",
-  "保持登录(365天)": "Stay signed in (365 days)",
+  "保持登录": "Stay signed in",
   "信息已确认，可以前往支付": "Details confirmed, proceed to payment",
   "修改": "Edit",
   "修改个人信息": "Edit Profile",
@@ -4202,5 +4202,8 @@
   "已下架，商户无法自行重新上架": "Delisted. The merchant can't relist it on their own",
   "该商品不在平台下架状态": "This product isn't delisted by the platform",
   "已解除，商户可以重新上架": "Lifted. The merchant can relist it now",
-  "该商品已被平台下架，无法自行上架，如有疑问请联系平台": "This product was delisted by the platform and can't be relisted. Contact the platform if you have questions."
+  "该商品已被平台下架，无法自行上架，如有疑问请联系平台": "This product was delisted by the platform and can't be relisted. Contact the platform if you have questions.",
+  "大写锁定已开启": "Caps Lock is on",
+  "查看官方文档重置密码方法": "See the official documentation to reset your password",
+  "该账号已开启两步验证，请输入谷歌验证码": "Two-step verification is on for this account. Enter your Google Authenticator code"
 }

@@ -26,7 +26,7 @@ class Query implements \App\Service\Query
      * 过滤/排序（`betweenStart-password` 布尔预言机、`sort_field=password` 排序侧信道）。
      * 接口如确有正当需要，只能通过 {@see Get::setFilterColumns} 显式声明（那是接口自己的选择）。
      */
-    private const SENSITIVE_COLUMNS = ['password', 'salt', 'app_key', 'google_secret'];
+    private const SENSITIVE_COLUMNS = ['password', 'salt', 'app_key', 'google_secret', 'totp_secret', 'totp_recovery'];
 
     /**
      * 表 → 真实列清单缓存（每进程一次 introspection，schema 进程内稳定）。

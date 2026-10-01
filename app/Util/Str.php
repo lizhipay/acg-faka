@@ -25,6 +25,27 @@ class Str
     }
 
     /**
+     * 生成新格式密码哈希（bcrypt，自带盐、慢哈希）。
+     *
+     * 旧格式 sha1(md5(md5·md5)) 是快哈希，脱库后可离线高速爆破；bcrypt 每次验证有成本，
+     * 大幅抬高爆破代价。哈希长度 60 字符，落在 password/manage.password 的 varchar(64) 内。
+     * salt 列对 bcrypt 已无意义（盐嵌在哈希里），但列 NOT NULL，调用方仍照旧写入一个盐值。
+     */
+    public static function hashPassword(string $pass): string
+    {
+        return password_hash($pass, PASSWORD_BCRYPT);
+    }
+
+    /**
+     * 该哈希是否为旧格式、需要在下次登录时透明升级为 bcrypt。
+     */
+    public static function passwordNeedsUpgrade(string $storedHash): bool
+    {
+        //bcrypt/argon 前缀形如 $2y$ / $argon2；旧格式是 40 位十六进制 sha1
+        return !str_starts_with($storedHash, '$');
+    }
+
+    /**
      * 校验账号密码，兼容旧清洗管线时代的哈希（#833）
      *
      * 旧版 Firewall 会对已解码的输入再 urldecode 一次，并把裸 & 实体化成 &amp;，
@@ -41,6 +62,12 @@ class Str
     {
         if ($storedHash === '') {
             return false;
+        }
+
+        //新格式（bcrypt）：盐嵌在哈希里，salt 列不参与；旧管线兼容对 bcrypt 不适用
+        if (str_starts_with($storedHash, '$')) {
+            return password_verify($cleanInput, $storedHash)
+                || ($rawInput !== null && $rawInput !== '' && $rawInput !== $cleanInput && password_verify($rawInput, $storedHash));
         }
 
         if (hash_equals($storedHash, self::generatePassword($cleanInput, $salt))) {

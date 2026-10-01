@@ -36,6 +36,24 @@
     #{index_var()}
     <script>(function(){try{var t=localStorage.getItem('uc-theme')||'auto';var d=t==='dark'||(t==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
 
+    <!-- 顶栏自适应收合：内容放不下时（例如英文标签更长）收进汉堡抽屉，任何宽度通用，不再溢出 -->
+    <style id="uc-nav-compact">
+        html.uc-force-compact .uc-nav__list,
+        html.uc-force-compact .uc-nav__right .uc-nav__link{display:none!important}
+        html.uc-force-compact .uc-burger{display:inline-flex!important}
+        html.uc-force-compact .uc-nav__right{margin-left:auto}
+        html.uc-force-compact .uc-drawer{display:block!important;position:fixed;top:0;left:0;bottom:0;z-index:1000;width:82%;max-width:320px;padding:20px 16px;overflow-y:auto;background:var(--glass-bg-strong);-webkit-backdrop-filter:var(--glass-filter-strong);backdrop-filter:var(--glass-filter-strong);border-right:1px solid var(--glass-border);transform:translateX(-104%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+        html.uc-force-compact body.uc-drawer-open .uc-drawer{transform:translateX(0)}
+        html.uc-force-compact .uc-drawer__shade{display:block!important;position:fixed;inset:0;z-index:999;background:rgba(20,22,30,.32);opacity:0;visibility:hidden;transition:opacity .28s ease,visibility .28s}
+        html.uc-force-compact body.uc-drawer-open .uc-drawer__shade{opacity:1;visibility:visible}
+        html.uc-force-compact .uc-drawer__group{margin-bottom:12px}
+        html.uc-force-compact .uc-drawer__gtitle{font-size:11.5px;font-weight:700;letter-spacing:.5px;color:var(--uc-ink-dis);text-transform:uppercase;padding:8px 12px 4px}
+        html.uc-force-compact .uc-drawer__link{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;font-size:14.5px;font-weight:500;color:var(--uc-ink);text-decoration:none}
+        html.uc-force-compact .uc-drawer__link .material-icons-outlined{font-size:21px;color:var(--uc-ink-dis)}
+        html.uc-force-compact .uc-drawer__link.active{background:rgba(var(--md-primary-rgb),.14);color:var(--uc-primary-deep)}
+        html.uc-force-compact .uc-drawer__link.active .material-icons-outlined{color:var(--uc-primary-deep)}
+    </style>
+
     <!--start::HOOK-->
     #{hook(\App\Consts\Hook::USER_VIEW_HEADER)}
     <!--end::HOOK-->
@@ -241,5 +259,47 @@
         </div>
     </div>
     <div class="uc-drawer__shade"></div>
+
+    <script>
+    (function () {
+        var html = document.documentElement;
+        var nav = document.querySelector('.uc-nav');
+        if (!nav) return;
+        var mqMobile = window.matchMedia ? window.matchMedia('(max-width: 992px)') : null;
+
+        function fit() {
+            // ≤992px 由主题原有的媒体查询接管，这里只管更宽屏幕下的“放不下就收起”
+            if (mqMobile && mqMobile.matches) {
+                if (html.classList.contains('uc-force-compact')) {
+                    html.classList.remove('uc-force-compact');
+                    document.body && document.body.classList.remove('uc-drawer-open');
+                }
+                return;
+            }
+            // 先还原成完整横向导航再量真实宽度；同一帧内完成，不会闪
+            html.classList.remove('uc-force-compact');
+            var overflow = nav.scrollWidth > nav.clientWidth + 2;
+            if (overflow) {
+                html.classList.add('uc-force-compact');
+            } else if (document.body) {
+                document.body.classList.remove('uc-drawer-open');
+            }
+        }
+
+        fit();
+        var timer;
+        window.addEventListener('resize', function () {
+            clearTimeout(timer);
+            timer = setTimeout(fit, 120);
+        });
+        window.addEventListener('load', fit);
+        if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function') {
+            document.fonts.ready.then(fit).catch(function () {});
+        }
+        if (window.jQuery) {
+            jQuery(document).on('pjax:complete', function () { setTimeout(fit, 0); });
+        }
+    })();
+    </script>
 
     <div id="pjax-container">

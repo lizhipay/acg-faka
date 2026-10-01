@@ -2,6 +2,10 @@
     <a href="/user/security/personal" data-ptab="info" #{if active('/user/security/personal')}class="active"#{/if}><span class="material-icons-outlined">badge</span>#{t("个人资料")}</a>
     <a href="/user/security/personal?tab=edit" data-ptab="edit"><span class="material-icons-outlined">edit</span>#{t("修改个人信息")}</a>
     <a href="/user/security/password" #{if active('/user/security/password')}class="active"#{/if}><span class="material-icons-outlined">password</span>#{t("密码设置")}</a>
+    <a href="/user/security/twoFactor" #{if active('/user/security/twoFactor')}class="active"#{/if}><span class="material-icons-outlined">shield</span>#{t("两步验证")}</a>
+    <a href="/user/security/passkey" #{if active('/user/security/passkey')}class="active"#{/if}><span class="material-icons-outlined">fingerprint</span>#{t("通行密钥")}</a>
+    <a href="/user/security/device" #{if active('/user/security/device')}class="active"#{/if}><span class="material-icons-outlined">devices</span>#{t("登录设备")}</a>
+    <a href="/user/security/log" #{if active('/user/security/log')}class="active"#{/if}><span class="material-icons-outlined">history</span>#{t("安全日志")}</a>
     #{if $config.registered_type == 2}
     <a href="/user/security/email" #{if active('/user/security/email')}class="active"#{/if}><span class="material-icons-outlined">mail</span>#{t("邮箱设置")}</a>
     #{/if}

@@ -1,0 +1,29 @@
+#{include file="../Common/Header.html"}
+<div class="uc-main">
+    <div class="uc-card">
+        <div class="uc-card__body">
+            #{include file="../Common/SecurityNav.html"}
+
+            <div id="slog-app" class="slog-app">
+                <div class="slog-head">
+                    <div class="slog-head__text">
+                        <div class="slog-head__title">#{t("安全日志")}</div>
+                    </div>
+                    <div class="slog-head__ops">
+                        <button type="button" class="slog-chip" id="slog-only-risk" aria-pressed="false"><span class="material-icons-outlined">gpp_maybe</span>#{t("只看风险")}</button>
+                        <button type="button" class="totp-ghost" id="slog-refresh"><span class="material-icons-outlined">refresh</span>#{t("刷新")}</button>
+                    </div>
+                </div>
+
+                <div id="slog-status" class="slog-status">#{t("正在读取安全日志…")}</div>
+                <div id="slog-list" class="slog-list"></div>
+                <div class="slog-more-wrap">
+                    <button type="button" class="totp-ghost" id="slog-more" style="display:none;">#{t("加载更多")}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+#{ready("/assets/user/controller/security/log.js")}
+#{include file="../Common/Footer.html"}

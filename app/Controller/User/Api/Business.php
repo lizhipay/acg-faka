@@ -34,6 +34,9 @@ class Business extends User
             throw new JSONException("请选择要购买的等级");
         }
 
+        // 用余额开通商户等级同属资金操作：开启了资金二次验证的会员需先过 TOTP（窗口内免重复）。
+        \App\Util\FundGuard::assert($this->getUser());
+
         $userId = (int)$this->getUser()->id;
         DB::transaction(function () use ($levelId, $userId) {
             $observedUser = \App\Model\User::query()

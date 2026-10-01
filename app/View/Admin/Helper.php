@@ -14,6 +14,8 @@ if (!function_exists("admin_var")) {
             //站长加了语言或停用了某种语言，前端跟着变，不用改任何模板
             "LANGS" => \Kernel\Util\Lang::menu(),
             "CURRENCY" => \App\Util\Currency::vars(),
+            //后台闲置锁屏分钟数（0=关闭），全局锁屏脚本据此计时
+            "LOCK_TIMEOUT" => \App\Util\AdminLock::timeoutMinutes(),
             "HACK_ROUTE_TABLE_COLUMNS" => hook(Hook::HACK_ROUTE_TABLE_COLUMNS),
             "HACK_SUBMIT_FORM" => hook(Hook::HACK_SUBMIT_FORM),
             "HACK_SUBMIT_TAB" => hook(Hook::HACK_SUBMIT_TAB),

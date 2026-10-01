@@ -6,6 +6,7 @@ namespace App\Interceptor;
 
 use App\Consts\Manage as ManageConst;
 use App\Service\ManageSessionManager;
+use App\Util\AdminLock;
 use App\Util\Client;
 use App\Util\Context;
 use App\Util\Date;
@@ -62,6 +63,21 @@ class ManageSession implements InterceptorInterface
         //保存会话
         Context::set(ManageConst::SESSION, $manage);
         Context::set(ManageConst::SESSION_RECORD, $session);
+
+        //闲置锁屏（伺服器强制）：逾时后 API 回 42010、VIEW 转锁屏页。
+        //解锁/ping 端点在不受本拦截器守卫的 Authentication 控制器，故锁定时仍可访问。
+        if (AdminLock::isLocked($session)) {
+            $this->locked($type);
+        }
+    }
+
+    #[NoReturn] private function locked(int $type): void
+    {
+        if ($type == Interceptor::TYPE_VIEW) {
+            Client::redirect("/admin/authentication/lock?goto=" . urlencode((string)$_SERVER['REQUEST_URI']), "", 0);
+        }
+        header('content-type:application/json;charset=utf-8');
+        exit(json_encode(["code" => 42010, "msg" => "会话已锁定，请重新验证解锁"], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
 

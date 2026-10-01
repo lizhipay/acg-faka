@@ -13,10 +13,10 @@
 
         data.forEach(item => {
             const isSoldOut = item.stock == 0;
-            $ItemList.append(`<a href="${!isSoldOut ? `/item/${item.id}` : `javascript:void(0);`}" class="col-12 col-md-6 col-lg-3 mb-3" data-id="${item.id}">
-          <div class="acg-card ${isSoldOut ? `soldout` : ``} h-100">
+            $ItemList.append(`<a href="${!isSoldOut ? `/item/${item.id}` : `javascript:void(0);`}" class="item-card-cell" data-id="${item.id}">
+          <div class="acg-card ${isSoldOut ? `soldout` : ``}">
             <div class="acg-thumb" style="background: url('${item.cover}') center/cover no-repeat;"></div>
-            <div class="p-3">
+            <div class="acg-body">
               <div class="tags">
               ${_CommodityTags(item)}
               <span class="badge-soft badge-soft-success">${item.delivery_way === 0 ? i18n('自动发货') : i18n('在线发货')}</span>

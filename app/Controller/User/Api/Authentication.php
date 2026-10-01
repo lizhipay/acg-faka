@@ -11,6 +11,7 @@ use App\Model\Config;
 use App\Service\Email;
 use App\Service\Sms;
 use App\Service\UserSSO;
+use App\Service\UserWebauthnService;
 use App\Util\Captcha;
 use App\Util\Client;
 use App\Util\Date;
@@ -111,7 +112,7 @@ class Authentication extends User
         }
 
         $user->salt = Str::generateRandStr();
-        $user->password = Str::generatePassword($_POST['password'], $user->salt);
+        $user->password = Str::hashPassword($_POST['password']);
         $user->app_key = strtoupper(Str::generateRandStr(16));
         $user->create_time = Date::current();
         $user->status = 1;
@@ -341,13 +342,19 @@ class Authentication extends User
 
         //verifyPassword 内含旧清洗管线的兼容比对：老账号的特殊字符密码当年哈希的是转义形态（#833）
         if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)$_POST['password'], (string)$this->request->unsafePost('password'))) {
-            $this->loginFail((string)$_POST['username'], "password");
+            $this->loginFail((string)$_POST['username'], "password", $user);
             throw new JSONException("密码错误");
         }
 
         if ($user->status == 0) {
-            $this->loginFail((string)$_POST['username'], "banned");
+            $this->loginFail((string)$_POST['username'], "banned", $user);
             throw new JSONException("您已被封禁");
+        }
+
+        //密码校验通过：旧格式哈希透明升级为 bcrypt（下次起用慢哈希，抬高脱库爆破成本）
+        if (Str::passwordNeedsUpgrade((string)$user->password)) {
+            $user->password = Str::hashPassword((string)$_POST['password']);
+            $user->save();
         }
 
         $remember = (bool)$this->request->post("remember", Filter::BOOLEAN);
@@ -363,15 +370,141 @@ class Authentication extends User
     }
 
     /**
+     * 两步验证第二步：密码已在 login() 通过并暂存待验证态，这里校验动态码/恢复码后才签发会话。
+     * 独立端点（不重放登录表单）以避开 Turnstile / 图形验证码的单次性。
+     * @return array
+     * @throws JSONException
+     * @throws RuntimeException
+     */
+    public function totp(): array
+    {
+        $ip = Client::getAddress();
+        if (Throttle::tooMany("totp:ip:{$ip}", 30, 300)) {
+            throw new JSONException("验证过于频繁，请稍后再试");
+        }
+
+        $pending = \Kernel\Util\Session::get(UserSSO::PENDING_KEY);
+        if (!is_array($pending) || empty($pending['uid']) || (int)($pending['exp'] ?? 0) <= time()) {
+            \Kernel\Util\Session::remove(UserSSO::PENDING_KEY);
+            throw new JSONException("登录状态已失效，请重新登录", UserSSO::CODE_NEED_TOTP);
+        }
+
+        $uid = (int)$pending['uid'];
+        if (Throttle::tooMany("totp:uid:{$uid}", 10, 300)) {
+            throw new JSONException("验证过于频繁，请稍后再试");
+        }
+
+        $user = \App\Model\User::query()->find($uid);
+        if (!$user || $user->status != 1 || empty($user->totp_secret)) {
+            \Kernel\Util\Session::remove(UserSSO::PENDING_KEY);
+            throw new JSONException("登录状态已失效，请重新登录", UserSSO::CODE_NEED_TOTP);
+        }
+
+        $code = trim((string)($_POST['code'] ?? ''));
+        if ($code === '') {
+            throw new JSONException("请输入验证码");
+        }
+
+        $ok = \App\Util\Totp::verify((string)$user->totp_secret, $code);
+        if (!$ok) {
+            //动态码不对时再试恢复码：命中即消费掉该恢复码
+            $before = (string)$user->totp_recovery;
+            $left = \App\Util\RecoveryCode::consume($before, $code);
+            if ($left !== null) {
+                //原子消费：仅当该列仍是消费前的值时才写入，命中 1 行才算成功。
+                //否则并发的两个请求会各自读到同一份恢复码、都校验通过，一条恢复码换到两个会话。
+                $affected = \App\Model\User::query()
+                    ->where('id', $uid)
+                    ->where('totp_recovery', $before)
+                    ->update(['totp_recovery' => $left]);
+                if ($affected === 1) {
+                    $user->totp_recovery = $left;
+                    $ok = true;
+                }
+            }
+        }
+
+        if (!$ok) {
+            $this->loginFail((string)$user->username, "totp", $user);
+            throw new JSONException("验证码错误");
+        }
+
+        $remember = (bool)($pending['remember'] ?? false);
+        \Kernel\Util\Session::remove(UserSSO::PENDING_KEY);
+        $this->sso->issue($user, $remember, (string)($pending['via'] ?? ''));
+
+        Throttle::clear("totp:ip:{$ip}");
+        Throttle::clear("totp:uid:{$uid}");
+        return $this->json(200, "登录成功");
+    }
+
+    /**
+     * 通行密钥登录选项（usernameless：不指定账号，由浏览器列出本站已保存的通行密钥）。
+     * @return array
+     */
+    public function passkeyOptions(): array
+    {
+        return $this->json(200, "success", UserWebauthnService::loginOptions());
+    }
+
+    /**
+     * 通行密钥登录：校验断言 → 找到会员 → 交给 loginSuccess。认证器做了用户验证（指纹/面容/PIN）
+     * 即视为已满足多因素、免两步验证；没做用户验证而账号开了两步验证，照常抛 CODE_NEED_TOTP 弹动态码。
+     * 不走图形验证码与 LOGIN_BEGIN（通行密钥本身无法被脚本批量尝试）。
+     * @return array
+     * @throws JSONException
+     * @throws RuntimeException
+     */
+    public function passkeyLogin(): array
+    {
+        $ip = Client::getAddress();
+        if (Throttle::tooMany("passkey:ip:{$ip}", 30, 300)) {
+            throw new JSONException("登录尝试过于频繁，请稍后再试");
+        }
+
+        $rawId = (string)$this->request->post("id");
+        $authData = (string)$this->request->post("authenticatorData");
+        $clientData = (string)$this->request->post("clientDataJSON");
+        $signature = (string)$this->request->post("signature");
+        $userHandle = (string)$this->request->post("userHandle");
+        foreach ([$rawId, $authData, $clientData, $signature] as $part) {
+            if (!preg_match('/^[A-Za-z0-9_-]+={0,2}$/', $part)) {
+                throw new JSONException("通行密钥数据不完整，请重试");
+            }
+        }
+        if ($userHandle !== '' && !preg_match('/^[A-Za-z0-9_-]+={0,2}$/', $userHandle)) {
+            $userHandle = '';
+        }
+
+        $result = UserWebauthnService::login($rawId, $authData, $clientData, $signature, $userHandle);
+        $user = $result['user'];
+        if ($user->status != 1) {
+            $this->loginFail((string)$user->username, "banned", $user);
+            throw new JSONException("您已被封禁");
+        }
+
+        $remember = (bool)$this->request->post("remember", Filter::BOOLEAN);
+        $this->sso->loginSuccess($user, $remember, $result['userVerified'], 'passkey');
+
+        Throttle::clear("passkey:ip:{$ip}");
+        return $this->json(200, "登录成功");
+    }
+
+    /**
      * 登录失败通知点位（钩子异常不影响原有失败流程）
      * @param string $account
      * @param string $reason not_found|password|banned
      */
-    private function loginFail(string $account, string $reason): void
+    private function loginFail(string $account, string $reason, ?\App\Model\User $user = null): void
     {
         try {
             hook(Hook::USER_API_AUTH_LOGIN_FAIL, $account, $reason);
         } catch (\Throwable $e) {
+        }
+        //安全日志：仅在命中真实会员时记（账号不存在的失败不归属任何会员）。失败一律标记为需关注。
+        if ($user) {
+            $labels = ['password' => '登录失败：密码错误', 'banned' => '登录失败：账号已被封禁', 'totp' => '登录失败：两步验证码错误'];
+            \App\Model\UserLog::write($user, 'login_fail', $labels[$reason] ?? ('登录失败：' . $reason), 1);
         }
     }
 
@@ -436,8 +569,10 @@ class Authentication extends User
             throw new JSONException("账号异常，请重新发起找回");
         }
 
-        $user->password = Str::generatePassword($_POST['password'], $user->salt);
+        $user->password = Str::hashPassword($_POST['password']);
         $user->save();
+        //改密后吊销该账号所有在线会话，被盗号者手里的旧 cookie 立即失效
+        \App\Service\UserSessionManager::revokeAll((int)$user->id);
 
         //成功即清零两个维度的失败计数，避免误伤本人后续操作。
         Throttle::clear("forget:ip:{$ip}");

@@ -5,9 +5,8 @@ namespace App\Interceptor;
 
 
 use App\Consts\User;
+use App\Service\UserSessionManager;
 use App\Util\Context;
-use App\Util\JWT;
-use Firebase\JWT\Key;
 use Kernel\Annotation\InterceptorInterface;
 
 /**
@@ -27,36 +26,13 @@ class UserVisitor implements InterceptorInterface
             return;
         }
 
-        $userToken = base64_decode((string)$_COOKIE[User::SESSION]);
-
-        if (!$userToken) {
-            return;
-        }
-
-        $head = JWT::getHead($userToken);
-        if (!isset($head['uid'])) {
-            return;
-        }
-
-        $user = \App\Model\User::query()->find($head['uid']);
-
-
-        if (!$user) {
-            return;
-        }
-
-        try {
-            $jwt = \Firebase\JWT\JWT::decode($userToken, new Key($user->password, 'HS256'));
-        } catch (\Exception $e) {
-            return;
-        }
-
-
-        if ($jwt->expire <= time() || $user->login_time != $jwt->loginTime || $user->status != 1) {
+        $resolved = UserSessionManager::authenticate((string)$_COOKIE[User::SESSION]);
+        if (!$resolved) {
             return;
         }
 
         //保存会话
-        Context::set(User::SESSION, $user);
+        Context::set(User::SESSION, $resolved['user']);
+        Context::set(User::SESSION_RECORD, $resolved['session']);
     }
 }

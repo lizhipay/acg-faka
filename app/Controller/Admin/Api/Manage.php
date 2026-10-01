@@ -10,6 +10,7 @@ use App\Interceptor\ManageSession;
 use App\Interceptor\Super;
 use App\Model\ManageLog;
 use App\Service\ManageSessionManager;
+use App\Service\ManageWebauthnService;
 use App\Service\Query;
 use App\Util\Str;
 use App\Util\Validation;
@@ -245,7 +246,7 @@ class Manage extends \App\Controller\Base\API\Manage
 
             if ($plainPassword !== '') {
                 $saveMap['salt'] = $salt;
-                $saveMap['password'] = Str::generatePassword($plainPassword, $salt);
+                $saveMap['password'] = Str::hashPassword($plainPassword);
             }
 
             $save = new Save(\App\Model\Manage::class);
@@ -443,7 +444,7 @@ class Manage extends \App\Controller\Base\API\Manage
                 if (!Str::verifyPassword((string)$manage->password, (string)$manage->salt, $oldPassword, (string)$this->request->unsafePost('old_password'))) {
                     throw new JSONException('原密码输入不正确');
                 }
-                $manage->password = Str::generatePassword($newPassword, (string)$manage->salt);
+                $manage->password = Str::hashPassword($newPassword);
                 $passwordChanged = true;
             }
 
@@ -603,5 +604,87 @@ class Manage extends \App\Controller\Base\API\Manage
         ManageSessionManager::clearCookie();
         ManageLog::log($manage, "解绑了谷歌验证器");
         return $this->json(200, "已解绑，请重新登录", ['reauthenticate' => true]);
+    }
+
+    /* ============================ passkey(通行密钥) 管理 ============================ */
+
+    /**
+     * 当前账号已注册的通行密钥列表。
+     */
+    public function passkeyList(): array
+    {
+        return $this->json(data: ["list" => ManageWebauthnService::listForManage($this->getManage())]);
+    }
+
+    /**
+     * 生成注册（create）选项，挑战暂存于会话。
+     * 新增登入凭证属敏感操作：必须验证当前密码，避免管理员离座（会话未锁）或后台 XSS 时
+     * 被静默植入一把永久、免密码、免 2FA 的后门通行密钥（改密码也撤不掉）。与会员端口径一致。
+     */
+    public function passkeyRegisterOptions(): array
+    {
+        $manage = $this->getManage();
+        $throttleKey = "adminpasskeyreg:" . (int)$manage->id;
+        if (\App\Util\Throttle::tooMany($throttleKey, 10, 300)) {
+            throw new JSONException("尝试过于频繁，请稍后再试");
+        }
+        if (!Str::verifyPassword((string)$manage->password, (string)$manage->salt, (string)$this->request->post('password'), (string)$this->request->unsafePost('password'))) {
+            throw new JSONException("密码错误");
+        }
+        \App\Util\Throttle::clear($throttleKey);
+        return $this->json(data: ManageWebauthnService::registerOptions($manage));
+    }
+
+    /**
+     * 校验注册回传并落库。
+     * @throws JSONException
+     */
+    public function passkeyRegister(): array
+    {
+        $manage = $this->getManage();
+        $name = (string)$this->request->post("name");
+        $attestationObject = (string)$this->request->post("attestationObject");
+        $clientDataJSON = (string)$this->request->post("clientDataJSON");
+        $rawId = (string)$this->request->post("id");
+        $transports = (string)$this->request->post("transports");
+        if ($attestationObject === '' || $clientDataJSON === '' || $rawId === '') {
+            throw new JSONException("通行密钥数据不完整");
+        }
+        ManageWebauthnService::register($manage, $name, $attestationObject, $clientDataJSON, $rawId, $transports);
+        ManageLog::log($manage, "添加了一个通行密钥(passkey)");
+        return $this->json(200, "通行密钥添加成功");
+    }
+
+    /**
+     * 重命名通行密钥。
+     * @throws JSONException
+     */
+    public function passkeyRename(): array
+    {
+        $id = (int)$this->request->post("id");
+        $name = (string)$this->request->post("name");
+        if ($id <= 0) {
+            throw new JSONException("参数无效");
+        }
+        ManageWebauthnService::rename($this->getManage(), $id, $name);
+        return $this->json(200, "已重命名");
+    }
+
+    /**
+     * 删除通行密钥。
+     * @throws JSONException
+     */
+    public function passkeyDelete(): array
+    {
+        $id = (int)$this->request->post("id");
+        if ($id <= 0) {
+            throw new JSONException("参数无效");
+        }
+        $manage = $this->getManage();
+        if (!ManageWebauthnService::delete($manage, $id)) {
+            throw new JSONException("通行密钥不存在");
+        }
+        ManageLog::log($manage, "删除了一个通行密钥(passkey)");
+        return $this->json(200, "已删除");
     }
 }

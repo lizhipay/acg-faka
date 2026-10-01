@@ -13,14 +13,14 @@
 
         <form method="post" class="needs-validation">
             <div class="form-floating mb-4">
-                <input type="text" class="form-control" name="username" placeholder="#{t('用户名/手机号/邮箱')}"
-                       required>
+                <input type="text" class="form-control" id="username" name="username" placeholder="#{t('用户名/手机号/邮箱')}"
+                       autocomplete="username webauthn" required>
                 <label for="username">#{t("用户名/手机号/邮箱")}</label>
             </div>
 
             <div class="form-floating mb-4">
-                <input type="password" class="form-control" name="password" placeholder="••••••••"
-                       minlength="6" required>
+                <input type="password" class="form-control" id="password" name="password" placeholder="••••••••"
+                       autocomplete="current-password" minlength="6" required>
                 <label for="password">#{t("密码")}</label>
             </div>
 
@@ -49,8 +49,19 @@
                 <a href="#{if $config.forget_type == 0}/user/authentication/emailForget#{else}/user/authentication/phoneForget#{/if}" class="text-link small">#{t("忘记密码？")}</a>
             </div>
 
-            <div class="d-grid">
+            <div class="d-grid gap-2">
                 <button type="submit" class="btn btn-gradient btn-lg">#{t("登录")}</button>
+                <button type="button" id="passkey-login" class="btn btn-passkey" hidden>
+                    <span class="btn-passkey__badge" aria-hidden="true">
+                        <svg class="btn-passkey__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="8.5" cy="7.5" r="3.5"/>
+                            <path d="M2.5 20c0-3.6 2.7-6.5 6-6.5 1.2 0 2.3.3 3.2.9"/>
+                            <circle cx="17.5" cy="10.5" r="3"/>
+                            <path d="M17.5 13.5V21M17.5 18h2.2M17.5 20.6h1.6"/>
+                        </svg>
+                    </span>
+                    <span>#{t("使用通行密钥登录")}</span>
+                </button>
             </div>
         </form>
 
@@ -74,5 +85,6 @@
     </div>
 </main>
 <!-- END Main Container -->
+#{ready("/assets/user/js/webauthn.js")}
 #{ready("/assets/user/controller/auth/login.js")}
 #{include file="./Footer.html"}
