@@ -453,6 +453,10 @@ class Category extends Manage
             }
             $map[$booleanField] = (int)$value;
         }
+        //排序没填：修改时保持原值，新增时排到同级最后（见下方）。弹窗里排序框留空会提交空字符串，不能当成非法值拒绝
+        if (array_key_exists('sort', $map) && trim((string)$map['sort']) === '') {
+            unset($map['sort']);
+        }
         if (isset($map['sort'])) {
             $sort = filter_var($map['sort'], FILTER_VALIDATE_INT);
             if ($sort === false || $sort < 0 || $sort > 65535) {
@@ -494,8 +498,24 @@ class Category extends Manage
             }
         }
 
+        //新增且没填排序：排到同级最后。拖动排序会把同级写成 0..n-1，默认 0 会插到第一、二位之间
+        if ($id === 0 && !isset($map['sort'])) {
+            $siblingQuery = \App\Model\Category::query()->where('owner', 0);
+            if ($parentId > 0) {
+                $siblingQuery->where('pid', $parentId);
+            } else {
+                $siblingQuery->where(function ($query) {
+                    $query->whereNull('pid')->orWhere('pid', 0);
+                });
+            }
+            $maxSort = $siblingQuery->max('sort');
+            $map['sort'] = $maxSort === null ? 0 : min(65535, (int)$maxSort + 1);
+        }
+
         unset($map['pid']);
         $save = new Save(\App\Model\Category::class);
+        //图标是可选字段，允许清空（移除分类图标）；其余字段维持"留空=不修改"
+        $save->allowEmpty = ['icon'];
         $save->setMap($map, $allowed);
         if ($hasParent) {
             $save->addForceMap('pid', $parentId > 0 ? $parentId : null);

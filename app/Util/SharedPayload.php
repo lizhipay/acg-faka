@@ -69,7 +69,7 @@ final class SharedPayload
         'shared_amount_sync', 'shared_config_sync', 'inventory_sync',
         'factory_price', 'level_price', 'level_disable',
         'owner', 'create_time', 'api_status', 'hide', 'recommend',
-        'leave_message', 'delivery_message', 'delivery_auto_mode', 'send_email',
+        'leave_message', 'delivery_message', 'delivery_auto_mode', 'delivery_auto', 'send_email',
     ];
 
     /**

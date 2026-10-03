@@ -5,8 +5,8 @@ namespace App\Util;
 
 final class RichHtml
 {
-    //2：放开圆角/阴影/渐变/flex 等纯视觉 CSS（#952），旧版本缓存的净化结果作废
-    private const VERSION = 2;
+    //3：放行 https 嵌入视频 iframe（issue #982），旧版本缓存的净化结果作废
+    private const VERSION = 3;
 
     private const CACHE_DIR = BASE_PATH . '/runtime/richhtml';
 
@@ -14,8 +14,16 @@ final class RichHtml
 
     public static function sanitize(string $html, bool $trusted): string
     {
-        if ($trusted || trim($html) === '') {
+        if (trim($html) === '') {
             return $html;
+        }
+
+        //可信内容（如 owner=0 自营商品描述）不走完整 HTMLPurifier，保留富排版与嵌入视频；但「对接上游」写进
+        //来的商品在下游也是 owner=0，同样命中可信分支。所以可信路径仍先去活化一次：剥掉 <script>/<object>/<embed>、
+        //on*= 事件、javascript: 伪协议；iframe 只留 src 为 https 的（去 srcdoc）。图片/链接/排版/样式/合规视频
+        //均保留，恶意上游的存储型 XSS 则进不了下游店铺访客页。
+        if ($trusted) {
+            return ViewSafe::neutralizeActive($html, true);
         }
 
         $key = sha1(self::VERSION . '|' . $html);
@@ -35,6 +43,8 @@ final class RichHtml
         //∈ RAW_PATHS）不会把外连样式表/信标带出去，也不会被下游凭空还原成 <style>。
         $safe = (string)preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $safe);
         $safe = (string)preg_replace('/\[STYLE-TAG[^\]]*\].*?\[\/STYLE-TAG[^\]]*\]/is', '', $safe);
+        //非 https 的 iframe 被 SafeIframe 剥掉 src 后会剩个空 <iframe></iframe>，清掉免得露出空白框
+        $safe = (string)preg_replace('#<iframe\s*>\s*</iframe>#i', '', $safe);
 
         self::writeCache($key, $safe);
         return $safe;
@@ -70,6 +80,7 @@ final class RichHtml
             . '.acg-rich :where(th){background:color-mix(in srgb,currentColor 6%,transparent);font-weight:600;text-align:left}'
             . '.acg-rich :where(hr){margin:1.6em 0;border:0;border-top:1px solid color-mix(in srgb,currentColor 15%,transparent)}'
             . '.acg-rich :where(img){max-width:100%;height:auto;border-radius:6px}'
+            . '.acg-rich :where(iframe){max-width:100%;border:0;border-radius:6px}'
             . '.acg-rich :where(a){text-decoration:underline;text-underline-offset:2px}'
             . '</style>';
 
@@ -111,6 +122,12 @@ final class RichHtml
         $config->set('HTML.TargetBlank', true);
         $config->set('HTML.Nofollow', true);
 
+        //放行嵌入视频 iframe，但 src 只认 https（issue #982）：srcdoc/on*= 等危险属性由 HTMLPurifier
+        //的 SafeIframe 自动剥除。外链域名白名单在写入侧由 WAF 的 URISchemeFilter 把关
+        //（link_domain_filter 关闭=放行全部域名），与普通链接同一套口径，显示侧不重复做域名过滤。
+        $config->set('HTML.SafeIframe', true);
+        $config->set('URI.SafeIframeRegexp', '%^https://%');
+
         $config->set('Attr.EnableID', false);
 
         //与 WAF 同一套 CSS 放行口径（#952）。必须在 maybeGetRawHTMLDefinition() 之前：它会把配置定稿
@@ -127,6 +144,10 @@ final class RichHtml
             $def->addAttribute('a', 'target', 'Text');
             $def->addAttribute('img', 'width', 'Text');
             $def->addAttribute('img', 'height', 'Text');
+            //播放器常用属性：SafeIframe 的基础 iframe 不含它们，不补上全屏/自动播放等会失效
+            $def->addAttribute('iframe', 'allowfullscreen', 'Bool');
+            $def->addAttribute('iframe', 'allow', 'Text');
+            $def->addAttribute('iframe', 'loading', 'Text');
         }
 
         self::$purifier = new \HTMLPurifier($config);

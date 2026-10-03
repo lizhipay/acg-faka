@@ -1100,7 +1100,14 @@ class Order implements \App\Service\Order
                 $order->secret = $this->pullCardForLocal($order, $commodity);
                 $order->delivery_status = 1;
             } else {
-                $order->secret = ($commodity->delivery_message != null && $commodity->delivery_message != "") ? $commodity->delivery_message : '正在发货中，请耐心等待，如有疑问，请联系客服。';
+                //付款即发货：发货信息是固定内容（通用卡密、下载链接等），直接作为卡密发出，订单即为已发货；
+                //关闭时维持原状——发货信息只是等待提示，订单留在待发货，等站长手动发货
+                if ((int)$commodity->delivery_auto === 1 && trim((string)$commodity->delivery_message) !== '') {
+                    $order->secret = (string)$commodity->delivery_message;
+                    $order->delivery_status = 1;
+                } else {
+                    $order->secret = ($commodity->delivery_message != null && $commodity->delivery_message != "") ? $commodity->delivery_message : '正在发货中，请耐心等待，如有疑问，请联系客服。';
+                }
 
                 if ($commodity->stock >= $order->card_num) {
                     Commodity::query()->where("id", $commodity->id)->decrement('stock', $order->card_num);

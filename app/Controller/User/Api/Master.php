@@ -352,6 +352,10 @@ class Master extends User
                 $userCommodity = new UserCommodity();
                 $userCommodity->commodity_id = $item['id'];
                 $userCommodity->user_id = $userId;
+                //user_commodity.status 默认 0=隐藏，而分站是「有 status=0 记录才隐藏、无记录=默认显示」（Business::sells）。
+                //批量加价只应改价格，绝不能顺带把原本显示的主站商品隐藏掉——新建记录显式置为显示。
+                //已存在的记录不动它的 status：商户手动隐藏过的商品保持隐藏。
+                $userCommodity->status = 1;
             }
 
             $userCommodity->premium = $premium;

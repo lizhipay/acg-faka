@@ -345,6 +345,11 @@ class Index extends User
 
                 if (!empty($map['sku']) && is_array($map['sku'])) {
                     foreach ($map['sku'] as $k => $v) {
+                        //$k 来自客户端，会拼进 JSON 路径 sku->{$k}。这条 append 闭包不经 Query 的子键校验，
+                        //非法键会生成坏 JSON 路径触发 PDOException→500。按同一套 SKU 键名规则校验。
+                        if (!\App\Util\Sku::isValidKey((string)$k)) {
+                            throw new JSONException("规格参数不正确");
+                        }
                         $builder = $builder->where("sku->{$k}", $v);
                     }
                 }
@@ -413,7 +418,10 @@ class Index extends User
         }
 
         $_race = (string)$this->request->post("race");
-        $_skus = (array)$this->request->post("sku") ?: [];
+        //没选的规格（空值）不参与筛选：前台传 sku=（被 (array) 转成 [0 => ""]）或 sku[组]= 时，
+        //会去找「规格 = 空字符串」的卡密，永远是 0，有库存的商品显示「已售罄」。只在这个查询接口清掉；
+        //下单走 Order::trade 自己的规格校验，发货也按订单上的规格筛卡，两边维持一致，不在共用的 getItemStock 里改
+        $_skus = array_filter((array)$this->request->post("sku") ?: [], static fn($v): bool => $v !== '' && $v !== null);
 
         $stock = $this->shop->getItemStock($commodity, $_race, $_skus);
 
@@ -538,9 +546,12 @@ class Index extends User
         $password = (string)$this->request->post("password", flags: Filter::NORMAL);
         $ip = Client::getAddress();
 
-        //限流：挡住卡密查询密码爆破 / 订单号枚举（本接口免登录，曾被单次刷 1 万+）
+        //限流：挡住卡密查询密码爆破 / 订单号枚举（本接口免登录，曾被单次刷 1 万+）。
+        //除按 IP 外，再加一道「与 IP 无关、按订单号」的闸：否则攻击者换 IP 即可对同一订单的查单密码
+        //重新获得 8 次机会（与找回密码 forget:target 同口径的加固；代价是单个订单可被短时锁定查询）。
         if (Throttle::tooMany("secret:ip:{$ip}", 40, 600)
-            || Throttle::tooMany("secret:no:{$tradeNo}:{$ip}", 8, 600)) {
+            || Throttle::tooMany("secret:no:{$tradeNo}:{$ip}", 8, 600)
+            || Throttle::tooMany("secret:no:{$tradeNo}", 20, 600)) {
             throw new JSONException("请求过于频繁，请稍后再试");
         }
 

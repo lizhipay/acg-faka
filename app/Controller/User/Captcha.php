@@ -26,6 +26,10 @@ class Captcha
         if (Throttle::tooMany("captcha:ip:" . Client::getAddress(), 100, 60)) {
             throw new JSONException("请求过于频繁，请稍后再试");
         }
+        //action 来自外部且会参与会话键名，限定字符与长度（会话键已统一加前缀隔离，这里再做一道输入校验）
+        if (!preg_match('/^[A-Za-z0-9_]{1,32}$/', $action)) {
+            throw new JSONException("验证码类型不正确");
+        }
         \App\Util\Captcha::generate($action);
     }
 }

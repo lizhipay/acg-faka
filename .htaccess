@@ -20,24 +20,33 @@
  #   一旦改成任意层级匹配就会被误杀。
 
  # ① 程序目录：运行时数据、内核源码、配置、Composer 依赖
- RewriteRule ^(runtime|kernel|config|vendor)(/|$) - [NC,R=404,L]
+ RewriteRule ^(runtime|kernel|config|vendor|docker)(/|$) - [NC,R=404,L]
+
+ # ①b 嵌套的 runtime / 加密缓存目录：①只锚在站点根，挡不住 app/Plugin/*/runtime/ 这类
+ #    嵌套目录里的插件密钥（如 secret.key）。非 .php 文件不被 ⑤ 拦，会被当静态文件吐出。
+ RewriteRule (^|/)(runtime|\.acgcache)/ - [NC,R=404,L]
 
  # ② 点文件 / 点目录：.env、.git、.user.ini、.DS_Store …（放行 ACME 证书校验）
  RewriteRule (^|/)\.(?!well-known) - [NC,R=404,L]
 
  # ③ 敏感后缀：日志、数据库、备份、编辑器交换文件。
  #    app/Plugin/*/runtime.log 和 version/*/update.sql 全靠这条兜住。
- RewriteRule \.(log|sql|sqlite|db|db-wal|db-shm|bak|old|save|orig|swp|swo|tmp|ini|lock)$ - [NC,R=404,L]
+ RewriteRule \.(log|sql|sqlite|db|db-wal|db-shm|bak|old|save|orig|swp|swo|tmp|ini|lock|key|pem|crt|cer|der|p12|pfx|p8|keystore|jks|asc|gpg|ppk|env|secret)$ - [NC,R=404,L]
 
  # ④ 备份副本与依赖清单：index.php~、composer.json、package-lock.json
  RewriteRule (~|composer\.(json|lock)|package(-lock)?\.json)$ - [NC,R=404,L]
+
+ # ④b 构建/部署文件与文档/脚本：别泄露 nginx 规则原文、版本指纹、部署脚本
+ RewriteRule (^|/)Dockerfile - [NC,R=404,L]
+ RewriteRule ^docker-compose\.(yml|yaml)$ - [NC,R=404,L]
+ RewriteRule \.(md|sh)$ - [NC,R=404,L]
 
  # ⑤ 只放行唯一入口 index.php，其余 .php 一律不执行 ——
  #    上传目录里就算真被塞进一个 .php，也跑不起来。
  #    ★ 判断依据只能用 per-dir 路径，不能用 %{REQUEST_URI}：伪静态命中后
  #    mod_rewrite 会带着 index.php 把规则重跑一遍，那时 REQUEST_URI 仍是
  #    原始地址（/user/order），用它会把整个前端控制器 404 掉。
- RewriteRule ^(?!index\.php(/|$)).*\.php(/|$) - [NC,R=404,L]
+ RewriteRule ^(?!(?-i:index\.php)(/|$)).*\.php(/|$) - [NC,R=404,L]
 
  # ⑥ 目录列表。Apache 很多环境默认开着 Indexes，会把 app/Plugin 这类目录整个列出来，
  #    nginx 侧 autoindex 默认是关的 —— 这里补齐，没有索引文件的目录直接 404。

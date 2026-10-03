@@ -76,21 +76,48 @@ final class ViewSafe
      * 见 F-50）。**不动 <style>**：正文排版与插件卡片的作用域样式靠它，且已由 RichHtml/IgnoreStyleTagFilter
      * 做过 CSS 净化。
      */
-    public static function neutralizeActive(string $value): string
+    public static function neutralizeActive(string $value, bool $allowSafeIframe = false): string
     {
         if ($value === '' || strpos($value, '<') === false) {
             return $value;
         }
         //成对 / 残缺的 <script>，以及可载入外部执行体的标签
         $value = (string)preg_replace('#<script\b[^>]*>.*?</script\s*>#is', '', $value);
-        $value = (string)preg_replace('#<\s*/?\s*(?:script|iframe|object|embed)\b[^>]*>#i', '', $value);
+        if ($allowSafeIframe) {
+            //可信正文（如商品描述）允许嵌视频 iframe：只留 src 为 https 的、去掉 srcdoc 与不合规的；
+            //script/object/embed 照删。留下来的 iframe 上的 on*= 会在下方统一再剥一次。
+            $value = self::sanitizeIframes($value);
+            $value = (string)preg_replace('#<\s*/?\s*(?:script|object|embed)\b[^>]*>#i', '', $value);
+        } else {
+            $value = (string)preg_replace('#<\s*/?\s*(?:script|iframe|object|embed)\b[^>]*>#i', '', $value);
+        }
         //事件处理器属性 on*=...（带双引号 / 单引号 / 裸值三种形态）
-        $value = (string)preg_replace('#\son[a-z0-9_\-]+\s*=\s*"[^"]*"#i', '', $value);
-        $value = (string)preg_replace("#\son[a-z0-9_\-]+\s*=\s*'[^']*'#i", '', $value);
-        $value = (string)preg_replace('#\son[a-z0-9_\-]+\s*=\s*[^\s>]+#i', '', $value);
+        //分隔符不限于空白：属性值的闭合引号、自闭合斜杠都可紧贴 on*，如 <img src="x"onerror=…>、
+        //<svg/onload=…>。用定宽 lookbehind 认 [空白 / " '] 四种边界，命中即剥，不消费边界字符。
+        $value = (string)preg_replace('#(?<=[\s/"\'])on[a-z0-9_\-]+\s*=\s*"[^"]*"#i', '', $value);
+        $value = (string)preg_replace('#(?<=[\s/"\'])on[a-z0-9_\-]+\s*=\s*\'[^\']*\'#i', '', $value);
+        $value = (string)preg_replace('#(?<=[\s/"\'])on[a-z0-9_\-]+\s*=\s*[^\s>]+#i', '', $value);
         //href/src/action 等属性里的伪协议
         $value = (string)preg_replace('#((?:href|src|xlink:href|action|formaction|poster)\s*=\s*["\']?)\s*(?:javascript|vbscript)\s*:#i', '$1#', $value);
         return $value;
+    }
+
+    /**
+     * 可信正文里的 iframe 收口：只保留 src 为 https 的 iframe、丢掉 srcdoc（可内联 HTML 执行脚本）
+     * 与没有合法 https src 的。保留 width/height/allowfullscreen 等播放器属性；on*= 由调用方统一再剥。
+     */
+    private static function sanitizeIframes(string $value): string
+    {
+        //只改开标签 <iframe ...>：src 为 https 才保留（顺带去掉 srcdoc），否则删掉开标签。对应的 </iframe>
+        //与标签间的回退内容留给后续 on*/脚本净化处理，浏览器会忽略落单的 </iframe>。on*= 也在下方统一再剥。
+        return (string)preg_replace_callback('#<iframe\b([^>]*)>#i', static function (array $m): string {
+            $attrs = $m[1];
+            if (!preg_match('#(?:^|\s)src\s*=\s*(?:"https://[^"]*"|\'https://[^\']*\'|https://[^\s>]+)#i', $attrs)) {
+                return '';
+            }
+            $attrs = (string)preg_replace('#\ssrcdoc\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)#i', '', $attrs);
+            return '<iframe' . $attrs . '>';
+        }, $value);
     }
 
     private static function ownerHtml(string $path, string $key): bool

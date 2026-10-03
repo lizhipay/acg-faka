@@ -349,6 +349,14 @@ final class Schema
         });
     }
 
+    /** 手动发货商品「付款即发货」：付款后直接把发货信息作为卡密发出、订单即为已发货（3.8.3） */
+    public static function ensureCommodityDeliveryAuto(): void
+    {
+        self::ensureColumn('commodity', 'delivery_auto', static function (Blueprint $table): void {
+            $table->unsignedTinyInteger('delivery_auto')->default(0)->comment('手动发货付款即发货：0=否，1=是')->after('delivery_message');
+        });
+    }
+
     /** 店铺共享的对方货币与结算汇率：非 CNY 站点接入 CNY 货源时按此换算金额 */
     public static function ensureSharedCurrency(): void
     {

@@ -591,7 +591,7 @@ class Manage extends \App\Controller\Base\API\Manage
         if (empty($manage->google_secret)) {
             throw new JSONException("尚未绑定谷歌验证器");
         }
-        if (!\App\Util\Totp::verify((string)$manage->google_secret, (string)$this->request->post("code"))) {
+        if (!\App\Util\Totp::verifyAndConsume((string)$manage->google_secret, (string)$this->request->post("code"), "manage:" . (int)$manage->id)) {
             throw new JSONException("验证码错误");
         }
         DB::transaction(function () use ($manage): void {

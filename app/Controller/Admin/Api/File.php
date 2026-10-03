@@ -43,7 +43,8 @@ class File extends Manage
     /**
      * 允许上传的后缀
      */
-    const ALLOW_EXT = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'ico', 'svg', 'mp4', 'webm', 'mov', 'mp3', 'zip', 'rar', '7z', 'gz', 'woff', 'woff2', 'ttf', 'otf', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'apk'];
+    //svg 不在白名单：SVG 可内联 <script>，以 image/svg+xml 直出即后台存储型 XSS。需要矢量图请转 png/webp。
+    const ALLOW_EXT = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'ico', 'mp4', 'webm', 'mov', 'mp3', 'zip', 'rar', '7z', 'gz', 'woff', 'woff2', 'ttf', 'otf', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'apk'];
 
     /**
      * 文件列表（分页 + 搜索），并附带文件大小/是否存在/缩略图/上传者
@@ -568,7 +569,7 @@ class File extends Manage
      */
     private function category(string $ext): string
     {
-        if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'ico', 'svg'], true)) {
+        if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'ico'], true)) {
             return 'image';
         }
         if (in_array($ext, ['mp4', 'webm', 'mov', 'mp3'], true)) {

@@ -144,10 +144,15 @@ class Authentication extends User
         }
 
         try {
-            //session销毁
+            //session销毁。注意：原写法 `$x != null ?? destroy()` 中 `??` 右侧永不执行（左侧是 bool，永不为 null），
+            //注册验证码用后从未作废，在其 300 秒 TTL 内可被重放——改用显式 if。
             Captcha::destroy("register");
-                $user->phone != null ?? $this->sms->destroyCaptcha($user->phone, Sms::CAPTCHA_REGISTER);
-                $user->email != null ?? $this->email->destroyCaptcha($user->email, Email::CAPTCHA_REGISTER);
+            if ($user->phone != null) {
+                $this->sms->destroyCaptcha($user->phone, Sms::CAPTCHA_REGISTER);
+            }
+            if ($user->email != null) {
+                $this->email->destroyCaptcha($user->email, Email::CAPTCHA_REGISTER);
+            }
             $user->save();
             if (!$riskHeld) {
                 $this->sso->loginSuccess($user);
@@ -171,7 +176,14 @@ class Authentication extends User
      */
     private function emailCaptcha(string $sessionName, int $type): array
     {
-        $this->email->sendCaptcha((string)$_POST['email'], $type);
+        $email = (string)($_POST['email'] ?? '');
+        $ip = Client::getAddress();
+        //发码端限流：不走会话(换 cookie 可绕冷却)，按 IP + 目标邮箱双维拦，防刷邮件
+        if (Throttle::tooMany("sendcode:ip:{$ip}", 10, 600)
+            || Throttle::tooMany("sendcode:email:" . md5(strtolower(trim($email))), 3, 600)) {
+            throw new JSONException("验证码发送过于频繁，请稍后再试");
+        }
+        $this->email->sendCaptcha($email, $type);
         Captcha::destroy($sessionName);
         return $this->json(200, "验证码发送成功");
     }
@@ -234,7 +246,14 @@ class Authentication extends User
      */
     private function phoneCaptcha(string $sessionName, int $type): array
     {
-        $this->sms->sendCaptcha((string)$_POST['phone'], $type);
+        $phone = (string)($_POST['phone'] ?? '');
+        $ip = Client::getAddress();
+        //短信发码更贵：IP + 目标手机双维限流(不走会话)，防刷短信烧钱
+        if (Throttle::tooMany("sendcode:ip:{$ip}", 10, 600)
+            || Throttle::tooMany("sendcode:phone:" . md5(trim($phone)), 3, 600)) {
+            throw new JSONException("验证码发送过于频繁，请稍后再试");
+        }
+        $this->sms->sendCaptcha($phone, $type);
         Captcha::destroy($sessionName);
         return $this->json(200, "验证码发送成功");
     }
@@ -405,7 +424,8 @@ class Authentication extends User
             throw new JSONException("请输入验证码");
         }
 
-        $ok = \App\Util\Totp::verify((string)$user->totp_secret, $code);
+        //登录动态码一次性消费：防止被嗅探到的码在 90 秒窗口内被重放登录
+        $ok = \App\Util\Totp::verifyAndConsume((string)$user->totp_secret, $code, "user:" . $uid);
         if (!$ok) {
             //动态码不对时再试恢复码：命中即消费掉该恢复码
             $before = (string)$user->totp_recovery;

@@ -1065,6 +1065,7 @@ class Config extends Manage
         return array_keys($hosts);
     }
 
+    #[Interceptor(Owner::class, Interceptor::TYPE_API)]
     public function other(): array
     {
         $map = $this->configPost(self::OTHER_REQUEST_FIELDS, '其他设置');
@@ -1136,6 +1137,7 @@ class Config extends Manage
         return $this->json(200, '保存成功');
     }
 
+    #[Interceptor(Owner::class, Interceptor::TYPE_API)]
     public function currencyConvert(): array
     {
         $code = trim((string)($_POST['currency_code'] ?? ''));

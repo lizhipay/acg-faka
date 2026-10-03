@@ -279,6 +279,18 @@ class Commodity extends Manage
     }
 
     /**
+     * 商品管理左侧的分类树（主站分类 + 按商家分组的商家分类，数量含下级），跟随列表的显示范围。
+     * @return array
+     */
+    public function categoryTree(): array
+    {
+        return $this->json(data: \App\Util\CategoryTree::forAdmin(
+            (int)($_POST['display_scope'] ?? 0),
+            (int)($_POST['user_id'] ?? 0)
+        ));
+    }
+
+    /**
      * @return array
      */
     public function data(): array
@@ -293,6 +305,10 @@ class Commodity extends Manage
         $get->addOrderBy("id", "asc");
 
         $data = $this->query->get($get, function (Builder $builder) use ($map) {
+            //左侧分类树：选中分类时连同全部下级分类一起筛
+            if (isset($map['category_tree']) && (int)$map['category_tree'] > 0) {
+                $builder = $builder->whereIn("category_id", \App\Util\CategoryTree::descendantIds((int)$map['category_tree']));
+            }
             if (isset($map['display_scope'])) {
                 if ($map['display_scope'] == 1) {
                     $builder = $builder->where("owner", 0);
@@ -366,10 +382,11 @@ class Commodity extends Manage
     public function save(Request $request): array
     {
         \App\Util\Schema::ensureCommodityControl();
+        \App\Util\Schema::ensureCommodityDeliveryAuto();
         $raw = $request->post(flags: Filter::NORMAL);
         $allowed = [
             'id', 'category_id', 'name', 'description', 'cover', 'factory_price', 'price', 'user_price',
-            'status', 'api_status', 'delivery_way', 'delivery_auto_mode', 'delivery_message', 'contact_type',
+            'status', 'api_status', 'delivery_way', 'delivery_auto_mode', 'delivery_message', 'delivery_auto', 'contact_type',
             'password_status', 'sort', 'coupon', 'shared_id', 'shared_code', 'shared_premium',
             'shared_premium_type', 'shared_premium_template',
             'seckill_status', 'seckill_start_time', 'seckill_end_time', 'draft_status',
@@ -434,6 +451,8 @@ class Commodity extends Manage
             }
         }
 
+        \App\Model\Commodity::assertDeliveryAuto($map, $current);
+
         //加价模板（issue #798）：选了模板就必须指向一个存在的模板；切回普通加价时要把模板清掉，
         //否则每次远端同步还会按老模板重算价格
         if (array_key_exists('shared_premium_type', $map)) {
@@ -493,6 +512,8 @@ class Commodity extends Manage
         }
 
         $save = new Save(\App\Model\Commodity::class);
+        //封面是可选字段，允许清空（移除商品封面图）
+        $save->allowEmpty = ['cover'];
         $save->setMap($map, $allowed);
         if (array_key_exists('config', $map)) {
             $save->addForceMap('config', $map['config'] ?? '');

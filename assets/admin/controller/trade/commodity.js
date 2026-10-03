@@ -247,10 +247,12 @@
                             change: (_, __) => {
                                 if (__ == 1) {
                                     _.show("delivery_message");
+                                    _.show("delivery_auto");
                                     _.hide("delivery_auto_mode");
                                     _.show("stock");
                                 } else {
                                     _.hide("delivery_message");
+                                    _.hide("delivery_auto");
                                     _.show("delivery_auto_mode");
                                     _.hide("stock");
                                 }
@@ -283,6 +285,14 @@
                             placeholder: "手动发货信息，可以是一些固定的卡密或者软件下载链接等..",
                             height: 100,
                             hide: true
+                        },
+                        {
+                            title: "付款即发货",
+                            name: "delivery_auto",
+                            type: "switch",
+                            text: "启用",
+                            hide: true,
+                            tips: "适合固定内容（通用卡密、下载链接等）：买家付款即收到上面的发货信息，订单直接变为已发货。由插件负责发货的商品请勿开启"
                         },
                         {
                             title: "发货留言",
@@ -952,6 +962,7 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
     // 商品列表分页且可筛选：后端只在「这一页商品当前占着的位置」里重排，其它商品原地不动，所以筛选、翻页时都能拖。
     const dragEnabled = Boolean(window.MdTableDragSort);
     let dragSort = null;
+    let categoryTree = null;
 
     table = new Table("/admin/api/commodity/data", "#commodity-table");
     table.setUpdate("/admin/api/commodity/save");
@@ -1104,6 +1115,10 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
             field: 'delivery_way', title: '发货方式', dict: "_commodity_delivery_way"
         },
         {
+            field: 'delivery_auto', title: '付款即发货',
+            formatter: (value, row) => Number(row.delivery_way) === 1 && Number(row.shared_id || 0) <= 0 ? escapeHtml(i18n(Number(value) === 1 ? '是' : '否')) : '-'
+        },
+        {
             field: 'delivery_auto_mode', title: '出库顺序', dict: "_commodity_delivery_auto_mode"
         },
         {
@@ -1180,8 +1195,8 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
                     search.show("user_id");
                 } else {
                     search.hide("user_id");
-                    search.treeSelectReload("equal-category_id", "category->owner=0,id,name,pid&tree=true");
                 }
+                categoryTree?.reload();
             }
         },
         {
@@ -1190,20 +1205,7 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
             hide: true,
             type: "remoteSelect",
             dict: "user->business_level>0,id,username",
-            change: (search, value, selected) => {
-                if (selected) {
-                    search.treeSelectReload("equal-category_id", `category->owner=${value},id,name,pid&tree=true`);
-                } else {
-                    search.treeSelectReload("equal-category_id", "category,id,name,pid&tree=true");
-                }
-            }
-        },
-        {
-            title: "商品分类",
-            name: "equal-category_id",
-            type: "treeSelect",
-            dict: "category,id,name,pid&tree=true",
-            search: true
+            change: () => categoryTree?.reload()
         },
         {title: "商品名称(模糊搜索)", name: "search-name", type: "input"},
         {title: "对接平台", name: "equal-shared_id", type: "select", dict: "shared,id,name", search: true},
@@ -1211,7 +1213,33 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
     ]);
     table.setState("status", "_commodity_status");
 
-    table.onComplete(() => dragSort?.sync());
+    table.onComplete(() => {
+        dragSort?.sync();
+        categoryTree?.refreshSoon();
+    });
+
+    // 左侧分类树（取代原来的「商品分类」下拉）：点分类筛选商品，含全部下级分类；跟随上方的显示范围
+    if (window.MdCategoryTree) {
+        categoryTree = MdCategoryTree.attach({
+            layout: document.getElementById('commodity-layout'),
+            panel: document.getElementById('commodity-category-panel'),
+            bar: document.getElementById('commodity-category-bar'),
+            url: '/admin/api/commodity/categoryTree',
+            scope: () => {
+                const search = table?.getSearchData?.() || {};
+                return {display_scope: search.display_scope ?? '', user_id: search.user_id ?? ''};
+            },
+            onSelect: id => {
+                if (!controllerActive || !table) return;
+                table.setWhere('category_tree', id || '');
+                table.reload({pageNumber: 1});
+            },
+            // 在分类栏里改名 / 删除 / 启停分类后，商品行里显示的分类（删除时连带删掉的商品）也要跟着变
+            onMutate: () => {
+                if (controllerActive && table) table.refresh();
+            }
+        });
+    }
     if (dragEnabled) {
         dragSort = MdTableDragSort.attach({
             table,
@@ -1431,6 +1459,8 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
         $(document).off(namespace);
         dragSort?.destroy();
         dragSort = null;
+        categoryTree?.destroy();
+        categoryTree = null;
         if (table && !table.isDestroyed && typeof table.destroy === 'function') table.destroy();
         table = null;
         if (window.__mdTradeCommodityDestroy === destroy) delete window.__mdTradeCommodityDestroy;

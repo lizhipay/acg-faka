@@ -449,6 +449,10 @@ class Commodity extends Shared
 
                 if (!empty($map['sku']) && is_array($map['sku'])) {
                     foreach ($map['sku'] as $k => $v) {
+                        //$k 来自对接方请求，拼进 JSON 路径 sku->{$k}；非法键会触发坏 JSON 路径→500。按 SKU 键名规则校验。
+                        if (!\App\Util\Sku::isValidKey((string)$k)) {
+                            throw new JSONException("规格参数不正确");
+                        }
                         $builder = $builder->where("sku->{$k}", $v);
                     }
                 }

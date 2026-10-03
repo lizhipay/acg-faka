@@ -285,6 +285,10 @@ class Shop implements \App\Service\Shop
             if ($race) $card = $card->where("race", $race);
             if (!empty($sku)) {
                 foreach ($sku as $k => $v) {
+                    //$k 来自客户端，拼进 JSON 路径 sku->{$k}；非法键会触发坏 JSON 路径→500。按 SKU 键名规则校验。
+                    if (!\App\Util\Sku::isValidKey((string)$k)) {
+                        throw new JSONException("规格参数不正确");
+                    }
                     $card = $card->where("sku->{$k}", $v);
                 }
             }

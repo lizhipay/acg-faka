@@ -189,6 +189,9 @@ class Commodity extends User
             }
         }
 
+        \App\Util\Schema::ensureCommodityDeliveryAuto();
+        \App\Model\Commodity::assertDeliveryAuto($map, $commodity);
+
         $touchesDraft = array_key_exists('draft_status', $map) || array_key_exists('draft_premium', $map);
         $draftStatus = isset($map['draft_status'])
             ? (int)$map['draft_status']
@@ -235,7 +238,7 @@ class Commodity extends User
         // 与后台 Admin\Api\Commodity::save() 的 $allowed 同一套做法，只是这里刻意收窄。
         $allowed = [
             'category_id', 'cover', 'name', 'description', 'price', 'user_price', 'sort', 'status',
-            'delivery_way', 'delivery_auto_mode', 'delivery_message', 'stock', 'contact_type',
+            'delivery_way', 'delivery_auto_mode', 'delivery_message', 'delivery_auto', 'stock', 'contact_type',
             'password_status', 'coupon', 'seckill_status', 'seckill_start_time', 'seckill_end_time',
             'draft_status', 'draft_premium', 'inventory_hidden', 'leave_message', 'send_email',
             'only_user', 'purchase_count', 'widget', 'level_price', 'level_disable', 'minimum',
@@ -243,6 +246,7 @@ class Commodity extends User
         ];
 
         $save = new Save(\App\Model\Commodity::class);
+        $save->allowEmpty = ['cover'];
         $save->setMap($map, $allowed);
         $save->addForceMap("owner", $user->id);
         // code 是系统生成的商品编码，不在白名单里，新建时强制写入（同后台做法）。

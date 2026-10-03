@@ -22,6 +22,11 @@
 
             <!--begin::Tables Widget 9-->
             <h2 class="admin-mobile-only-section">#{t("商品列表")}</h2>
+            <!-- 左侧分类树（category-tree.js 渲染）；手机版收成列表上方的「分类」按钮 -->
+            <div class="md-commodity-layout" id="commodity-layout">
+            <aside class="card md-cat-panel" id="commodity-category-panel" aria-label="#{t('商品分类')}"></aside>
+            <div class="md-commodity-layout__main">
+            <div class="md-cat-bar" id="commodity-category-bar"></div>
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->
                 <div class="card-header border-0">
@@ -50,6 +55,8 @@
                     <table id="commodity-table"></table>
                 </div>
             </div>
+            </div>
+            </div>
 
             <!--end::Tables Widget 9-->
         </div>
@@ -62,5 +69,7 @@
 #{hook(\App\Consts\Hook::ADMIN_VIEW_COMMODITY_FOOTER)}
 <!--end::HOOK-->
 #{ready("/assets/admin/controller/trade/drag-sort.js?rev=mobile-1")}
-#{ready("/assets/admin/controller/trade/commodity.js?rev=drag-sort-2")}
+#{ready("/assets/admin/controller/trade/category-actions.js?rev=2")}
+#{ready("/assets/admin/controller/trade/category-tree.js?rev=manage-1")}
+#{ready("/assets/admin/controller/trade/commodity.js?rev=delivery-auto-2")}
 #{include file="../Footer.html"}

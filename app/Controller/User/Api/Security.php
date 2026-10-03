@@ -28,6 +28,21 @@ class Security extends User
     private Sms $sms;
 
     /**
+     * 会话内「步进验证」（改绑定 / 改密码 / 开关两步验证）前的限流闸。
+     * 这些端点校验账号密码或动态码，若不限流，被窃会话者可在线爆破密码或 6 位动态码。
+     * 与 fundVerify / ipWhitelistAdd 同口径：按会员 10 次 / 300 秒，校验全部通过后由调用方 clear。
+     * @throws JSONException
+     */
+    private function stepThrottle(int $uid): string
+    {
+        $key = "secstep:uid:" . $uid;
+        if (\App\Util\Throttle::tooMany($key, 10, 300)) {
+            throw new JSONException("验证过于频繁，请稍后再试");
+        }
+        return $key;
+    }
+
+    /**
      * @return array
      * @throws JSONException
      */
@@ -138,9 +153,11 @@ class Security extends User
         //改绑前必须用登录密码二次验证：只凭会话（可能经 XSS/共享设备被窃）就能改绑，会被攻击者改到
         //自己的邮箱再走找回密码永久接管（F-33）。要求账号密码=只有会话也改不了绑定。
         $user = $this->getUser();
+        $throttleKey = $this->stepThrottle((int)$user->id);
         if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)($_POST['password'] ?? ''), (string)$this->request->unsafePost('password'))) {
             throw new JSONException("登录密码不正确");
         }
+        \App\Util\Throttle::clear($throttleKey);
         if (!$this->email->checkCaptcha($_POST['email'], Email::CAPTCHA_BIND_NEW, (int)$_POST['email_captcha'])) {
             throw new JSONException("邮箱验证码不正确");
         }
@@ -160,9 +177,11 @@ class Security extends User
     {
         //改绑前必须用登录密码二次验证（同 email()，防会话被窃后改绑手机再走找回密码永久接管，F-33）。
         $user = $this->getUser();
+        $throttleKey = $this->stepThrottle((int)$user->id);
         if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)($_POST['password'] ?? ''), (string)$this->request->unsafePost('password'))) {
             throw new JSONException("登录密码不正确");
         }
+        \App\Util\Throttle::clear($throttleKey);
         if (!$this->sms->checkCaptcha($_POST['phone'], Sms::CAPTCHA_BIND_NEW, (int)$_POST['phone_captcha'])) {
             throw new JSONException("手机验证码不正确");
         }
@@ -183,10 +202,12 @@ class Security extends User
         $password = (string)$_POST['password'];
         $rePassword = (string)$_POST['re_password'];
         $user = $this->getUser();
+        $throttleKey = $this->stepThrottle((int)$user->id);
         //兼容旧清洗管线时代哈希的特殊字符密码（#833），改密成功后即升级为新形态
         if (!Str::verifyPassword((string)$user->password, (string)$user->salt, $oldPassword, (string)$this->request->unsafePost('old_password'))) {
             throw new JSONException("旧密码输入不正确");
         }
+        \App\Util\Throttle::clear($throttleKey);
         if ($password != $rePassword) {
             throw new JSONException("两次密码输入不一致");
         }
@@ -308,6 +329,7 @@ class Security extends User
         if (!empty($user->totp_secret)) {
             throw new JSONException("已开启两步验证，请先关闭再重新绑定");
         }
+        $throttleKey = $this->stepThrottle((int)$user->id);
         //要求账号密码：只有会话也不能开启/改动两步验证（与改邮箱/手机同口径，防会话被盗后接管）
         if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)($_POST['password'] ?? ''), (string)$this->request->unsafePost('password'))) {
             throw new JSONException("账号密码不正确");
@@ -319,6 +341,7 @@ class Security extends User
         if (!\App\Util\Totp::verify($secret, (string)($_POST['code'] ?? ''))) {
             throw new JSONException("验证码错误，请确认手机时间已同步后重试");
         }
+        \App\Util\Throttle::clear($throttleKey);
 
         $recovery = \App\Util\RecoveryCode::generate(8);
         $user->totp_secret = $secret;
@@ -345,15 +368,17 @@ class Security extends User
         if (empty($user->totp_secret)) {
             throw new JSONException("尚未开启两步验证");
         }
+        $throttleKey = $this->stepThrottle((int)$user->id);
         if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)($_POST['password'] ?? ''), (string)$this->request->unsafePost('password'))) {
             throw new JSONException("账号密码不正确");
         }
         $code = trim((string)($_POST['code'] ?? ''));
-        $ok = \App\Util\Totp::verify((string)$user->totp_secret, $code)
+        $ok = \App\Util\Totp::verifyAndConsume((string)$user->totp_secret, $code, "user:" . (int)$user->id)
             || \App\Util\RecoveryCode::consume((string)$user->totp_recovery, $code) !== null;
         if (!$ok) {
             throw new JSONException("验证码错误");
         }
+        \App\Util\Throttle::clear($throttleKey);
 
         $user->totp_secret = null;
         $user->totp_recovery = null;
@@ -375,12 +400,14 @@ class Security extends User
         if (empty($user->totp_secret)) {
             throw new JSONException("尚未开启两步验证");
         }
+        $throttleKey = $this->stepThrottle((int)$user->id);
         if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)($_POST['password'] ?? ''), (string)$this->request->unsafePost('password'))) {
             throw new JSONException("账号密码不正确");
         }
-        if (!\App\Util\Totp::verify((string)$user->totp_secret, (string)($_POST['code'] ?? ''))) {
+        if (!\App\Util\Totp::verifyAndConsume((string)$user->totp_secret, (string)($_POST['code'] ?? ''), "user:" . (int)$user->id)) {
             throw new JSONException("验证码错误");
         }
+        \App\Util\Throttle::clear($throttleKey);
         $recovery = \App\Util\RecoveryCode::generate(8);
         $user->totp_recovery = \App\Util\RecoveryCode::hashAll($recovery);
         $user->save();
@@ -403,7 +430,7 @@ class Security extends User
         if (\App\Util\Throttle::tooMany("fundverify:uid:" . (int)$user->id, 10, 300)) {
             throw new JSONException("验证过于频繁，请稍后再试");
         }
-        if (!\App\Util\Totp::verify((string)$user->totp_secret, trim((string)($_POST['code'] ?? '')))) {
+        if (!\App\Util\Totp::verifyAndConsume((string)$user->totp_secret, trim((string)($_POST['code'] ?? '')), "user:" . (int)$user->id)) {
             throw new JSONException("验证码错误");
         }
         \App\Util\FundGuard::markVerified((int)$user->id);
@@ -424,12 +451,14 @@ class Security extends User
         if (empty($user->totp_secret)) {
             throw new JSONException("请先开启两步验证");
         }
+        $throttleKey = $this->stepThrottle((int)$user->id);
         if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)($_POST['password'] ?? ''), (string)$this->request->unsafePost('password'))) {
             throw new JSONException("账号密码不正确");
         }
-        if (!\App\Util\Totp::verify((string)$user->totp_secret, trim((string)($_POST['code'] ?? '')))) {
+        if (!\App\Util\Totp::verifyAndConsume((string)$user->totp_secret, trim((string)($_POST['code'] ?? '')), "user:" . (int)$user->id)) {
             throw new JSONException("验证码错误");
         }
+        \App\Util\Throttle::clear($throttleKey);
         $enable = (string)($_POST['enable'] ?? '') === '1';
         $user->fund_2fa = $enable ? 1 : 0;
         $user->save();
@@ -471,7 +500,7 @@ class Security extends User
             throw new JSONException("验证过于频繁，请稍后再试");
         }
         if (!empty($user->totp_secret)) {
-            if (!\App\Util\Totp::verify((string)$user->totp_secret, trim((string)($_POST['code'] ?? '')))) {
+            if (!\App\Util\Totp::verifyAndConsume((string)$user->totp_secret, trim((string)($_POST['code'] ?? '')), "user:" . (int)$user->id)) {
                 throw new JSONException("验证码错误");
             }
         } elseif (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)($_POST['password'] ?? ''), (string)$this->request->unsafePost('password'))) {

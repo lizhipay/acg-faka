@@ -163,7 +163,7 @@ class Authentication extends Manage
             throw new JSONException("登录状态已失效，请重新登录", \App\Service\Bind\ManageSSO::CODE_NEED_TOTP);
         }
         $code = trim((string)$this->request->post("code"));
-        if ($code === '' || !\App\Util\Totp::verify((string)$manage->google_secret, $code)) {
+        if ($code === '' || !\App\Util\Totp::verifyAndConsume((string)$manage->google_secret, $code, "manage:" . $mid)) {
             throw new JSONException("谷歌验证码错误");
         }
         \Kernel\Util\Session::remove(self::PASSKEY_PENDING);

@@ -68,7 +68,7 @@ class ManageSSO implements \App\Service\ManageSSO
                         $failedAudit = [$manage, "登录待验证：密码正确，等待谷歌验证码"];
                         throw new JSONException("该账号已开启两步验证，请输入谷歌验证码", self::CODE_NEED_TOTP);
                     }
-                    if (!\App\Util\Totp::verify((string)$manage->google_secret, $code)) {
+                    if (!\App\Util\Totp::verifyAndConsume((string)$manage->google_secret, $code, "manage:" . (int)$manage->id)) {
                         $failedAudit = [$manage, "登录失败：谷歌验证码错误"];
                         throw new JSONException("谷歌验证码错误");
                     }

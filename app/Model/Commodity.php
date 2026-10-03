@@ -27,6 +27,7 @@ use Kernel\Exception\JSONException;
  * @property int $delivery_way
  * @property int $delivery_auto_mode
  * @property string $delivery_message
+ * @property int $delivery_auto
  * @property int $contact_type
  * @property int $sort
  * @property int $password_status
@@ -89,6 +90,7 @@ class Commodity extends Model
         'integral' => 'integer',
         'delivery_way' => 'integer',
         'delivery_auto_mode' => 'integer',
+        'delivery_auto' => 'integer',
         'contact_type' => 'integer',
         'sort' => 'integer',
         'coupon' => 'integer',
@@ -182,6 +184,34 @@ class Commodity extends Model
         $parse['config'] = Ini::toArray((string)$var['config']);
         $parse['show'] = (int)$var['show'];
         return $parse;
+    }
+
+    /**
+     * 「付款即发货」：手动发货商品付款后直接把发货信息作为卡密发出，订单即为已发货。
+     * 后台与商户端保存共用。只在本次提交动到发货方式 / 开关 / 发货信息时校验最终状态，
+     * 表格里只提交 id + 单个字段的快捷开关不受影响。
+     * @param array $map 待保存字段（会把 delivery_auto 归一成 0/1）
+     * @param Commodity|null $current 修改时的原商品
+     * @throws JSONException
+     */
+    public static function assertDeliveryAuto(array &$map, ?self $current): void
+    {
+        if (array_key_exists('delivery_auto', $map)) {
+            $map['delivery_auto'] = (int)$map['delivery_auto'] === 1 ? 1 : 0;
+        }
+        //delivery_message 是 varchar(255)：超长时严格模式直接报错，非严格模式会被悄悄截断——发出去的下载链接就残了
+        if (array_key_exists('delivery_message', $map) && mb_strlen((string)$map['delivery_message']) > 255) {
+            throw new JSONException("发货信息最多255个字");
+        }
+        if (!array_key_exists('delivery_way', $map) && !array_key_exists('delivery_auto', $map) && !array_key_exists('delivery_message', $map)) {
+            return;
+        }
+        $way = (int)($map['delivery_way'] ?? $current?->delivery_way ?? 0);
+        $auto = (int)($map['delivery_auto'] ?? $current?->delivery_auto ?? 0);
+        $message = (string)($map['delivery_message'] ?? $current?->delivery_message ?? '');
+        if ($way === 1 && $auto === 1 && trim($message) === '') {
+            throw new JSONException("开启了付款即发货，请填写发货信息");
+        }
     }
 
     /**

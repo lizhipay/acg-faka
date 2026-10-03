@@ -150,6 +150,9 @@ class App implements \App\Service\App
      */
     public function installPlugin(string $key, int $type, int $pluginId): void
     {
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', $key)) {
+            throw new \Kernel\Exception\JSONException("非法的插件标识");
+        }
         //默认位置，通用插件
         $pluginPath = BASE_PATH . "/app/Plugin/{$key}/";
         $fileInit = file_exists($pluginPath . "/Config/Info.php");
@@ -212,6 +215,9 @@ class App implements \App\Service\App
      */
     public function updatePlugin(string $key, int $type, int $pluginId): void
     {
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', $key)) {
+            throw new \Kernel\Exception\JSONException("非法的插件标识");
+        }
         //默认位置，通用插件
         $pluginPath = BASE_PATH . "/app/Plugin/{$key}/";
         if ($type == 1) {
@@ -307,6 +313,9 @@ class App implements \App\Service\App
      */
     public function uninstallPlugin(string $key, int $type): void
     {
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', $key)) {
+            throw new \Kernel\Exception\JSONException("非法的插件标识");
+        }
         //默认位置，通用插件
         $pluginPath = BASE_PATH . "/app/Plugin/{$key}/";
         if ($type == 1) {

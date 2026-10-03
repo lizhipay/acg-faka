@@ -204,6 +204,9 @@ final class Csp
 
     private static ?array $extraCache = null;
 
+    /** 支付跳转页（Submit.html）本次要放行的网关 origin，只进这一次响应的 form-action */
+    private static array $extraFormAction = [];
+
     /**
      * 收集插件声明的放行域名。任何一步出错都退回空清单——策略头绝不能因为
      * 某个插件写错而发不出去。
@@ -260,6 +263,35 @@ final class Csp
         return self::$extraCache = array_map('array_keys', $collected);
     }
 
+    /**
+     * 支付表单跳转页（Submit.html）专用：把本次要 POST 过去的网关 origin 加进 form-action，
+     * 并立刻重发一次 CSP 头覆盖掉 Kernel 初始化时发的那条（form-action 'self'）。全站 form-action
+     * 仍保持 'self'——只有这一个服务端生成、无用户内容的跳转页放行它那一个网关。网关地址取自
+     * order.pay_url（下单时由支付插件回填，非用户每请求可控）。修「码支付等 submit 表单支付卡单」。
+     */
+    public static function allowPaymentGateway(string $url): void
+    {
+        if (!self::enabled()) {
+            return; //CSP 关闭时 Kernel 没发完整策略，表单本来就能提交
+        }
+        $url = trim($url);
+        $host = strtolower((string)parse_url($url, PHP_URL_HOST));
+        $scheme = strtolower((string)parse_url($url, PHP_URL_SCHEME));
+        if ($host === '' || !in_array($scheme, ['http', 'https'], true)) {
+            return; //取不到网关 origin（相对地址 / 非 http(s)）：form-action 维持 'self'
+        }
+        $port = parse_url($url, PHP_URL_PORT);
+        $origin = $scheme . '://' . $host . ($port ? ':' . (int)$port : '');
+        //只收 scheme://host[:port] 的纯净 origin，杜绝借畸形 URL 往头里塞别的
+        if (!preg_match('#^https?://[a-z0-9.\-]+(?::\d{1,5})?$#', $origin)) {
+            return;
+        }
+        self::$extraFormAction[$origin] = true;
+        if (!headers_sent()) {
+            header(self::header() . ': ' . self::policy());
+        }
+    }
+
     public static function policy(): string
     {
         $extra = self::extraSources();
@@ -284,7 +316,7 @@ final class Csp
             "frame-ancestors 'self'",
             "object-src 'none'",
             "base-uri 'self'",
-            "form-action 'self'",
+            "form-action " . trim("'self' " . implode(' ', array_keys(self::$extraFormAction))),
             'report-uri ' . self::REPORT_PATH,
         ]);
     }

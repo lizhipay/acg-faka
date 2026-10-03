@@ -107,6 +107,8 @@ class Recharge extends User
             if (!$data) {
                 throw new JSONException("参数错误");
             }
+            //码支付等 submit 表单支付：放行本次网关 origin 的 form-action，否则被全站 'self' 挡住卡单
+            \App\Util\Csp::allowPaymentGateway((string)$order->pay_url);
             return $this->render("正在下单，请稍后..", "Submit.html", [
                 "url" => $order->pay_url,
                 "data" => $data

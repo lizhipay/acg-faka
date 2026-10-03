@@ -100,10 +100,12 @@
                             change: (_, __) => {
                                 if (__ == 1) {
                                     _.show("delivery_message");
+                                    _.show("delivery_auto");
                                     _.hide("delivery_auto_mode");
                                     _.show("stock");
                                 } else {
                                     _.hide("delivery_message");
+                                    _.hide("delivery_auto");
                                     _.show("delivery_auto_mode");
                                     _.hide("stock");
                                 }
@@ -136,6 +138,14 @@
                             placeholder: "手动发货信息，可以是一些固定的卡密或者软件下载链接等..",
                             height: 100,
                             hide: true
+                        },
+                        {
+                            title: "付款即发货",
+                            name: "delivery_auto",
+                            type: "switch",
+                            text: "启用",
+                            hide: true,
+                            tips: "适合固定内容（通用卡密、下载链接等）：买家付款即收到上面的发货信息，订单直接变为已发货。由插件负责发货的商品请勿开启"
                         },
                         {
                             title: "发货留言",

@@ -6,6 +6,7 @@ namespace App\Controller\Admin\Api;
 use App\Consts\Hook;
 use App\Controller\Base\API\Manage;
 use App\Interceptor\ManageSession;
+use App\Interceptor\Owner;
 use App\Model\ManageLog;
 use App\Util\Theme;
 use Kernel\Annotation\Interceptor;
@@ -14,7 +15,7 @@ use Kernel\Context\Interface\Request;
 use Kernel\Exception\JSONException;
 use Kernel\Waf\Filter;
 
-#[Interceptor([ManageSession::class], Interceptor::TYPE_API)]
+#[Interceptor([ManageSession::class, Owner::class], Interceptor::TYPE_API)]
 class Plugin extends Manage
 {
     /**

@@ -65,6 +65,14 @@ class Save
      */
     public array $modifiableWhitelist = [];
 
+    /**
+     * 允许"清空"的字段：默认 setMap 会跳过空字符串（让"留空=不修改"成立，如密码），
+     * 但图标 / 封面 / 发货信息等可选字段，用户确实需要能清空。列入此名单的字段，
+     * 当请求里显式带了空值时会被写入（清空），不列入的字段维持原有"空值跳过"行为。
+     * @var array
+     */
+    public array $allowEmpty = [];
+
 
     /**
      * @param string $model
@@ -112,7 +120,8 @@ class Save
 
         foreach ($map as $key => $value) {
             $key = strtolower(trim((string)$key));
-            if ($value === '' || $key == "id" || (!in_array($key, $bypass) && !empty($bypass))) { //$value === '' ||
+            //空字符串默认跳过（"留空=不修改"，如密码）；但列入 allowEmpty 的字段允许被清空写入
+            if (($value === '' && !in_array($key, $this->allowEmpty, true)) || $key == "id" || (!in_array($key, $bypass) && !empty($bypass))) {
                 continue;
             }
 

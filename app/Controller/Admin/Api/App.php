@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller\Admin\Api;
 
 use App\Interceptor\ManageSession;
+use App\Interceptor\Owner;
 use App\Interceptor\Waf;
 use App\Model\ManageLog;
 use App\Util\Opcache;
@@ -14,7 +15,7 @@ use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
 
-#[Interceptor([Waf::class, ManageSession::class], Interceptor::TYPE_API)]
+#[Interceptor([Waf::class, ManageSession::class, Owner::class], Interceptor::TYPE_API)]
 class App extends Manage
 {
     #[Inject]

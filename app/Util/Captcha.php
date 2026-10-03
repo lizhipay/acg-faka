@@ -28,6 +28,19 @@ class Captcha
     private const FONT = '/assets/common/fonts/font.ttf';
 
     /**
+     * 会话键前缀：图形验证码的 action 名是外部可控的（/user/captcha/image?action=），
+     * 若直接拿它当会话键名，攻击者就能把任意会话键写成一个自己能从图里读到的 4 位数，
+     * 覆盖掉其它流程的会话标记（如各类人机验证闸门）。统一加前缀把它关进独立命名空间，
+     * 既不影响任何调用方的 action 口径，也杜绝与其它会话键的碰撞。
+     */
+    private const KEY_PREFIX = 'cap_';
+
+    private static function key(string $sessionName): string
+    {
+        return self::KEY_PREFIX . $sessionName;
+    }
+
+    /**
      * 生成验证码
      * @param string $sessionName
      */
@@ -37,7 +50,7 @@ class Captcha
         for ($i = 0; $i < self::LEN; $i++) {
             $code .= random_int(0, 9);
         }
-        Session::set($sessionName, $code);
+        Session::set(self::key($sessionName), $code);
 
         //验证码是一次性凭据，任何一层缓存住都会让用户看到过期的图
         if (!headers_sent()) {
@@ -180,8 +193,8 @@ class Captcha
         }
         //验证码一次性：取出即作废，无论本次校验成败。否则同一个码可被无限次重放——
         //一次打码即可对登录/注册发起在线爆破（校验失败的分支在销毁之前就返回了）。
-        $stored = Session::get($sessionName);
-        Session::remove($sessionName);
+        $stored = Session::get(self::key($sessionName));
+        Session::remove(self::key($sessionName));
         return $stored !== null && $stored == $code;
     }
 
@@ -190,6 +203,6 @@ class Captcha
      */
     public static function destroy(string $sessionName): void
     {
-        Session::remove($sessionName);
+        Session::remove(self::key($sessionName));
     }
 }
