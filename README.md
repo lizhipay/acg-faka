@@ -58,28 +58,18 @@
 - 以上步骤完成后，然后配置伪静态，Apache无需配置，根目录已经有.htaccess文件了，但如果你是Nginx，则需要配置伪静态。
 - 下面是Nginx伪静态规则：
 ```
+if ($uri ~* "^/(?!(?-i:index\.php)(/|$)).*\.php(/|$)")             { return 404; }
+
 location ~* ^/(runtime|kernel|config|vendor)/                { return 404; }
+location ~  (^|/)(runtime|\.acgcache)(/|$)                   { return 404; }
 location ~  /\.(?!well-known)                                { return 404; }
-location ~* \.(log|sql|sqlite|db|db-wal|db-shm|bak|old|save|orig|swp|swo|tmp|ini|lock)$  { return 404; }
+location ~* \.(log|sql|sqlite|db|db-wal|db-shm|bak|old|save|orig|swp|swo|tmp|ini|lock|key|pem|crt|cer|der|p12|pfx|p8|keystore|jks|asc|gpg|ppk|env|secret)$  { return 404; }
 location ~* (~|composer\.(json|lock)|package(-lock)?\.json)$ { return 404; }
 location / {
     try_files $uri $uri/ /index.php?s=$uri&$args;
 }
 ```
-- Windows IIS服务器环境，可以使用下面伪静态规则：
-```
-<rules>
-	<rule name="acg_rewrite" stopProcessing="true">
-		<match url="^(.*)$"/>
-		<conditions logicalGrouping="MatchAll">
-			<add input="{HTTP_HOST}" pattern="^(.*)$"/>
-			<add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true"/>
-			<add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true"/>
-		</conditions>
-		<action type="Rewrite" url="index.php?s={R:1}"/>
-	</rule>
-</rules>
-```
+
 - 配置完成后，访问你的首页，即可开始安装
 - 安装完成后，后台地址是：`https://你的域名/admin`
 
