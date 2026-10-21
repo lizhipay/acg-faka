@@ -28,6 +28,14 @@ app 容器只跑 nginx + php-fpm，数据库走独立的 `mysql` 服务。
 
 改端口：`ACG_HTTP_PORT=8081 docker compose up -d`
 
+## 升级
+
+一条命令升级到最新版，数据不受影响：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lizhipay/acg-faka/main/docker/upgrade.sh | bash
+```
+
 ## 这套编排有什么
 
 | 服务 | 镜像 | 说明 |
