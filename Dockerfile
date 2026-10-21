@@ -3,15 +3,17 @@
 # 为什么 nginx 而不是 mod_php：程序只有 index.php 一个 web 入口，nginx 配置里
 # 因此可以只放行它一个，其余 .php 一概不执行 —— 上传目录被塞进 .php 也跑不起来。
 # 伪静态规则随镜像发布，用户不需要配置任何东西。
-# PHP 版本可切：默认 8.2。
+# PHP 版本可切：默认 8.2。PHP 会打上 lizhipay/php 的 session 硬化补丁重编
+# （docker/php-rebuild.sh），对应版本没有补丁时构建失败。
 #
 # 为什么不是 8.0：PHP 8.0 已于 2023-11 停止安全维护，且它的 Debian bullseye 底座
 # 已整体进入归档 —— 连 nginx、openssl 这些系统包都不再有安全更新。8.2 用的是
 # bookworm，仍在支持期。composer.json 要求 >=8.0，本程序在 8.2 上实测可正常安装运行。
 #
 # 确实需要贴合旧线上环境时：
-#   docker build --build-arg PHP_VERSION=8.0 -t acg-faka .
-# 下面的 apt 段会自动处理 bullseye 的归档源。
+#   docker build --build-arg PHP_VERSION=8.0 --build-arg ALLOW_UNPATCHED_PHP=1 -t acg-faka .
+# 下面的 apt 段会自动处理 bullseye 的归档源。8.0 没有 CVE-2026-109618/109619 的
+# 官方修补，不显式放行会被 docker/php-cve-gate.sh 拦下。
 ARG PHP_VERSION=8.2
 FROM php:${PHP_VERSION}-fpm
 
@@ -50,7 +52,13 @@ RUN set -eux; \
     # 数据目录一律落在 /data（单卷挂载），这里先把默认位置清掉
     mkdir -p /data
 
-# 2) PHP 扩展。
+# 2) 打 session 对象注入硬化补丁重编 PHP，开关 session.harden 在 docker/php.ini 里打开。
+#    必须在装扩展之前：后面的扩展要对着重编后的头文件编译。
+COPY docker/php-patches/ /usr/local/share/acg-faka/php-patches/
+COPY docker/php-rebuild.sh /usr/local/bin/acg-php-rebuild
+RUN sh /usr/local/bin/acg-php-rebuild /usr/local/share/acg-faka/php-patches
+
+# 3) PHP 扩展。
 #
 # 编译完之后不能按名字去 purge 那些 -dev 包 —— `--auto-remove` 会把它们带进来的
 # 运行时库一起删掉（gd / zip 直接罢工），而运行时库的包名各 Debian 版本还不一样
@@ -111,6 +119,11 @@ COPY docker/acg-ssl-lib.sh    /usr/local/lib/acg-ssl-lib.sh
 COPY docker/acg-ssl.sh        /usr/local/bin/acg-ssl
 COPY docker/acg-ssl-import.sh /usr/local/bin/acg-ssl-import
 COPY docker/acg-ssl-renew.sh  /usr/local/bin/acg-ssl-renew
+
+# 基础镜像的 PHP 低于安全修补版时默认构建失败；=1 放行并套上临时缓解。
+ARG ALLOW_UNPATCHED_PHP=0
+COPY docker/php-cve-gate.sh /usr/local/bin/acg-php-cve-gate
+RUN sh /usr/local/bin/acg-php-cve-gate
 
 COPY . ${ACG_HOME}
 

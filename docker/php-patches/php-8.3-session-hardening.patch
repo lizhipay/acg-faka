@@ -1,0 +1,65 @@
+--- a/ext/session/php_session.h
++++ b/ext/session/php_session.h
+@@ -202,6 +202,7 @@
+ 	zend_string *session_vars; /* serialized original session data */
+ 
+ 	bool in_rfc1867_update;    /* php_session_rfc1867_update() is running */
++	bool harden;               /* session.harden: deny object deserialization + sanitize upload_progress key */
+ } php_ps_globals;
+ 
+ typedef php_ps_globals zend_ps_globals;
+--- a/ext/session/session.c
++++ b/ext/session/session.c
+@@ -837,6 +837,7 @@
+ 	STD_PHP_INI_BOOLEAN("session.use_cookies",      "1",         PHP_INI_ALL, OnUpdateSessionBool,   use_cookies,        php_ps_globals,    ps_globals)
+ 	STD_PHP_INI_BOOLEAN("session.use_only_cookies", "1",         PHP_INI_ALL, OnUpdateSessionBool,   use_only_cookies,   php_ps_globals,    ps_globals)
+ 	STD_PHP_INI_BOOLEAN("session.use_strict_mode",  "0",         PHP_INI_ALL, OnUpdateSessionBool,   use_strict_mode,    php_ps_globals,    ps_globals)
++	STD_PHP_INI_BOOLEAN("session.harden",           "0",         PHP_INI_SYSTEM, OnUpdateBool,       harden,             php_ps_globals,    ps_globals)
+ 	STD_PHP_INI_ENTRY("session.referer_check",      "",          PHP_INI_ALL, OnUpdateSessionString, extern_referer_chk, php_ps_globals,    ps_globals)
+ 	STD_PHP_INI_ENTRY("session.cache_limiter",      "nocache",   PHP_INI_ALL, OnUpdateSessionString, cache_limiter,      php_ps_globals,    ps_globals)
+ 	STD_PHP_INI_ENTRY("session.cache_expire",       "180",       PHP_INI_ALL, OnUpdateSessionLong,   cache_expire,       php_ps_globals,    ps_globals)
+@@ -872,11 +873,19 @@
+  * code may run. Objects are then kept as __PHP_Incomplete_Class: no
+  * autoloading, no unserialize_callback_func, no __wakeup() or __unserialize(),
+  * and they are written back unchanged. */
++/* Shared empty allowed-classes set: makes session unserialize refuse every
++ * class (objects become __PHP_Incomplete_Class), neutralising serialize_handler
++ * mismatch object injection. Allocated once in MINIT. */
++static HashTable *php_session_no_classes = NULL;
++
+ static void php_session_unserialize_init(php_unserialize_data_t *var_hash)
+ {
+ 	PHP_VAR_UNSERIALIZE_INIT(*var_hash);
+ 	if (PS(in_rfc1867_update)) {
+ 		php_var_unserialize_set_incomplete_classes_only(*var_hash, true);
++	}
++	if (PS(harden) && php_session_no_classes) {
++		php_var_unserialize_set_allowed_classes(*var_hash, php_session_no_classes);
+ 	}
+ }
+ 
+@@ -2910,6 +2919,10 @@
+ 
+ static PHP_MINIT_FUNCTION(session) /* {{{ */
+ {
++	if (!php_session_no_classes) {
++		ALLOC_HASHTABLE(php_session_no_classes);
++		zend_hash_init(php_session_no_classes, 0, NULL, NULL, 1);
++	}
+ 	zend_register_auto_global(zend_string_init_interned("_SESSION", sizeof("_SESSION") - 1, 1), 0, NULL);
+ 
+ 	my_module_number = module_number;
+@@ -3184,6 +3197,13 @@
+ 					smart_str_appends(&progress->key, PS(rfc1867_prefix));
+ 					smart_str_appendl(&progress->key, *data->value, value_len);
+ 					smart_str_0(&progress->key);
++					if (PS(harden) && progress->key.s) {
++						char *hk = ZSTR_VAL(progress->key.s);
++						size_t hl = ZSTR_LEN(progress->key.s), hi;
++						for (hi = 0; hi < hl; hi++) {
++							if (hk[hi] == '|' || hk[hi] == '!') hk[hi] = '_';
++						}
++					}
+ 
+ 					progress->apply_trans_sid = APPLY_TRANS_SID;
+ 					php_session_rfc1867_early_find_sid(progress);

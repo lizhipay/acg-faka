@@ -3,6 +3,9 @@
 # 为什么一定要走 CI 而不是在本机 build：作者本机的仓库是「私有超集」，磁盘上有全部
 # 付费插件源码、加密工具链明文源和线上凭证。CI 的 checkout 只有公开仓库内容，
 # 从源头上就不可能把它们打进镜像。仓库里的 .dockerignore 是第二道防线。
+#
+# 镜像里要重编 PHP（session 硬化补丁），QEMU 模拟 arm64 编一次太慢，所以每个架构
+# 在各自的原生 runner 上构建，只按摘要推到 GHCR，最后由 merge 合成多架构清单并打标签。
 
 name: 发布 Docker 镜像
 
@@ -21,17 +24,23 @@ on:
         description: '同时更新 latest 标签'
         type: boolean
         default: true
+      allow_unpatched_php:
+        description: '基础镜像 PHP 未含安全修补时仍发布（套临时缓解，仅限官方修补版出来之前）'
+        type: boolean
+        default: false
 
 jobs:
-  publish:
+  # 只算标签名和 labels，不碰 Docker Hub 用户名：job output 里带 secret 会被 Actions 整个丢掉。
+  prepare:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write          # 推 GHCR 需要
+    outputs:
+      hub: ${{ steps.hub.outputs.enabled }}
+      tag_names: ${{ steps.tags.outputs.names }}
+      labels: ${{ steps.meta.outputs.labels }}
 
     steps:
-      - uses: actions/checkout@v4
-
       # 没配 Docker Hub 的 secret 时自动降级为「只发 GHCR」，不让整条流水线红掉。
       # secrets 上下文不能直接写在 if: 里，所以先落成一个 output。
       - name: 检查 Docker Hub 凭证
@@ -45,18 +54,6 @@ jobs:
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             echo "::notice::未配置 DOCKERHUB_TOKEN，本次只发布到 GHCR"
           fi
-
-      # 兜底闸门：万一有人在带私有内容的检出上跑这条流水线，宁可让它红，也不能推出去。
-      - name: 拦截私有内容
-        run: |
-          fail=0
-          if [ -n "$(find app/Plugin -type f 2>/dev/null | head -1)" ]; then
-            echo "::error::app/Plugin 下有文件，公开镜像不应包含任何插件源码"; fail=1
-          fi
-          for f in config/store.php config/mcp.php kernel/Plugin_src.php .developer; do
-            if [ -e "$f" ]; then echo "::error::检出里存在不该公开的 $f"; fail=1; fi
-          done
-          exit "$fail"
 
       # 手动触发时给的版本号：校验格式并拆出 major.minor，
       # 这样不打 git tag 也能发出 3.7.1 / 3.7 这两个镜像标签。
@@ -75,8 +72,131 @@ jobs:
             echo "::notice::将发布镜像标签 ${V} 和 ${V%.*}"
           fi
 
-      - name: 准备 QEMU
-        uses: docker/setup-qemu-action@v3      # 交叉构建 arm64 用
+      - name: 计算标签与 labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            # 手动触发且填了版本号时用这两条（type=semver 只认 git tag，手动跑产不出）
+            type=raw,value=${{ steps.ver.outputs.full }},enable=${{ steps.ver.outputs.full != '' }}
+            type=raw,value=${{ steps.ver.outputs.minor }},enable=${{ steps.ver.outputs.minor != '' }}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') || inputs.tag_latest }}
+            # 兜底：手动跑又没给版本号时，保证 tags 不为空
+            type=raw,value=dev-{{sha}},enable=${{ github.event_name == 'workflow_dispatch' && steps.ver.outputs.full == '' }}
+          labels: |
+            org.opencontainers.image.title=acg-faka
+            org.opencontainers.image.description=异次元发卡 — 基于 PHP8 的原生虚拟发卡与个人店铺系统
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.documentation=https://faka.wiki
+
+      # 去掉镜像名只留标签名，merge 再按各个仓库拼回去
+      - name: 取出标签名
+        id: tags
+        env:
+          META_JSON: ${{ steps.meta.outputs.json }}
+        run: |
+          names="$(jq -r '.tags[] | sub(".*:"; "")' <<< "${META_JSON}")"
+          if [ -z "${names}" ]; then echo "::error::没有算出任何镜像标签"; exit 1; fi
+          { echo "names<<EOF"; echo "${names}"; echo "EOF"; } >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write          # 推 GHCR 需要
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 兜底闸门：万一有人在带私有内容的检出上跑这条流水线，宁可让它红，也不能推出去。
+      - name: 拦截私有内容
+        run: |
+          fail=0
+          if [ -n "$(find app/Plugin -type f 2>/dev/null | head -1)" ]; then
+            echo "::error::app/Plugin 下有文件，公开镜像不应包含任何插件源码"; fail=1
+          fi
+          for f in config/store.php config/mcp.php kernel/Plugin_src.php .developer; do
+            if [ -e "$f" ]; then echo "::error::检出里存在不该公开的 $f"; fail=1; fi
+          done
+          exit "$fail"
+
+      - name: 准备
+        id: plat
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          echo "pair=${PLATFORM//\//-}" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: 准备 Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录 GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 构建并按摘要推送
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          labels: ${{ needs.prepare.outputs.labels }}
+          # tag 推送时 inputs 为空 → 0：未修补的 PHP 一律构建失败
+          build-args: |
+            ALLOW_UNPATCHED_PHP=${{ inputs.allow_unpatched_php && '1' || '0' }}
+          outputs: type=image,name=${{ steps.plat.outputs.image }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ steps.plat.outputs.pair }}
+          cache-to: type=gha,mode=max,scope=${{ steps.plat.outputs.pair }}
+          # 不生成 provenance/sbom 附件：否则 Docker Hub 的标签页会多出
+          # 一堆 unknown/unknown 架构的条目，看着像坏了。
+          provenance: false
+          sbom: false
+
+      - name: 记下摘要
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/digests"
+          touch "${RUNNER_TEMP}/digests/${DIGEST#sha256:}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ steps.plat.outputs.pair }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4      # 只为同步 docker/README.md
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
 
       - name: 准备 Buildx
         uses: docker/setup-buildx-action@v3
@@ -89,52 +209,46 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 登录 Docker Hub
-        if: steps.hub.outputs.enabled == 'true'
+        if: needs.prepare.outputs.hub == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: 计算镜像名与标签
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ghcr.io/${{ github.repository }}
-            name=${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}/acg-faka,enable=${{ steps.hub.outputs.enabled == 'true' }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            # 手动触发且填了版本号时用这两条（type=semver 只认 git tag，手动跑产不出）
-            type=raw,value=${{ steps.ver.outputs.full }},enable=${{ steps.ver.outputs.full != '' }}
-            type=raw,value=${{ steps.ver.outputs.minor }},enable=${{ steps.ver.outputs.minor != '' }}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') || inputs.tag_latest }}
-            # 兜底：手动跑又没给版本号时，保证 tags 不为空（空了 build-push-action 直接失败）
-            type=raw,value=dev-{{sha}},enable=${{ github.event_name == 'workflow_dispatch' && steps.ver.outputs.full == '' }}
-          labels: |
-            org.opencontainers.image.title=acg-faka
-            org.opencontainers.image.description=异次元发卡 — 基于 PHP8 的原生虚拟发卡与个人店铺系统
-            org.opencontainers.image.licenses=MIT
-            org.opencontainers.image.documentation=https://faka.wiki
+      # 两个架构的镜像合成一份清单，分别在 GHCR 和 Docker Hub 打上全部标签
+      - name: 发布多架构清单
+        working-directory: ${{ runner.temp }}/digests
+        env:
+          TAG_NAMES: ${{ needs.prepare.outputs.tag_names }}
+          HUB_ENABLED: ${{ needs.prepare.outputs.hub }}
+          HUB_USER: ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}
+        run: |
+          set -euo pipefail
+          ghcr="ghcr.io/${GITHUB_REPOSITORY,,}"
+          targets=("${ghcr}")
+          if [ "${HUB_ENABLED}" = "true" ]; then
+            targets+=("docker.io/${HUB_USER,,}/acg-faka")
+          fi
 
-      - name: 构建并推送
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          # 不生成 provenance/sbom 附件：否则 Docker Hub 的标签页会多出
-          # 一堆 unknown/unknown 架构的条目，看着像坏了。
-          provenance: false
-          sbom: false
+          sources=()
+          for d in *; do sources+=("${ghcr}@sha256:${d}"); done
+          if [ "${#sources[@]}" -ne 2 ]; then
+            echo "::error::应有 amd64、arm64 两个摘要，实际 ${#sources[@]} 个"; exit 1
+          fi
+
+          for target in "${targets[@]}"; do
+            args=()
+            while IFS= read -r t; do
+              if [ -n "${t}" ]; then args+=(-t "${target}:${t}"); fi
+            done <<< "${TAG_NAMES}"
+            docker buildx imagetools create "${args[@]}" "${sources[@]}"
+          done
+
+          docker buildx imagetools inspect "${ghcr}:$(head -n1 <<< "${TAG_NAMES}")"
 
       # 把仓库里的 docker/README.md 同步成 Docker Hub 的项目说明
       - name: 同步 Docker Hub 说明
-        if: steps.hub.outputs.enabled == 'true'
+        if: needs.prepare.outputs.hub == 'true'
         uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}
