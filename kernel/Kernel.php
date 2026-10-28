@@ -58,6 +58,13 @@ try {
         array_map(static fn($seg): string => trim((string)$seg), explode("/", $routePath)),
         static fn(string $seg): bool => $seg !== ''
     ));
+    // A backslash is a PHP namespace separator once the segments are joined into a controller
+    // class below ("Admin\Authentication/login" dispatches to App\Controller\Admin\Authentication),
+    // but every "/"-based route check (AdminEntrance, plugins, interceptors) sees a different first
+    // segment. No legitimate route contains one, so reject it here before any of those checks run.
+    if (str_contains($routePath, "\\")) {
+        throw new NotFoundException("404 Not Found");
+    }
     if ($routePath === '') {
         $routePath = "user/index/index";
     }
