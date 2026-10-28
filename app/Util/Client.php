@@ -31,11 +31,7 @@ class Client
 
     private const CHAIN_HEADER_MODES = [2, 4, 5, 6, 7];
 
-    /**
-     * Amazon CloudFront 的 CloudFront-Viewer-Address：固定是「地址:端口」，IPv6 也不加方括号
-     * （2001:db8:…:60776）。通用的 normalizeIp() 分不出 2001:db8::1:8080 的末段是不是端口，
-     * 只能对这一个头按「最后一段必是端口」剥掉再校验（issue #1126）。
-     */
+
     private const MODE_CLOUDFRONT = 9;
     public const MODE_CONFIG = 'ip_get_mode';
 
@@ -567,12 +563,52 @@ class Client
     }
 
     /**
+     * @param string $host
+     * @return string|null 非法时返回 null
+     */
+    public static function normalizeHost(string $host): ?string
+    {
+        if ($host === '' || strlen($host) > 261) {
+            return null;
+        }
+        $pattern = '/^(?:\[[0-9A-Fa-f:.]+\]|[A-Za-z0-9_](?:[A-Za-z0-9_.-]{0,253}[A-Za-z0-9_])?\.?)(?::\d{1,5})?$/D';
+        return preg_match($pattern, $host) === 1 ? $host : null;
+    }
+    public static function guardHost(): void
+    {
+        $host = (string)($_SERVER['HTTP_HOST'] ?? '');
+        if ($host !== '' && self::normalizeHost($host) === null) {
+            http_response_code(400);
+            header('Content-Type: text/plain; charset=utf-8');
+            exit('400 Bad Request');
+        }
+
+        if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+            foreach (explode(',', (string)$_SERVER['HTTP_X_FORWARDED_HOST']) as $forwarded) {
+                if (self::normalizeHost(trim($forwarded)) === null) {
+                    unset($_SERVER['HTTP_X_FORWARDED_HOST']);
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * 当前请求的 Host（含端口），非法时为空串
+     * @return string
+     */
+    public static function getHost(): string
+    {
+        return self::normalizeHost((string)($_SERVER['HTTP_HOST'] ?? '')) ?? '';
+    }
+
+    /**
      * 获取URL地址
      * @return string
      */
     public static function getUrl(): string
     {
-        return self::getRequestScheme() . '://' . (string)($_SERVER['HTTP_HOST'] ?? '');
+        return self::getRequestScheme() . '://' . self::getHost();
     }
 
     /**
@@ -580,7 +616,7 @@ class Client
      */
     public static function getDomain(): string
     {
-        $host = explode(":", (string)$_SERVER['HTTP_HOST']);
+        $host = explode(":", self::getHost());
         return (string)$host[0];
     }
 

@@ -10,7 +10,7 @@ class Aes
 {
     /**
      * AES->CBC 加密
-     * @param $data
+     * @param mixed $data
      * @param string $key
      * @param string $iv
      * @return string
@@ -29,6 +29,6 @@ class Aes
      */
     public static function decrypt(string $data, string $key, string $iv): mixed
     {
-        return unserialize((string)openssl_decrypt(base64_decode($data), 'aes-128-cbc', $key, 1, $iv));
+        return unserialize((string)openssl_decrypt(base64_decode($data), 'aes-128-cbc', $key, 1, $iv), ['allowed_classes' => false]);
     }
 }
