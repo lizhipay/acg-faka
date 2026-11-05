@@ -1187,7 +1187,13 @@ class Order implements \App\Service\Order
 
         if ($commodity->contact_type == 2 && $commodity->send_email == 1 && $order->owner == 0) {
             try {
-                $this->email->send($order->contact, "【发货提醒】您购买的卡密发货啦", "您购买的卡密如下：" . $order->secret);
+                $content = "您购买的卡密如下：" . $order->secret;
+                // 与订单页面保持一致：优先使用下单时的留言快照，老订单回退到商品留言。
+                $leaveMessage = \App\Model\Order::resolveLeaveMessage($order->leave_message, $commodity->leave_message);
+                if ($leaveMessage !== null) {
+                    $content .= "<br><br>发货留言：<br>" . nl2br(htmlspecialchars($leaveMessage, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
+                }
+                $this->email->send($order->contact, "【发货提醒】您购买的卡密发货啦", $content);
             } catch (\Exception|\Error $e) {
             }
         }
