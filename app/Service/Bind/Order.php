@@ -738,6 +738,11 @@ class Order implements \App\Service\Order
                 throw new JSONException("联系方式不能低于3个字符");
             }
 
+            //与 acg_order.contact 的 varchar(32) 一致：超长在严格模式下会变成数据库异常（500），而不是正常的提示
+            if (mb_strlen(trim($contact)) > 32) {
+                throw new JSONException("联系方式不能超过32个字符");
+            }
+
             if ($commodity->contact_type != 0) {
                 if (!preg_match($regx[$commodity->contact_type - 1], $contact)) {
                     throw new JSONException("您输入的{$msg[$commodity->contact_type - 1]}格式不正确！");
