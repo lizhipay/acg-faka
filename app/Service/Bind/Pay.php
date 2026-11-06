@@ -8,6 +8,7 @@ use App\Model\Pay as PayModel;
 use App\Model\PayConfig as PayConfigModel;
 use App\Util\Date;
 use App\Util\Opcache;
+use App\Util\PayConfig;
 use App\Util\PayProfile;
 use Illuminate\Database\Capsule\Manager as DB;
 use Kernel\Exception\JSONException;
@@ -176,17 +177,13 @@ class Pay implements \App\Service\Pay
     }
 
     /**
+     * 确认 $candidate 不存在，或者是 $directory 下的普通文件（不是软链、没被解析到别处）。
+     *
      * @throws JSONException
      */
-    private function pluginLogPath(string $handle): string
+    private function safeLogFile(string $directory, string $candidate): string
     {
-        $directory = $this->pluginDirectory($handle);
-        if ($directory === null) {
-            throw new JSONException('支付插件不存在');
-        }
-
-        $candidate = $directory . DIRECTORY_SEPARATOR . 'runtime.log';
-        if (!file_exists($candidate)) {
+        if (!file_exists($candidate) && !is_link($candidate)) {
             return $candidate;
         }
         if (!is_file($candidate) || is_link($candidate)) {
@@ -200,18 +197,49 @@ class Pay implements \App\Service\Pay
     }
 
     /**
+     * 当前日志在 runtime/log/pay/<handle>.log；旧版本写在插件目录的 runtime.log，
+     * 升级上来的站点可能还留着，查看、清空时一起处理，旧的在前。
+     *
+     * @return string[]
+     * @throws JSONException
+     */
+    private function pluginLogPaths(string $handle): array
+    {
+        $directory = $this->pluginDirectory($handle);
+        $current = PayConfig::logPath($handle);
+        if ($directory === null || $current === null) {
+            throw new JSONException('支付插件不存在');
+        }
+
+        $paths = [$this->safeLogFile($directory, $directory . DIRECTORY_SEPARATOR . 'runtime.log')];
+
+        $logDirectory = dirname($current);
+        if (is_dir($logDirectory)) {
+            $real = realpath($logDirectory);
+            if ($real === false || is_link($logDirectory)) {
+                throw new JSONException('支付插件日志路径不安全');
+            }
+            $paths[] = $this->safeLogFile($real, $real . DIRECTORY_SEPARATOR . basename($current));
+        }
+        return $paths;
+    }
+
+    /**
      * @param string $handle
      * @return string
      */
     public function getPluginLog(string $handle): string
     {
-        $path = $this->pluginLogPath($handle);
-        if (!is_file($path)) {
-            return '';
-        }
-        $contents = file_get_contents($path);
-        if ($contents === false) {
-            throw new JSONException('支付插件日志读取失败');
+        $contents = '';
+        foreach ($this->pluginLogPaths($handle) as $path) {
+            if (!is_file($path)) {
+                continue;
+            }
+            $part = file_get_contents($path);
+            if ($part === false) {
+                throw new JSONException('支付插件日志读取失败');
+            }
+            $contents .= $part;
         }
         return $this->redactLogSecrets($handle, $contents);
     }
@@ -222,8 +250,13 @@ class Pay implements \App\Service\Pay
      */
     public function ClearPluginLog(string $handle): bool
     {
-        $path = $this->pluginLogPath($handle);
-        return !file_exists($path) || unlink($path);
+        $ok = true;
+        foreach ($this->pluginLogPaths($handle) as $path) {
+            if (file_exists($path) && !unlink($path)) {
+                $ok = false;
+            }
+        }
+        return $ok;
     }
 
     /**
