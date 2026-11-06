@@ -183,10 +183,22 @@
         modal(`<i class="fa-duotone fa-regular fa-circle-plus"></i> ${i18n('添加等级')}`);
     });
 
+    layui.form.render('checkbox');
+    layui.form.on('switch(business-fee-visible)', data => {
+        const visible = data.elem.checked;
+        util.post('/admin/api/businessLevel/feeVisibility', {visible: visible ? 1 : 0}, () => {
+            if (controllerActive) message.success('保存成功');
+        }, () => {
+            data.elem.checked = !visible;
+            layui.form.render('checkbox');
+        });
+    });
+
     function destroy() {
         if (!controllerActive) return;
         controllerActive = false;
         $('.btn-app-create').off(namespace);
+        layui.off('switch(business-fee-visible)', 'form');
         $(document).off('pjax:beforeReplace' + namespace);
         if (table && !table.isDestroyed && typeof table.destroy === 'function') table.destroy();
         table = null;

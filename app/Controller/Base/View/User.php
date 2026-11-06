@@ -105,7 +105,9 @@ abstract class User extends \App\Controller\Base\User
                 $data['config']['shop_name'] = $business->shop_name;
                 $data['config']['title'] = $business->title;
                 $data['config']['notice'] = RichHtml::sanitize((string)$business->notice, false);
-                $data['config']['service_url'] = $business->service_url != "" ? $business->service_url : "https://wpa.qq.com/msgrd?v=1&uin={$business->service_qq}";
+                //分站自己的客服链接 → 客服 QQ → 都没填就沿用主站客服（以前会拼出一个 uin 为空的 QQ 链接）
+                $data['config']['service_url'] = \App\Util\ServiceLink::resolve($business->service_url, $business->service_qq)
+                    ?: (string)($data['config']['service_url'] ?? '');
                 if (!$data['from']) {
                     $data['from'] = $business->user_id;
                 }

@@ -99,6 +99,7 @@ class Index extends User
 
         $bus = \App\Model\Business::get();
         $userCommodityMap = []; //自定义名称的MAP
+        $premiumRules = null; //分站加价规则（全店默认/分类），只对主站商品生效
 
         if ($bus) {
             //商家
@@ -118,6 +119,7 @@ class Index extends User
                     }
                 }
 
+                $premiumRules = UserCommodity::rulesOf($bus);
                 $commodity = $commodity->whereNotIn("id", $hideCommodity)->whereRaw("((`owner`=0 and `substation_disable`=0) or `owner`={$bus->user_id})");
             }
         } else {
@@ -149,8 +151,9 @@ class Index extends User
                 //算完就从响应里剔掉（config 里有成本价和定价结构，不能外泄）。见 issue #806
                 'seckill_status', 'seckill_start_time', 'seckill_end_time', 'config'
             ])
+            //已售数量不含已退款订单（#1145）
             ->withCount(['order as order_sold' => function (Builder $relation) {
-                $relation->where("delivery_status", 1);
+                $relation->where("delivery_status", 1)->unrefunded();
             }]);
         if ($limit == 0) {
             $commodity = $commodity
@@ -235,15 +238,17 @@ class Index extends User
                 $data[$key]['user_price'] = $data[$key]['price'];
             }
 
-            //分站自定义名称和价格
-            if (isset($userCommodityMap[$val['id']])) {
-                $var = $userCommodityMap[$val['id']];
-
-                if ($var->premium > 0) {
-                    $data[$key]['price'] = $var->markup($data[$key]['price']);
-                    $data[$key]['user_price'] = $var->markup($data[$key]['user_price']);
+            //分站自定义名称和价格：加价按 商品自己 → 分类规则 → 全店默认，与详情页、下单同一套
+            if ($premiumRules !== null) {
+                $var = $userCommodityMap[$val['id']] ?? null;
+                //$val['owner'] 是 with('owner') 载入的关联（数组或 null），归属要读模型上的原始列
+                $raw = $commodity[$key]->getAttributes();
+                $markup = UserCommodity::fromRule(UserCommodity::pick($premiumRules, (int)($raw['owner'] ?? 0), (int)($raw['category_id'] ?? 0), $var));
+                if ($markup) {
+                    $data[$key]['price'] = $markup->markup($data[$key]['price']);
+                    $data[$key]['user_price'] = $markup->markup($data[$key]['user_price']);
                 }
-                if ($var->name) {
+                if ($var?->name) {
                     $data[$key]['name'] = $var->name;
                 }
             }
@@ -498,9 +503,13 @@ class Index extends User
             $let .= " and id!=1";
         }
 
-        $pay = Pay::query()->orderBy("sort", "asc")->where("commodity", 1)->whereRaw($let)->get(['id', 'name', 'icon', 'handle'])->toArray();
+        //限额与手续费一并带出，前台据此预先置灰超限的接口（#1129）
+        \App\Util\Schema::ensurePayAmountLimit();
+        $pay = Pay::query()->orderBy("sort", "asc")->where("commodity", 1)->whereRaw($let)
+            ->get(array_merge(['id', 'name', 'icon', 'handle'], \App\Util\PayLimit::LIST_COLUMNS))->toArray();
 
         hook(Hook::USER_API_INDEX_PAY_LIST, $pay);
+        $pay = \App\Util\PayLimit::present($pay);
         //支付方式名是站长自定义的动态文案，出口统一走 dyn 翻译（与后台支付接口列表口径一致）
         $pay = \Kernel\Util\Lang::transList($pay, ['name']);
         return $this->json(200, 'success', $pay);

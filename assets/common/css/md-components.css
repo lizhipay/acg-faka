@@ -1116,6 +1116,24 @@
 :root[data-theme] .bootstrap-table tbody tr { background-color: transparent; transition: background-color var(--md-dur-fast) var(--md-ease); }
 :root[data-theme] .bootstrap-table tbody tr:hover td { background-color: var(--md-hover-overlay); }
 :root[data-theme] .bootstrap-table tbody tr.selected td { background-color: var(--md-selected-overlay); }
+/* sticky action column (.action-col) while the table scrolls sideways: the page script flags the scroller with
+   .is-overflowing / .is-scrolled-end; rows slide under a frosted surface with a left shade; at the far end nothing is drawn.
+   The surface is an inset shadow (cell backgrounds are forced transparent !important), so a theme's own sticky-cell
+   box-shadow still wins over it */
+:root[data-theme] .bootstrap-table .fixed-table-body.is-overflowing:not(.is-scrolled-end) .action-col {
+  --md-sticky-surface: color-mix(in srgb, var(--acg-component-surface, var(--md-surface)) 94%, transparent);
+  --md-sticky-shade: rgba(0, 0, 0, .28);
+  box-shadow: -16px 0 16px -16px var(--md-sticky-shade), inset 0 0 0 100vmax var(--md-sticky-surface);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+}
+@supports not (color: color-mix(in srgb, red 50%, transparent)) {
+  :root[data-theme] .bootstrap-table .fixed-table-body.is-overflowing:not(.is-scrolled-end) .action-col { --md-sticky-surface: var(--acg-component-surface, var(--md-surface)); }
+}
+:root[data-theme="dark"] .bootstrap-table .fixed-table-body.is-overflowing:not(.is-scrolled-end) .action-col { --md-sticky-shade: rgba(0, 0, 0, .75); }
+:root[data-theme] .bootstrap-table .fixed-table-body.is-overflowing:not(.is-scrolled-end) thead th.action-col { --md-sticky-surface: var(--acg-component-surface, var(--md-surface)); }
+:root[data-theme] .bootstrap-table .fixed-table-body.is-overflowing:not(.is-scrolled-end) tbody tr:hover td.action-col { box-shadow: -16px 0 16px -16px var(--md-sticky-shade), inset 0 0 0 100vmax var(--md-hover-overlay), inset 0 0 0 100vmax var(--md-sticky-surface); }
+:root[data-theme] .bootstrap-table .fixed-table-body.is-overflowing:not(.is-scrolled-end) tbody tr.selected td.action-col { box-shadow: -16px 0 16px -16px var(--md-sticky-shade), inset 0 0 0 100vmax var(--md-selected-overlay), inset 0 0 0 100vmax var(--md-sticky-surface); }
 /* zebra off (Material tables use dividers, not stripes) */
 :root[data-theme] .table-striped > tbody > tr:nth-of-type(odd) > * { background-color: transparent; box-shadow: none; color: var(--md-on-surface); }
 /* sort affordance */

@@ -8,6 +8,9 @@
     //抢购结束后付款区被收起，切换SKU重新查库存时不能把它又打开
     let _seckillEnded = false;
     const $vstack = $(`.vstack`), $cashPay = $(`.cash-pay`);
+    //单笔限额(#1129)：只登记有限额的支付方式；询价进行中(_pricing)不拦，交给服务端判断
+    const _payLimits = {};
+    let _pricing = false, _pricingSeq = 0;
 
     function _getPostData() {
         let post = util.arrayToObject($vstack.serializeArray());
@@ -36,6 +39,8 @@
         const $price = $(`.abacus .price`);
         //远程加载价格
         $price.html(`<i class="fa-duotone fa-regular fa-spinner-third icon-spin fs-6"></i>`);
+        const seq = ++_pricingSeq;
+        _pricing = true;
 
         util.post({
             url: "/user/api/index/valuation",
@@ -44,11 +49,15 @@
                 $price.html(`<span class="unit">${format.currencySymbol()}</span>${format.amountRemoveTrailingZeros(res.data.price)}`);
                 _price = res.data.price;
                 _available = true;
+                seq === _pricingSeq && (_pricing = false);
+                _PaintPayLimits();
             },
             loader: false,
             error: d => {
+                seq === _pricingSeq && (_pricing = false);
                 typeof error === "function" && error(d);
                 $price.html(`<span class="unit">${format.currencySymbol()}</span>${format.amountRemoveTrailingZeros(_price)}`);
+                _PaintPayLimits();
             }
         });
 
@@ -209,19 +218,124 @@
         });
     }
 
+    //单笔限额：min/max 为 0 或缺省(旧版服务端)即不限，两头都不限的返回 null
+    function _PayLimit(item) {
+        const amount = v => Number.isFinite(+v) && +v > 0 ? +v : 0;
+        const min = amount(item.min_amount), max = amount(item.max_amount);
+        if (!min && !max) {
+            return null;
+        }
+        return {name: i18n(item.name), min, max, cost: Number.isFinite(+item.cost) ? +item.cost : 0, percent: item.cost_type == 1};
+    }
+
+    //与服务端同一口径：按含手续费的实付金额判断，免费单不受限；超限返回 {over, amount}
+    function _PayBreach(limit, base) {
+        base = +base;
+        if (!limit || !(base > 0)) {
+            return null;
+        }
+        //百分比手续费服务端 bcmul 截断到分，先取 6 位小数消掉浮点误差再截断
+        const fee = limit.percent ? Math.trunc(Math.round(base * limit.cost * 1e6) / 1e4) / 100 : limit.cost;
+        const amount = Math.round((base + fee) * 100) / 100;
+        if (limit.max > 0 && amount > limit.max) {
+            return {over: true, amount};
+        }
+        if (limit.min > 0 && amount < limit.min) {
+            return {over: false, amount};
+        }
+        return null;
+    }
+
+    const _money = v => format.currencySymbol() + format.amountRemoveTrailingZeros(v);
+    const _fill = (text, vars) => text.replace(/\{(\w+)\}/g, (m, k) => vars.hasOwnProperty(k) ? vars[k] : m);
+
+    function _PayHint(limit, breach) {
+        if (breach) {
+            return breach.over ? _fill(i18n('超出上限 {amount}'), {amount: _money(limit.max)}) : _fill(i18n('低于下限 {amount}'), {amount: _money(limit.min)});
+        }
+        if (limit.min && limit.max) {
+            return _fill(i18n('单笔 {min}–{max}'), {min: _money(limit.min), max: _money(limit.max)});
+        }
+        return limit.max ? _fill(i18n('单笔最高 {amount}'), {amount: _money(limit.max)}) : _fill(i18n('单笔最低 {amount}'), {amount: _money(limit.min)});
+    }
+
+    function _PayReason(limit, breach) {
+        const vars = {name: limit.name, limit: _money(breach.over ? limit.max : limit.min), amount: _money(breach.amount)};
+        return breach.over ? _fill(i18n('{name} 单笔最高 {limit}，本次需支付 {amount}，请更换其他支付方式'), vars) : _fill(i18n('{name} 单笔最低 {limit}，本次需支付 {amount}，请更换其他支付方式'), vars);
+    }
+
+    //状态样式与 recharge.js、acg.js 共用同一个 id，只认 acg-pay-* 自有类，套在哪个主题的按钮上都不改原有外观
+    function _PayLimitStyle() {
+        if (document.getElementById('acg-pay-limit-style')) {
+            return;
+        }
+        const style = document.createElement('style');
+        style.id = 'acg-pay-limit-style';
+        style.textContent = '.acg-pay-label{display:inline-block;min-width:0;max-width:100%;vertical-align:middle;text-align:start}' +
+            '.acg-pay-name{display:block;overflow:hidden;text-overflow:ellipsis}' +
+            '.acg-pay-limit{display:block;margin-top:2px;font-size:11px;font-size:max(11px,.78em);font-weight:500;line-height:1.3;letter-spacing:0;white-space:normal;opacity:.66;font-variant-numeric:tabular-nums}' +
+            '.acg-pay-limited>img,.acg-pay-limited .acg-pay-name,.acg-pay-limit{transition:opacity .2s ease,filter .2s ease,color .2s ease}' +
+            '.acg-pay-limited{vertical-align:middle}' +
+            ':has(>.acg-pay-limited)>*{vertical-align:middle}' +
+            '.acg-pay-off{cursor:not-allowed!important}' +
+            '.acg-pay-off>img,.acg-pay-off .acg-pay-name{opacity:.42;filter:grayscale(1)}' +
+            '.acg-pay-off .acg-pay-limit{opacity:1;color:#c8383e;color:color-mix(in srgb,#e5484d 74%,currentColor)}' +
+            '.acg-pay-off::after{filter:opacity(.45)}' +
+            '.acg-pay-off:hover,.acg-pay-off:active{transform:none!important}' +
+            '@media (prefers-reduced-motion:reduce){.acg-pay-limited>img,.acg-pay-limited .acg-pay-name,.acg-pay-limit{transition:none}}';
+        document.head.appendChild(style);
+    }
+
+    //每次询价后按当前总价重算；首次询价回来之前只显示范围、不置灰
+    function _PaintPayLimits() {
+        $(`.pay-list .pay.acg-pay-limited`).each(function () {
+            const limit = _payLimits[$(this).attr("data-id")];
+            const breach = _available ? _PayBreach(limit, _price) : null;
+            $(this).toggleClass("acg-pay-off", !!breach)
+                .attr("aria-disabled", breach ? "true" : null)
+                .attr("title", breach ? _PayReason(limit, breach) : null)
+                .find(".acg-pay-limit").text(limit ? _PayHint(limit, breach) : "");
+        });
+    }
+
+    //<a> 没有 href 键盘够不着：补了 tabindex，回车/空格等同点击
+    function _PayKey(e) {
+        if ((e.key === "Enter" || e.key === " ") && !e.repeat) {
+            e.preventDefault();
+            this.click();
+        }
+    }
+
     function _SetPayList() {
         const $payList = $(`.pay-list`);
         util.post({
             url: `/user/api/index/pay?itemId=${_item.id}`,
             done: res => {
                 res.data.forEach(item => {
-                    $payList.append(`<a class="pay" data-id="${esc(item.id)}"><img src="${esc(item.icon)}"><span>${esc(i18n(item.name))}</span></a>`);
+                    const limit = _PayLimit(item), name = esc(i18n(item.name));
+                    limit && (_payLimits[String(item.id)] = limit);
+                    $(limit
+                        ? `<a class="pay acg-pay-limited" data-id="${esc(item.id)}" role="button" tabindex="0"><img src="${esc(item.icon)}"><span class="acg-pay-label"><span class="acg-pay-name">${name}</span><small class="acg-pay-limit"></small></span></a>`
+                        : `<a class="pay" data-id="${esc(item.id)}" role="button" tabindex="0"><img src="${esc(item.icon)}"><span>${name}</span></a>`
+                    ).on("keydown", _PayKey).appendTo($payList);
                 });
+                if (Object.keys(_payLimits).length > 0) {
+                    _PayLimitStyle();
+                    _PaintPayLimits();
+                }
             },
             loader: false
         });
 
         $(document).on("click", `.pay-list .pay`, function () {
+            //超出单笔限额：直接说明原因、不去下单
+            const limit = _payLimits[$(this).attr("data-id")];
+            const breach = _available && !_pricing ? _PayBreach(limit, _price) : null;
+            if (breach) {
+                message.error(_PayReason(limit, breach));
+                return;
+            }
+
             let post = _getPostData();
             post["pay_id"] = $(this).data("id");
             util.post("/user/api/order/trade", post, res => {

@@ -304,7 +304,7 @@
         }
 
         html[data-admin-layout="desktop"][data-theme] .store-toolbar
-            :is(.update-pro, .bind-pro).admin-mobile-store-enterprise-cta {
+            :is(.update-pro, .bind-pro, .rebind-all).admin-mobile-store-enterprise-cta {
             position: relative;
             isolation: isolate;
             display: grid !important;
@@ -332,7 +332,7 @@
             color: var(--md-on-primary) !important;
         }
 
-        html[data-admin-layout="desktop"][data-theme] .store-toolbar .bind-pro.admin-mobile-store-enterprise-cta {
+        html[data-admin-layout="desktop"][data-theme] .store-toolbar :is(.bind-pro, .rebind-all).admin-mobile-store-enterprise-cta {
             flex: 0 1 340px;
             width: min(100%, 340px);
             max-width: 340px;
@@ -343,7 +343,7 @@
         }
 
         html[data-admin-layout="desktop"][data-theme] .store-toolbar
-            :is(.update-pro, .bind-pro).admin-mobile-store-enterprise-cta:hover {
+            :is(.update-pro, .bind-pro, .rebind-all).admin-mobile-store-enterprise-cta:hover {
             transform: translateY(-1px);
         }
 
@@ -352,20 +352,20 @@
             box-shadow: 0 19px 36px -20px rgba(var(--md-primary-rgb), .9) !important;
         }
 
-        html[data-admin-layout="desktop"][data-theme] .store-toolbar .bind-pro.admin-mobile-store-enterprise-cta:hover {
+        html[data-admin-layout="desktop"][data-theme] .store-toolbar :is(.bind-pro, .rebind-all).admin-mobile-store-enterprise-cta:hover {
             border-color: color-mix(in srgb, var(--md-primary) 42%, var(--md-surface)) !important;
             background: color-mix(in srgb, var(--md-primary) 12%, var(--md-surface)) !important;
             box-shadow: 0 15px 28px -24px rgba(var(--md-primary-rgb), .74) !important;
         }
 
         html[data-admin-layout="desktop"][data-theme] .store-toolbar
-            :is(.update-pro, .bind-pro).admin-mobile-store-enterprise-cta:active {
+            :is(.update-pro, .bind-pro, .rebind-all).admin-mobile-store-enterprise-cta:active {
             filter: saturate(.95);
             transform: translateY(0) scale(.988);
         }
 
         html[data-admin-layout="desktop"][data-theme] .store-toolbar
-            :is(.update-pro, .bind-pro).admin-mobile-store-enterprise-cta > .material-icons-outlined:first-child {
+            :is(.update-pro, .bind-pro, .rebind-all).admin-mobile-store-enterprise-cta > .material-icons-outlined:first-child {
             display: grid;
             width: 27px;
             height: 27px;
@@ -808,6 +808,8 @@
                         <button type="button" class="btn btn-sm btn-light-danger me-3 update-pro" style="display: none;"><i class="fa-duotone fa-regular fa-circle-yen"></i>#{t("开通企业版(免费使用所有插件/获得技术支持)")}
                         </button>
                         <button type="button" class="btn btn-sm btn-light-primary me-3 bind-pro" style="display: none;"><i class="fa-duotone fa-regular fa-lock-hashtag"></i> #{t("绑定专业版/企业版")}
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light-primary me-3 rebind-all" style="display: none;"><i class="fa-duotone fa-regular fa-arrows-rotate"></i> #{t("一键授权至本机")}
                         </button>
                     </div>
                 </div>

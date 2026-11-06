@@ -845,19 +845,36 @@ html.shop-compact .shop-nav__right {
 }
 
 /* ---------- 商品详情页 ---------- */
+/* 商品图按原比例完整显示：卡片不跟右侧一起拉高（规格一多下面会空一大块），
+   也不裁切填满（会把图上的文字和主体切掉）。桌面版往下滚时图片停在顶部（#1175） */
 .acg-cover {
     border-radius: 18px;
     overflow: hidden;
     background: var(--glass-bg-soft);
     border: 1px solid var(--glass-border-soft);
+    height: auto;
+    align-self: flex-start;
 }
 
 .item-cover {
     width: 100%;
-    height: 100%;
-    max-height: 460px;
-    object-fit: cover;
+    height: auto;
+    max-height: min(640px, 76vh);
+    object-fit: contain;
     display: block;
+}
+
+@media (min-width: 992px) {
+    /* 吸顶要求祖先不是滚动容器：overflow:hidden 会让 sticky 失效，clip 一样裁圆角但不建滚动容器 */
+    .item-panel {
+        overflow: hidden;
+        overflow: clip;
+    }
+
+    .acg-cover {
+        position: sticky;
+        top: 92px;
+    }
 }
 
 .item-detail .panel-body :is(h1, h2, h3, h4, h5, h6) {

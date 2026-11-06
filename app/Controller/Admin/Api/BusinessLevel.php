@@ -6,6 +6,7 @@ namespace App\Controller\Admin\Api;
 
 use App\Controller\Base\API\Manage;
 use App\Entity\Query\Get;
+use App\Model\Config;
 use App\Interceptor\ManageSession;
 use App\Model\ManageLog;
 use App\Service\Query;
@@ -194,6 +195,23 @@ class BusinessLevel extends Manage
      * @throws NotFoundException
      * @throws \ReflectionException
      */
+    /**
+     * 会员中心要不要显示供货手续费（全站一个开关）。只影响显示，费率照常扣。
+     * 老站没有这个键时就是显示，所以不用迁移。
+     *
+     * @throws JSONException
+     */
+    public function feeVisibility(): array
+    {
+        $visible = $_POST['visible'] ?? null;
+        if (!is_string($visible) || !in_array($visible, ['0', '1'], true)) {
+            throw new JSONException('参数不正确');
+        }
+        Config::put('business_fee_hidden', $visible === '1' ? '0' : '1');
+        ManageLog::log($this->getManage(), $visible === '1' ? '[修改]向会员显示商户等级手续费' : '[修改]向会员隐藏商户等级手续费');
+        return $this->json(200, '保存成功');
+    }
+
     public function data(): array
     {
         $map = $_POST;

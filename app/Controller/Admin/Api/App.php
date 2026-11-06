@@ -576,6 +576,15 @@ class App extends Manage
     }
 
     /**
+     * 一键授权至本机：先给计划，前端确认后逐条调 unbind / bindLevel（#1144）
+     * @return array
+     */
+    public function rebindPlan(): array
+    {
+        return $this->json(data: $this->app->rebindPlan());
+    }
+
+    /**
      * @throws JSONException
      */
     public function setServer(): array

@@ -48,8 +48,8 @@
     const translated = (text) => Object.prototype.hasOwnProperty.call(dict, text) ? dict[text] : text;
     const FIELD_ERRORS = [
         ["验证码错误", () => captcha],
+        ["邮箱或密码错误", () => pass],
         ["密码错误", () => pass],
-        ["该邮箱不存在", () => user],
         ["谷歌验证码错误", () => code]
     ];
 

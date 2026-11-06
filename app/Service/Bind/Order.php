@@ -30,6 +30,7 @@ use App\Util\PayConfig;
 use App\Util\PayFactory;
 use App\Util\PayProfile;
 use App\Util\PurchaseLimit;
+use App\Util\SharedTradeFailure;
 use App\Util\Sku;
 use App\Util\Str;
 use Illuminate\Database\Capsule\Manager as DB;
@@ -75,6 +76,46 @@ class Order implements \App\Service\Order
 
     #[Inject]
     private Email $email;
+
+    /**
+     * 向上游下单失败时怎么办（#1172）。默认照旧抛出，整单回滚；
+     * 网关付款回调里钱已经收到了，一律挂起成「已付款、待发货」，等站长重新取货；
+     * 余额购买时上游明确拒绝就回滚（会员不扣钱），说不准上游有没有成交的才挂起。
+     */
+    private const SHARED_FAIL_THROW = 0;
+    private const SHARED_FAIL_HOLD_UNCERTAIN = 1;
+    private const SHARED_FAIL_HOLD_ALL = 2;
+
+    private int $sharedFailMode = self::SHARED_FAIL_THROW;
+
+    /** 挂起的订单给买家看的提示 */
+    public const SHARED_HOLD_SECRET = '上游发货遇到问题，商家正在处理，请稍后刷新查看或联系客服';
+
+    private function withSharedFailMode(int $mode, callable $run): mixed
+    {
+        $previous = $this->sharedFailMode;
+        $this->sharedFailMode = $mode;
+        try {
+            return $run();
+        } finally {
+            $this->sharedFailMode = $previous;
+        }
+    }
+
+    private function shouldHoldSharedFailure(JSONException $e): bool
+    {
+        return match ($this->sharedFailMode) {
+            self::SHARED_FAIL_HOLD_ALL => true,
+            self::SHARED_FAIL_HOLD_UNCERTAIN => $e instanceof SharedTradeFailure && $e->mayHaveSucceeded(),
+            default => false,
+        };
+    }
+
+    private static function sharedFailureReason(JSONException $e): string
+    {
+        $reason = $e instanceof SharedTradeFailure ? $e->detail() : trim(strip_tags($e->getMessage()));
+        return mb_substr($reason !== '' ? $reason : '上游下单失败', 0, 255);
+    }
 
     public function calcAmount(int $owner, int $num, Commodity $commodity, ?UserGroup $group, ?string $race = null, bool $disableSubstation = false, ?array $sku = []): float
     {
@@ -828,6 +869,8 @@ class Order implements \App\Service\Order
             $callbackDomain = $clientDomain;
         }
 
+        //挂起订单要写 shared_error；补列是 DDL，会隐式提交，必须在事务外做
+        \App\Util\Schema::ensureOrderSharedError();
         DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
         $result = Db::transaction(function () use ($commodity, $rent, $rebate, $divideAmount, $business, $sku, $requestNo, $user, $userGroup, $num, $contact, $device, $amount, $owner, $pay, $cardId, $password, $coupon, $from, $promotion, $widget, $race, $callbackDomain, $clientDomain) {
             $lockedCommodity = $this->lockCommodityForOrder($commodity);
@@ -938,7 +981,7 @@ class Order implements \App\Service\Order
                 }
                 $order->amount = "0.00";
                 $order->save();
-                $secret = $this->orderSuccess($order);
+                $secret = $this->withSharedFailMode(self::SHARED_FAIL_HOLD_UNCERTAIN, fn() => $this->orderSuccess($order));
 
                 $url = $owner == 0
                     ? $clientDomain . '/user/index/query?tradeNo=' . $order->trade_no
@@ -964,12 +1007,15 @@ class Order implements \App\Service\Order
                     Bill::create($session, $order->amount, Bill::TYPE_SUB, "商品下单[{$order->trade_no}]");
 
                     $order->save();
-                    $secret = $this->orderSuccess($order);
+                    $secret = $this->withSharedFailMode(self::SHARED_FAIL_HOLD_UNCERTAIN, fn() => $this->orderSuccess($order));
 
                     $url = $clientDomain . '/user/personal/purchaseRecord?tradeNo=' . $order->trade_no;
                 } else {
                     $order->pay_cost = $pay->cost_type == 0 ? $pay->cost : (new Decimal($order->amount, 2))->mul($pay->cost)->getAmount();
                     $order->amount = (new Decimal($order->amount, 2))->add($order->pay_cost)->getAmount();
+
+                    //接口单笔限额按含手续费的实付金额判断；在事务里抛出，优惠券消耗等一并回滚（#1129）
+                    \App\Util\PayLimit::assert($pay, $order->amount);
 
                     if ($owner == 0) {
                         $returnUrl = $clientDomain . '/user/index/query?tradeNo=' . $order->trade_no;
@@ -1138,7 +1184,15 @@ class Order implements \App\Service\Order
             $order->delivery_status = 0;
             $order->secret = $risk->message("订单正在人工审核中，通过后会立即发货，请耐心等待。");
             $order->save();
-            hook(Hook::USER_API_ORDER_PAY_AFTER, $commodity, $order, $order->pay);
+            //告诉订阅方「这次是发货被挂起」：审核放行时会重跑本方法、同一笔订单再触发一次。
+            //通知类照常发「已付款」；向上游下单 / 交付类插件这次要跳过，否则审核没过就把货交出去、放行后再重复下单（#976）。
+            //不加第 4 个参数：已有插件把 0x18 的第 4 个位置当成自己的内部参数
+            \App\Util\Context::set(Hook::CONTEXT_DELIVERY_HELD, (int)$order->id);
+            try {
+                hook(Hook::USER_API_ORDER_PAY_AFTER, $commodity, $order, $order->pay);
+            } finally {
+                \App\Util\Context::set(Hook::CONTEXT_DELIVERY_HELD, 0);
+            }
             //跳过：拉卡密、扣库存、分成与返利账单、发货邮件 ——
             //这些副作用一个都没执行，所以审核通过后重跑一次恰好是对的
             return (string)$order->secret;
@@ -1147,8 +1201,26 @@ class Order implements \App\Service\Order
         $shared = $commodity->shared;
 
         if ($shared) {
-            $order->secret = $this->shared->trade($shared, $commodity, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, (string)$order->password, (string)$order->race, $order->sku ?: [], $order->widget, $order->trade_no);
-            $order->delivery_status = 1;
+            \App\Util\Context::set(Hook::CONTEXT_SHARED_TRADE, null);
+            try {
+                $order->secret = $this->shared->trade($shared, $commodity, $order->contact, $order->card_num, (int)$order->card_id, $order->create_device, (string)$order->password, (string)$order->race, $order->sku ?: [], $order->widget, $order->trade_no);
+                $held = false;
+            } catch (JSONException $e) {
+                if (!$this->shouldHoldSharedFailure($e)) {
+                    throw $e;
+                }
+                //付款照样记下，订单留在待发货，原因给站长看；后台「重新向上游取货」会先按请求号查、
+                //查不到才用同一个请求号再下单，所以不会买第二次（#1172）
+                $order->secret = self::SHARED_HOLD_SECRET;
+                $order->delivery_status = 0;
+                $order->shared_error = self::sharedFailureReason($e);
+                $held = true;
+            }
+            if (!$held) {
+                $order->delivery_status = 1;
+                $sharedTrade = (array)\App\Util\Context::get(Hook::CONTEXT_SHARED_TRADE) + ['trade_no' => '', 'delivery_status' => null];
+                hook(Hook::ORDER_SHARED_TRADE_AFTER, $order, $commodity, $shared, $sharedTrade);
+            }
         } else {
             if ($commodity->delivery_way == 0) {
                 $order->secret = $this->pullCardForLocal($order, $commodity);
@@ -1185,13 +1257,11 @@ class Order implements \App\Service\Order
 
         $order->save();
 
-        if ($commodity->contact_type == 2 && $commodity->send_email == 1 && $order->owner == 0) {
-            try {
-                $this->email->send($order->contact, "【发货提醒】您购买的卡密发货啦", "您购买的卡密如下：" . $order->secret);
-            } catch (\Exception|\Error $e) {
-            }
+        //对接单被插件接手（delivery_status 改回 0）时，货还没到，提醒邮件由接手方发
+        $deliveryDeferred = $shared && (int)$order->delivery_status !== 1;
+        if (!$deliveryDeferred) {
+            $this->sendDeliveryEmail($order, $commodity);
         }
-
         hook(Hook::USER_API_ORDER_PAY_AFTER, $commodity, $order, $order->pay);
 
         return (string)$order->secret;
@@ -1316,6 +1386,63 @@ class Order implements \App\Service\Order
         return $entries;
     }
 
+    /** 游客用邮箱下单、商品开了邮件通知时，把发货内容和发货留言寄给买家 */
+    private function sendDeliveryEmail(\App\Model\Order $order, Commodity $commodity): void
+    {
+        if ($commodity->contact_type == 2 && $commodity->send_email == 1 && $order->owner == 0) {
+            try {
+                $content = "您购买的卡密如下：" . $order->secret;
+                // 与订单页面保持一致：优先使用下单时的留言快照，老订单回退到商品留言。
+                $leaveMessage = \App\Model\Order::resolveLeaveMessage($order->leave_message, $commodity->leave_message);
+                if ($leaveMessage !== null) {
+                    $content .= "<br><br>发货留言：<br>" . nl2br(htmlspecialchars($leaveMessage, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
+                }
+                $this->email->send($order->contact, "【发货提醒】您购买的卡密发货啦", $content);
+            } catch (\Exception|\Error $e) {
+            }
+        }
+    }
+
+    /**
+     * 重新向上游取货（#1172）：订单已付款、但当初向上游下单失败被挂起。调用方要先锁住订单行。
+     * 先按请求号查上游，查不到才用同一个请求号重新下单，上游按请求号去重，不会买第二次。
+     * @throws JSONException
+     */
+    public function retrySharedDelivery(\App\Model\Order $order): \App\Model\Order
+    {
+        if ((int)$order->status !== 1) {
+            throw new JSONException("仅已支付订单可以重新取货");
+        }
+        if (trim((string)$order->shared_error) === '') {
+            throw new JSONException("这笔订单没有上游异常，不需要重新取货");
+        }
+        $commodity = Commodity::query()->find((int)$order->commodity_id);
+        $shared = $commodity?->shared;
+        if (!$commodity || !$shared) {
+            throw new JSONException("这笔订单的商品已经不是对接商品，请用「手动发货」处理");
+        }
+
+        \App\Util\Context::set(Hook::CONTEXT_SHARED_TRADE, null);
+        try {
+            $secret = $this->shared->retrieve($shared, $commodity, $order);
+        } catch (JSONException $e) {
+            throw new JSONException("重新取货失败：" . self::sharedFailureReason($e));
+        }
+
+        $order->secret = $secret;
+        $order->delivery_status = 1;
+        $order->shared_error = null;
+        $sharedTrade = (array)\App\Util\Context::get(Hook::CONTEXT_SHARED_TRADE) + ['trade_no' => '', 'delivery_status' => null];
+        hook(Hook::ORDER_SHARED_TRADE_AFTER, $order, $commodity, $shared, $sharedTrade);
+        if (!$order->save()) {
+            throw new JSONException("保存订单失败，请重试");
+        }
+        if ((int)$order->delivery_status === 1) {
+            $this->sendDeliveryEmail($order, $commodity);
+        }
+        return $order;
+    }
+
     public function callback(string $tradeNo, array $map): string
     {
         $tradeNo = Firewall::inst()->xssKiller($tradeNo);
@@ -1347,6 +1474,7 @@ class Order implements \App\Service\Order
         }
 
         $tradeNo = (string)$order->trade_no;
+        \App\Util\Schema::ensureOrderSharedError();
         DB::connection()->getPdo()->exec("set session transaction isolation level serializable");
         DB::transaction(function () use ($handle, $map, $callback, $tradeNo) {
             $order = \App\Model\Order::query()->where("trade_no", $tradeNo)->first();
@@ -1373,7 +1501,8 @@ class Order implements \App\Service\Order
                 $owner->recharge = $owner->recharge + $order->amount;
                 $owner->save();
             }
-            $this->orderSuccess($order);
+            //钱已经到账：向上游下单出什么错都不能让这笔付款回滚成「未支付」（#1172）
+            $this->withSharedFailMode(self::SHARED_FAIL_HOLD_ALL, fn() => $this->orderSuccess($order));
         });
         return $callback['success'];
     }

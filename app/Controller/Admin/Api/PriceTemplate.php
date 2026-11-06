@@ -43,7 +43,35 @@ class PriceTemplate extends Manage
         $get = new Get(TemplateModel::class);
         $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
         $get->setOrderBy('id', 'desc');
-        return $this->json(data: $this->query->get($get));
+        $data = $this->query->get($get);
+
+        $counts = self::boundCounts(array_map('intval', array_column($data['list'] ?? [], 'id')));
+        foreach ($data['list'] ?? [] as $index => $row) {
+            $data['list'][$index]['bound_count'] = $counts[(int)$row['id']] ?? 0;
+        }
+
+        return $this->json(data: $data);
+    }
+
+    /**
+     * 各模板绑定的主站商品数（加价模式选了这个模板，同步时也按它算价）
+     * @param int[] $templateIds
+     * @return array<int, int>
+     */
+    private static function boundCounts(array $templateIds): array
+    {
+        if ($templateIds === []) {
+            return [];
+        }
+        return Commodity::query()
+            ->where('owner', 0)
+            ->where('shared_premium_type', TemplateModel::SHARED_PREMIUM_TYPE)
+            ->whereIn('shared_premium_template', $templateIds)
+            ->groupBy('shared_premium_template')
+            ->selectRaw('shared_premium_template as template_id, count(*) as total')
+            ->pluck('total', 'template_id')
+            ->map(static fn($total): int => (int)$total)
+            ->all();
     }
 
     /**
@@ -222,10 +250,13 @@ class PriceTemplate extends Manage
             throw new JSONException('请选择加价模板');
         }
 
-        $scope = (string)($_POST['scope'] ?? 'all');
+        $scope = (string)($_POST['scope'] ?? '');
         $query = Commodity::query()->where('owner', 0);
 
         switch ($scope) {
+            case 'bound':
+                $query->where('shared_premium_type', TemplateModel::SHARED_PREMIUM_TYPE)->where('shared_premium_template', $templateId);
+                break;
             case 'category':
                 $categoryId = (int)($_POST['category_id'] ?? 0);
                 if ($categoryId <= 0) {

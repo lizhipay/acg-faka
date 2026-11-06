@@ -64,7 +64,7 @@
                             type: 'radio',
                             dict: BASE,
                             default: 0,
-                            tips: '成本价＝商品的进货价；当前售价＝商品现在的游客价。对接商品同步上游价格后，通常选「成本价」。'
+                            tips: '成本价＝商品的进货价；当前售价＝商品现在的游客价。对接商品要在共享店铺开启「成本价基准用账号拿货价」，才会按拿货价加价。'
                         },
                         {
                             title: '游客价加价方式',
@@ -203,11 +203,13 @@
                             name: 'scope',
                             type: 'radio',
                             dict: [
-                                {id: 'shared', name: '仅对接商品'},
+                                {id: 'bound', name: `${i18n('仅绑定此模板')}（${Number(row.bound_count || 0)}）`},
+                                {id: 'shared', name: '全部对接商品'},
                                 {id: 'category', name: '指定分类'},
                                 {id: 'all', name: '全部自营商品'}
                             ],
-                            default: 'shared',
+                            default: 'bound',
+                            tips: '绑定：商品的加价模式选了这个模板',
                             change: (form, value) => {
                                 value === 'category' ? form.show('category_id') : form.hide('category_id');
                             }
@@ -224,7 +226,7 @@
                     ]
                 }
             ],
-            assign: {template_id: row.id, scope: 'shared'},
+            assign: {template_id: row.id, scope: 'bound'},
             autoPosition: true,
             //分类下拉展开时会超出弹层高度，默认的 overflow 会把它裁掉，这里放它出去
             content: {
@@ -234,7 +236,7 @@
                 }
             },
             height: 'auto',
-            width: '520px',
+            width: '600px',
             confirmText: i18n('预览影响'),
             submit: (data, index) => {
                 util.post('/admin/api/priceTemplate/applyImpact', data, res => {
@@ -244,7 +246,7 @@
                     const affected = Number(impact.affected ?? total);
                     const skipped = Number(impact.skipped || 0);
                     if (total === 0) {
-                        message.alert(i18n('当前范围内没有可应用的商品'), 'warning');
+                        message.alert(i18n(data.scope === 'bound' ? '还没有商品绑定这个模板，可以在商品管理的批量设置里切换' : '当前范围内没有可应用的商品'), 'warning');
                         return;
                     }
                     if (affected === 0) {
@@ -357,6 +359,10 @@
         {
             field: 'rounding', title: '取整', class: 'nowrap',
             formatter: value => (ROUNDING.find(r => r.id === Number(value)) || {name: '-'}).name
+        },
+        {
+            field: 'bound_count', title: '绑定商品', class: 'nowrap',
+            formatter: value => Number(value) > 0 ? format.badge(`${Number(value)} ${i18n('个商品')}`, 'a-badge-primary') : '-'
         },
         {field: 'create_time', title: '创建时间', class: 'nowrap'},
         {

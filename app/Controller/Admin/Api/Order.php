@@ -9,6 +9,7 @@ use App\Consts\Manage as ManageConst;
 use App\Controller\Base\API\Manage;
 use App\Entity\Query\Get;
 use App\Interceptor\ManageSession;
+use App\Interceptor\Owner;
 use App\Model\ManageLog;
 use App\Service\Query;
 use App\Util\CardFile\Link;
@@ -26,6 +27,9 @@ class Order extends Manage
 {
     #[Inject]
     private Query $query;
+
+    #[Inject]
+    private \App\Service\Order $order;
 
     private const MAX_EXPORT_COUNT = 5000;
     private const EXPORT_PREVIEW_TTL = 180;
@@ -321,9 +325,10 @@ class Order extends Manage
         $get->setWhere($map);
         $raw = [];
         $data = $this->query->get($get, function (Builder $builder) use (&$raw) {
-            $raw['order_amount'] = (clone $builder)->sum("amount");
+            //合计不含已退款订单（#1145），列表本身照常列出它们
+            $raw['order_amount'] = (clone $builder)->unrefunded()->sum("amount");
             //手续费总额取支付通道费 pay_cost（旧 cost 列已废弃、恒为 0）。issue #903
-            $raw['order_cost'] = (clone $builder)->sum("pay_cost");
+            $raw['order_cost'] = (clone $builder)->unrefunded()->sum("pay_cost");
             return $builder->with([
                 'coupon' => function (Relation $relation) {
                     $relation->select(["id", "code"]);
@@ -335,7 +340,7 @@ class Order extends Manage
                     $relation->select(["id", "username", "avatar", "recharge"]);
                 },
                 'commodity' => function (Relation $relation) {
-                    $relation->select(["id", "name", "cover", "price", "delivery_way", "contact_type"]);
+                    $relation->select(["id", "name", "cover", "price", "delivery_way", "contact_type", "shared_id"]);
                 },
                 'pay' => function (Relation $relation) {
                     $relation->select(["id", "name", "icon"]);
@@ -381,6 +386,33 @@ class Order extends Manage
      * @return array
      * @throws JSONException
      */
+    /**
+     * 重新向上游取货（#1172）：已付款、但当初向上游下单失败被挂起的对接订单。
+     * 可能向上游再下一次单（花的是本站在上游的余额），所以只给站长本人。
+     * @throws JSONException
+     */
+    #[Interceptor(Owner::class, Interceptor::TYPE_API)]
+    public function sharedRetry(): array
+    {
+        \App\Util\Schema::ensureOrderSharedError();
+        $id = filter_var($this->request->post('id'), FILTER_VALIDATE_INT);
+        if ($id === false || $id === null || $id < 1) {
+            throw new JSONException('订单 ID 不正确，请刷新后重试');
+        }
+        //锁住订单行再去上游：同一笔订单同时点两次，第二次会等第一次做完，再看到已经不需要重试
+        $order = DB::transaction(function () use ($id): \App\Model\Order {
+            $order = \App\Model\Order::query()->where('id', $id)->lockForUpdate()->first();
+            if (!$order) {
+                throw new JSONException('订单不存在，请刷新后重试');
+            }
+            return $this->order->retrySharedDelivery($order);
+        });
+        ManageLog::log($this->getManage(), "[重新向上游取货]订单：{$order->trade_no}");
+        return $this->json(200, (int)$order->delivery_status === 1 ? '已取回发货内容' : '上游已接单，正在发货中', [
+            'delivery_status' => (int)$order->delivery_status,
+        ]);
+    }
+
     public function save(): array
     {
         $map = $this->request->post(flags: Filter::NORMAL);

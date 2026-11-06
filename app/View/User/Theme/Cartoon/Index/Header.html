@@ -60,6 +60,9 @@
             </div>
 
             <div class="shop-nav__right">
+                #{if $config.service_url}
+                    <a class="shop-icon-btn" href="#{$config.service_url}" target="_blank" rel="noopener noreferrer" title="#{t('联系客服')}" aria-label="#{t('联系客服')}"><i class="fa-duotone fa-regular fa-headset"></i></a>
+                #{/if}
                 <button class="shop-icon-btn shop-theme-btn" type="button" title="#{t('主题模式')}" aria-label="#{t('主题模式')}">
                     <span class="material-icons-outlined shop-theme-ico">brightness_auto</span>
                 </button>
@@ -112,6 +115,9 @@
     #{foreach user_header_nav() as $nav}
         <a class="shop-drawer__link #{if $nav.match}#{active($nav.match)}#{/if}" href="#{$nav.url}" target="#{$nav.target}">#{user_nav_icon($nav, 'nav-icon')}#{$nav.name}</a>
     #{/foreach}
+    #{if $config.service_url}
+        <a class="shop-drawer__link" href="#{$config.service_url}" target="_blank" rel="noopener noreferrer"><i class="fa-duotone fa-regular fa-headset"></i>#{t("联系客服")}</a>
+    #{/if}
     #{if $user}
         <a class="shop-drawer__link" href="/user/dashboard/index"><i class="fa-duotone fa-regular fa-user"></i>#{t("个人中心")}</a>
         <a class="shop-drawer__link" href="/user/recharge/index"><i class="fa-duotone fa-regular fa-wallet"></i>#{t("钱包充值")}</a>

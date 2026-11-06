@@ -97,6 +97,163 @@
         return root;
     };
 
+    // Refund to the member's balance (#1145): owner only, the API is guarded by the Owner interceptor too.
+    const isOwner = typeof getVar === 'function' && getVar('MANAGE_OWNER') === true;
+    const REFUND_STYLE_ID = 'md-order-refund-style';
+    const ensureRefundStyle = () => {
+        if (document.getElementById(REFUND_STYLE_ID)) return;
+        const style = document.createElement('style');
+        style.id = REFUND_STYLE_ID;
+        style.textContent = `
+            .md-refund{padding:14px 20px 18px;color:var(--md-on-surface);font-size:13px;line-height:1.6}
+            .md-refund__meta{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--md-on-surface-med);font-size:12px;margin-bottom:12px}
+            .md-refund__meta b{color:var(--md-on-surface);font-weight:600;font-variant-numeric:tabular-nums}
+            .md-refund__hero{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:var(--md-radius-lg);
+                background:rgba(var(--md-primary-rgb),.08);margin-bottom:12px}
+            .md-refund__hero-label{color:var(--md-on-surface-med);font-size:12px}
+            .md-refund__hero-amount{font-size:24px;font-weight:700;color:var(--md-primary);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+            .md-refund__seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:3px;border-radius:calc(var(--md-radius) + 3px);background:var(--md-hover-overlay);margin-bottom:6px}
+            .md-refund__seg label{position:relative;margin:0;padding:8px 10px;border-radius:var(--md-radius);text-align:center;cursor:pointer;font-weight:600;
+                color:var(--md-on-surface-med);transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+            .md-refund__seg input{position:absolute;opacity:0;pointer-events:none}
+            .md-refund__seg label.is-on{background:var(--md-surface);color:var(--md-primary);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+            .md-refund__seg label:has(input:focus-visible){outline:2px solid var(--md-primary);outline-offset:1px}
+            .md-refund__seg small{display:block;font-weight:500;font-size:11px;opacity:.75;font-variant-numeric:tabular-nums}
+            .md-refund__hint{color:var(--md-on-surface-med);font-size:12px;margin:0 0 12px}
+            .md-refund__title{font-size:12px;font-weight:600;color:var(--md-on-surface-med);margin:14px 0 6px;letter-spacing:.02em}
+            .md-refund__list{list-style:none;margin:0;padding:0;border:1px solid var(--md-divider);border-radius:var(--md-radius-lg);overflow:hidden}
+            .md-refund__item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px}
+            .md-refund__item + .md-refund__item{border-top:1px solid var(--md-divider)}
+            .md-refund__icon{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;margin-top:1px;
+                background:rgba(var(--md-primary-rgb),.12);color:var(--md-primary)}
+            .md-refund__item.is-short .md-refund__icon{background:rgba(var(--md-warning-rgb),.16);color:var(--md-warning)}
+            .md-refund__body{flex:1;min-width:0}
+            .md-refund__row{display:flex;justify-content:space-between;gap:10px}
+            .md-refund__amount{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+            .md-refund__sub{color:var(--md-on-surface-med);font-size:12px}
+            .md-refund__item.is-short .md-refund__sub{color:var(--md-warning)}
+            .md-refund__skip{display:flex;gap:8px;align-items:flex-start;margin:8px 0 0;padding:8px 10px;border-radius:var(--md-radius);
+                background:rgba(var(--md-warning-rgb),.10);font-size:12px;cursor:pointer;line-height:1.5}
+            .md-refund__skip input{margin-top:3px;accent-color:var(--md-warning)}
+            .md-refund__note{margin:12px 0 0;color:var(--md-on-surface-med);font-size:12px}
+            .md-refund__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+            .md-refund__btn{border:0;border-radius:999px;padding:9px 18px;font-weight:600;font-size:13px;cursor:pointer;transition:filter .15s ease,opacity .15s ease}
+            .md-refund__btn--ghost{background:var(--md-hover-overlay);color:var(--md-on-surface)}
+            .md-refund__btn--primary{background:var(--md-error);color:#fff}
+            .md-refund__btn:hover{filter:brightness(1.06)}
+            .md-refund__btn:focus-visible{outline:2px solid var(--md-primary);outline-offset:2px}
+            .md-refund__btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
+            .admin-mobile-layer-popup .md-refund__actions{position:sticky;bottom:0;background:var(--md-surface);padding-top:10px}
+            .admin-mobile-layer-popup .md-refund__btn{flex:1;padding:12px 18px}
+        `;
+        document.head.appendChild(style);
+    };
+    const refundMoney = value => format.currencySymbol() + format.amountRemoveTrailingZeros(Number(value || 0).toFixed(2));
+    const openRefund = row => {
+        util.post({
+            url: '/admin/api/refund/preview',
+            data: {order_id: row.id},
+            done: res => showRefund(res.data || {})
+        });
+    };
+    const showRefund = data => {
+        ensureRefundStyle();
+        const fee = parseFloat(data.pay_cost) || 0;
+        const withoutFee = parseFloat(data.refund_without_fee) || 0;
+        const hasChoice = fee > 0 && withoutFee > 0;
+        const roleName = role => role === 'seller' ? i18n('卖家') : i18n('推广人');
+        const buyer = escapeHtml(data.buyer?.username || '-');
+        const items = [];
+        items.push({key: 'balance'});
+        if ((parseFloat(data.vigor) || 0) > 0) {
+            items.push({
+                html: `<div class="md-refund__row"><span>${i18n('扣回买家的元气')}</span><span class="md-refund__amount">${escapeHtml(format.amountRemoveTrailingZeros(Number(data.vigor).toFixed(2)))}</span></div>
+                       <div class="md-refund__sub">${i18n('通道付款时按订单金额加过元气，退款一并扣回')}</div>`,
+                icon: 'fa-bolt'
+            });
+        }
+        (data.clawbacks || []).forEach(c => {
+            const who = `${roleName(c.role)} ${escapeHtml(c.username || ('#' + c.user_id))}`;
+            if (!c.exists) {
+                items.push({html: `<div class="md-refund__row"><span>${who}</span><span class="md-refund__amount">-</span></div><div class="md-refund__sub">${i18n('账户已不存在，无从扣回')}</div>`, icon: 'fa-user-slash'});
+                return;
+            }
+            items.push({
+                short: !c.enough,
+                role: c.role,
+                html: `<div class="md-refund__row"><span>${i18n('扣回')}${who} ${i18n('的收益')}</span><span class="md-refund__amount">${i18n('硬币')} ${escapeHtml(format.amountRemoveTrailingZeros(Number(c.amount).toFixed(2)))}</span></div>
+                       <div class="md-refund__sub">${c.enough
+                    ? `${i18n('当前硬币')} ${escapeHtml(format.amountRemoveTrailingZeros(Number(c.coin).toFixed(2)))}`
+                    : `${i18n('当前硬币只有')} ${escapeHtml(format.amountRemoveTrailingZeros(Number(c.coin).toFixed(2)))}${i18n('，不够扣回')}`}</div>
+                       ${c.enough ? '' : `<label class="md-refund__skip"><input type="checkbox" data-refund-skip="${escapeHtml(c.role)}"><span>${i18n('仍然退款，这笔收益不扣回（差额由你承担）')}</span></label>`}`,
+                icon: c.role === 'seller' ? 'fa-store' : 'fa-user-group'
+            });
+        });
+
+        const content = `<div class="md-refund">
+            <div class="md-refund__meta"><span>${i18n('订单')} <b>${escapeHtml(data.trade_no)}</b></span><span>${i18n('买家')} <b>${buyer}</b></span><span>${i18n('订单金额')} <b>${refundMoney(data.amount)}</b></span></div>
+            <div class="md-refund__hero"><span class="md-refund__hero-label">${i18n('退回会员余额')}</span><span class="md-refund__hero-amount" data-refund-amount></span></div>
+            ${hasChoice ? `<div class="md-refund__seg" role="radiogroup" aria-label="${escapeHtml(i18n('支付手续费'))}">
+                <label class="is-on"><input type="radio" name="md-refund-fee" value="0" checked>${i18n('扣除手续费')}<small>${refundMoney(withoutFee)}</small></label>
+                <label><input type="radio" name="md-refund-fee" value="1">${i18n('全额退款')}<small>${refundMoney(data.refund_full)}</small></label>
+            </div>
+            <p class="md-refund__hint">${i18n('其中支付手续费')} ${refundMoney(fee)}${i18n('，在用户付款时已进入支付通道，不会退回来。买家反悔一般扣除，发不出货建议全额退。')}</p>` : ''}
+            <div class="md-refund__title">${i18n('退款后会同时')}</div>
+            <ul class="md-refund__list">${items.map(item => `<li class="md-refund__item${item.short ? ' is-short' : ''}">
+                <span class="md-refund__icon"><i class="fa-duotone fa-regular ${item.icon || 'fa-wallet'}"></i></span>
+                <div class="md-refund__body">${item.key === 'balance'
+                    ? `<div class="md-refund__row"><span>${i18n('退回')} ${buyer} ${i18n('的余额')}</span><span class="md-refund__amount" data-refund-amount></span></div><div class="md-refund__sub">${i18n('不计入元气')}</div>`
+                    : item.html}</div></li>`).join('')}</ul>
+            <p class="md-refund__note">${i18n('退款只退到会员余额，支付通道里的钱不会原路退回；退款后无法撤销。')}</p>
+            <div class="md-refund__actions">
+                <button type="button" class="md-refund__btn md-refund__btn--ghost" data-refund-cancel>${i18n('取消')}</button>
+                <button type="button" class="md-refund__btn md-refund__btn--primary" data-refund-submit></button>
+            </div>
+        </div>`;
+
+        const index = openControllerLayer({
+            ...(mobileAdminEnabled() ? mobileSheetOptions('md-order-refund-layer') : {area: '480px', skin: 'md-order-refund-layer'}),
+            type: 1,
+            title: `${util.icon('fa-duotone fa-regular fa-money-bill-transfer')} ${i18n('退款到会员余额')}`,
+            shadeClose: true,
+            content: content,
+            success: layero => {
+                const $root = layero.find('.md-refund');
+                const refundFee = () => hasChoice ? $root.find('input[name="md-refund-fee"]:checked').val() === '1' : true;
+                const sync = () => {
+                    const amount = refundFee() ? data.refund_full : (hasChoice ? data.refund_without_fee : data.refund_full);
+                    $root.find('[data-refund-amount]').text(refundMoney(amount));
+                    $root.find('.md-refund__seg label').each(function () {
+                        $(this).toggleClass('is-on', $(this).find('input').prop('checked'));
+                    });
+                    const blocked = $root.find('[data-refund-skip]').toArray().some(box => !box.checked);
+                    $root.find('[data-refund-submit]').prop('disabled', blocked).text(`${i18n('确认退款')} ${refundMoney(amount)}`);
+                };
+                $root.on('change', 'input', sync);
+                $root.on('click', '[data-refund-cancel]', () => layer.close(index));
+                $root.on('click', '[data-refund-submit]', function () {
+                    const $btn = $(this).prop('disabled', true);
+                    const skip = $root.find('[data-refund-skip]:checked').toArray().map(box => box.getAttribute('data-refund-skip'));
+                    util.post({
+                        url: '/admin/api/refund/make',
+                        data: {order_id: data.id, refund_fee: refundFee() ? 1 : 0, skip: skip},
+                        done: res => {
+                            layer.close(index);
+                            message.success(res.msg);
+                            table.refresh();
+                        },
+                        error: res => {
+                            message.error(res?.msg || i18n('退款失败'));
+                            sync();
+                        }
+                    });
+                });
+                sync();
+                $root.find(hasChoice ? 'input[name="md-refund-fee"]:checked' : '[data-refund-submit]').trigger('focus');
+            }
+        });
+    };
+
     const mobileDeliverySubmit = order => {
         let confirming = false;
         let requesting = false;
@@ -197,6 +354,21 @@
     }
 
 
+    //已付款但向上游下单失败的对接订单（#1172）：先查后买、沿用同一个请求号，不会重复扣款
+    const retrySharedDelivery = map => {
+        const reason = String(map.shared_error ?? '').trim();
+        message.ask(
+            `<div style="text-align:left;line-height:1.75">${i18n('上次失败原因：')}<b>${escapeHtml(reason)}</b><br><br>${i18n('会先向上游查询这笔订单，查得到就直接取回；查不到才重新下单，并沿用同一个请求号，上游已经有这笔订单时不会重复扣款。')}</div>`,
+            () => util.post('/admin/api/order/sharedRetry', {id: map.id}, res => {
+                if (!controllerActive) return;
+                message.success(res.msg || i18n('已取回发货内容'));
+                table && table.refresh();
+            }),
+            i18n('重新向上游取货？'),
+            i18n('重新取货')
+        );
+    };
+
     table.setColumns([
         {checkbox: true}
         , {
@@ -210,7 +382,12 @@
                 const time = createTime
                     ? `<span class="md-order-id__time" title="${i18n('下单时间')}">${escapeHtml(createTime)}</span>`
                     : '';
-                return `<div class="md-order-id"><span class="md-order-trade-no"><span class="md-order-trade-no__value">${escapeHtml(tradeNo)}</span><button type="button" class="md-order-trade-no__copy" aria-label="${i18n('复制订单号')}" title="${i18n('复制订单号')}">${util.icon("fa-duotone fa-regular fa-copy")}</button></span>${time}</div>`;
+                //已付款但向上游下单失败、等待重新取货（#1172）：原因放在悬停提示里
+                const sharedError = String(row?.shared_error ?? '').trim();
+                const held = sharedError && Number(row?.status) === 1
+                    ? `<span class="a-badge a-badge-warning" title="${escapeHtml(sharedError)}">${i18n('上游取货失败')}</span>`
+                    : '';
+                return `<div class="md-order-id"><span class="md-order-trade-no"><span class="md-order-trade-no__value">${escapeHtml(tradeNo)}</span><button type="button" class="md-order-trade-no__copy" aria-label="${i18n('复制订单号')}" title="${i18n('复制订单号')}">${util.icon("fa-duotone fa-regular fa-copy")}</button></span>${time}${held}</div>`;
             },
             events: {
                 'click .md-order-trade-no__copy': (event, value) => {
@@ -270,7 +447,11 @@
                 const feeRow = fee > 0
                     ? `<div class="md-pair__row"><span class="md-pair__k">${i18n('含手续费')}</span><span class="md-pair__v md-pair__v--muted">${format.currencySymbol()}${format.amountRemoveTrailingZeros(fee)}</span></div>`
                     : '';
-                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">${i18n('数量')}</span><span class="md-pair__v">${__.card_num ?? '-'}</span></div><div class="md-pair__row"><span class="md-pair__k">${i18n('金额')}</span>${amountHtml}</div>${feeRow}</div>`;
+                //已退款到会员余额（#1145）：标在金额下面，统计已不再计入这单
+                const refundRow = Number(__.refund_status) === 1
+                    ? `<div class="md-pair__row"><span class="md-pair__k">${i18n('已退款')}</span><span class="md-pair__v" style="color:var(--md-error);font-weight:600">${format.currencySymbol()}${format.amountRemoveTrailingZeros(parseFloat(__.refund_amount) || amt)}</span></div>`
+                    : '';
+                return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__k">${i18n('数量')}</span><span class="md-pair__v">${__.card_num ?? '-'}</span></div><div class="md-pair__row"><span class="md-pair__k">${i18n('金额')}</span>${amountHtml}</div>${feeRow}${refundRow}</div>`;
             }
         }
         , {
@@ -375,6 +556,14 @@
                         modal(`${util.icon("fa-duotone fa-regular fa-truck-ramp-box")} ${i18n('发货内容')}`, map);
                     }
                 },
+                //Mobile recipes address buttons by index (secret:N): append new buttons, never insert
+                {
+                    icon: `fa-duotone fa-regular fa-rotate`,
+                    class: "text-warning",
+                    title: "重新向上游取货",
+                    show: _ => isOwner && Number(_.status) === 1 && String(_.shared_error ?? '').trim() !== '',
+                    click: (event, value, map) => retrySharedDelivery(map)
+                },
 
             ]
         }
@@ -407,6 +596,26 @@
                 }
             ]
         }
+        , {
+            field: 'refund', title: '退款', type: "button", buttons: [
+                {
+                    icon: `fa-duotone fa-regular fa-money-bill-transfer`,
+                    class: "text-primary",
+                    title: "退款",
+                    //已支付、未退款、有会员账户（游客单没有余额可退）
+                    show: _ => isOwner && Number(_.status) === 1 && Number(_.refund_status) !== 1
+                        && Number((_.owner && typeof _.owner === 'object') ? _.owner.id : _.owner) > 0,
+                    click: (event, value, map) => openRefund(map)
+                },
+                {
+                    icon: `fa-duotone fa-regular fa-circle-check`,
+                    class: "text-success",
+                    title: "已退款",
+                    show: _ => Number(_.refund_status) === 1,
+                    click: (event, value, map) => message.info(`${i18n('已退款')} ${refundMoney(parseFloat(map.refund_amount) || map.amount)}${map.refund_time ? ' · ' + escapeHtml(map.refund_time) : ''}`)
+                }
+            ]
+        }
     ]);
 
     // 双击订单号 → MUI 详情弹窗（取代原 hover 黑色浮层 setFloatMessage）
@@ -435,6 +644,7 @@
         {title: "联系方式", name: "equal-contact", type: "input"},
         {title: "支付状态", name: "equal-status", type: "select", dict: "_order_status"},
         {title: "发货状态", name: "equal-delivery_status", type: "select", dict: "_order_delivery_status"},
+        {title: "退款状态", name: "equal-refund_status", type: "select", dict: [{id: 0, name: "未退款"}, {id: 1, name: "已退款"}]},
         {title: "支付方式", name: "equal-pay_id", type: "select", dict: "pay,id,name"},
         {
             title: "下单设备",

@@ -175,7 +175,8 @@ class PriceTemplate extends Model
         foreach ($levels as $groupId => $computed) {
             $existing = is_array($config[$groupId] ?? null) ? $config[$groupId] : [];
             $existing['amount'] = (float)$computed['amount'];
-            if (isset($existing['config']) && is_string($existing['config']) && trim($existing['config']) !== '') {
+            //带 rule 才按等级规则重算该等级的独立配置（后台应用模板）；店铺共享同步只给金额
+            if (isset($computed['rule'], $existing['config']) && is_string($existing['config']) && trim($existing['config']) !== '') {
                 $existing['config'] = self::applyToConfig(
                     $existing['config'],
                     $computed['rule']['type'],
@@ -190,17 +191,50 @@ class PriceTemplate extends Model
         return (string)json_encode($config, JSON_UNESCAPED_UNICODE);
     }
 
+    /**
+     * 店铺共享（接入 / 远端同步 / 自动货源）按上游商品价加价。
+     */
     public function forShared(string $config, string $price, string $userPrice, string $levelPrice = ''): array
     {
-        $base = (float)$price;
+        return $this->sharedPrices((float)$price, $userPrice, $levelPrice)
+            + ['config' => self::applyToConfig($config, $this->guest_type, (float)$this->guest_value, $this->rounding, false)];
+    }
 
+    /**
+     * 店铺共享按账号拿货价加价（模板选「成本价」，且共享店铺开了「成本价基准用账号拿货价」）。
+     *
+     * 拿货价只认调用方从可信接口取到后传入的值：$config 里的 *_factory 可能是老上游自己那层的进货价快照，
+     * 当基准会跌破真实拿货价。种类商品按种类计价，单价只用来展示，沿用上游商品价。
+     *
+     * @param array<string,mixed> $categoryFactory 种类 => 拿货价
+     */
+    public function forSharedAtFactory(string $config, string $price, string $userPrice, string $levelPrice, ?string $factoryPrice, array $categoryFactory = []): array
+    {
+        $base = is_numeric($factoryPrice) && (float)$factoryPrice > 0 ? (float)$factoryPrice : (float)$price;
+
+        return $this->sharedPrices($base, $userPrice, $levelPrice) + [
+            'config' => self::applyToConfig(
+                self::withTrustedFactory($config, $categoryFactory),
+                $this->guest_type,
+                (float)$this->guest_value,
+                $this->rounding,
+                true
+            ),
+        ];
+    }
+
+    /**
+     * 只给等级金额不给 rule：等级独立配置是站长手填的，上游没有对应的价。
+     * 以前每次同步都拿它自己再乘一遍等级规则，价格越滚越偏。
+     *
+     * @return array{price:string, user_price:string, level_price:string}
+     */
+    private function sharedPrices(float $base, string $userPrice, string $levelPrice): array
+    {
         $levels = [];
         if ($base > 0) {
             foreach ($this->levelRules() as $groupId => $rule) {
-                $levels[$groupId] = [
-                    'amount' => self::priced($base, $rule['type'], $rule['value'], $this->rounding),
-                    'rule' => $rule,
-                ];
+                $levels[$groupId] = ['amount' => self::priced($base, $rule['type'], $rule['value'], $this->rounding)];
             }
         }
 
@@ -211,9 +245,38 @@ class PriceTemplate extends Model
             'user_price' => $base > 0
                 ? self::priced($base, $this->user_type, (float)$this->user_value, $this->rounding)
                 : sprintf('%.2f', (float)$userPrice),
-            'config' => self::applyToConfig($config, $this->guest_type, (float)$this->guest_value, $this->rounding, false),
             'level_price' => self::mergeLevelPrice($levelPrice, $levels, $this->rounding, false),
         ];
+    }
+
+    /**
+     * 上游配置里的拿货价段全部换掉，只留调用方担保过的种类拿货价；其余由 applyToConfig 以上游售价补记为基准。
+     * 批发、种类批发、SKU 上游从不按请求方身份算，它们的售价本身就是拿货价。
+     *
+     * @param array<string,mixed> $categoryFactory
+     */
+    private static function withTrustedFactory(string $config, array $categoryFactory): string
+    {
+        if (trim($config) === '') {
+            return $config;
+        }
+
+        try {
+            $parsed = \App\Util\Ini::toArray($config);
+        } catch (\Throwable $e) {
+            return $config;
+        }
+
+        unset($parsed['category_factory'], $parsed['wholesale_factory'], $parsed['category_wholesale_factory'], $parsed['sku_factory']);
+        if ($categoryFactory !== [] && is_array($parsed['category'] ?? null)) {
+            $parsed['category_factory'] = array_intersect_key($categoryFactory, $parsed['category']);
+        }
+
+        try {
+            return \App\Util\Ini::toConfig($parsed);
+        } catch (\Throwable $e) {
+            return $config;
+        }
     }
 
     public function markupExtra(float $amount): string

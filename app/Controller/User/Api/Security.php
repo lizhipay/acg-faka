@@ -9,6 +9,7 @@ use App\Interceptor\Waf;
 use App\Service\Email;
 use App\Service\Sms;
 use App\Service\UserWebauthnService;
+use App\Util\AccountResolver;
 use App\Util\Captcha;
 use App\Util\QrCode;
 use App\Util\StepUp;
@@ -257,6 +258,9 @@ class Security extends User
         if (!$this->email->checkCaptcha($_POST['email'], Email::CAPTCHA_BIND_NEW, (int)$_POST['email_captcha'])) {
             throw new JSONException("邮箱验证码不正确");
         }
+        if (AccountResolver::taken($_POST['email'], (int)$user->id)) {
+            throw new JSONException("该邮箱已被他人绑定");
+        }
         $user->email = $_POST['email'];
         $user->save();
         \App\Model\UserLog::write($user, 'email', '修改了绑定邮箱');
@@ -280,6 +284,9 @@ class Security extends User
         \App\Util\Throttle::clear($throttleKey);
         if (!$this->sms->checkCaptcha($_POST['phone'], Sms::CAPTCHA_BIND_NEW, (int)$_POST['phone_captcha'])) {
             throw new JSONException("手机验证码不正确");
+        }
+        if (AccountResolver::taken($_POST['phone'], (int)$user->id)) {
+            throw new JSONException("该手机已被他人绑定");
         }
         $user->phone = $_POST['phone'];
         $user->save();
@@ -333,7 +340,7 @@ class Security extends User
             throw new JSONException("邮箱地址不正确");
         }
 
-        if (\App\Model\User::query()->where("email", $_POST['email'])->first()) {
+        if (AccountResolver::taken($_POST['email'], (int)$this->getUser()->id)) {
             throw new JSONException("该邮箱已被他人绑定");
         }
         //发码限流：不走会话(换 cookie 可绕)，按 IP + 目标邮箱双维拦，防刷邮件
@@ -360,7 +367,7 @@ class Security extends User
             throw new JSONException("手机号码不正确");
         }
 
-        if (\App\Model\User::query()->where("phone", $_POST['phone'])->first()) {
+        if (AccountResolver::taken($_POST['phone'], (int)$this->getUser()->id)) {
             throw new JSONException("该手机已被他人绑定");
         }
 

@@ -11,6 +11,7 @@ use Kernel\Exception\JSONException;
  * Per-member purchase limit (commodity.purchase_count), counted in items, not orders.
  * Items held = paid orders plus unpaid orders still inside the payment window, so an
  * expired unpaid order stops holding the quota and one large order cannot exceed it.
+ * Refunded orders (#1145) are fully undone and release their quota.
  */
 class PurchaseLimit
 {
@@ -25,6 +26,7 @@ class PurchaseLimit
         return (int)Order::query()
             ->where("owner", $owner)
             ->where("commodity_id", $commodityId)
+            ->unrefunded()
             ->where(function ($query) {
                 $query->where("status", 1)->orWhere(function ($query) {
                     $query->where("status", 0)->where("create_time", ">=", date("Y-m-d H:i:s", time() - self::HOLD));

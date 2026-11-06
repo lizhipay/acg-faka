@@ -655,6 +655,19 @@
                             ],
                             default: 0
                         },
+                        {
+                            title: "单笔最低",
+                            name: "min_amount",
+                            type: "input",
+                            placeholder: "不限制请留空"
+                        },
+                        {
+                            title: "单笔最高",
+                            name: "max_amount",
+                            type: "input",
+                            placeholder: "不限制请留空",
+                            tips: i18n("按含手续费的实付金额判断，商品下单和会员充值都适用") + "<br>" + i18n("超出范围时前台会把这个支付方式置灰，并提示客户更换")
+                        },
                         {title: "商品下单", name: "commodity", type: "switch", text: "启用"},
                         {title: "会员充值", name: "recharge", type: "switch", text: "启用"},
                         {title: "显示排序", name: "sort", type: "input", placeholder: "越小显示靠前"},
@@ -673,7 +686,11 @@
             width: "680px",
             renderComplete: unique => {
                 const $root = $('.' + unique);
-                $root.find('input[name="cost"]').attr({inputmode: 'decimal', autocomplete: 'off'});
+                $root.find('input[name="cost"], input[name="min_amount"], input[name="max_amount"]').attr({inputmode: 'decimal', autocomplete: 'off'});
+                //0 = 不限，编辑时显示成空白，和占位提示对得上
+                $root.find('input[name="min_amount"], input[name="max_amount"]').each(function () {
+                    if (Number(this.value) === 0) this.value = '';
+                });
                 $root.find('input[name="sort"]').attr({inputmode: 'numeric', autocomplete: 'off'});
 
                 //自定义Code 只是个录入口，值靠 syncCustomCode 写进 code 单选框。
@@ -749,6 +766,20 @@
                 } else {
                     return '<span class="a-badge a-badge-primary" >' + (item.cost * 100) + '%</span>';
                 }
+            }
+        }
+        , {
+            field: 'max_amount', title: '单笔限额', formatter: function (val, item) {
+                const min = Number(item.min_amount) || 0;
+                const max = Number(item.max_amount) || 0;
+                if (item.id == 1 || (min <= 0 && max <= 0)) {
+                    return '<span class="text-muted">' + i18n('不限') + '</span>';
+                }
+                const money = value => format.currencySymbol() + escapeHtml(format.amountRemoveTrailingZeros(value));
+                if (min > 0 && max > 0) {
+                    return '<span class="a-badge a-badge-info">' + money(min) + ' – ' + money(max) + '</span>';
+                }
+                return '<span class="a-badge a-badge-info">' + (max > 0 ? '≤ ' + money(max) : '≥ ' + money(min)) + '</span>';
             }
         }
         , {

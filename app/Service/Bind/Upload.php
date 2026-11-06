@@ -176,6 +176,12 @@ class Upload implements \App\Service\Upload
         $upload_size = $upload['size'] / 1024;
         if ($upload_size > $size) return '文件太大';
 
+        //内容必须与后缀相符（#1136）：只校验后缀的话，任意内容改个名就能借站点域名公开分发。
+        //落盘后缀统一小写，不再沿用客户端的大小写
+        $fix = strtolower($fix);
+        $contentError = \App\Util\UploadGuard::contentError((string)$upload['tmp_name'], $fix);
+        if ($contentError !== null) return $contentError;
+
         return array('tmp' => $upload['tmp_name'], 'size' => $upload_size, 'name' => $upload['name'], 'fix' => $fix);
     }
 

@@ -136,8 +136,9 @@ class Shop implements \App\Service\Shop
                 "seckill_start_time", "seckill_end_time", "draft_status", "draft_premium", "inventory_hidden",
                 "widget", "minimum", "maximum", "shared_sync", "config", "stock", "code", "shared_amount_sync", "shared_config_sync",
                 "tags", "substation_disable"])
+            //已售数量不含已退款订单（#1145）
             ->withCount(['order as order_sold' => function (Builder $relation) {
-                $relation->where("delivery_status", 1);
+                $relation->where("delivery_status", 1)->unrefunded();
             }]);
 
         if (is_int($commodityId)) {
@@ -204,7 +205,7 @@ class Shop implements \App\Service\Shop
         if ($array["owner"]) {
             $business = Business::query()->where("user_id", $array["owner"]['id'])->first();
             if ($business) {
-                $array['service_url'] = $business->service_url;
+                $array['service_url'] = \App\Util\ServiceLink::safeUrl($business->service_url);
                 $array['service_qq'] = $business->service_qq;
             }
         }
@@ -389,53 +390,60 @@ class Shop implements \App\Service\Shop
 
         $userCommodity = UserCommodity::query()->where("user_id", $business->user_id)->where("commodity_id", $commodity->id)->first();
 
-        if (!$userCommodity) {
-            return;
-        }
-
-        if ($userCommodity->name) {
+        if ($userCommodity?->name) {
             $commodity->name = $userCommodity->name;
         }
 
-        if (trim((string)$userCommodity->description) !== '') {
+        if ($userCommodity && trim((string)$userCommodity->description) !== '') {
             $commodity->description = $userCommodity->description;
+        }
+
+        //商品自己的加价 → 分类规则 → 全店默认（#975），与下单的 getSubstationPrice() 同一套
+        $attributes = $commodity->getAttributes();
+        $markup = UserCommodity::fromRule(UserCommodity::pick(
+            UserCommodity::rulesOf($business),
+            (int)($attributes['owner'] ?? 0),
+            (int)($attributes['category_id'] ?? 0),
+            $userCommodity
+        ));
+
+        if (!$markup) {
+            return;
         }
 
         $config = $commodity->config ?: [];
 
-        if ($userCommodity->premium > 0) {
-            $commodity->price = $userCommodity->markup($commodity->price);
-            $commodity->user_price = $userCommodity->markup($commodity->user_price);
+        $commodity->price = $markup->markup($commodity->price);
+        $commodity->user_price = $markup->markup($commodity->user_price);
 
-            if ($commodity->draft_premium > 0) {
-                $commodity->draft_premium = $userCommodity->markup($commodity->draft_premium);
+        if ($commodity->draft_premium > 0) {
+            $commodity->draft_premium = $markup->markup($commodity->draft_premium);
+        }
+
+        if (is_array($config['category'])) {
+            foreach ($config['category'] as &$price) {
+                $price = $markup->markup($price);
             }
+        }
 
-            if (is_array($config['category'])) {
-                foreach ($config['category'] as &$price) {
-                    $price = $userCommodity->markup($price);
+        if (is_array($config['wholesale'])) {
+            foreach ($config['wholesale'] as &$price) {
+                $price = $markup->markup($price);
+            }
+        }
+
+        if (is_array($config['category_wholesale'])) {
+            foreach ($config['category_wholesale'] as &$arr) {
+                foreach ($arr as &$price) {
+                    $price = $markup->markup($price);
                 }
             }
+        }
 
-            if (is_array($config['wholesale'])) {
-                foreach ($config['wholesale'] as &$price) {
-                    $price = $userCommodity->markup($price);
-                }
-            }
-
-            if (is_array($config['category_wholesale'])) {
-                foreach ($config['category_wholesale'] as &$arr) {
-                    foreach ($arr as &$price) {
-                        $price = $userCommodity->markup($price);
-                    }
-                }
-            }
-
-            if (is_array($config['sku'])) {
-                foreach ($config['sku'] as &$arr) {
-                    foreach ($arr as &$price) {
-                        $price = $userCommodity->markup($price);
-                    }
+        if (is_array($config['sku'])) {
+            foreach ($config['sku'] as &$arr) {
+                foreach ($arr as &$price) {
+                    $price = $markup->markup($price);
                 }
             }
         }
@@ -459,16 +467,8 @@ class Shop implements \App\Service\Shop
             return (string)$amount;
         }
 
-        $userCommodity = UserCommodity::query()->where("user_id", $business->user_id)->where("commodity_id", $commodity->id)->first();
+        $markup = UserCommodity::effective($business, $commodity);
 
-        if (!$userCommodity) {
-            return (string)$amount;
-        }
-
-        if ($userCommodity->premium > 0) {
-            return $userCommodity->markup($amount);
-        }
-
-        return (string)$amount;
+        return $markup ? $markup->markup($amount) : (string)$amount;
     }
 }

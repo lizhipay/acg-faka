@@ -35,8 +35,12 @@ class Recharge extends User
         }
 
         $let = "(`equipment`=0 or `equipment`={$equipment})";
-        $pay = Pay::query()->orderBy("sort", "asc")->where("recharge", 1)->whereRaw($let)->get(['id', 'name', 'icon', 'handle'])->toArray();
+        //限额与手续费一并带出，前台据此预先置灰超限的接口（#1129）
+        \App\Util\Schema::ensurePayAmountLimit();
+        $pay = Pay::query()->orderBy("sort", "asc")->where("recharge", 1)->whereRaw($let)
+            ->get(array_merge(['id', 'name', 'icon', 'handle'], \App\Util\PayLimit::LIST_COLUMNS))->toArray();
         hook(\App\Consts\Hook::USER_API_RECHARGE_PAY_LIST, $pay);
+        $pay = \App\Util\PayLimit::present($pay);
         //支付方式名是站长自定义的动态文案，出口统一走 dyn 翻译
         $pay = \Kernel\Util\Lang::transList($pay, ['name']);
         return $this->json(200, 'success', $pay);

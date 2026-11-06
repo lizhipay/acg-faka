@@ -68,10 +68,11 @@ class Dashboard extends \App\Controller\Base\API\Manage
 
     /**
      * 已支付订单在一个窗口内的全部金额口径，一条 SQL 取齐。
+     * 已退款到余额的订单（#1145）不算成交：本页所有订单统计都加 unrefunded()。
      */
     private function orderStats(?array $time): object
     {
-        $query = Order::query()->where('status', 1);
+        $query = Order::query()->where('status', 1)->unrefunded();
         $time && $query->whereBetween('create_time', $time);
         $net = self::NET_SQL;
 
@@ -97,7 +98,8 @@ class Dashboard extends \App\Controller\Base\API\Manage
      * 各支付通道在窗口内收到的钱：商品订单 + 会员充值。两者走的是同一个网关，对账时必须合在一起看。
      *   amount          已含通道手续费，就是顾客在网关里实际付的数（站点货币）
      *   gateway_amount  下单时提交给网关的 CNY 快照；升级前的旧单没有快照，那时站点只有人民币，直接用 amount
-     * 时间口径与页面其它数字一致（按下单时间），订单金额列相加 = 成交额，充值金额列相加 = 会员充值。
+     * 时间口径与页面其它数字一致（按下单时间），订单金额列相加 = 成交额，充值金额列相加 = 会员充值；
+     * 所以订单同样不含已退款的（#1145）。
      * 通道被删掉后 name 为 null，由前端显示编号；余额（pay_id=1）不是外部通道，排在最后。
      * @return array<int, array<string, mixed>>
      */
@@ -113,7 +115,7 @@ class Dashboard extends \App\Controller\Base\API\Manage
                 ->get()
                 ->keyBy(fn($row) => (int)$row->pay_id);
         };
-        $orders = $collect(Order::query());
+        $orders = $collect(Order::query()->unrefunded());
         $recharges = $collect(UserRecharge::query());
 
         $ids = array_values(array_unique(array_merge($orders->keys()->all(), $recharges->keys()->all())));
@@ -269,6 +271,7 @@ class Dashboard extends \App\Controller\Base\API\Manage
 
         $row = Order::query()
             ->where('status', 1)
+            ->unrefunded()
             ->whereBetween('create_time', [$periods['last_month'][0], $today[1]])
             ->selectRaw(implode(', ', $selects), $bindings)
             ->toBase()
@@ -297,8 +300,10 @@ class Dashboard extends \App\Controller\Base\API\Manage
         }
         try {
             //等你发货：平台自己的商品（user_id=0）里，手动发货类、顾客已付款但还没发货的订单。商户商品由商户自己发货，不算站长的待办
+            //已退款的单不用再发货
             $todo['delivery_num'] = Order::query()
                 ->where('status', 1)
+                ->unrefunded()
                 ->where('delivery_status', 0)
                 ->where('user_id', 0)
                 ->whereIn('commodity_id', Commodity::query()->where('delivery_way', 1)->select('id'))
@@ -334,6 +339,7 @@ class Dashboard extends \App\Controller\Base\API\Manage
         $orderRows = Order::query()
             ->whereBetween('create_time', $range)
             ->where('status', 1)
+            ->unrefunded()
             ->selectRaw('DATE(create_time) AS day, COUNT(*) AS orders, COALESCE(SUM(amount),0) AS turnover, COALESCE(SUM(' . self::NET_SQL . '),0) AS profit')
             ->groupBy('day')
             ->toBase()

@@ -30,6 +30,8 @@ CREATE TABLE `__PREFIX__business`  (
                                        `topdomain` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '顶级域名',
                                        `master_display` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '主站显示：0=否，1=是',
                                        `create_time` datetime NOT NULL COMMENT '创建时间',
+                                       `premium` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '全店默认加价百分比：0=不加价',
+                                       `premium_rounding` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '全店默认加价取整：0=不取整，1=四舍五入到整元，2=向上取整到整元',
                                        PRIMARY KEY (`id`) USING BTREE,
                                        UNIQUE INDEX `user_id`(`user_id` ASC) USING BTREE,
                                        UNIQUE INDEX `subdomain`(`subdomain` ASC) USING BTREE,
@@ -207,6 +209,7 @@ CREATE TABLE `__PREFIX__commodity`  (
                                         `substation_disable` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '禁止分站销售：0=否，1=是',
                                         `ban` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '平台下架：0=否，1=是',
                                         `ban_reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '平台下架原因',
+                                        `shared_leave_message_sync` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '同步远端发货留言：0=关，1=开',
                                         PRIMARY KEY (`id`) USING BTREE,
                                         UNIQUE INDEX `code`(`code` ASC) USING BTREE,
                                         INDEX `owner`(`owner` ASC) USING BTREE,
@@ -219,7 +222,7 @@ CREATE TABLE `__PREFIX__commodity`  (
                                         INDEX `recommend`(`recommend` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
-INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 0, 1, 1, NULL, '', 0.00, NULL, 999999, 0, 0, 0, NULL, NULL, 0, 0.00, 0, NULL, 0, 0, 0, 0, NULL, NULL, NULL, 0, 0, 0, 0, NULL, 0, 0, 0, 0, 0, 0, NULL);
+INSERT INTO `__PREFIX__commodity` VALUES (1, 1, 'DEMO', '<p>该商品是演示商品</p>', '/favicon.ico', 0.00, 1.00, 0.90, 1, 0, '2021-11-26 18:01:30', 1, '8AE80574F3CA98BE', 1, 0, '', 0, 0, 0, 1, 1, NULL, '', 0.00, NULL, 999999, 0, 0, 0, NULL, NULL, 0, 0.00, 0, NULL, 0, 0, 0, 0, NULL, NULL, NULL, 0, 0, 0, 0, NULL, 0, 0, 0, 0, 0, 0, NULL, 0);
 
 
 
@@ -432,6 +435,10 @@ CREATE TABLE `__PREFIX__order`  (
                                     `divide_amount` decimal(10,2) unsigned DEFAULT NULL COMMENT '推广者分成金额',
                                     `substation_user_id` int(10) unsigned DEFAULT NULL COMMENT '子站ID',
                                     `request_no` char(19) COMMENT '请求id',
+                                    `refund_status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '退款状态：0=未退款，1=已退款到会员余额',
+                                    `refund_amount` decimal(10, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '退回会员余额的金额',
+                                    `refund_time` datetime NULL DEFAULT NULL COMMENT '退款时间',
+                                    `shared_error` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '向上游下单失败的原因：非空=已付款但没取到货，等待重新向上游取货',
                                     PRIMARY KEY (`id`) USING BTREE,
                                     UNIQUE INDEX `trade_no`(`trade_no` ASC) USING BTREE,
                                     UNIQUE INDEX `request_no`(`request_no` ASC) USING BTREE,
@@ -493,6 +500,8 @@ CREATE TABLE `__PREFIX__pay`  (
                                   `cost` decimal(10, 3) UNSIGNED NULL DEFAULT 0.000 COMMENT '手续费',
                                   `cost_type` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '手续费模式：0=单笔固定，1=百分比',
                                   `archived` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '归档：0=正常，1=归档(仅保留供历史订单显示)',
+                                  `min_amount` decimal(10, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '单笔最低支付金额(含手续费)：0=不限',
+                                  `max_amount` decimal(10, 2) UNSIGNED NOT NULL DEFAULT 0.00 COMMENT '单笔最高支付金额(含手续费)：0=不限',
                                   PRIMARY KEY (`id`) USING BTREE,
                                   INDEX `commodity`(`commodity` ASC) USING BTREE,
                                   INDEX `recharge`(`recharge` ASC) USING BTREE,
@@ -501,8 +510,8 @@ CREATE TABLE `__PREFIX__pay`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 
-INSERT INTO `__PREFIX__pay` VALUES (1, '余额', '/assets/static/images/wallet.png', '#system', 1, 0, '1997-01-01 00:00:00', '#system', 0, 999, 0, 0.000, 0, 0);
-INSERT INTO `__PREFIX__pay` VALUES (2, '支付宝', '/assets/user/images/cash/alipay.png', 'alipay', 1, 1, '1997-01-01 00:00:00', 'Epay', 0, 1, 0, 0.000, 0, 0);
+INSERT INTO `__PREFIX__pay` VALUES (1, '余额', '/assets/static/images/wallet.png', '#system', 1, 0, '1997-01-01 00:00:00', '#system', 0, 999, 0, 0.000, 0, 0, 0.00, 0.00);
+INSERT INTO `__PREFIX__pay` VALUES (2, '支付宝', '/assets/user/images/cash/alipay.png', 'alipay', 1, 1, '1997-01-01 00:00:00', 'Epay', 0, 1, 0, 0.000, 0, 0, 0.00, 0.00);
 
 
 DROP TABLE IF EXISTS `__PREFIX__pay_config`;
@@ -533,6 +542,7 @@ CREATE TABLE `__PREFIX__shared`  (
                                      `currency` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'CNY' COMMENT '上游站点货币代码',
                                      `currency_rate` decimal(18, 6) NOT NULL DEFAULT 0.000000 COMMENT '结算汇率：1 上游货币 = ? 本站货币；0 = 按站点汇率自动',
                                      `protocol` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '上游协议代次：0=未探明，1=3.1.2+，2=3.1.1及更老',
+                                     `factory_base` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '成本价基准：0=按上游商品价加价，1=按账号拿货价加价',
                                      PRIMARY KEY (`id`) USING BTREE,
                                      UNIQUE INDEX `domain`(`domain` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
@@ -659,6 +669,8 @@ CREATE TABLE `__PREFIX__user_category`  (
                                             `category_id` int UNSIGNED NOT NULL COMMENT '分类id',
                                             `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '自定义分类名称',
                                             `status` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '状态：0=屏蔽，1=显示',
+                                            `premium` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '分类加价百分比：0=沿用全店规则',
+                                            `rounding` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '分类加价取整：0=不取整，1=四舍五入到整元，2=向上取整到整元',
                                             PRIMARY KEY (`id`) USING BTREE,
                                             UNIQUE INDEX `user_id`(`user_id` ASC, `category_id` ASC) USING BTREE,
                                             INDEX `status`(`status` ASC) USING BTREE,

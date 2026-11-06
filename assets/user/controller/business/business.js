@@ -1,6 +1,19 @@
 !function () {
     let globalCategoryId, globalCategoryName, _ItemTable, _CateTable;
 
+    const roundingDict = [
+        {id: 0, name: "不取整（保留小数）"},
+        {id: 1, name: "四舍五入到整元"},
+        {id: 2, name: "向上取整到整元"}
+    ];
+
+    // "20% · 向上取整" style label for a markup rule.
+    const premiumLabel = (premium, rounding) => {
+        rounding = Number(rounding || 0);
+        const mark = rounding === 1 ? ` · ${i18n('四舍五入')}` : (rounding === 2 ? ` · ${i18n('向上取整')}` : '');
+        return `${premium}%${mark}`;
+    };
+
     function _OpenBusinessGroup() {
         let groupId;
 
@@ -57,45 +70,59 @@
 
 
         $('.commodity-premium').click(function () {
-            component.popup({
+            const openPopup = rule => component.popup({
                 submit: '/user/api/master/setCommodityAllPremium',
                 tab: [
                     {
-                        name: `<i class="fa-duotone fa-regular fa-hand-holding-dollar"></i> ${globalCategoryName ? `${i18n('仅分类：')}<span class="text-success">${globalCategoryName}</span> ${i18n('下的商品生效')}` : i18n("全部商品")}`,
+                        name: `<i class="fa-duotone fa-regular fa-hand-holding-dollar"></i> ${globalCategoryName ? `${i18n('分类加价：')}<span class="text-success">${globalCategoryName}</span>` : i18n("全店默认加价")}`,
                         form: [
                             {title: "cid", name: "category_id", type: "input", hide: true},
                             {
                                 title: "加价百分比",
                                 name: "premium",
                                 type: "input",
-                                placeholder: "商品加价",
-                                tips: "比如一个商品市场价 100 元，如果你填写了 50，售价就是：\n" +
-                                    "100 + (100 × 0.5) = 150 元。\n" +
-                                    "如果你的进货价是 70 元，那么最终利润就是：150 - 70 = 80 元。".replace("\n", "<br>")
+                                placeholder: "0 = 不加价",
+                                tips: globalCategoryId
+                                    ? "这个分类下没有单独设置加价的商品按此加价，之后上架到这个分类的新商品也会自动套用；填 0 则沿用全店默认加价。"
+                                    : "没有单独设置加价、所在分类也没有加价规则的商品按此加价，之后主站上架的新商品也会自动套用。比如市场价 100 元，填写 50，售价就是 150 元。"
                             },
                             {
                                 title: "价格取整",
                                 name: "rounding",
                                 type: "select",
-                                dict: [
-                                    {id: 0, name: "不取整（保留小数）"},
-                                    {id: 1, name: "四舍五入到整元"},
-                                    {id: 2, name: "向上取整到整元"}
-                                ],
+                                dict: roundingDict,
                                 default: 0,
-                                tips: "按百分比加价后价格出现小数时的处理方式，例如加价后 3.66 元：四舍五入 → 4 元、向上取整 → 4 元；加价后 3.20 元：四舍五入 → 3 元、向上取整 → 4 元。仅对设置了加价的商品生效。"
+                                tips: "按百分比加价后价格出现小数时的处理方式，例如加价后 3.66 元：四舍五入 → 4 元、向上取整 → 4 元；加价后 3.20 元：四舍五入 → 3 元、向上取整 → 4 元。"
+                            },
+                            {
+                                title: "统一覆盖",
+                                name: "override",
+                                type: "switch",
+                                text: "覆盖|保留",
+                                default: 1,
+                                tips: globalCategoryId
+                                    ? "开启：清掉这个分类里各商品单独设置的加价，统一按这条规则。关闭：单独设置过的商品保持原样。"
+                                    : "开启：清掉各商品与各分类单独设置的加价，全店统一按这条规则。关闭：单独设置过的商品和分类保持原样。"
                             }
                         ]
                     }
                 ],
-                assign: {category_id: globalCategoryId},
+                assign: {category_id: globalCategoryId, premium: rule.premium || '', rounding: rule.rounding || 0, override: 1},
                 autoPosition: true,
                 height: "auto",
                 width: "480px",
                 done: () => {
                     _ItemTable.refresh();
+                    _CateTable.refresh();
                 }
             });
+
+            if (globalCategoryId) {
+                const row = ($('#master_category').bootstrapTable('getData') || []).find(item => Number(item.id) === Number(globalCategoryId));
+                openPopup({premium: row?.user_category?.premium, rounding: row?.user_category?.rounding});
+                return;
+            }
+            util.post("/user/api/master/premiumRule", {}, res => openPopup(res.data || {}));
         });
 
 
@@ -200,6 +227,15 @@
                 }
             },
             {
+                field: 'premium', title: '分类加价', class: "normal", formatter: function (val, item) {
+                    const rule = item.user_category;
+                    if (!rule || !(Number(rule.premium) > 0)) {
+                        return '-';
+                    }
+                    return format.badge(premiumLabel(rule.premium, rule.rounding), "a-badge-success");
+                }
+            },
+            {
                 field: 'operation',
                 title: '',
                 type: "button",
@@ -244,6 +280,14 @@
                                                 height: 48,
                                                 placeholder: "自定义分类名称，不填写代表使用主站的，支持各种HTML美化代码"
                                             },
+                                            {
+                                                title: "分类加价百分比",
+                                                name: "premium",
+                                                type: "input",
+                                                placeholder: "0 = 沿用全店默认加价",
+                                                tips: "这个分类下没有单独设置加价的商品按此加价，之后上架到这个分类的新商品也会自动套用。"
+                                            },
+                                            {title: "价格取整", name: "rounding", type: "select", dict: roundingDict, default: 0},
                                             {title: "状态", name: "status", type: "switch", text: "显示|隐藏", default: 1} // 首次设置还没有记录，默认显示，否则保存即隐藏(#922)
                                         ]
                                     }
@@ -327,12 +371,18 @@
             }
             , {
                 field: 'premium', title: '加价百分比', class: "normal", formatter: function (val, item) {
-                    if (!item.user_commodity || item.user_commodity.premium == 0) {
+                    const rule = item.premium_rule;
+                    if (!rule) {
                         return '-';
                     }
-                    const rounding = Number(item.user_commodity.rounding || 0);
-                    const roundingMark = rounding === 1 ? ` · ${i18n('四舍五入')}` : (rounding === 2 ? ` · ${i18n('向上取整')}` : '');
-                    return format.badge(`${item.user_commodity.premium}%${roundingMark}`, "a-badge-success");
+                    const label = premiumLabel(rule.premium, rule.rounding);
+                    if (rule.source === 'category') {
+                        return format.badge(`${label} · ${i18n('分类规则')}`, "a-badge-info");
+                    }
+                    if (rule.source === 'shop') {
+                        return format.badge(`${label} · ${i18n('全店默认')}`, "a-badge-info");
+                    }
+                    return format.badge(label, "a-badge-success");
                 }
             },
             {
@@ -377,20 +427,14 @@
                                                 title: "加价百分比",
                                                 name: "premium",
                                                 type: "input",
-                                                placeholder: "商品加价",
-                                                tips: "比如一个商品市场价 100 元，如果你填写了 50，售价就是：\n" +
-                                                    "100 + (100 × 0.5) = 150 元。\n" +
-                                                    "如果你的进货价是 70 元，那么最终利润就是：150 - 70 = 80 元。".replace("\n", "<br>")
+                                                placeholder: "0 = 按分类规则或全店默认加价",
+                                                tips: "单独给这件商品设置加价，优先于分类规则和全店默认加价。比如市场价 100 元，填写 50，售价就是 100 + (100 × 0.5) = 150 元。"
                                             },
                                             {
                                                 title: "价格取整",
                                                 name: "rounding",
                                                 type: "select",
-                                                dict: [
-                                                    {id: 0, name: "不取整（保留小数）"},
-                                                    {id: 1, name: "四舍五入到整元"},
-                                                    {id: 2, name: "向上取整到整元"}
-                                                ],
+                                                dict: roundingDict,
                                                 default: 0,
                                                 tips: "按百分比加价后价格出现小数时的处理方式。仅对设置了加价的商品生效。"
                                             },

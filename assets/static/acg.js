@@ -11,6 +11,88 @@ function acgT(text) {
     return typeof i18n === 'function' ? i18n(text) : text;
 }
 
+//单笔限额（#1129）：min/max 为 0 或缺省（旧版服务端、本地缓存的旧支付列表）即不限，两头都不限的返回 null
+function acgPayLimit(item) {
+    const amount = v => Number.isFinite(+v) && +v > 0 ? +v : 0;
+    const min = amount(item.min_amount), max = amount(item.max_amount);
+    if (!min && !max) {
+        return null;
+    }
+    return {name: acgT(item.name), min: min, max: max, cost: Number.isFinite(+item.cost) ? +item.cost : 0, percent: item.cost_type == 1};
+}
+
+//与服务端同一口径：按含手续费的实付金额判断，免费单/还没询到价不受限；超限返回 {over, amount}
+function acgPayBreach(limit, base) {
+    base = +base;
+    if (!limit || !(base > 0)) {
+        return null;
+    }
+    //百分比手续费服务端 bcmul 截断到分，先取 6 位小数消掉浮点误差再截断
+    const fee = limit.percent ? Math.trunc(Math.round(base * limit.cost * 1e6) / 1e4) / 100 : limit.cost;
+    const amount = Math.round((base + fee) * 100) / 100;
+    if (limit.max > 0 && amount > limit.max) {
+        return {over: true, amount: amount};
+    }
+    if (limit.min > 0 && amount < limit.min) {
+        return {over: false, amount: amount};
+    }
+    return null;
+}
+
+function acgPayMoney(v) {
+    const n = Math.round(+v * 100) / 100;
+    return acgCurrencySymbol() + (n % 1 === 0 ? String(n) : n.toFixed(2));
+}
+
+function acgPayFill(text, vars) {
+    return String(text).replace(/\{(\w+)\}/g, (m, k) => vars.hasOwnProperty(k) ? vars[k] : m);
+}
+
+function acgPayHint(limit, breach) {
+    if (breach) {
+        return breach.over ? acgPayFill(acgT('超出上限 {amount}'), {amount: acgPayMoney(limit.max)}) : acgPayFill(acgT('低于下限 {amount}'), {amount: acgPayMoney(limit.min)});
+    }
+    if (limit.min && limit.max) {
+        return acgPayFill(acgT('单笔 {min}–{max}'), {min: acgPayMoney(limit.min), max: acgPayMoney(limit.max)});
+    }
+    return limit.max ? acgPayFill(acgT('单笔最高 {amount}'), {amount: acgPayMoney(limit.max)}) : acgPayFill(acgT('单笔最低 {amount}'), {amount: acgPayMoney(limit.min)});
+}
+
+function acgPayReason(limit, breach) {
+    const vars = {name: limit.name, limit: acgPayMoney(breach.over ? limit.max : limit.min), amount: acgPayMoney(breach.amount)};
+    return breach.over ? acgPayFill(acgT('{name} 单笔最高 {limit}，本次需支付 {amount}，请更换其他支付方式'), vars) : acgPayFill(acgT('{name} 单笔最低 {limit}，本次需支付 {amount}，请更换其他支付方式'), vars);
+}
+
+//状态样式与 item.js、recharge.js 共用同一个 id，只认 acg-pay-* 自有类，旧主题的按钮原有外观不受影响
+function acgPayLimitStyle() {
+    if (document.getElementById('acg-pay-limit-style')) {
+        return;
+    }
+    const style = document.createElement('style');
+    style.id = 'acg-pay-limit-style';
+    style.textContent = '.acg-pay-label{display:inline-block;min-width:0;max-width:100%;vertical-align:middle;text-align:start}' +
+        '.acg-pay-name{display:block;overflow:hidden;text-overflow:ellipsis}' +
+        '.acg-pay-limit{display:block;margin-top:2px;font-size:11px;font-size:max(11px,.78em);font-weight:500;line-height:1.3;letter-spacing:0;white-space:normal;opacity:.66;font-variant-numeric:tabular-nums}' +
+        '.acg-pay-limited>img,.acg-pay-limited .acg-pay-name,.acg-pay-limit{transition:opacity .2s ease,filter .2s ease,color .2s ease}' +
+        '.acg-pay-limited{vertical-align:middle}' +
+        ':has(>.acg-pay-limited)>*{vertical-align:middle}' +
+        '.acg-pay-off{cursor:not-allowed!important}' +
+        '.acg-pay-off>img,.acg-pay-off .acg-pay-name{opacity:.42;filter:grayscale(1)}' +
+        '.acg-pay-off .acg-pay-limit{opacity:1;color:#c8383e;color:color-mix(in srgb,#e5484d 74%,currentColor)}' +
+        '.acg-pay-off::after{filter:opacity(.45)}' +
+        '.acg-pay-off:hover,.acg-pay-off:active{transform:none!important}' +
+        '@media (prefers-reduced-motion:reduce){.acg-pay-limited>img,.acg-pay-limited .acg-pay-name,.acg-pay-limit{transition:none}}';
+    document.head.appendChild(style);
+}
+
+//支付按钮是主题拼的 <a>（没有 href），键盘够不着：补了 tabindex，回车/空格等同点击
+function acgPayKey(e) {
+    if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
+        e.preventDefault();
+        this.click();
+    }
+}
+
 let acg = {
     setCache(key, value, expire = 0) {
         localStorage.setItem("cache_" + key, JSON.stringify({
@@ -35,7 +117,9 @@ let acg = {
             opera: /opera/.test(window.navigator.userAgent.toLowerCase()),
             safari: /safari/.test(window.navigator.userAgent.toLowerCase())
         }, cache: {
-            raceId: "", payHtml: "", inventoryHidden: 0, order: []
+            raceId: "", payHtml: "", inventoryHidden: 0, order: [],
+            //单笔限额：id => 限额；payBase 是最近一次询到的总价（null=还没询到），询价进行中不拦
+            payLimits: {}, payBase: null, payPricing: false, paySeq: 0
         }, setting: {
             cache: 0, cache_expire: 0
         },
@@ -292,14 +376,73 @@ let acg = {
                     typeof opt.empty === 'function' && opt.empty(res);
                     return;
                 }
+                acg.property.cache.payLimits = {};
                 res.forEach(item => {
+                    const limit = acgPayLimit(item);
+                    limit && (acg.property.cache.payLimits[String(item.id)] = limit);
                     typeof opt.success === 'function' && opt.success(item);
                 });
                 typeof opt.yes === 'function' && opt.yes(res);
+                acg.API.payLimitPaint();
             }, opt.error, acg.property.setting.cache, acg.property.setting.cache_expire);
+        }, //按当前总价给主题拼好的支付按钮标上限额/置灰；按钮靠 data-acg-args 里的 id 对上支付方式
+        payLimitPaint() {
+            const cache = acg.property.cache;
+            document.querySelectorAll('[data-acg-action="acg.API.tradePerform"]').forEach(el => {
+                let id;
+                try {
+                    id = String(JSON.parse(el.getAttribute('data-acg-args'))[0]);
+                } catch (e) {
+                    return;
+                }
+                if (!el.hasAttribute('tabindex')) {
+                    el.setAttribute('role', 'button');
+                    el.setAttribute('tabindex', '0');
+                    el.addEventListener('keydown', acgPayKey);
+                }
+                const limit = cache.payLimits[id];
+                if (!limit) {
+                    return;
+                }
+                let hint = el.querySelector('.acg-pay-limit');
+                if (!hint) {
+                    //图标后面的名称（含余额等后缀）原样挪进 .acg-pay-name，下面再挂一行限额说明
+                    acgPayLimitStyle();
+                    const label = document.createElement('span'), name = document.createElement('span');
+                    label.className = 'acg-pay-label';
+                    name.className = 'acg-pay-name';
+                    const img = el.querySelector(':scope > img');
+                    let node = img ? img.nextSibling : el.firstChild;
+                    while (node) {
+                        const next = node.nextSibling;
+                        name.appendChild(node);
+                        node = next;
+                    }
+                    hint = document.createElement('small');
+                    hint.className = 'acg-pay-limit';
+                    label.appendChild(name);
+                    label.appendChild(hint);
+                    el.appendChild(document.createTextNode(' '));
+                    el.appendChild(label);
+                    el.classList.add('acg-pay-limited');
+                }
+                const breach = acgPayBreach(limit, cache.payBase);
+                el.classList.toggle('acg-pay-off', !!breach);
+                breach ? el.setAttribute('aria-disabled', 'true') : el.removeAttribute('aria-disabled');
+                breach ? el.setAttribute('title', acgPayReason(limit, breach)) : el.removeAttribute('title');
+                hint.textContent = acgPayHint(limit, breach);
+            });
         }, trade(opt) {
             acg.$post("/user/api/order/trade", opt.data, opt.success, opt.error);
         }, tradePerform(payId) {
+            //超出单笔限额：直接说明原因、不去下单（询价进行中交给服务端判断）
+            const limit = acg.property.cache.payLimits[String(payId)];
+            const breach = acg.property.cache.payPricing ? null : acgPayBreach(limit, acg.property.cache.payBase);
+            if (breach) {
+                layer.msg(acgPayReason(limit, breach));
+                return;
+            }
+
             let arrayToObject = this.getPostData();
 
             arrayToObject.pay_id = payId;
@@ -368,8 +511,15 @@ let acg = {
                 $("input[name=num]").val(1);
             }
 
+            const seq = ++acg.property.cache.paySeq;
+            acg.property.cache.payPricing = true;
             acg.API.tradeAmount({
-                success: res => {
+                error: () => {
+                    seq === acg.property.cache.paySeq && (acg.property.cache.payPricing = false);
+                }, success: res => {
+                    seq === acg.property.cache.paySeq && (acg.property.cache.payPricing = false);
+                    acg.property.cache.payBase = Number(res.price);
+                    acg.API.payLimitPaint();
                     $(instance).html(acgCurrencySymbol() + (res.price * $("input[name=num]").val()));
                     $('.price').html(acg.API.priceHtml(res.price));
                     if (res.hasOwnProperty("card_count")) {
@@ -502,6 +652,9 @@ let acg = {
         commodity(opt) {
             acg.property.cache.raceId = "";
             acg.property.cache.cardPage = 1;
+            //换了商品，上一件的总价不能再拿来判断单笔限额
+            acg.property.cache.payBase = null;
+            acg.API.payLimitPaint();
             acg.$get("/user/api/index/commodityDetail?commodityId=" + opt.commodityId, res => {
                 typeof opt.begin === 'function' && opt.begin(res);
                 acg.property.cache.item = res;
@@ -548,7 +701,7 @@ let acg = {
                                 }
                                 let categoryWholesale = function () {
                                     //批发渲染
-                                    let categoryWholesale = res.category_wholesale;
+                                    let categoryWholesale = res?.config?.category_wholesale;
                                     if (categoryWholesale && categoryWholesale.hasOwnProperty(acg.property.cache.raceId)) {
                                         let rules = categoryWholesale[acg.property.cache.raceId];
                                         let ws = [];
@@ -583,7 +736,7 @@ let acg = {
 
                                 instance.show();
                             } else {
-                                let wholesale = res.wholesale;
+                                let wholesale = res?.config?.wholesale;
                                 if (wholesale && Object.keys(wholesale).length > 0) {
                                     let ws = [];
                                     for (const ruleKey in wholesale) {

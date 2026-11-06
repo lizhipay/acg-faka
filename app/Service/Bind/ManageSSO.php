@@ -27,6 +27,8 @@ class ManageSSO implements \App\Service\ManageSSO
      */
     public const CODE_NEED_TOTP = 42001;
 
+    public const WRONG_CREDENTIALS = "邮箱或密码错误";
+
     /**
      * @param string $username
      * @param string $password
@@ -53,12 +55,13 @@ class ManageSSO implements \App\Service\ManageSSO
                 // session from stale security settings after global revocation.
                 $manage = Manage::query()->where('email', $username)->lockForUpdate()->first();
                 if (!$manage) {
-                    throw new JSONException("该邮箱不存在");
+                    Str::burnPasswordCheck($password);
+                    throw new JSONException(self::WRONG_CREDENTIALS);
                 }
                 //verifyPassword 内含旧清洗管线的兼容比对（#833）
                 if (!Str::verifyPassword((string)$manage->password, (string)$manage->salt, $password, $rawPassword)) {
                     $failedAudit = [$manage, "登录失败：密码错误"];
-                    throw new JSONException("密码错误");
+                    throw new JSONException(self::WRONG_CREDENTIALS);
                 }
 
                 //谷歌验证器：已绑定则必须校验动态码（密码通过后才校验，避免暴露 2FA 是否开启）

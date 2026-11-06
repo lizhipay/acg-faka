@@ -41,6 +41,7 @@ class Commodity extends Manage
         'shared_sync',
         'shared_amount_sync',
         'shared_config_sync',
+        'shared_leave_message_sync',
     ];
 
     /**
@@ -296,6 +297,7 @@ class Commodity extends Manage
     public function data(): array
     {
         \App\Util\Schema::ensureCommodityControl();
+        \App\Util\Schema::ensureCommoditySharedLeaveMessage();
         $map = $_POST;
         $get = new Get(\App\Model\Commodity::class);
         $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
@@ -332,21 +334,21 @@ class Commodity extends Manage
                 'card as card_success_count' => function (Builder $builder) {
                     $builder->where("status", 1);
                 },
-                //商品销售额（扣除支付通道手续费 pay_cost，不含商品成本 rent）。issue #903
+                //商品销售额（扣除支付通道手续费 pay_cost，不含商品成本 rent）。issue #903；以下四项均不含已退款订单（#1145）
                 'order as order_all_amount' => function (Builder $relation) {
-                    $relation->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount - COALESCE(pay_cost, 0)),0) as order_all_amount"));
+                    $relation->where("status", 1)->unrefunded()->select(\App\Model\Order::query()->raw("COALESCE(sum(amount - COALESCE(pay_cost, 0)),0) as order_all_amount"));
                 },
                 //过去7天内盈利
                 'order as order_week_amount' => function (Builder $relation) {
-                    $relation->whereBetween('create_time', [Date::weekDay(1, Date::TYPE_START), Date::weekDay(7, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount - COALESCE(pay_cost, 0)),0) as order_week_amount"));
+                    $relation->whereBetween('create_time', [Date::weekDay(1, Date::TYPE_START), Date::weekDay(7, Date::TYPE_END)])->where("status", 1)->unrefunded()->select(\App\Model\Order::query()->raw("COALESCE(sum(amount - COALESCE(pay_cost, 0)),0) as order_week_amount"));
                 },
                 //昨日盈利
                 'order as order_yesterday_amount' => function (Builder $relation) {
-                    $relation->whereBetween('create_time', [Date::calcDay(-1), Date::calcDay(-1, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount - COALESCE(pay_cost, 0)),0) as order_yesterday_amount"));
+                    $relation->whereBetween('create_time', [Date::calcDay(-1), Date::calcDay(-1, Date::TYPE_END)])->where("status", 1)->unrefunded()->select(\App\Model\Order::query()->raw("COALESCE(sum(amount - COALESCE(pay_cost, 0)),0) as order_yesterday_amount"));
                 },
                 //今日盈利
                 'order as order_today_amount' => function (Builder $relation) {
-                    $relation->whereBetween('create_time', [Date::calcDay(), Date::calcDay(0, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount - COALESCE(pay_cost, 0)),0) as order_today_amount"));
+                    $relation->whereBetween('create_time', [Date::calcDay(), Date::calcDay(0, Date::TYPE_END)])->where("status", 1)->unrefunded()->select(\App\Model\Order::query()->raw("COALESCE(sum(amount - COALESCE(pay_cost, 0)),0) as order_today_amount"));
                 }
             ]);
         });
@@ -404,6 +406,7 @@ class Commodity extends Manage
     {
         \App\Util\Schema::ensureCommodityControl();
         \App\Util\Schema::ensureCommodityDeliveryAuto();
+        \App\Util\Schema::ensureCommoditySharedLeaveMessage();
         $raw = $request->post(flags: Filter::NORMAL);
         $allowed = [
             'id', 'category_id', 'name', 'description', 'cover', 'factory_price', 'price', 'user_price',
@@ -413,7 +416,7 @@ class Commodity extends Manage
             'seckill_status', 'seckill_start_time', 'seckill_end_time', 'draft_status',
             'draft_premium', 'inventory_hidden', 'leave_message', 'recommend', 'send_email', 'only_user',
             'purchase_count', 'widget', 'level_price', 'level_disable', 'minimum', 'maximum', 'shared_sync',
-            'config', 'hide', 'stock', 'inventory_sync', 'shared_amount_sync', 'shared_config_sync',
+            'config', 'hide', 'stock', 'inventory_sync', 'shared_amount_sync', 'shared_config_sync', 'shared_leave_message_sync',
             'tags', 'substation_disable',
             'pay_intercept',
             'dock_g_id', 'dock_mode', 'dock_mode_value', 'dock_lucky_decimal', 'dock_sync_price',
@@ -876,6 +879,7 @@ class Commodity extends Manage
      */
     public function fastEnable(): array
     {
+        \App\Util\Schema::ensureCommoditySharedLeaveMessage();
         $raw = $this->request->post();
         $list = $this->commodityIds($raw['list'] ?? []);
         if ($list === []) {
@@ -896,15 +900,16 @@ class Commodity extends Manage
             }
             $changes[$field] = (int)$value;
         }
-        if ($changes === []) {
+        $templateId = $this->batchTemplateId($raw['shared_premium_template'] ?? '');
+        if ($changes === [] && $templateId === 0) {
             throw new JSONException('你还没有选择任何需要修改的设置');
         }
 
-        $sharedFields = ['shared_sync', 'shared_amount_sync', 'shared_config_sync'];
+        $sharedFields = ['shared_sync', 'shared_amount_sync', 'shared_config_sync', 'shared_leave_message_sync'];
         $sharedChanges = array_intersect_key($changes, array_flip($sharedFields));
         $baseChanges = array_diff_key($changes, array_flip($sharedFields));
 
-        $result = DB::transaction(function () use ($list, $baseChanges, $sharedChanges): array {
+        $result = DB::transaction(function () use ($list, $baseChanges, $sharedChanges, $templateId): array {
             $selected = \App\Model\Commodity::query()->whereIn('id', $list)->lockForUpdate()->pluck('id');
             $selectedIds = $selected->map(static fn($id): int => (int)$id)->all();
             if ($selectedIds === []) {
@@ -920,12 +925,16 @@ class Commodity extends Manage
                     ->whereIn('id', $selectedIds)
                     ->where('shared_id', '>', 0)
                     ->update($sharedChanges);
+            $template = $templateId > 0 ? $this->switchPriceTemplate($selectedIds, $templateId) : [];
+            if ($template !== [] && $template['template_count'] === 0 && $baseChanges === [] && $sharedChanges === []) {
+                throw new JSONException('所选商品都不能切换加价模板：只有主站的对接商品可以切换，自动货源托管的商品请到托管设置里修改');
+            }
 
             return [
                 'selected_count' => count($selectedIds),
-                'updated_count' => max($baseCount, $sharedCount),
+                'updated_count' => max($baseCount, $sharedCount, $template['template_count'] ?? 0),
                 'shared_updated_count' => $sharedCount,
-            ];
+            ] + $template;
         });
 
         //广播用请求的 id 集合即可：订阅方是拿快照算差量的，多给的 id 算不出变化，不会产生事件
@@ -935,10 +944,72 @@ class Commodity extends Manage
             hook(\App\Consts\Hook::COMMODITY_CHANGE_AFTER, $list, $ebAction, $ebBefore);
         }
 
-        ManageLog::log(
-            $this->getManage(),
-            "[批量设置]商品 {$result['selected_count']} 个，字段：" . implode(',', array_keys($changes))
-        );
+        if ($changes !== []) {
+            ManageLog::log(
+                $this->getManage(),
+                "[批量设置]商品 {$result['selected_count']} 个，字段：" . implode(',', array_keys($changes))
+            );
+        }
+        if ($templateId > 0) {
+            ManageLog::log(
+                $this->getManage(),
+                "[批量设置]商品 {$result['selected_count']} 个切换加价模板 #{$templateId}，实际切换 {$result['template_count']} 个"
+            );
+        }
         return $this->json(200, '更新成功', $result);
+    }
+
+    /**
+     * @throws JSONException
+     */
+    private function batchTemplateId(mixed $value): int
+    {
+        if ($value === '' || $value === null) {
+            return 0;
+        }
+        if (
+            !is_scalar($value)
+            || !preg_match('/^[1-9]\d{0,9}$/D', (string)$value)
+            || !\App\Model\PriceTemplate::query()->whereKey((int)$value)->exists()
+        ) {
+            throw new JSONException('请选择有效的加价模板');
+        }
+        return (int)$value;
+    }
+
+    /**
+     * 只换绑定不改价：下次同步按新模板算，想立刻生效到加价模板点「应用」。
+     * 自动货源托管的商品跳过：托管按自己的模板算价，这里再换一个，托管和详情页同步会轮流改价。
+     *
+     * @param int[] $ids
+     * @return array{template_count: int, template_managed: int, template_unsupported: int}
+     */
+    private function switchPriceTemplate(array $ids, int $templateId): array
+    {
+        $docked = \App\Model\Commodity::query()
+            ->whereIn('id', $ids)
+            ->where('owner', 0)
+            ->where('shared_id', '>', 0)
+            ->pluck('id')
+            ->map(static fn($id): int => (int)$id)
+            ->all();
+
+        $managed = $docked !== [] && \App\Util\Schema::tableExists('autodock_item')
+            ? DB::table('autodock_item')->whereIn('commodity_id', $docked)->pluck('commodity_id')->map(static fn($id): int => (int)$id)->all()
+            : [];
+
+        $targets = array_values(array_diff($docked, $managed));
+        if ($targets !== []) {
+            \App\Model\Commodity::query()->whereIn('id', $targets)->update([
+                'shared_premium_type' => \App\Model\PriceTemplate::SHARED_PREMIUM_TYPE,
+                'shared_premium_template' => $templateId,
+            ]);
+        }
+
+        return [
+            'template_count' => count($targets),
+            'template_managed' => count($docked) - count($targets),
+            'template_unsupported' => count($ids) - count($docked),
+        ];
     }
 }

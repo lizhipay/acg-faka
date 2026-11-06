@@ -21,6 +21,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property float $cost
  * @property int $cost_type
  * @property int $archived
+ * @property string $min_amount 单笔最低支付金额（含手续费），0=不限
+ * @property string $max_amount 单笔最高支付金额（含手续费），0=不限
  */
 class Pay extends Model
 {

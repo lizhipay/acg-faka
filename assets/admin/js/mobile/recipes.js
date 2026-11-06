@@ -1242,7 +1242,7 @@
         actions: {
             showPrimary: false,
             primary: [action('secret:0', i18n('查看卡密'))],
-            more: [action('copy:trade_no', i18n('复制订单号'), {copyField: 'trade_no', icon: 'content_copy'}), action('secret:1', i18n('手动发货')), action('widget:0', i18n('查看控件信息'))],
+            more: [action('copy:trade_no', i18n('复制订单号'), {copyField: 'trade_no', icon: 'content_copy'}), action('secret:1', i18n('手动发货')), action('secret:2', i18n('重新向上游取货')), action('widget:0', i18n('查看控件信息')), action('refund:0', i18n('退款到会员余额'), {danger: true}), action('refund:1', i18n('查看退款'))],
             toolbar: [selector('.btn-app-export', i18n('导出订单')), selector('.clear', i18n('清理订单'), {
                 danger: true,
                 confirm: {title: '确认清理商品订单', message: i18n('将永久删除 30 分钟前仍未支付的商品订单，删除后无法恢复。确认继续吗？'), confirmText: i18n('确认清理')}
@@ -1732,6 +1732,12 @@
                     trailingIcon: 'arrow_forward',
                     className: 'admin-mobile-store-enterprise-cta admin-mobile-store-enterprise-cta--secondary',
                     description: i18n('转移已有授权 · 原设备将解除绑定')
+                }),
+                selector('.rebind-all', i18n('一键授权至本机'), {
+                    icon: 'sync_lock',
+                    trailingIcon: 'arrow_forward',
+                    className: 'admin-mobile-store-enterprise-cta admin-mobile-store-enterprise-cta--secondary',
+                    description: i18n('掉授权时一次全部转到本机')
                 })
             ]
         },

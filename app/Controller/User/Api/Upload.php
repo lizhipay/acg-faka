@@ -30,6 +30,9 @@ class Upload extends User
     private Image $image;
     const MIME = ['image', 'video', 'doc', 'other'];
 
+    /** 会员只能传图片（#1136）：前台只用到头像、商品图和编辑器插图，压缩包/视频/字体不开放给会员 */
+    private const MAX_IMAGE_KB = 10240;
+
     /**
      * @param Request $request
      * @return array
@@ -48,13 +51,18 @@ class Upload extends User
         if (!in_array($type, self::MIME)) {
             throw new JSONException("mime not supported");
         }
+        if ($type !== self::MIME[0]) {
+            throw new JSONException("会员只能上传图片");
+        }
+        $this->throttle();
         $static_path = "/assets/cache/user/{$this->getUser()->id}/{$type}/";
-        $handle = $this->upload->handle($_FILES['file'], BASE_PATH . $static_path, ['jpg', 'png', 'jpeg', 'bmp', 'webp', 'ico', 'gif', 'mp4', 'zip', 'woff', 'woff2', 'ttf', 'otf'], 1024000);
+        $handle = $this->upload->handle($_FILES['file'] ?? null, BASE_PATH . $static_path, \App\Util\UploadGuard::MEMBER_IMAGE_EXTENSIONS, self::MAX_IMAGE_KB);
         if (!is_array($handle)) {
             throw new JSONException($handle);
         }
 
         $fileName = $static_path . $handle['new_name'];
+        $this->sanitize(BASE_PATH . $fileName, (string)$handle['ext']);
 
         // 去重只在「当前用户自己的上传记录」内进行:
         // 否则同一张图若已被管理员(/general/)或其它用户上传过,全局去重会命中他人记录,
@@ -123,11 +131,39 @@ class Upload extends User
         if (!isset($_FILES['file'])) {
             throw new JSONException("请选择文件");
         }
-        $handle = $this->upload->handle($_FILES['file'], BASE_PATH . '/assets/cache/user/' . $userId . '/images', ['jpg', 'png', 'jpeg', 'ico', 'gif', 'ico', 'mp4', 'woff', 'woff2', 'ttf', 'otf'], 1024000);
+        $this->throttle();
+        $handle = $this->upload->handle($_FILES['file'], BASE_PATH . '/assets/cache/user/' . $userId . '/images', \App\Util\UploadGuard::MEMBER_IMAGE_EXTENSIONS, self::MAX_IMAGE_KB);
         if (!is_array($handle)) {
             throw new JSONException($handle);
         }
-        return $this->json(200, '上传成功', ['path' => '/assets/cache/user/' . $userId . '/images/' . $handle['new_name']]);
+        $path = '/assets/cache/user/' . $userId . '/images/' . $handle['new_name'];
+        $this->sanitize(BASE_PATH . $path, (string)$handle['ext']);
+        return $this->json(200, '上传成功', ['path' => $path]);
+    }
+
+    /**
+     * 会员上传频率：每人 10 分钟 60 张、每个 IP 10 分钟 120 张
+     * @throws JSONException
+     */
+    private function throttle(): void
+    {
+        if (\App\Util\Throttle::tooMany("upload:user:" . $this->getUser()->id, 60, 600)
+            || \App\Util\Throttle::tooMany("upload:ip:" . \App\Util\Client::getAddress(), 120, 600)) {
+            throw new JSONException("上传太频繁，请稍后再试");
+        }
+    }
+
+    /**
+     * 图片落盘后重新编码，丢掉 EXIF 和附在图片后面的数据；不合格就删掉
+     * @throws JSONException
+     */
+    private function sanitize(string $file, string $extension): void
+    {
+        $error = \App\Util\UploadGuard::sanitizeImage($file, $extension);
+        if ($error !== null) {
+            File::remove($file);
+            throw new JSONException($error);
+        }
     }
 
     /**

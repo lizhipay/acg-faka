@@ -41,7 +41,8 @@ class Agent extends User
         $data['share_url'] = Client::getUrl() . "?from=" . $user->id;
         $data['children'] = \App\Model\User::query()->where("pid", $user->id)->count();
 
-        $orders = \App\Model\Order::query()->where("from", $user->id)->where("status", 1);
+        //已退款订单(#1145)不再计入推广订单与分成
+        $orders = \App\Model\Order::query()->where("from", $user->id)->where("status", 1)->unrefunded();
         $data['promote_orders'] = (clone $orders)->count();
         $data['promote_total'] = sprintf("%.2f", (float)(clone $orders)->sum("divide_amount"));
         $data['promote_month'] = sprintf("%.2f", (float)(clone $orders)->where("create_time", ">=", $monthStart)->sum("divide_amount"));

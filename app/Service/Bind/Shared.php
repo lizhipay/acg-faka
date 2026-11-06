@@ -9,6 +9,7 @@ use App\Util\Http;
 use App\Util\Ini;
 use App\Util\SharedCurrency;
 use App\Util\SharedPayload;
+use App\Util\SharedTradeFailure;
 use App\Util\Str;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
@@ -88,22 +89,33 @@ class Shared implements \App\Service\Shared
             }
             //「对方」这个说法本身就是转售身份的暗示——它会出现在免登录的商品详情页上。
             //站长自己操作时保留原文，其余场合只给通用文案。
-            throw new JSONException(SharedPayload::guardMessage(
+            //连不上、超时：请求可能已经到了上游并成交，所以是「不确定」而不是「被拒绝」
+            throw new SharedTradeFailure(SharedPayload::guardMessage(
                 "连接失败, 疑似被对方防火墙拦截",
                 "商品暂时无法购买，请稍后重试"
-            ));
+            ), SharedTradeFailure::UNCERTAIN, '连接上游失败：' . mb_substr($e->getMessage(), 0, 160));
         }
         $contents = $response->getBody()->getContents();
 
         $result = json_decode($contents, true);
-        if (!is_array($result) || ($result['code'] ?? null) != 200) {
+        if (!is_array($result)) {
+            //回应不是 JSON（报错页、防火墙页、被截断）：上游可能已经处理完了，同样算「不确定」
+            throw new SharedTradeFailure("连接失败", SharedTradeFailure::UNCERTAIN, '上游回应无法解析：' . mb_substr(trim(strip_tags($contents)), 0, 160));
+        }
+        if (($result['code'] ?? null) != 200) {
             //上游的报错文本会一路冒泡出去：syncRemoteItem 跑在**免登录的商品详情页**上，
             //下单失败则原样回给下游。上游常在 msg 里写自己的站名、域名和充值地址，
             //那就是转售身份。出站前抹掉地址类标识，原文进日志；站长在后台操作时保留原文。
-            throw new JSONException(SharedPayload::upstreamError($result['msg'] ?? null) ?: "连接失败");
+            $raw = trim(strip_tags((string)($result['msg'] ?? '')));
+            //上游按请求号去重：这个号已经下过单 = 上游那边已经成交（#1172）
+            $kind = stripos($raw, 'request ID already exists') !== false ? SharedTradeFailure::DUPLICATE : SharedTradeFailure::REJECTED;
+            throw new SharedTradeFailure(SharedPayload::upstreamError($raw) ?: "连接失败", $kind, $raw !== '' ? mb_substr($raw, 0, 200) : '上游返回失败');
         }
         return (array)$result['data'];
     }
+
+    /** 上一次 syncRemoteItem() 是否因查不到拿货价而没有改价 */
+    private bool $priceSkipped = false;
 
     /** 上游协议代次：还没探明 */
     public const PROTOCOL_UNKNOWN = 0;
@@ -433,12 +445,88 @@ class Shared implements \App\Service\Shared
             $post[$key] = $item['value'];
         }
 
-        $trade = $this->post($shared->domain . "/shared/commodity/trade", $shared->app_id, $shared->app_key, $post);
+        try {
+            $trade = $this->post($shared->domain . "/shared/commodity/trade", $shared->app_id, $shared->app_key, $post);
+        } catch (SharedTradeFailure $e) {
+            //上次已经在上游成交、只是本站没拿到结果（超时、本地回滚后重试、补单）：按请求号把那笔单查回来，
+            //不再下第二次单（#1172）
+            if ($e->kind() !== SharedTradeFailure::DUPLICATE) {
+                throw $e;
+            }
+            $trade = $this->tradeByRequest($shared, $requestNo, $e);
+        }
 
-        $shop = Di::inst()->make(\App\Service\Shop::class);
-        $shop->updateSharedStock($commodity->id, $race, $sku);
+        //只是清掉本站的库存缓存：这一步出错不能让已经在上游成交的这单跟着回滚
+        try {
+            $shop = Di::inst()->make(\App\Service\Shop::class);
+            $shop->updateSharedStock($commodity->id, $race, $sku);
+        } catch (\Throwable $e) {
+        }
+
+        // Picked up by Order::orderSuccess right after this returns; nothing yields in between.
+        \App\Util\Context::set(\App\Consts\Hook::CONTEXT_SHARED_TRADE, [
+            'trade_no' => (string)($trade['tradeNo'] ?? ''),
+            'delivery_status' => isset($trade['delivery_status']) ? (int)$trade['delivery_status'] : null,
+        ]);
 
         return (string)$trade['secret'];
+    }
+
+    /**
+     * 上游已经成交过的订单（请求号相同）。上游 3.8.6 起才有这个接口；老上游返回 null。
+     * @return array{found: bool, trade_no?: string, secret?: string, status?: int, delivery_status?: int}|null
+     */
+    private function findByRequest(\App\Model\Shared $shared, string $requestNo): ?array
+    {
+        return $this->postOptional($shared->domain . "/shared/commodity/queryByRequest", $shared->app_id, $shared->app_key, [
+            'request_no' => $requestNo,
+        ]);
+    }
+
+    /**
+     * 上游说「这个请求号已经下过单」：把那笔单查回来当作这次的结果。
+     * @throws SharedTradeFailure 查不回来时仍是 DUPLICATE，交给调用方挂起等站长处理
+     */
+    private function tradeByRequest(\App\Model\Shared $shared, string $requestNo, SharedTradeFailure $duplicate): array
+    {
+        $found = $this->findByRequest($shared, $requestNo);
+        if ($found === null) {
+            $detail = "上游已经处理过这笔订单（请求号 {$requestNo}），但上游版本过旧，无法自动取回发货内容；请到上游后台按这个请求号查找，再用手动发货补给买家";
+            //站长在后台补单时直接看到该怎么处理，其余场合仍是通用文案
+            throw new SharedTradeFailure(SharedPayload::guardMessage($detail, $duplicate->getMessage()), SharedTradeFailure::DUPLICATE, $detail);
+        }
+        if (empty($found['found']) || (int)($found['status'] ?? 0) !== 1) {
+            $detail = "上游提示请求号 {$requestNo} 已存在，但查不到这笔已付款的订单；请到上游后台核对";
+            throw new SharedTradeFailure(SharedPayload::guardMessage($detail, $duplicate->getMessage()), SharedTradeFailure::DUPLICATE, $detail);
+        }
+        return [
+            'secret' => (string)($found['secret'] ?? ''),
+            'tradeNo' => (string)($found['trade_no'] ?? ''),
+            'delivery_status' => isset($found['delivery_status']) ? (int)$found['delivery_status'] : null,
+        ];
+    }
+
+    /**
+     * 重新向上游取货（#1172 后台「重新向上游取货」）：先按请求号查，上游有这笔单就直接拿回来；
+     * 查不到才用**同一个请求号**重新下单——上游按请求号去重，就算查询漏判也不会买第二次。
+     * @throws JSONException
+     */
+    public function retrieve(\App\Model\Shared $shared, Commodity $commodity, \App\Model\Order $order): string
+    {
+        if ((int)$shared->type === 1) {
+            throw new JSONException("这个货源用的协议不支持安全重试，请到上游后台核对这笔订单后，用「手动发货」补给买家");
+        }
+        $requestNo = (string)$order->trade_no;
+        $found = $this->findByRequest($shared, $requestNo);
+        if ($found !== null && !empty($found['found']) && (int)($found['status'] ?? 0) === 1) {
+            \App\Util\Context::set(\App\Consts\Hook::CONTEXT_SHARED_TRADE, [
+                'trade_no' => (string)($found['trade_no'] ?? ''),
+                'delivery_status' => isset($found['delivery_status']) ? (int)$found['delivery_status'] : null,
+            ]);
+            return (string)($found['secret'] ?? '');
+        }
+        return $this->trade($shared, $commodity, (string)$order->contact, (int)$order->card_num, (int)$order->card_id, (int)$order->create_device,
+            (string)$order->password, (string)$order->race, $order->sku ?: [], $order->widget, $requestNo);
     }
 
     public function draftCard(\App\Model\Shared $shared, string $code, array $map = []): array
@@ -768,15 +856,81 @@ class Shared implements \App\Service\Shared
         return ["config" => $_config, "price" => $price, "user_price" => $userPrice];
     }
 
-    public function AdjustmentTemplate(PriceTemplate $template, string $config, string $price, string $userPrice, string $levelPrice = ''): array
+    public function AdjustmentTemplate(PriceTemplate $template, string $config, string $price, string $userPrice, string $levelPrice = '', ?array $factory = null): array
     {
-        $result = $template->forShared($config, $price, $userPrice, $levelPrice);
+        $result = $factory !== null
+            ? $template->forSharedAtFactory($config, $price, $userPrice, $levelPrice, $factory['price'] ?? null, $factory['category'] ?? [])
+            : $template->forShared($config, $price, $userPrice, $levelPrice);
         return [
             "config" => Ini::toArray($result['config']),
             "price" => $result['price'],
             "user_price" => $result['user_price'],
             "level_price" => $result['level_price'],
         ];
+    }
+
+    /**
+     * 只有店铺开了开关、模板选了成本价才走拿货价。type=1 的商品价本来就是拿货价（stock_price），不用区分。
+     * 上游商品价是公开售价还是账号成本，各家定义不同，所以开关放在店铺上；老店铺默认关，升级不改价。
+     */
+    public function usesFactoryBase(\App\Model\Shared $shared, PriceTemplate $template, ?Commodity $commodity = null): bool
+    {
+        if ((int)($shared->factory_base ?? 0) !== 1
+            || (int)$shared->type === 1
+            || (int)$template->base !== PriceTemplate::BASE_FACTORY) {
+            return false;
+        }
+        return $commodity === null || !$this->managedByAutoDock($commodity);
+    }
+
+    /**
+     * 自动货源的更新器一轮只拉一次列表，拿不到按账号算的拿货价，只能按列表价加价。
+     * 它托管的商品这里也维持按上游商品价，否则两边轮流改价。
+     */
+    private function managedByAutoDock(Commodity $commodity): bool
+    {
+        try {
+            return \App\Util\Schema::tableExists('autodock_item')
+                && \Illuminate\Database\Capsule\Manager::table('autodock_item')->where('commodity_id', $commodity->id)->exists();
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    public function priceSkipped(): bool
+    {
+        return $this->priceSkipped;
+    }
+
+    public function factoryQuote(\App\Model\Shared $shared, array $remoteItem, array $config, ?string $cost): ?array
+    {
+        $categories = $config['category'] ?? null;
+        if (empty($categories) || !is_array($categories)) {
+            return is_numeric($cost) && (float)$cost > 0 ? ['price' => $cost, 'category' => []] : null;
+        }
+
+        //3.1.2~3.6.0 的 item() 不带 factory_price，那份 [category_factory] 是上游自己的进货价快照，不是给本账号的拿货价
+        if ((int)$shared->type === 0
+            && $this->protocolOf($shared) === self::PROTOCOL_MODERN
+            && !array_key_exists('factory_price', $remoteItem)) {
+            return null;
+        }
+
+        $factory = $config['category_factory'] ?? null;
+        if (!is_array($factory)) {
+            return null;
+        }
+        $trusted = [];
+        foreach ($categories as $name => $amount) {
+            if (!is_numeric($amount) || (float)$amount <= 0) {
+                continue;
+            }
+            if (!is_numeric($factory[$name] ?? null) || (float)$factory[$name] <= 0) {
+                return null;
+            }
+            $trusted[$name] = $factory[$name];
+        }
+        return $trusted === [] ? null : ['price' => null, 'category' => $trusted];
     }
 
     public function AdjustmentAmount(int $type, float $premium, float|int|string $amount): string
@@ -853,8 +1007,31 @@ class Shared implements \App\Service\Shared
         return (new Decimal(sprintf('%.6F', (float)$value), 2))->getAmount();
     }
 
+    /**
+     * 上游的发货留言是不可信内容：按商户富文本同一套 RichHtml 净化后才入库。本地列是 varchar(255) utf8，
+     * 四字节字符（表情）存不进去先剔掉；净化后仍超长就不动本地留言，不截断 HTML。
+     * 上游把留言清空时返回 ''，开着同步的商品跟着清空。
+     */
+    public function remoteLeaveMessage(array $remoteItem): ?string
+    {
+        if (!array_key_exists('leave_message', $remoteItem)) {
+            return null;
+        }
+        $raw = $remoteItem['leave_message'] ?? '';
+        if (!is_string($raw) || !mb_check_encoding($raw, 'UTF-8')) {
+            return null;
+        }
+        $text = trim((string)preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $raw));
+        if ($text === '') {
+            return '';
+        }
+        $text = trim(\App\Util\RichHtml::sanitize($text, false));
+        return mb_strlen($text) <= 255 ? $text : null;
+    }
+
     public function syncRemoteItem(Commodity|int $commodity): bool
     {
+        $this->priceSkipped = false;
         if (is_int($commodity)) {
             $commodity = Commodity::query()->find($commodity);
         }
@@ -871,12 +1048,35 @@ class Shared implements \App\Service\Shared
 
         $remoteItem = $this->item($shared, $commodity->shared_code);
         $remoteConfig = Ini::toConfig($remoteItem['config'] ?: []);
+        $_config = $remoteItem['config'] ?: [];
+
+        //没配置参数（非种类）商品的进货成本。种类/SKU 商品的成本就是下面写进 config 的
+        //category_cost / sku_cost，而没配置参数的商品成本只能落在 factory_price 这一列——
+        //以前这里从来不写、导入时又固定写 0，这类商品的成本就永远是 0。
+        //成本是上游的事实而不是加价，不受加价模板影响；但价格同步和配置同步都关着，
+        //说明站长要自己管，这里就不动它。按拿货价加价时它也是基准，所以在算价之前取。
+        $cost = null;
+        $followsRemote = (int)$commodity->shared_amount_sync === 1 || (int)$commodity->shared_config_sync === 1;
+        if (empty($_config['category']) && $followsRemote) {
+            $cost = $this->remoteCost($shared, $commodity, $remoteItem);
+        }
 
         $template = $this->resolvePremiumTemplate($commodity);
         $usesTemplate = (int)$commodity->shared_premium_type === PriceTemplate::SHARED_PREMIUM_TYPE;
         $priceSyncable = !($usesTemplate && !$template);
         if (!$priceSyncable) {
             \Kernel\Util\Log::inst()->error("商品[{$commodity->id}]的加价模板不可用，本次跳过价格与配置同步");
+        }
+
+        //该按拿货价加价却查不到：保持原价并记错误。退回上游售价的话，上游一抖动售价就会跳高再跳回来
+        $factory = null;
+        if ($priceSyncable && $template && $followsRemote && $this->usesFactoryBase($shared, $template, $commodity)) {
+            $factory = $this->factoryQuote($shared, $remoteItem, $_config, $cost);
+            if ($factory === null) {
+                $priceSyncable = false;
+                $this->priceSkipped = true;
+                \Kernel\Util\Log::inst()->error("商品[{$commodity->id}]查不到账号拿货价，无法按成本价基准加价，本次跳过价格与配置同步");
+            }
         }
 
         $base = ['price' => null, 'user_price' => null, 'config' => []];
@@ -887,7 +1087,8 @@ class Shared implements \App\Service\Shared
                     $remoteConfig,
                     (string)$remoteItem['price'],
                     (string)$remoteItem['user_price'],
-                    (string)$commodity->getRawOriginal('level_price')
+                    (string)$commodity->getRawOriginal('level_price'),
+                    $factory
                 )
                 : $this->AdjustmentPrice(
                     $remoteConfig,
@@ -898,8 +1099,6 @@ class Shared implements \App\Service\Shared
                 );
         }
 
-        $_config = $remoteItem['config'] ?: [];
-
         if (!empty($_config['sku'])) {
             $base['config']['sku_cost'] = $_config['sku'];
         }
@@ -908,17 +1107,8 @@ class Shared implements \App\Service\Shared
             $base['config']['category_cost'] = $_config['category'];
         }
 
-        //没配置参数（非种类）商品的进货成本。种类/SKU 商品的成本就是上面写进 config 的
-        //category_cost / sku_cost，而没配置参数的商品成本只能落在 factory_price 这一列——
-        //以前这里从来不写、导入时又固定写 0，这类商品的成本就永远是 0。
-        //成本是上游的事实而不是加价，不受加价模板影响；但价格同步和配置同步都关着，
-        //说明站长要自己管，这里就不动它。
-        if (empty($_config['category'])
-            && ((int)$commodity->shared_amount_sync === 1 || (int)$commodity->shared_config_sync === 1)) {
-            $cost = $this->remoteCost($shared, $commodity, $remoteItem);
-            if ($cost !== null) {
-                $commodity->factory_price = $cost;
-            }
+        if ($cost !== null) {
+            $commodity->factory_price = $cost;
         }
 
         if ($priceSyncable && $commodity->shared_amount_sync === 1) {
@@ -932,6 +1122,13 @@ class Shared implements \App\Service\Shared
 
         if ($priceSyncable && $commodity->shared_config_sync === 1) {
             $commodity->config = Ini::toConfig($base['config']);
+        }
+
+        if ((int)$commodity->shared_leave_message_sync === 1) {
+            $leaveMessage = $this->remoteLeaveMessage($remoteItem);
+            if ($leaveMessage !== null) {
+                $commodity->leave_message = $leaveMessage;
+            }
         }
 
         $commodity->draft_status = $remoteItem['draft_status'];

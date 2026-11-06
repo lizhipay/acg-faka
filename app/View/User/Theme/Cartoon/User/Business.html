@@ -31,7 +31,7 @@
                                 <div class="uc-plan__feat"><span class="material-icons-outlined">check_circle</span>#{t("分站返佣")}</div>
                                 <div class="uc-plan__feat #{if $le.top_domain != 1}off#{/if}"><span class="material-icons-outlined">#{if $le.top_domain == 1}check_circle#{else}cancel#{/if}</span>#{t("独立域名")}</div>
                                 <div class="uc-plan__feat #{if $le.supplier != 1}off#{/if}"><span class="material-icons-outlined">#{if $le.supplier == 1}check_circle#{else}cancel#{/if}</span>#{t("供货权限")}</div>
-                                <div class="uc-plan__feat uc-plan__feat--fee"><span>#{t("供货手续费")}</span><b>#{if $le.supplier == 1}#{$le.cost*100}%#{else}—#{/if}</b></div>
+                                #{if $config.business_fee_hidden != 1}<div class="uc-plan__feat uc-plan__feat--fee"><span>#{t("供货手续费")}</span><b>#{if $le.supplier == 1}#{$le.cost*100}%#{else}—#{/if}</b></div>#{/if}
                             </div>
                         </a>
                         #{/foreach}
@@ -41,7 +41,7 @@
                         <div class="uc-benefit"><span class="material-icons-outlined">hub</span><div><b>#{t("分站返佣")}</b>#{t("开通分站后，您在分站售出的主站商品，将按差价返还佣金（实际成交金额 − 您的拿货价 = 您的佣金）。")}</div></div>
                         <div class="uc-benefit"><span class="material-icons-outlined">language</span><div><b>#{t("独立域名")}</b>#{t("开通分站后，您可绑定自己的顶级域名，无需使用系统默认分配的子域名。")}</div></div>
                         <div class="uc-benefit"><span class="material-icons-outlined">inventory_2</span><div><b>#{t("供货权限")}</b>#{t("您可自建商品分类并上架商品进行销售，主站也将协助推广与售卖。")}</div></div>
-                        <div class="uc-benefit"><span class="material-icons-outlined">receipt_long</span><div><b>#{t("供货手续费")}</b>#{t("针对您自主上架的商品，每笔成功交易将收取一定比例的手续费。")}</div></div>
+                        #{if $config.business_fee_hidden != 1}<div class="uc-benefit"><span class="material-icons-outlined">receipt_long</span><div><b>#{t("供货手续费")}</b>#{t("针对您自主上架的商品，每笔成功交易将收取一定比例的手续费。")}</div></div>#{/if}
                     </div>
 
                     <div class="uc-plan-actions">
@@ -68,7 +68,7 @@
                     <div class="uc-mstatus__feat #{if $user.businessLevel.supplier == 1}ok#{else}no#{/if}">
                         <span class="material-icons-outlined">#{if $user.businessLevel.supplier == 1}check_circle#{else}cancel#{/if}</span>#{t("供货权限")}
                     </div>
-                    #{if $user.businessLevel.supplier == 1}
+                    #{if $user.businessLevel.supplier == 1 && $config.business_fee_hidden != 1}
                     <div class="uc-mstatus__feat fee">
                         <span class="material-icons-outlined">receipt_long</span>#{t("供货手续费")}<b>#{$user.businessLevel.cost*100}%</b>
                     </div>
@@ -104,6 +104,19 @@
                                 <div class="form-body">
                                     <div class="notice-editor"></div>
                                 </div>
+                            </div>
+                            <div>
+                                <div class="uc-domain-row">
+                                    <div style="flex:1 1 auto; min-width:0;">
+                                        <div class="form-header">#{t("客服链接")}</div>
+                                        <div class="form-body"><input type="text" value="#{$business.service_url}" name="service_url" autocomplete="off" inputmode="url" placeholder="#{t('https:// 网址或 @Telegram 用户名')}" class="layui-input"></div>
+                                    </div>
+                                    <div style="flex:0 0 170px;">
+                                        <div class="form-header">#{t("客服 QQ")}</div>
+                                        <div class="form-body"><input type="text" value="#{$business.service_qq}" name="service_qq" autocomplete="off" inputmode="numeric" placeholder="#{t('选填')}" class="layui-input"></div>
+                                    </div>
+                                </div>
+                                <div class="uc-domain-hint">#{t("显示在店铺顶栏的「联系客服」；两项都不填时显示主站的客服")}</div>
                             </div>
                             <div>
                                 <div class="form-header">#{t("显示主站商品 [全局]")}</div>

@@ -53,6 +53,7 @@ use Kernel\Exception\JSONException;
  * @property int $shared_sync
  * @property int $shared_amount_sync
  * @property int $shared_config_sync
+ * @property int $shared_leave_message_sync
  * @property int $inventory_sync
  * @property int $hide
  * @property array|string $config
@@ -109,6 +110,7 @@ class Commodity extends Model
         'maximum' => 'integer',
         'shared_amount_sync' => 'integer',
         'shared_config_sync' => 'integer',
+        'shared_leave_message_sync' => 'integer',
         'shared_sync' => 'integer',
         'substation_disable' => 'integer',
         'ban' => 'integer',

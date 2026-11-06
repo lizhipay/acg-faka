@@ -46,7 +46,8 @@ class ManageLog extends Model
         $manageLog = new ManageLog();
         $manageLog->email = $manage->email;
         $manageLog->nickname = $manage->nickname;
-        $manageLog->content = $content;
+        //content 是 varchar(128)：严格模式下超长会报错，而这时业务改动往往已经提交了
+        $manageLog->content = mb_substr($content, 0, 128, 'UTF-8');
         $manageLog->create_time = Date::current();
         $manageLog->create_ip = Client::getAddress();
         $manageLog->ua = Client::getUserAgent();

@@ -12,6 +12,7 @@ use App\Service\Email;
 use App\Service\Sms;
 use App\Service\UserSSO;
 use App\Service\UserWebauthnService;
+use App\Util\AccountResolver;
 use App\Util\Captcha;
 use App\Util\Client;
 use App\Util\Date;
@@ -27,6 +28,8 @@ use Kernel\Waf\Filter;
 #[Interceptor(Waf::class)]
 class Authentication extends User
 {
+    private const FORGET_SENT_AT = 'FORGET_CODE_SENT_AT';
+    private const FORGET_COOLDOWN = 60;
 
     #[Inject]
     private Email $email;
@@ -61,13 +64,18 @@ class Authentication extends User
             throw new JSONException("验证码错误");
         }
 
-        if (!isset($_POST['username']) || !Validation::username((string)$_POST['username'], $usernameLen)) {
+        if (!is_string($_POST['username'] ?? null) || !Validation::username($_POST['username'], $usernameLen)) {
             throw new JSONException("用户名最少{$usernameLen}位");
         }
+
+        if (AccountResolver::looksLikeContact($_POST['username'])) {
+            throw new JSONException("用户名不能是邮箱或手机号");
+        }
+
         //user Model
         $user = new \App\Model\User();
 
-        if (\App\Model\User::query()->where("username", $_POST['username'])->first()) {
+        if (AccountResolver::taken($_POST['username'])) {
             throw new JSONException("该用户名已存在，换一个吧");
         }
 
@@ -85,7 +93,7 @@ class Authentication extends User
                 throw new JSONException("邮箱验证码不正确");
             }
 
-            if (\App\Model\User::query()->where("email", $_POST['email'])->first()) {
+            if (AccountResolver::taken($_POST['email'])) {
                 throw new JSONException("该邮箱已存在，换一个吧");
             }
             $user->email = $_POST['email'];
@@ -100,7 +108,7 @@ class Authentication extends User
                 throw new JSONException("手机验证码不正确");
             }
 
-            if (\App\Model\User::query()->where("phone", $_POST['phone'])->first()) {
+            if (AccountResolver::taken($_POST['phone'])) {
                 throw new JSONException("该手机已存在，换一个吧");
             }
             $user->phone = $_POST['phone'];
@@ -207,7 +215,7 @@ class Authentication extends User
             throw new JSONException("邮箱地址不正确");
         }
 
-        if (\App\Model\User::query()->where("email", $_POST['email'])->first()) {
+        if (AccountResolver::taken($_POST['email'])) {
             throw new JSONException("该邮箱已存在，换一个吧");
         }
         return $this->emailCaptcha("emailRegisterCaptcha", Email::CAPTCHA_REGISTER);
@@ -232,11 +240,7 @@ class Authentication extends User
             throw new JSONException("邮箱地址不正确");
         }
 
-        if (!\App\Model\User::query()->where("email", $_POST['email'])->first()) {
-            throw new JSONException("该邮箱没有被注册");
-        }
-
-        return $this->emailCaptcha("emailForgetCaptcha", Email::CAPTCHA_FORGET);
+        return $this->forgetCaptcha("emailForgetCaptcha", AccountResolver::CHANNEL_EMAIL, (string)$_POST['email']);
     }
 
     /**
@@ -277,7 +281,7 @@ class Authentication extends User
             throw new JSONException("手机号码不正确");
         }
 
-        if (\App\Model\User::query()->where("phone", $_POST['phone'])->first()) {
+        if (AccountResolver::taken($_POST['phone'])) {
             throw new JSONException("该手机已存在，换一个吧");
         }
 
@@ -303,11 +307,45 @@ class Authentication extends User
             throw new JSONException("手机号码不正确");
         }
 
-        if (!\App\Model\User::query()->where("phone", $_POST['phone'])->first()) {
-            throw new JSONException("该手机没有被注册");
+        return $this->forgetCaptcha("phoneForgetCaptcha", AccountResolver::CHANNEL_PHONE, (string)$_POST['phone']);
+    }
+
+    /**
+     * Same limits and same answer whether or not the address is registered. The code only
+     * ever goes to the stored address: the submitted spelling may merely collate equal to it.
+     * @param string $sessionName
+     * @param string $channel
+     * @param string $input
+     * @return array
+     * @throws JSONException
+     */
+    private function forgetCaptcha(string $sessionName, string $channel, string $input): array
+    {
+        $ip = Client::getAddress();
+        $quota = "sendcode:{$channel}:";
+        $inputKey = md5(strtolower(trim($input)));
+        if (Throttle::tooMany("sendcode:ip:{$ip}", 10, 600) || Throttle::tooMany($quota . $inputKey, 3, 600)) {
+            throw new JSONException("验证码发送过于频繁，请稍后再试");
+        }
+        if ((int)\Kernel\Util\Session::get(self::FORGET_SENT_AT) + self::FORGET_COOLDOWN > time()) {
+            throw new JSONException("验证码发送频繁，请稍后再试");
         }
 
-        return $this->phoneCaptcha("phoneForgetCaptcha", Sms::CAPTCHA_FORGET);
+        $user = AccountResolver::forReset($input, $channel);
+        if ($user) {
+            $address = (string)$user->{$channel};
+            $addressKey = md5(strtolower(trim($address)));
+            //Spellings of one address share its quota. Going over skips the send silently, so the answer stays the same.
+            if ($addressKey === $inputKey || !Throttle::tooMany($quota . $addressKey, 3, 600)) {
+                $channel === AccountResolver::CHANNEL_EMAIL
+                    ? $this->email->sendCaptcha($address, Email::CAPTCHA_FORGET)
+                    : $this->sms->sendCaptcha($address, Sms::CAPTCHA_FORGET);
+            }
+        }
+
+        \Kernel\Util\Session::set(self::FORGET_SENT_AT, time());
+        Captcha::destroy($sessionName);
+        return $this->json(200, "验证码发送成功");
     }
 
 
@@ -333,40 +371,43 @@ class Authentication extends User
             throw new JSONException("验证码错误");
         }
 
-        if (!isset($_POST['username'])) {
-            throw new JSONException("用户名输入错误");
+        $username = AccountResolver::normalize($_POST['username'] ?? null);
+        if ($username === '') {
+            throw new JSONException("账号或密码错误");
         }
 
         //按「账号+IP」再加一道，挡住盯着某个账号猛试的爆破（跨 IP 分布式仍靠上面的 IP 闸兜底）
-        $username = (string)$_POST['username'];
-        $userThrottleKey = "login:user:" . md5(strtolower(trim($username))) . ":{$ip}";
+        $userThrottleKey = "login:user:" . md5(strtolower($username)) . ":{$ip}";
         if (Throttle::tooMany($userThrottleKey, 10, 300)) {
             throw new JSONException("登录尝试过于频繁，请稍后再试");
         }
 
         //验证密码
         if (!isset($_POST['password']) || !Validation::password((string)$_POST['password'])) {
-            throw new JSONException("密码错误");
+            throw new JSONException("账号或密码错误");
         }
 
-
-        $user = \App\Model\User::query()->where("username", $_POST['username'])->first()
-            ?? \App\Model\User::query()->where("email", $_POST['username'])->first()
-            ?? \App\Model\User::query()->where("phone", $_POST['username'])->first();
+        $user = AccountResolver::resolve($username);
 
         if (!$user) {
-            $this->loginFail((string)$_POST['username'], "not_found");
-            throw new JSONException("用户不存在");
+            Str::burnPasswordCheck((string)$_POST['password']);
+            $this->loginFail($username, "not_found");
+            throw new JSONException("账号或密码错误");
         }
 
         //verifyPassword 内含旧清洗管线的兼容比对：老账号的特殊字符密码当年哈希的是转义形态（#833）
-        if (!Str::verifyPassword((string)$user->password, (string)$user->salt, (string)$_POST['password'], (string)$this->request->unsafePost('password'))) {
-            $this->loginFail((string)$_POST['username'], "password", $user);
-            throw new JSONException("密码错误");
+        if (!$this->passwordMatches($user)) {
+            $shadowed = AccountResolver::shadowedBy($username, $user);
+            if ($shadowed && $this->passwordMatches($shadowed)) {
+                $this->loginFail($username, "password", $shadowed);
+                throw new JSONException("该用户名已被其他账号绑定为邮箱或手机，请用您绑定的邮箱或手机登录，或联系站长修改用户名");
+            }
+            $this->loginFail($username, "password", $user);
+            throw new JSONException("账号或密码错误");
         }
 
         if ($user->status == 0) {
-            $this->loginFail((string)$_POST['username'], "banned", $user);
+            $this->loginFail($username, "banned", $user);
             throw new JSONException("您已被封禁");
         }
 
@@ -510,6 +551,11 @@ class Authentication extends User
         return $this->json(200, "登录成功");
     }
 
+    private function passwordMatches(\App\Model\User $user): bool
+    {
+        return Str::verifyPassword((string)$user->password, (string)$user->salt, (string)$_POST['password'], (string)$this->request->unsafePost('password'));
+    }
+
     /**
      * 登录失败通知点位（钩子异常不影响原有失败流程）
      * @param string $account
@@ -536,10 +582,11 @@ class Authentication extends User
     public function password(): array
     {
         $forgetType = (int)Config::get("forget_type");
+        $channel = $forgetType == 0 ? AccountResolver::CHANNEL_EMAIL : AccountResolver::CHANNEL_PHONE;
 
         //风控判决。刻意放在验证码校验**之前** —— 拒绝时不该白白消耗掉
         //用户手里那条邮件/短信验证码，也不该替攻击者把站长的短信费烧掉。
-        $riskAccount = (string)($_POST['username'] ?? '');
+        $riskAccount = AccountResolver::normalize($_POST['username'] ?? null);
         $risk = new \App\Entity\RiskContext('password');
         hook(Hook::USER_API_AUTH_PASSWORD_BEGIN, $risk, $riskAccount);
         if ($risk->denied() || $risk->held()) {
@@ -551,11 +598,14 @@ class Authentication extends User
         //杜绝分布式 IP 绕过。触限即销毁该目标的找回验证码，使已发出的码立即失效，攻击者必须重新发码
         //（发码侧有 60s 冷却 + 图形验证码）。（F-32）
         $ip = Client::getAddress();
-        $forgetTargetKey = "forget:target:" . md5(strtolower(trim($riskAccount)));
+        //Every spelling of one address shares its code and its attempt counter.
+        $user = AccountResolver::forReset($riskAccount, $channel);
+        $address = $user ? (string)$user->{$channel} : $riskAccount;
+        $forgetTargetKey = "forget:target:" . md5(strtolower(trim($address)));
         if (Throttle::tooMany("forget:ip:{$ip}", 30, 300) || Throttle::tooMany($forgetTargetKey, 10, 600)) {
             $forgetType == 0
-                ? $this->email->destroyCaptcha($riskAccount, Email::CAPTCHA_FORGET)
-                : $this->sms->destroyCaptcha($riskAccount, Sms::CAPTCHA_FORGET);
+                ? $this->email->destroyCaptcha($address, Email::CAPTCHA_FORGET)
+                : $this->sms->destroyCaptcha($address, Sms::CAPTCHA_FORGET);
             throw new JSONException("尝试过于频繁，请稍后再试");
         }
 
@@ -564,24 +614,22 @@ class Authentication extends User
         }
 
         if ($forgetType == 0) {
-            if (!isset($_POST['username']) || !Validation::email((string)$_POST['username'])) {
+            if (!Validation::email($riskAccount)) {
                 throw new JSONException("邮箱地址不正确");
             }
-            if (!$this->email->checkCaptcha($_POST['username'], Email::CAPTCHA_FORGET, (int)$_POST['captcha'])) {
+            if (!$this->email->checkCaptcha($address, Email::CAPTCHA_FORGET, (int)($_POST['captcha'] ?? 0))) {
                 throw new JSONException("邮箱验证码不正确");
             }
-            $user = \App\Model\User::query()->where("email", $_POST['username'])->first();
-            $this->email->destroyCaptcha($_POST['username'], Email::CAPTCHA_FORGET);
+            $this->email->destroyCaptcha($address, Email::CAPTCHA_FORGET);
         } else {
-            if (!isset($_POST['username']) || !Validation::phone((string)$_POST['username'])) {
+            if (!Validation::phone($riskAccount)) {
                 throw new JSONException("手机号不正确");
             }
 
-            if (!$this->sms->checkCaptcha($_POST['username'], Sms::CAPTCHA_FORGET, (int)$_POST['captcha'])) {
+            if (!$this->sms->checkCaptcha($address, Sms::CAPTCHA_FORGET, (int)($_POST['captcha'] ?? 0))) {
                 throw new JSONException("手机验证码不正确");
             }
-            $user = \App\Model\User::query()->where("phone", $_POST['username'])->first();
-            $this->sms->destroyCaptcha($_POST['username'], Sms::CAPTCHA_FORGET);
+            $this->sms->destroyCaptcha($address, Sms::CAPTCHA_FORGET);
         }
 
         //账号在「发码后、提交前」被删会让 $user 为 null（低危 500 面），给出通用错误而非崩溃。
@@ -593,6 +641,7 @@ class Authentication extends User
         $user->save();
         //改密后吊销该账号所有在线会话，被盗号者手里的旧 cookie 立即失效
         \App\Service\UserSessionManager::revokeAll((int)$user->id);
+        \App\Model\UserLog::write($user, 'password', '通过找回密码重置了登录密码');
 
         //成功即清零两个维度的失败计数，避免误伤本人后续操作。
         Throttle::clear("forget:ip:{$ip}");

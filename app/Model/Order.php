@@ -39,7 +39,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property float $divide_amount
  * @property string $race
  * @property string $request_no
+ * @property string|null $shared_error 向上游下单失败的原因，非空=已付款等待重新取货（#1172）
  * @property array $sku
+ * @property int $refund_status 0=未退款，1=已退款到会员余额（#1145）
+ * @property float $refund_amount 退回会员余额的金额
+ * @property string|null $refund_time
  */
 class Order extends Model
 {
@@ -56,7 +60,27 @@ class Order extends Model
     /**
      * @var array
      */
-    protected $casts = ['amount' => 'float', 'gateway_amount' => 'float', 'cost' => 'float', 'rebate' => 'float', 'divide_amount' => 'float', 'rent' => 'float', 'premium' => 'float', 'user_id' => 'integer', 'substation_user_id' => 'integer', 'from' => 'integer', 'commodity_id' => 'integer', 'card_id' => 'integer', 'card_num' => 'integer', 'create_device' => 'integer', 'delivery_status' => 'integer', 'id' => 'integer', 'owner' => 'integer', 'pay_id' => 'integer', 'status' => 'integer', 'sku' => 'json'];
+    protected $casts = ['amount' => 'float', 'gateway_amount' => 'float', 'cost' => 'float', 'rebate' => 'float', 'divide_amount' => 'float', 'rent' => 'float', 'premium' => 'float', 'user_id' => 'integer', 'substation_user_id' => 'integer', 'from' => 'integer', 'commodity_id' => 'integer', 'card_id' => 'integer', 'card_num' => 'integer', 'create_device' => 'integer', 'delivery_status' => 'integer', 'id' => 'integer', 'owner' => 'integer', 'pay_id' => 'integer', 'status' => 'integer', 'sku' => 'json', 'refund_status' => 'integer', 'refund_amount' => 'float'];
+
+    public const REFUND_NONE = 0;
+    public const REFUND_DONE = 1;
+
+    /**
+     * 统计口径：排除已退款订单（#1145）。只管退款，「已支付」照旧自己加 where('status', 1)。
+     * 联表或原生 SQL 里用 Order::unrefundedSql('别名') 拼同一个条件。
+     */
+    public function scopeUnrefunded(Builder $query): Builder
+    {
+        \App\Util\Schema::ensureOrderRefund();
+        return $query->where($query->getModel()->getTable() . '.refund_status', self::REFUND_NONE);
+    }
+
+    /** 原生 SQL 片段（无绑定参数），$alias 为空时不加表名前缀 */
+    public static function unrefundedSql(string $alias = ''): string
+    {
+        \App\Util\Schema::ensureOrderRefund();
+        return ($alias === '' ? '' : '`' . $alias . '`.') . '`refund_status` = ' . self::REFUND_NONE;
+    }
 
     /**
      * 当前商户作为供货方或实际销售分站时可见。

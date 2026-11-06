@@ -67,7 +67,12 @@
                 return `<div class="md-pair"><div class="md-pair__row"><span class="md-pair__v">${no}</span></div>${subTime(row?.create_time)}</div>`;
             }
         }
-        , {field: 'commodity', title: '商品', formatter: format.item}
+        , {
+            field: 'commodity', title: '商品', class: 'table-cell-wrap', formatter: (value) => {
+                const name = esc(i18n(value?.name ?? ''));
+                return `<span class="table-item" title="${name}"><img src="${esc(value?.cover)}" class="table-item-icon" alt=""><span class="table-item-name">${name}</span></span>`;
+            }
+        }
         , {
             field: 'sku', title: '类别/SKU', formatter: (_, __) => {
                 const race = (__.race && __.race !== '-') ? __.race : '';
@@ -99,7 +104,7 @@
         }
         , {field: 'delivery_status', title: '发货状态', dict: "_order_delivery_status"}
         , {
-            field: 'secret', title: '操作', type: "button", buttons: [
+            field: 'secret', title: '操作', type: "button", class: 'action-col', buttons: [
                 {
                     icon: `fa-duotone fa-regular fa-eye`,
                     class: "text-primary",
@@ -118,4 +123,21 @@
 
     table.setState("status", "_order_status");
     table.render();
+
+    // The action column is sticky (.action-col); flag the scroller so it gets a surface and an edge shade while rows slide under it.
+    const scroller = document.querySelector('#bill-table')?.closest('.fixed-table-body');
+    if (scroller) {
+        const sync = () => {
+            const overflow = scroller.scrollWidth - scroller.clientWidth > 1;
+            scroller.classList.toggle('is-overflowing', overflow);
+            scroller.classList.toggle('is-scrolled-end', !overflow || Math.ceil(Math.abs(scroller.scrollLeft) + scroller.clientWidth) >= scroller.scrollWidth - 1);
+        };
+        scroller.addEventListener('scroll', sync, {passive: true});
+        if (typeof ResizeObserver === 'function') {
+            const observer = new ResizeObserver(sync);
+            observer.observe(scroller);
+            observer.observe(scroller.querySelector('#bill-table'));
+        }
+        sync();
+    }
 }();

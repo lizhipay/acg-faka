@@ -15,6 +15,7 @@ use App\Model\Business;
 use App\Model\ManageLog;
 use App\Model\UserGroup;
 use App\Service\Query;
+use App\Util\AccountResolver;
 use App\Util\Date;
 use App\Util\Str;
 use Illuminate\Database\Capsule\Manager as DB;
@@ -156,6 +157,16 @@ class User extends Manage
 
         if (!empty($map['password']) && strlen((string)$map['password']) < 6) {
             throw new JSONException("密码必须6位以上");
+        }
+
+        //Only changed values are checked, so accounts that already collide stay editable.
+        $identity = \App\Model\User::query()->find($userId, ['id', 'username', 'email', 'phone']);
+        foreach (['username' => "该用户名已被其他会员使用", 'email' => "该邮箱已被其他会员使用", 'phone' => "该手机已被其他会员使用"] as $field => $conflict) {
+            if ($identity && array_key_exists($field, $map)
+                && trim((string)$map[$field]) !== (string)$identity->$field
+                && AccountResolver::taken((string)$map[$field], (int)$userId)) {
+                throw new JSONException($conflict);
+            }
         }
 
         $user = DB::transaction(function () use (
@@ -337,7 +348,8 @@ class User extends Manage
         if ($userId === false || $userId < 1) {
             throw new JSONException('用户不存在');
         }
-        $order = \App\Model\Order::query()->where("user_id", $userId)->where("status", 1);
+        //已退款订单不算交易（#1145）
+        $order = \App\Model\Order::query()->where("user_id", $userId)->where("status", 1)->unrefunded();
         $data = [];
         //今日交易
         $data['today_order_amount'] = sprintf("%.2f", (clone $order)->whereBetween('create_time', [Date::calcDay(), Date::calcDay(0, Date::TYPE_END)])->sum("amount"));

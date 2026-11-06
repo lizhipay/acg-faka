@@ -44,6 +44,7 @@ class Pay extends Manage
     private const MAX_TEST_AMOUNT = 100;
     private const SAVE_FIELDS = [
         'name', 'icon', 'code', 'commodity', 'recharge', 'handle', 'pay_config_id', 'sort', 'equipment', 'cost', 'cost_type',
+        'min_amount', 'max_amount',
     ];
 
     /**
@@ -225,6 +226,17 @@ class Pay extends Manage
             }
             $map['cost'] = $cost;
         }
+        //单笔限额（#1129）：留空 = 不限，按含手续费的实付金额判断
+        foreach (['min_amount' => '单笔最低金额', 'max_amount' => '单笔最高金额'] as $field => $label) {
+            if (array_key_exists($field, $raw)) {
+                $limit = $this->scalarString($raw[$field], $label);
+                $limit = $limit === '' ? '0' : $limit;
+                if (!preg_match('/^\d{1,8}(?:\.\d{1,2})?$/D', $limit)) {
+                    throw new JSONException("{$label}必须是不超过 2 位小数的非负数，留空表示不限");
+                }
+                $map[$field] = $limit;
+            }
+        }
 
         if (!$existing) {
             foreach (['name' => '支付名称', 'icon' => '支付图标', 'handle' => '支付插件', 'code' => '支付方式'] as $field => $label) {
@@ -232,7 +244,7 @@ class Pay extends Manage
                     throw new JSONException("请填写{$label}");
                 }
             }
-            $map += ['commodity' => 0, 'recharge' => 0, 'sort' => 0, 'equipment' => 0, 'cost' => '0', 'cost_type' => 0, 'pay_config_id' => 0];
+            $map += ['commodity' => 0, 'recharge' => 0, 'sort' => 0, 'equipment' => 0, 'cost' => '0', 'cost_type' => 0, 'pay_config_id' => 0, 'min_amount' => '0', 'max_amount' => '0'];
         }
 
         if (!$existing || array_key_exists('code', $map)) {
@@ -266,6 +278,12 @@ class Pay extends Manage
         $effectiveCost = (float)($map['cost'] ?? $existing?->cost ?? 0);
         if ($effectiveCostType === 1 && $effectiveCost > 1) {
             throw new JSONException('百分比手续费请使用 0–1 之间的小数');
+        }
+
+        $effectiveMin = (string)($map['min_amount'] ?? $existing?->min_amount ?? '0');
+        $effectiveMax = (string)($map['max_amount'] ?? $existing?->max_amount ?? '0');
+        if (bccomp($effectiveMax, '0', 2) > 0 && bccomp($effectiveMin, $effectiveMax, 2) > 0) {
+            throw new JSONException('单笔最低金额不能大于单笔最高金额');
         }
 
         //归档接口不允许重新启用（避免出现"前台可用但列表看不见"的悬空状态），先恢复再启用
@@ -397,6 +415,7 @@ class Pay extends Manage
      */
     public function data(): array
     {
+        \App\Util\Schema::ensurePayAmountLimit();
         $map = $_POST;
         //归档接口默认不出现在列表；「已归档」筛选显式传 equal-archived=1 时才展示
         if (($map['equal-archived'] ?? '') === '') {
@@ -424,6 +443,7 @@ class Pay extends Manage
      */
     public function save(Request $request): array
     {
+        \App\Util\Schema::ensurePayAmountLimit();
         $raw = (array)$request->post(flags: Filter::NORMAL);
         $id = $this->paymentId($raw['id'] ?? null);
         $created = $id === 0;

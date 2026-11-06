@@ -1659,6 +1659,11 @@
 /* --- 单元格不换行(数据表标准),宽表交给横向滚动;th 永不换行 --- */
 :root[data-theme] .uc-card .bootstrap-table .table thead th,
 :root[data-theme] .uc-card .bootstrap-table .table tbody td { white-space: nowrap; }
+/* 例外:标了 .table-cell-wrap 的列(购买记录的商品)名称最多两行,长商品名不再把表格撑宽、把右侧「操作」挤出视野;全名在 title */
+:root[data-theme] .uc-card .bootstrap-table .table tbody td.table-cell-wrap { min-width: 180px; }
+:root[data-theme] .uc-card .bootstrap-table .table-cell-wrap .table-item { max-width: 240px; white-space: normal; justify-content: flex-start; text-align: left; }
+:root[data-theme] .uc-card .bootstrap-table .table-cell-wrap .table-item-icon { flex: 0 0 auto; }
+:root[data-theme] .uc-card .bootstrap-table .table-cell-wrap .table-item-name { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
 
 /* --- 行内"加卡"快捷链接 → 迷你 tonal 芯片(原是裸绿链接) --- */
 :root[data-theme] .uc-card .bootstrap-table .add-card {

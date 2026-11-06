@@ -11,6 +11,7 @@ use App\Model\Bill;
 use App\Model\BusinessLevel;
 use App\Model\Config;
 use App\Util\Date;
+use App\Util\ServiceLink;
 use App\Util\Validation;
 use Illuminate\Database\Capsule\Manager as DB;
 use Kernel\Annotation\Interceptor;
@@ -169,8 +170,13 @@ class Business extends User
         $business->shop_name = $_POST['shop_name'];
         $business->title = $_POST['title'];
         $business->notice = $post['notice'];
-        $business->service_qq = $_POST['service_qq'];
-        $business->service_url = $_POST['service_url'];
+        //没这两栏的模板不会提交它们，缺键时保持原值，别把别的模板里填好的客服清空
+        if (array_key_exists('service_qq', $_POST)) {
+            $business->service_qq = ServiceLink::qq((string)$request->unsafePost('service_qq'));
+        }
+        if (array_key_exists('service_url', $_POST)) {
+            $business->service_url = ServiceLink::normalize((string)$request->unsafePost('service_url'));
+        }
         $business->master_display = (int)$_POST['master_display'];
 
         $business->save();

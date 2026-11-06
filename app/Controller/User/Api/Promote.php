@@ -34,6 +34,8 @@ class Promote extends User
 
     private array $custom = [];
 
+    private ?array $premiumRules = null;
+
     private array $hiddenCategories = [];
 
     /**
@@ -240,8 +242,21 @@ class Promote extends User
     private function customFor(Commodity $commodity): ?UserCommodity
     {
         $this->loadSite();
-        $custom = $this->business ? ($this->custom[$commodity->id] ?? null) : null;
-        return $custom && $custom->premium > 0 ? $custom : null;
+        if (!$this->business) {
+            return null;
+        }
+        //商品自己的加价 → 分类规则 → 全店默认，与分站列表、详情、下单同一套
+        $attributes = $commodity->getAttributes();
+        if (!array_key_exists('owner', $attributes) || !array_key_exists('category_id', $attributes)) {
+            return UserCommodity::effective($this->business, $commodity);
+        }
+        $this->premiumRules ??= UserCommodity::rulesOf($this->business);
+        return UserCommodity::fromRule(UserCommodity::pick(
+            $this->premiumRules,
+            (int)$attributes['owner'],
+            (int)$attributes['category_id'],
+            $this->custom[$commodity->id] ?? null
+        ));
     }
 
     private function loadSite(): void

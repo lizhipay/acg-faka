@@ -50,7 +50,9 @@ class User extends Manage
      */
     public function businessLevel(): string
     {
-        return $this->render("商户等级", "User/BusinessLevel.html");
+        return $this->render("商户等级", "User/BusinessLevel.html", [
+            "feeVisible" => \App\Model\Config::cached('business_fee_hidden') !== '1',
+        ]);
     }
 
     /**

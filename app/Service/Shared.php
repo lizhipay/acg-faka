@@ -75,6 +75,12 @@ interface Shared
     public function trade(\App\Model\Shared $shared, Commodity $commodity, string $contact, int $num, int $cardId, int $device, string $password, string $race, ?array $sku, ?string $widget, string $requestNo): string;
 
     /**
+     * 重新向上游取货：先按请求号查，查不到才用同一个请求号重新下单（#1172）
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function retrieve(\App\Model\Shared $shared, Commodity $commodity, \App\Model\Order $order): string;
+
+    /**
      * @param \App\Model\Shared $shared
      * @param string $code
      * @param array $map
@@ -136,9 +142,31 @@ interface Shared
      * @param string $price
      * @param string $userPrice
      * @param string $levelPrice
+     * @param array{price:?string, category:array}|null $factory 按账号拿货价加价时的拿货价（factoryQuote() 的结果）；null = 按上游商品价
      * @return array
      */
-    public function AdjustmentTemplate(PriceTemplate $template, string $config, string $price, string $userPrice, string $levelPrice = ''): array;
+    public function AdjustmentTemplate(PriceTemplate $template, string $config, string $price, string $userPrice, string $levelPrice = '', ?array $factory = null): array;
+
+    /**
+     * 这张模板、这家店铺该不该按账号拿货价加价。
+     * $commodity 给了就顺带排除自动货源托管的商品：它的更新器只有列表价，两边口径不同价格会来回跳。
+     */
+    public function usesFactoryBase(\App\Model\Shared $shared, PriceTemplate $template, ?Commodity $commodity = null): bool;
+
+    /**
+     * 按账号拿货价加价要用的拿货价；查不到返回 null，调用方不许退回上游售价。
+     *
+     * @param array $remoteItem item() 的结果
+     * @param array $config 上游配置（已解析）
+     * @param string|null $cost remoteCost() 的结果
+     * @return array{price:?string, category:array}|null
+     */
+    public function factoryQuote(\App\Model\Shared $shared, array $remoteItem, array $config, ?string $cost): ?array;
+
+    /**
+     * 这个实例上一次 syncRemoteItem() 是不是因为查不到拿货价而没有改价（后台同步日志据此如实显示）。
+     */
+    public function priceSkipped(): bool;
 
 
     /**
@@ -173,4 +201,11 @@ interface Shared
      * @return string|null
      */
     public function remoteCost(\App\Model\Shared $shared, Commodity $commodity, array $remoteItem): ?string;
+
+    /**
+     * 上游发货留言的入库形态（#972）。上游没给（老版本上游、平台对接）或内容放不进本地列时返回 null，调用方保持本地留言不动。
+     * @param array $remoteItem item() 的返回
+     * @return string|null
+     */
+    public function remoteLeaveMessage(array $remoteItem): ?string;
 }

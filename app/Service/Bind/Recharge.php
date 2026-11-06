@@ -65,6 +65,9 @@ class Recharge implements \App\Service\Recharge
             throw new JSONException("当前支付方式已停用");
         }
 
+        //接口单笔限额：与下单共用，按含手续费的实付金额判断（#1129）
+        \App\Util\PayLimit::assert($pay, \App\Util\PayLimit::payable($pay, $amount));
+
         //风控判决。放在服务层而不是控制器：控制器那边不组装任何 $map，
         //金额与通道是在这里才解析出来的。
         $riskMap = ['amount' => $amount, 'pay_id' => $payId];

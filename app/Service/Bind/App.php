@@ -357,6 +357,70 @@ class App implements \App\Service\App
     }
 
     /**
+     * 一键授权至本机（#1144）：列出「买过、但本机没授权」的插件和本机缺的专业版/企业版，
+     * 每一项挑出要转过来的那条授权。只在不会挑错时才自动挑：
+     * 只剩一条有效授权，或多条里只有一条的机器指纹就是本机（换了 IP 的同一台机器）。
+     * 其余列为「需手动选择」，免得把站长其他网站正在用的授权转走。
+     * @throws GuzzleException
+     * @throws JSONException
+     */
+    public function rebindPlan(): array
+    {
+        //商店回来的指纹是 md5(机器指纹) 末 4 位打码，比对前 28 位
+        $mine = substr(md5((string)_plugin_get_hwid()), 0, 28);
+        $now = date("Y-m-d H:i:s");
+        $pick = static function (array $records) use ($mine, $now): array {
+            $alive = array_values(array_filter($records, static function ($record) use ($now): bool {
+                $expire = (string)($record['expire_date'] ?? '');
+                return $expire === '' || $expire > $now;
+            }));
+            if (!$alive) {
+                return ['reason' => '授权已过期'];
+            }
+            $same = array_values(array_filter($alive, static fn($record): bool => str_starts_with((string)($record['app_key'] ?? ''), $mine)));
+            $chosen = count($alive) === 1 ? $alive[0] : (count($same) === 1 ? $same[0] : null);
+            if ($chosen === null) {
+                return ['reason' => '有 ' . count($alive) . ' 条授权，无法判断要转移哪一条，请手动选择', 'records' => count($alive)];
+            }
+            return ['auth_id' => (int)$chosen['id'], 'from' => (string)($chosen['server_ip'] ?? '')];
+        };
+
+        $level = null;
+        $service = $this->service();
+        if (($service['level'] ?? null) === null && !empty($service['is_have_level'])) {
+            $levels = $this->levels();
+            $levels = is_array($levels['list'] ?? null) ? $levels['list'] : $levels;
+            $top = max(array_map(static fn($row): int => (int)($row['level'] ?? 0), $levels ?: [['level' => 0]]));
+            $candidates = array_values(array_filter($levels, static fn($row): bool => (int)($row['level'] ?? 0) === $top));
+            $level = ['level' => $top, 'name' => $top === 1 ? '企业版' : '专业版'] + $pick($candidates);
+        }
+
+        $plugins = [];
+        for ($page = 1; $page <= 20; $page++) {
+            $result = $this->plugins(["owner" => -1, "group" => 8, "page" => $page, "limit" => 50]);
+            $rows = is_array($result['rows'] ?? null) ? $result['rows'] : [];
+            foreach ($rows as $row) {
+                //和插件列表上的「解绑」按钮同一口径：付费、买过（有未过期授权）、本机没有授权
+                if ((float)($row['price'] ?? 0) <= 0 || !empty($row['has']['has']) || empty($row['owned'])) {
+                    continue;
+                }
+                $records = $this->purchaseRecords((int)$row['id']);
+                $records = is_array($records['list'] ?? null) ? $records['list'] : $records;
+                $plugins[] = [
+                    'plugin_id' => (int)$row['id'],
+                    'name' => strip_tags((string)($row['plugin_name'] ?? '')),
+                    'icon' => (string)($row['icon'] ?? ''),
+                ] + $pick(is_array($records) ? $records : []);
+            }
+            if (count($rows) < 50 || $page * 50 >= (int)($result['count'] ?? 0)) {
+                break;
+            }
+        }
+
+        return ['level' => $level, 'plugins' => $plugins];
+    }
+
+    /**
      * @throws GuzzleException
      * @throws JSONException
      */

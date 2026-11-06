@@ -52,7 +52,19 @@ interface Hook
 
     const USER_API_ORDER_TRADE_AFTER = 0x17;
 
+    /**
+     * 订单付款成功之后。传参 \App\Model\Commodity $commodity, \App\Model\Order $order, \App\Model\Pay $pay
+     *
+     * 发货被风控挂起（USER_API_ORDER_DELIVERY_BEGIN 判了 REVIEW）时也会触发，此时订单是「已付款、待发货」；
+     * 审核放行时核心会重跑付款成功流程，**同一笔订单会再触发一次**。挂起那次触发期间，
+     * `\App\Util\Context::get('order.delivery_held')` 等于该订单 id（见 CONTEXT_DELIVERY_HELD）。
+     * 通知类照常处理即可；向上游下单、交付类的订阅方必须在挂起时跳过，并自己按订单防重。
+     * 旧核心没有这个标记，取到的是 null。
+     */
     const USER_API_ORDER_PAY_AFTER = 0x18;
+
+    /** USER_API_ORDER_PAY_AFTER 在「发货被挂起」那次触发期间，App\Util\Context 里这个键等于订单 id；插件请写字面量以兼容旧核心 */
+    public const CONTEXT_DELIVERY_HELD = 'order.delivery_held';
 
     const USER_API_ORDER_TRADE_PAY_BEGIN = 0x171;
 
@@ -163,6 +175,26 @@ interface Hook
     const ADMIN_API_TICKET_REPLY_AFTER = 0x2102;
 
     const ORDER_MANUAL_DELIVERY_AFTER = 0x2200;
+
+    /**
+     * 订单退款完成（事务已提交，#1145）。传参 \App\Model\Order $order（refund_status=1），
+     * array $result {refunded 退回余额的金额, vigor 扣回的元气, clawed 已扣回的硬币 [{role,user_id,amount}], skipped 站长确认不扣回的}
+     */
+    const ORDER_REFUND_AFTER = 0x2201;
+
+    /**
+     * 店铺共享下单成功之后、订单落库之前，跑在付款事务里（#1167）。
+     * 传参 \App\Model\Order $order, \App\Model\Commodity $commodity, \App\Model\Shared $shared, array $result
+     *
+     * $result：trade_no 上游订单号（V4 协议没有，为空串）；delivery_status 上游回报的发货状态，旧版上游不回报时为 null。
+     * 此时 $order->secret 是上游返回的内容，delivery_status 是 1。订阅方要接手发货就改这两个字段：
+     * delivery_status 改成 0 = 由订阅方稍后补发，核心这一单不发「发货提醒」邮件。
+     * 这里抛异常会让整个付款回滚，订阅方要自己兜住。插件请写字面量以兼容旧核心。
+     */
+    const ORDER_SHARED_TRADE_AFTER = 0x2202;
+
+    /** Bind\Shared::trade 把上游下单结果放进 App\Util\Context 的键，供 Order::orderSuccess 取用 */
+    public const CONTEXT_SHARED_TRADE = 'shared.trade_result';
 
     /* ───────────── 风控 / 人工审核 ─────────────
      *

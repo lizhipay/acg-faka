@@ -403,6 +403,70 @@ final class Schema
         });
     }
 
+    /** 对接商品「远端发货留言同步」：开启后接入与同步时把上游的发货留言写进本地商品（#972，3.8.6） */
+    public static function ensureCommoditySharedLeaveMessage(): void
+    {
+        self::ensureColumn('commodity', 'shared_leave_message_sync', static function (Blueprint $table): void {
+            $table->unsignedTinyInteger('shared_leave_message_sync')->default(0)->comment('同步远端发货留言：0=关，1=开');
+        });
+    }
+
+    /** 分站加价规则：全店默认（business）与分类规则（user_category），没有单独设置加价的主站商品按它们加价（#975，3.8.6） */
+    public static function ensureSubstationPremiumRules(): void
+    {
+        self::ensureColumn('business', 'premium', static function (Blueprint $table): void {
+            $table->unsignedInteger('premium')->default(0)->comment('全店默认加价百分比：0=不加价');
+        });
+        self::ensureColumn('business', 'premium_rounding', static function (Blueprint $table): void {
+            $table->unsignedTinyInteger('premium_rounding')->default(0)->comment('全店默认加价取整：0=不取整，1=四舍五入到整元，2=向上取整到整元');
+        });
+        self::ensureColumn('user_category', 'premium', static function (Blueprint $table): void {
+            $table->unsignedInteger('premium')->default(0)->comment('分类加价百分比：0=沿用全店规则');
+        });
+        self::ensureColumn('user_category', 'rounding', static function (Blueprint $table): void {
+            $table->unsignedTinyInteger('rounding')->default(0)->comment('分类加价取整：0=不取整，1=四舍五入到整元，2=向上取整到整元');
+        });
+    }
+
+    /**
+     * 订单退款（#1145，3.8.6）：退款并入核心，统计口径一律排除已退款订单。
+     * refund_status 列以前由「订单退款」插件建（同名同类型），这里只补缺的列。
+     */
+    public static function ensureOrderRefund(): void
+    {
+        self::ensureColumn('order', 'refund_status', static function (Blueprint $table): void {
+            $table->unsignedTinyInteger('refund_status')->default(0)->comment('退款状态：0=未退款，1=已退款到会员余额');
+        });
+        self::ensureColumn('order', 'refund_amount', static function (Blueprint $table): void {
+            $table->decimal('refund_amount', 10, 2)->unsigned()->default(0)->comment('退回会员余额的金额');
+        });
+        self::ensureColumn('order', 'refund_time', static function (Blueprint $table): void {
+            $table->dateTime('refund_time')->nullable()->comment('退款时间');
+        });
+    }
+
+    /**
+     * 对接下单失败挂起（#1172，3.8.6）：钱收到了但上游没给货，订单记为已付款、待发货，原因记在这里。
+     * 只能在事务外调用（补列是 DDL，会隐式提交）。
+     */
+    public static function ensureOrderSharedError(): void
+    {
+        self::ensureColumn('order', 'shared_error', static function (Blueprint $table): void {
+            $table->string('shared_error', 255)->nullable()->comment('向上游下单失败的原因：非空=已付款但没取到货，等待重新向上游取货');
+        });
+    }
+
+    /** 支付接口单笔限额：含手续费的实付金额超出范围时拒绝下单/充值（#1129，3.8.6） */
+    public static function ensurePayAmountLimit(): void
+    {
+        self::ensureColumn('pay', 'min_amount', static function (Blueprint $table): void {
+            $table->decimal('min_amount', 10, 2)->unsigned()->default(0)->comment('单笔最低支付金额(含手续费)：0=不限');
+        });
+        self::ensureColumn('pay', 'max_amount', static function (Blueprint $table): void {
+            $table->decimal('max_amount', 10, 2)->unsigned()->default(0)->comment('单笔最高支付金额(含手续费)：0=不限');
+        });
+    }
+
     /** 手动发货商品「付款即发货」：付款后直接把发货信息作为卡密发出、订单即为已发货（3.8.3） */
     public static function ensureCommodityDeliveryAuto(): void
     {
@@ -434,6 +498,17 @@ final class Schema
     {
         self::ensureColumn('shared', 'protocol', static function (Blueprint $table): void {
             $table->unsignedTinyInteger('protocol')->default(0)->comment('上游协议代次：0=未探明，1=3.1.2+，2=3.1.1及更老');
+        });
+    }
+
+    /**
+     * 共享店铺的成本价基准：加价模板选「成本价」时，要不要按上游给本账号的拿货价加价。
+     * 老店铺补列后是 0，价格口径不变，由站长逐家打开；新接入的店铺由保存接口默认设成 1。
+     */
+    public static function ensureSharedFactoryBase(): void
+    {
+        self::ensureColumn('shared', 'factory_base', static function (Blueprint $table): void {
+            $table->unsignedTinyInteger('factory_base')->default(0)->comment('成本价基准：0=按上游商品价加价，1=按账号拿货价加价');
         });
     }
 

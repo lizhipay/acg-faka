@@ -12,6 +12,15 @@ use Kernel\Waf\Firewall;
  */
 class Str
 {
+    private const DECOY_HASH = '$2y$10$Vx6h8ISfIG.cozj.Yc7aHuAg8H2kif0a59xA2EdQl5whf76OikgtS';
+
+    /**
+     * Spend what a real check costs when no account matched, so response time does not reveal it.
+     */
+    public static function burnPasswordCheck(string $password): void
+    {
+        password_verify($password, self::DECOY_HASH);
+    }
 
     /**
      * 生成密码

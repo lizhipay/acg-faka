@@ -294,6 +294,7 @@
             shared_sync: normalizeBinaryValue(value?.shared_sync),
             shared_amount_sync: normalizeBinaryValue(value?.shared_amount_sync),
             shared_config_sync: normalizeBinaryValue(value?.shared_config_sync),
+            shared_leave_message_sync: normalizeBinaryValue(value?.shared_leave_message_sync),
             premium_type: premiumType,
             //模板模式下加价规则整套来自模板，加价数额留 0 免得被误读
             premium: useTemplate ? '0' : premiumText,
@@ -1281,7 +1282,8 @@
             app_id: String(assign.app_id || ''),
             currency: String(assign.currency || 'CNY').toUpperCase(),
             //0 = 自动，回填成空串让占位提示可见
-            currency_rate: Number(assign.currency_rate) > 0 ? String(Number(assign.currency_rate)) : ''
+            currency_rate: Number(assign.currency_rate) > 0 ? String(Number(assign.currency_rate)) : '',
+            factory_base: Number(assign.factory_base) === 1 ? 1 : 0
         } : {};
         component.popup({
             submit: (data, index) => {
@@ -1363,6 +1365,13 @@
                                 value: '^$|^\\d{0,9}(\\.\\d{1,6})?$',
                                 message: i18n('结算汇率必须是数字，最多 6 位小数')
                             }
+                        },
+                        {
+                            title: "成本价基准用账号拿货价",
+                            name: "factory_base",
+                            type: "switch",
+                            default: 1,
+                            tips: "加价模板选「成本价」时：开启按上游给本账号的拿货价加价，查不到拿货价就保持原价并记录错误；关闭按上游商品价加价。上游商品价已经是账号成本时请关闭。切换后，商品下次同步时按新口径改价。"
                         },
                     ]
                 },
@@ -1727,6 +1736,12 @@
                                                 tips: "启用后，远端的商品配置会实时同步本地商品（如种类，SKU）"
                                             },
                                             {
+                                                title: "远端发货留言同步",
+                                                name: "shared_leave_message_sync",
+                                                type: "switch",
+                                                tips: "启用后，接入与同步时会用上游的发货留言覆盖本地留言。上游留言可能含有对方的联系方式，介意引流请勿开启"
+                                            },
+                                            {
                                                 title: "立即上架",
                                                 name: "shelves",
                                                 type: "switch",
@@ -1757,7 +1772,7 @@
                                                 type: "select",
                                                 dict: "price_template,id,name",
                                                 placeholder: "请选择加价模板",
-                                                tips: "在【店铺共享 - 加价模板】里维护。模板可以一次配好游客价、会员价、每个会员等级的价格，还能对价格取整。这里一律以远端价为基准加价（远端报的价就是你的进货成本），模板里的「加价基准」不参与。后续远端价变动时也会按同一个模板重算"
+                                                tips: "在【店铺共享 - 加价模板】里维护。模板可以一次配好游客价、会员价、每个会员等级的价格，还能对价格取整。模板选「成本价」且这家店铺开了「成本价基准用账号拿货价」时，按上游给你的拿货价加价，其余情况按上游商品价加价。后续远端价变动时也会按同一个模板重算"
                                             },
                                             {
                                                 title: false,

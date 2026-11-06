@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $topdomain
  * @property string $create_time
  * @property int $master_display
+ * @property int $premium 全店默认加价百分比（0=不加价）
+ * @property int $premium_rounding 全店默认加价取整，见 UserCommodity::ROUNDING_*
  */
 class Business extends Model
 {
@@ -35,7 +37,7 @@ class Business extends Model
     /**
      * @var array
      */
-    protected $casts = ['id' => 'integer', 'user_id' => 'integer', 'master_display' => 'integer'];
+    protected $casts = ['id' => 'integer', 'user_id' => 'integer', 'master_display' => 'integer', 'premium' => 'integer', 'premium_rounding' => 'integer'];
 
     /**
      * @return Business|mixed

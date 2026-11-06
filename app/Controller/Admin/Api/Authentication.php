@@ -61,7 +61,7 @@ class Authentication extends Manage
         } catch (JSONException $e) {
             //待输入两步验证码不算失败（密码已正确）
             if ($e->getCode() !== \App\Service\Bind\ManageSSO::CODE_NEED_TOTP) {
-                $this->loginFail($username, self::failReason($e->getMessage()));
+                $this->loginFail($username, self::failReason($e->getMessage(), $username));
             }
             throw $e;
         }
@@ -85,11 +85,13 @@ class Authentication extends Manage
     /**
      * 把 SSO 抛出的失败文案归一成稳定的原因码，供插件按类别统计
      * @param string $message
+     * @param string $email
      * @return string
      */
-    private static function failReason(string $message): string
+    private static function failReason(string $message, string $email): string
     {
         return match (true) {
+            $message === \App\Service\Bind\ManageSSO::WRONG_CREDENTIALS => \App\Model\Manage::query()->where('email', $email)->exists() ? "password" : "not_found",
             str_contains($message, "不存在") => "not_found",
             str_contains($message, "谷歌验证码") => "totp",
             str_contains($message, "密码错误") => "password",

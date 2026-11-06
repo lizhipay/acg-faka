@@ -28,5 +28,5 @@ class UserCategory extends Model
     /**
      * @var array
      */
-    protected $casts = ['id' => 'integer' , 'user_id' => 'integer' , 'category_id' => 'integer' , 'status' => 'integer'];
+    protected $casts = ['id' => 'integer' , 'user_id' => 'integer' , 'category_id' => 'integer' , 'status' => 'integer' , 'premium' => 'integer' , 'rounding' => 'integer'];
 }

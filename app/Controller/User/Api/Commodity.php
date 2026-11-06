@@ -54,21 +54,21 @@ class Commodity extends User
                     'card as card_success_count' => function (Builder $builder) {
                         $builder->where("status", 1);
                     },
-                    //商品总盈利
+                    //商品总盈利（以下四项均不含已退款订单，#1145）
                     'order as order_all_amount' => function (Builder $relation) {
-                        $relation->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_all_amount"));
+                        $relation->where("status", 1)->unrefunded()->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_all_amount"));
                     },
                     //过去7天内盈利
                     'order as order_week_amount' => function (Builder $relation) {
-                        $relation->whereBetween('create_time', [Date::weekDay(1, Date::TYPE_START), Date::weekDay(7, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_week_amount"));
+                        $relation->whereBetween('create_time', [Date::weekDay(1, Date::TYPE_START), Date::weekDay(7, Date::TYPE_END)])->where("status", 1)->unrefunded()->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_week_amount"));
                     },
                     //昨日盈利
                     'order as order_yesterday_amount' => function (Builder $relation) {
-                        $relation->whereBetween('create_time', [Date::calcDay(-1), Date::calcDay(-1, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_yesterday_amount"));
+                        $relation->whereBetween('create_time', [Date::calcDay(-1), Date::calcDay(-1, Date::TYPE_END)])->where("status", 1)->unrefunded()->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_yesterday_amount"));
                     },
                     //今日盈利
                     'order as order_today_amount' => function (Builder $relation) {
-                        $relation->whereBetween('create_time', [Date::calcDay(), Date::calcDay(0, Date::TYPE_END)])->where("status", 1)->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_today_amount"));
+                        $relation->whereBetween('create_time', [Date::calcDay(), Date::calcDay(0, Date::TYPE_END)])->where("status", 1)->unrefunded()->select(\App\Model\Order::query()->raw("COALESCE(sum(amount),0) as order_today_amount"));
                     }
                 ]);
         });

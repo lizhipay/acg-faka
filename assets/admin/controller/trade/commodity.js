@@ -70,8 +70,9 @@
         {name: 'shared_sync', title: '远端信息同步', tips: '仅对远端商品生效'},
         {name: 'shared_amount_sync', title: '远端价格同步', tips: '仅对远端商品生效'},
         {name: 'shared_config_sync', title: '远端配置同步', tips: '仅对远端商品生效'},
+        {name: 'shared_leave_message_sync', title: '远端发货留言同步', tips: '仅对远端商品生效'},
     ];
-    const batchSettingForm = definition => mobileAdminEnabled() ? {
+    const batchSettingForm = definition => ({
         title: definition.title,
         name: definition.name,
         type: 'radio',
@@ -82,12 +83,30 @@
             {id: 0, name: '关闭'},
         ],
         tips: definition.tips
-    } : {
-        title: definition.title,
-        name: definition.name,
-        type: 'switch',
-        text: '启用',
-        tips: definition.tips
+    });
+    const batchTemplateField = {
+        title: '加价模板',
+        name: 'shared_premium_template',
+        type: 'select',
+        dict: 'price_template,id,name',
+        placeholder: '不修改',
+        tips: '只对对接商品生效，不会立刻改价：下次同步按新模板计算，也可以到加价模板点「应用」。自动货源托管的商品请到托管设置里修改'
+    };
+    const showBatchTemplateResult = result => {
+        const switched = Number(result.template_count || 0);
+        const managed = Number(result.template_managed || 0);
+        const unsupported = Number(result.template_unsupported || 0);
+        const lines = [`${i18n('已切换加价模板')} <b>${switched} ${i18n('个商品')}</b>`];
+        if (managed > 0) {
+            lines.push(`${i18n('跳过自动货源托管的商品')} <b>${managed} ${i18n('个')}</b>`);
+        }
+        if (unsupported > 0) {
+            lines.push(`${i18n('跳过非对接商品')} <b>${unsupported} ${i18n('个')}</b>`);
+        }
+        if (switched > 0) {
+            lines.push(i18n('下次同步按新模板计算价格，想立刻生效请到加价模板点「应用」'));
+        }
+        message.alert(lines.join('<br>'), switched > 0 ? 'success' : 'warning');
     };
     if (typeof window.__mdTradeCommodityDestroy === 'function') window.__mdTradeCommodityDestroy();
     const confirmCommodityDelete = (list, fallbackName, done) => {
@@ -666,6 +685,7 @@
                                     _.show("shared_sync");
                                     _.show("shared_amount_sync");
                                     _.show("shared_config_sync");
+                                    _.show("shared_leave_message_sync");
                                     //加价数额/加价模板二选一，由加价模式决定显示哪个
                                     applySharedPremiumMode(_, sharedPremiumType);
                                 } else {
@@ -676,6 +696,7 @@
                                     _.hide("shared_sync");
                                     _.hide("shared_amount_sync");
                                     _.hide("shared_config_sync");
+                                    _.hide("shared_leave_message_sync");
                                 }
                             },
                             complete: (_, __) => {
@@ -712,6 +733,13 @@
                             hide: true
                         },
                         {
+                            title: "远端发货留言同步",
+                            name: "shared_leave_message_sync",
+                            type: "switch",
+                            tips: "启用后，接入与同步时会用上游的发货留言覆盖本地留言，本地修改的留言会被覆盖",
+                            hide: true
+                        },
+                        {
                             title: "加价模式",
                             name: "shared_premium_type",
                             type: "radio",
@@ -740,7 +768,7 @@
                             type: "select",
                             dict: "price_template,id,name",
                             placeholder: "请选择加价模板",
-                            tips: "在【店铺共享 - 加价模板】里维护。模板能一次配好游客价、会员价、每个会员等级的价格并对价格取整；远端价变动时按同一个模板重算。这里一律以远端价为基准，模板里的「加价基准」不参与",
+                            tips: "在【店铺共享 - 加价模板】里维护。模板能一次配好游客价、会员价、每个会员等级的价格并对价格取整；远端价变动时按同一个模板重算。模板选「成本价」且共享店铺开了「成本价基准用账号拿货价」时按拿货价加价，其余情况按上游商品价加价",
                             hide: true
                         }
                     ]
@@ -1359,22 +1387,23 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
         }
 
         let join = data.join(",");
-        const useMobileBatchSettings = mobileAdminEnabled();
         let submitting = false;
-        const submitMobileBatchSettings = (formData, index) => {
+        const submitBatchSettings = (formData, index) => {
             if (submitting) return;
             const changes = batchSettingDefinitions.filter(item => {
                 const value = String(formData[item.name] ?? 'keep');
                 return value === '0' || value === '1';
             });
-            if (!changes.length) {
+            const templateId = String(formData.shared_premium_template || '');
+            if (!changes.length && !templateId) {
                 message.warning('请至少选择一项需要修改的设置');
                 return;
             }
+            const templateName = document.querySelector('select[name="shared_premium_template"]')?.selectedOptions?.[0]?.textContent;
             const summary = changes.map(item => {
                 const enabled = String(formData[item.name]) === '1';
                 return `<li><b>${item.title}</b> → ${enabled ? i18n('开启') : i18n('关闭')}</li>`;
-            }).join('');
+            }).join('') + (templateId ? `<li><b>${i18n('加价模板')}</b> → ${escapeHtml(templateName || templateId)}</li>` : '');
             message.ask(
                 `${i18n('将修改')} <b>${data.length} ${i18n('个商品')}</b>，${i18n('仅变更以下项目，其他设置保持原值：')}<ul style="text-align:left;margin:14px 0 0 22px">${summary}</ul>`,
                 () => {
@@ -1384,7 +1413,11 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
                         if (!controllerActive || !table) return;
                         layer.close(index);
                         const count = Number(res.data?.selected_count || data.length);
-                        message.success(`${i18n('已完成')} ${count} ${i18n('个商品的批量设置')}`);
+                        if (res.data?.template_count !== undefined) {
+                            showBatchTemplateResult(res.data);
+                        } else {
+                            message.success(`${i18n('已完成')} ${count} ${i18n('个商品的批量设置')}`);
+                        }
                         table.refresh();
                     }, error => {
                         submitting = false;
@@ -1402,7 +1435,8 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
         };
 
         component.popup({
-            submit: useMobileBatchSettings ? submitMobileBatchSettings : '/admin/api/commodity/fastEnable',
+            submit: submitBatchSettings,
+            submitRoute: '/admin/api/commodity/fastEnable',
             tab: [
                 {
                     name: util.icon("fa-duotone fa-regular fa-sliders") + i18n(" 批量设置"),
@@ -1414,17 +1448,15 @@ ACC_JP_6M_0KLD-22MM-PP31║${i18n('地区')}:${i18n('日区')}·${i18n('时长')
                             hide: true,
                             default: join
                         },
-                        ...batchSettingDefinitions.map(batchSettingForm)
+                        ...batchSettingDefinitions.map(batchSettingForm),
+                        batchTemplateField
                     ]
                 },
             ],
             autoPosition: true,
             height: "auto",
-            width: "320px",
-            maxmin: false,
-            done: () => {
-                if (controllerActive && table) table.refresh();
-            }
+            width: "380px",
+            maxmin: false
         });
     });
 

@@ -9,6 +9,7 @@ use App\Entity\Query\Save;
 use App\Interceptor\Store;
 use App\Interceptor\UserSession;
 use App\Interceptor\Waf;
+use App\Model\Business;
 use App\Model\UserCategory;
 use App\Model\UserCommodity;
 use App\Service\Query;
@@ -17,6 +18,7 @@ use Kernel\Annotation\Inject;
 use Kernel\Annotation\Interceptor;
 use Kernel\Exception\JSONException;
 use Kernel\Waf\Filter;
+use Illuminate\Database\Capsule\Manager as DB;
 
 //Master 是分站主(转售主站商品)配置售价/展示的接口，此前漏了店铺门禁：任何登录用户都能写
 //user_commodity/user_category 并触发 setCommodityAll* 全表遍历写。补 Store（=已开通店铺，与
@@ -36,6 +38,7 @@ class Master extends User
      */
     public function category(): array
     {
+        \App\Util\Schema::ensureSubstationPremiumRules();
         $map = [];
         $map['equal-status'] = 1;
         $map['equal-owner'] = 0;
@@ -88,9 +91,19 @@ class Master extends User
             $id = (int)(UserCategory::query()->where("user_id", $userId)->where("category_id", $categoryId)->value("id") ?? 0);
         }
 
+        //分类加价规则（#975）：0 = 沿用全店默认；只作用于直接归属这个分类、且没单独设置加价的商品
+        $fields = ['name', 'status'];
+        if (array_key_exists('premium', $map)) {
+            \App\Util\Schema::ensureSubstationPremiumRules();
+            $map['premium'] = $this->premiumPercent($map['premium']);
+            $map['rounding'] = $this->premiumRounding($map['rounding'] ?? UserCommodity::ROUNDING_NONE);
+            $fields[] = 'premium';
+            $fields[] = 'rounding';
+        }
+
         $save = new Save(UserCategory::class);
         $save->setId($id);
-        $save->setMap($map, ['name', 'status']);
+        $save->setMap($map, $fields);
         if ($id == 0) {
             //白名单会把 user_id/category_id 一起滤掉，新建记录必须强制写入，否则 NOT NULL 列让 INSERT 直接报错(#922)
             $save->addForceMap("user_id", $userId);
@@ -179,11 +192,15 @@ class Master extends User
         $get->setPaginate((int)$this->request->post("page"), (int)$this->request->post("limit"));
         $get->setWhere($map);
         $get->setOrderBy('sort', 'asc');
-        $get->setColumn('id', 'name', 'cover', 'price', 'user_price', 'sort');
+        $get->setColumn('id', 'name', 'cover', 'price', 'user_price', 'sort', 'category_id');
         $data = $this->query->get($get);
+        $business = Business::query()->where('user_id', $this->getUser()->id)->first();
+        $rules = $business ? UserCommodity::rulesOf($business) : ['shop' => null, 'category' => []];
         foreach ($data['list'] as &$item) {
             $UserCommodity = UserCommodity::query()->where("user_id", $this->getUser()->id)->where("commodity_id", $item['id'])->first();
             $item['user_commodity'] = $UserCommodity?->toArray();
+            //实际生效的加价及来源（商品 / 分类 / 全店），列表据此显示，免得站主以为没设置的新商品不加价
+            $item['premium_rule'] = UserCommodity::pick($rules, 0, (int)$item['category_id'], $UserCommodity);
         }
 
         return $this->json(data: $data);
@@ -322,48 +339,102 @@ class Master extends User
      */
     public function setCommodityAllPremium(): array
     {
-        //全表遍历写：限流防止被反复调用堆大 user_commodity 表 / 压 DB（写放大 DoS）
+        //全表批量写：限流防止被反复调用压 DB（写放大 DoS）
         if (Throttle::tooMany("master:bulk:" . $this->getUser()->id, 20, 60)) {
             throw new JSONException("操作过于频繁，请稍后再试");
         }
-        $categoryId = (int)$_POST['category_id'];
-        $premium = (int)$_POST['premium'];
-        $rounding = (int)($_POST['rounding'] ?? UserCommodity::ROUNDING_NONE);
+        \App\Util\Schema::ensureSubstationPremiumRules();
+        $categoryId = (int)($_POST['category_id'] ?? 0);
+        $premium = $this->premiumPercent($_POST['premium'] ?? 0);
+        $rounding = $this->premiumRounding($_POST['rounding'] ?? UserCommodity::ROUNDING_NONE);
+        //旧版页面不带 override：保持原来「范围内的商品统一改成这个加价」的效果
+        $override = !array_key_exists('override', $_POST) || (string)$_POST['override'] === '1';
+        $userId = $this->getUser()->id;
 
-        if ($premium < 0) {
-            throw new JSONException("加价百分比，无法低于0");
+        $business = Business::query()->where('user_id', $userId)->first();
+        if (!$business) {
+            throw new JSONException("无权限");
+        }
+        if ($categoryId !== 0 && !\App\Model\Category::query()->where("owner", 0)->where("id", $categoryId)->exists()) {
+            throw new JSONException("分类不存在，请刷新网页");
         }
 
+        //#975 以前是给「当下已有」的每件商品写一条加价，之后新上架的商品不加价；现在存成规则：
+        //不选分类 = 全店默认，选了分类 = 分类规则，新商品自动套用。覆盖 = 清掉范围内商品各自的加价，让规则统一生效
+        DB::transaction(function () use ($business, $categoryId, $premium, $rounding, $override, $userId): void {
+            if ($categoryId === 0) {
+                $business->premium = $premium;
+                $business->premium_rounding = $rounding;
+                $business->save();
+                if ($override) {
+                    UserCommodity::query()->where("user_id", $userId)->where("premium", ">", 0)->update(['premium' => 0, 'rounding' => 0]);
+                    UserCategory::query()->where("user_id", $userId)->where("premium", ">", 0)->update(['premium' => 0, 'rounding' => 0]);
+                }
+                return;
+            }
+
+            $userCategory = UserCategory::query()->where("user_id", $userId)->where("category_id", $categoryId)->first();
+            if (!$userCategory) {
+                $userCategory = new UserCategory();
+                $userCategory->user_id = $userId;
+                $userCategory->category_id = $categoryId;
+                //user_category.status 默认 0=隐藏：只为存加价规则新建的记录必须显式置为显示，否则设个加价分类就被藏了
+                $userCategory->status = 1;
+            }
+            $userCategory->premium = $premium;
+            $userCategory->rounding = $rounding;
+            $userCategory->save();
+
+            if ($override) {
+                UserCommodity::query()
+                    ->where("user_id", $userId)
+                    ->where("premium", ">", 0)
+                    ->whereIn("commodity_id", \App\Model\Commodity::query()->where("owner", 0)->where("category_id", $categoryId)->pluck("id")->all())
+                    ->update(['premium' => 0, 'rounding' => 0]);
+            }
+        });
+
+        return $this->json(200, "加价规则已保存，之后新上架的商品也会自动加价");
+    }
+
+    /**
+     * 全店默认加价（批量加价弹窗回填用）
+     * @return array
+     */
+    public function premiumRule(): array
+    {
+        \App\Util\Schema::ensureSubstationPremiumRules();
+        $business = Business::query()->where('user_id', $this->getUser()->id)->first();
+        return $this->json(data: [
+            'premium' => (int)($business?->premium ?? 0),
+            'rounding' => (int)($business?->premium_rounding ?? 0),
+        ]);
+    }
+
+    /** @throws JSONException */
+    private function premiumPercent(mixed $value): int
+    {
+        if ($value === '' || $value === null) {
+            return 0;
+        }
+        if (!is_scalar($value) || !preg_match('/^\d{1,6}$/', trim((string)$value))) {
+            throw new JSONException("加价百分比只能填写 0–100000 的整数");
+        }
+        $premium = (int)trim((string)$value);
+        if ($premium > 100000) {
+            throw new JSONException("加价百分比只能填写 0–100000 的整数");
+        }
+        return $premium;
+    }
+
+    /** @throws JSONException */
+    private function premiumRounding(mixed $value): int
+    {
+        $rounding = is_scalar($value) ? (int)$value : -1;
         if (!in_array($rounding, [UserCommodity::ROUNDING_NONE, UserCommodity::ROUNDING_ROUND, UserCommodity::ROUNDING_CEIL], true)) {
             throw new JSONException("价格取整方式不正确");
         }
-
-        $commodity = \App\Model\Commodity::query()->where("owner", 0)->where("status", 1);
-
-        if ($categoryId != 0) {
-            $commodity->where("category_id", $categoryId);
-        }
-
-        $commodity = $commodity->get();
-        $userId = $this->getUser()->id;
-        foreach ($commodity as $item) {
-            $userCommodity = UserCommodity::query()->where("user_id", $userId)->where("commodity_id", $item->id)->first();
-            if (!$userCommodity) {
-                $userCommodity = new UserCommodity();
-                $userCommodity->commodity_id = $item['id'];
-                $userCommodity->user_id = $userId;
-                //user_commodity.status 默认 0=隐藏，而分站是「有 status=0 记录才隐藏、无记录=默认显示」（Business::sells）。
-                //批量加价只应改价格，绝不能顺带把原本显示的主站商品隐藏掉——新建记录显式置为显示。
-                //已存在的记录不动它的 status：商户手动隐藏过的商品保持隐藏。
-                $userCommodity->status = 1;
-            }
-
-            $userCommodity->premium = $premium;
-            $userCommodity->rounding = $rounding;
-            $userCommodity->save();
-        }
-
-        return $this->json(200, "加价已生效");
+        return $rounding;
     }
 
 

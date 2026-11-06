@@ -106,6 +106,12 @@ interface Order
     public function orderSuccess(\App\Model\Order $order): string;
 
     /**
+     * 重新向上游取货：已付款、向上游下单失败被挂起的订单（#1172）。调用方要先锁住订单行。
+     * @throws \Kernel\Exception\JSONException
+     */
+    public function retrySharedDelivery(\App\Model\Order $order): \App\Model\Order;
+
+    /**
      * @param string $handle
      * @param array $map
      * @return array

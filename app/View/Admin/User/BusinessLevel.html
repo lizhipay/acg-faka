@@ -22,6 +22,11 @@
                         <button class="btn btn-sm btn-light-primary btn-app-create me-3"><i class="fa-duotone fa-regular fa-circle-plus"></i>
                             #{t("新增等级")}
                         </button>
+                        <div class="layui-form layui-switch-text d-flex flex-wrap align-items-center">
+                            <span class="fw-semibold me-2">#{t("向会员显示手续费")}</span>
+                            <input lay-filter="business-fee-visible" type="checkbox" lay-skin="switch" lay-text="ON|OFF"#{if $feeVisible} checked#{/if}>
+                            <small class="text-muted ms-2">#{t("关闭后，会员中心不再显示供货手续费，实际仍照常扣除")}</small>
+                        </div>
                     </div>
                 </div>
                 <!--end::Header-->
@@ -39,5 +44,5 @@
 <!--end::Content-->
 
 
-#{ready("/assets/admin/controller/user/business.level.js")}
+#{ready("/assets/admin/controller/user/business.level.js?rev=1164-fee-visible-2")}
 #{include file="../Footer.html"}

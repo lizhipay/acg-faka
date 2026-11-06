@@ -62,11 +62,14 @@ final class SharedPayload
     /**
      * 明确禁止出站的商品键。白名单已经足够，这份清单是给测试当断言用的——
      * 谁把某个键加进 COMMODITY_FIELDS，回归立刻变红。
+     *
+     * leave_message 不进批量列表；下游要同步发货留言时，只由单品接口
+     * Shared\Commodity::item() 单独补发（#972，是否采用由下游商品的开关决定）。
      */
     public const FORBIDDEN_KEYS = [
         'shared_id', 'shared_code', 'shared_premium', 'shared_premium_type',
         'shared_premium_template', 'shared_stock', 'shared_sync',
-        'shared_amount_sync', 'shared_config_sync', 'inventory_sync',
+        'shared_amount_sync', 'shared_config_sync', 'shared_leave_message_sync', 'inventory_sync',
         'factory_price', 'level_price', 'level_disable',
         'owner', 'create_time', 'api_status', 'hide', 'recommend',
         'leave_message', 'delivery_message', 'delivery_auto_mode', 'delivery_auto', 'send_email',
@@ -82,7 +85,7 @@ final class SharedPayload
     public const DETAIL_STRIP_KEYS = [
         'shared_id', 'shared_code', 'shared_premium', 'shared_premium_type',
         'shared_premium_template', 'shared_stock', 'shared_sync',
-        'shared_amount_sync', 'shared_config_sync', 'inventory_sync',
+        'shared_amount_sync', 'shared_config_sync', 'shared_leave_message_sync', 'inventory_sync',
         'factory_price', 'level_price', 'level_disable',
     ];
 

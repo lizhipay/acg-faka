@@ -225,6 +225,10 @@ class Commodity extends Shared
             }
 
             $item['factory_price'] = $factoryPrice;
+
+            //#972 发货留言只走这个要下游凭据、且商品已开放对接的口（公开详情 getItem() 仍然不带）；
+            //下游采不采用由它自己的「远端发货留言同步」开关决定。套娃转售时抹掉我们自己上游的地址。
+            $item['leave_message'] = SharedPayload::scrubText((string)$commodity->leave_message);
         }
 
         return $this->json(data: $item);
@@ -408,6 +412,8 @@ class Commodity extends Shared
         // trade() already points file links at the origin this downstream called; the downstream
         // stores the secret verbatim, so the protocol keeps its old shape.
         unset($trade['delivery_files']);
+        // Lets a downstream tell a real delivery from a "being prepared" placeholder; older ones ignore it.
+        $trade['delivery_status'] = (int)\App\Model\Order::query()->where("trade_no", (string)($trade['tradeNo'] ?? ''))->value('delivery_status');
         return $this->json(200, 'success', $trade);
     }
 
@@ -488,16 +494,54 @@ class Commodity extends Shared
             throw new JSONException("订单不存在");
         }
 
+        return $this->json(200, 'success', $this->orderPayload($order));
+    }
+
+    /**
+     * 按下游的请求号查单（#1172）。下游下单时上游已经成交、但下游没拿到结果，
+     * 下游手上只有自己的请求号（它的订单号），靠这个把那笔单找回来，而不是再买一次。
+     * 只查调用者自己的订单；查不到返回 found=false，好让下游分清「没成交」和「接口出错」。
+     * @throws JSONException
+     */
+    public function queryByRequest(): array
+    {
+        $requestNo = trim((string)$this->request->post('request_no'));
+        if (!preg_match('/^[A-Za-z0-9]{1,32}$/D', $requestNo)) {
+            throw new JSONException("请求号不正确");
+        }
+        $order = \App\Model\Order::query()->where("request_no", $requestNo)->where("owner", $this->getUser()->id)->first();
+        if (!$order) {
+            return $this->json(200, 'success', ['found' => false]);
+        }
+        return $this->json(200, 'success', ['found' => true, 'trade_no' => (string)$order->trade_no] + $this->orderPayload($order));
+    }
+
+    private function orderPayload(\App\Model\Order $order): array
+    {
         $widget = (array)json_decode((string)$order->widget, true);
         if (empty($widget)) {
             $widget = null;
         }
 
         $secret = $order->secret;
+        $files = [];
         if (is_string($secret)) {
-            [$secret] = Link::decorate($secret);
+            [$secret, $local] = Link::decorate($secret);
+            if ($local !== []) {
+                // Name, size and digest let a downstream verify the copy it keeps; the bearer token is already in the secret.
+                foreach (\App\Model\CardFile::query()->whereIn('token', array_keys($local))->get(['token', 'name', 'size', 'hash']) as $file) {
+                    $files[(string)$file->token] = ['name' => (string)$file->name, 'size' => (int)$file->size, 'sha256' => (string)$file->hash];
+                }
+            }
         }
-        return $this->json(200, 'success', ['secret' => $secret, 'widget' => $widget, "status" => $order->status]);
+        return [
+            'secret' => $secret,
+            'widget' => $widget,
+            "status" => $order->status,
+            'delivery_status' => (int)$order->delivery_status,
+            'request_no' => (string)$order->request_no,
+            'files' => $files === [] ? null : $files,
+        ];
     }
 
 

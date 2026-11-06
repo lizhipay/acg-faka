@@ -27,7 +27,8 @@ class Dashboard extends User
         $data = [];
 
         //消费(所有人):本月购物 / 累计购物 / 订单数(「最近购买」列表已改由前端表格复用 /user/api/purchaseRecord/data)
-        $buyModel = \App\Model\Order::query()->where("owner", $uid)->where("status", 1);
+        //已退款到余额的订单(#1145)不算消费,也不算成交
+        $buyModel = \App\Model\Order::query()->where("owner", $uid)->where("status", 1)->unrefunded();
         $data['buy_month'] = sprintf("%.2f", (float)(clone $buyModel)->where("create_time", ">=", $monthStart)->sum("amount"));
         $data['buy_total'] = sprintf("%.2f", (float)(clone $buyModel)->sum("amount"));
         $data['buy_count'] = (clone $buyModel)->count();
@@ -40,7 +41,7 @@ class Dashboard extends User
             $data['week_income'] = sprintf("%.2f", (float)(clone $bill)->whereBetween('create_time', [Date::weekDay(1, Date::TYPE_START), Date::weekDay(7, Date::TYPE_END)])->sum("amount"));
             $data['month_income'] = sprintf("%.2f", (float)(clone $bill)->where("create_time", ">=", $monthStart)->sum("amount"));
 
-            $sellModel = \App\Model\Order::query()->where("user_id", $uid)->where("status", 1);
+            $sellModel = \App\Model\Order::query()->where("user_id", $uid)->where("status", 1)->unrefunded();
             $data['trade'] = sprintf("%.2f", (float)(clone $sellModel)->sum("amount"));
             $data['today_orders'] = (clone $sellModel)->whereBetween('create_time', [Date::calcDay(), Date::calcDay(0, Date::TYPE_END)])->count();
             $data['pending_delivery'] = (clone $sellModel)->where("delivery_status", 0)->count();

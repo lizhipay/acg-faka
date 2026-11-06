@@ -414,6 +414,24 @@
             </span>
             <span class="material-icons-outlined admin-mobile-store-enterprise-cta__arrow" aria-hidden="true">arrow_forward</span>`);
     };
+    const configureRebindAllCta = $button => {
+        const title = '一键授权至本机';
+        const description = '掉授权时一次全部转到本机';
+
+        $button
+            .addClass('admin-mobile-store-enterprise-cta admin-mobile-store-enterprise-cta--secondary')
+            .attr({
+                'data-admin-mobile-label': title,
+                'data-admin-mobile-description': description
+            });
+
+        $button.html(`<span class="material-icons-outlined admin-mobile-store-enterprise-cta__icon" aria-hidden="true">sync_lock</span>
+            <span class="admin-mobile-store-enterprise-cta__copy">
+                <strong class="admin-mobile-store-enterprise-cta__title">${i18n(title)}</strong>
+                <small class="admin-mobile-store-enterprise-cta__description">${i18n(description)}</small>
+            </span>
+            <span class="material-icons-outlined admin-mobile-store-enterprise-cta__arrow" aria-hidden="true">arrow_forward</span>`);
+    };
     const table = new Table("/admin/api/app/plugins", "#plugin-table");
     const $StoreRoot = $('.store-content').first();
     const $StoreContent = $StoreRoot.parent();
@@ -982,6 +1000,179 @@
         });
     }
 
+    // 一键授权至本机（#1144）：服务端先排好计划（哪条授权转过来、哪些要手动选），确认后逐条转移、逐条显示结果
+    let rebindLayer = null;
+    const REBIND_STYLE_ID = 'md-store-rebind-style';
+    const ensureRebindStyle = () => {
+        if (document.getElementById(REBIND_STYLE_ID)) return;
+        const style = document.createElement('style');
+        style.id = REBIND_STYLE_ID;
+        style.textContent = `
+            .md-rebind{padding:16px 20px 18px;color:var(--md-on-surface);font-size:13px;line-height:1.6}
+            .md-rebind__summary{display:flex;gap:10px;margin-bottom:14px}
+            .md-rebind__stat{flex:1;padding:12px 14px;border-radius:var(--md-radius-lg);background:var(--md-hover-overlay)}
+            .md-rebind__stat b{display:block;font-size:22px;line-height:1.2;font-variant-numeric:tabular-nums}
+            .md-rebind__stat span{color:var(--md-on-surface-med);font-size:12px}
+            .md-rebind__stat--go{background:rgba(var(--md-primary-rgb),.08)}
+            .md-rebind__stat--go b{color:var(--md-primary)}
+            .md-rebind__title{margin:12px 0 6px;font-size:12px;font-weight:600;color:var(--md-on-surface-med)}
+            .md-rebind__list{list-style:none;margin:0;padding:0;border:1px solid var(--md-divider);border-radius:var(--md-radius-lg);max-height:min(42vh,320px);overflow:auto;overscroll-behavior:contain}
+            .md-rebind__item{display:flex;align-items:center;gap:10px;padding:9px 12px}
+            .md-rebind__item + .md-rebind__item{border-top:1px solid var(--md-divider)}
+            .md-rebind__icon{flex:none;width:28px;height:28px;border-radius:8px;object-fit:cover;background:var(--md-hover-overlay);display:grid;place-items:center;font-size:16px;color:var(--md-on-surface-med)}
+            .md-rebind__body{flex:1;min-width:0}
+            .md-rebind__name{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+            .md-rebind__sub{display:block;color:var(--md-on-surface-med);font-size:12px}
+            .md-rebind__state{flex:none;font-size:18px;line-height:1;color:var(--md-on-surface-med)}
+            .md-rebind__item.is-done .md-rebind__state{color:var(--md-success)}
+            .md-rebind__item.is-fail .md-rebind__state{color:var(--md-error)}
+            .md-rebind__item.is-fail .md-rebind__sub{color:var(--md-error)}
+            .md-rebind__item.is-busy .md-rebind__state{animation:md-rebind-spin .9s linear infinite}
+            @keyframes md-rebind-spin{to{transform:rotate(360deg)}}
+            .md-rebind__note{margin:12px 0 0;color:var(--md-on-surface-med);font-size:12px}
+            .md-rebind__bar{height:4px;border-radius:2px;background:var(--md-hover-overlay);overflow:hidden;margin-top:14px;opacity:0;transition:opacity .2s ease}
+            .md-rebind__bar i{display:block;height:100%;width:0;background:var(--md-primary);transition:width .25s ease}
+            .md-rebind.is-running .md-rebind__bar{opacity:1}
+            .md-rebind__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+            .md-rebind__btn{border:0;border-radius:999px;padding:9px 18px;font-weight:600;font-size:13px;cursor:pointer;transition:filter .15s ease,opacity .15s ease}
+            .md-rebind__btn--ghost{background:var(--md-hover-overlay);color:var(--md-on-surface)}
+            .md-rebind__btn--primary{background:var(--md-primary);color:var(--md-on-primary)}
+            .md-rebind__btn:hover{filter:brightness(1.06)}
+            .md-rebind__btn:focus-visible{outline:2px solid var(--md-primary);outline-offset:2px}
+            .md-rebind__btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
+            @media (prefers-reduced-motion:reduce){.md-rebind__item.is-busy .md-rebind__state{animation:none}}
+            .admin-mobile-layer-popup .md-rebind__btn{flex:1;padding:12px 18px}
+        `;
+        document.head.appendChild(style);
+    };
+
+    function _RebindAll() {
+        const loading = layer.load(2, {shade: [0.15, '#000']});
+        util.post({
+            url: '/admin/api/app/rebindPlan',
+            loader: false,
+            done: res => {
+                layer.close(loading);
+                if (!controllerActive) return;
+                _ShowRebindPlan(res?.data || {});
+            },
+            error: res => {
+                layer.close(loading);
+                message.error(res?.msg || i18n('检查授权失败，请稍后再试'));
+            },
+            fail: () => layer.close(loading)
+        });
+    }
+
+    function _ShowRebindPlan(plan) {
+        ensureRebindStyle();
+        const items = [];
+        if (plan.level) {
+            items.push({kind: 'level', name: `${i18n(plan.level.name || '企业版')}${i18n('授权')}`, authId: plan.level.auth_id, from: plan.level.from, reason: plan.level.reason, icon: ''});
+        }
+        (plan.plugins || []).forEach(p => items.push({kind: 'plugin', name: p.name, authId: p.auth_id, from: p.from, reason: p.reason, icon: p.icon}));
+        const todo = items.filter(item => item.authId);
+        const manual = items.filter(item => !item.authId);
+        if (items.length === 0) {
+            message.success(i18n('所有已购买的授权都在本机，不需要处理'));
+            return;
+        }
+
+        const iconHtml = item => item.icon
+            ? `<img class="md-rebind__icon" src="${escapeHtml(item.icon)}" alt="">`
+            : `<span class="md-rebind__icon material-icons-outlined" aria-hidden="true">${item.kind === 'level' ? 'workspace_premium' : 'extension'}</span>`;
+        const row = (item, index) => `<li class="md-rebind__item" data-rebind-index="${index}">
+                ${iconHtml(item)}
+                <span class="md-rebind__body"><span class="md-rebind__name">${escapeHtml(item.name)}</span>
+                <span class="md-rebind__sub">${item.authId
+                    ? `${i18n('原服务器')} ${escapeHtml(item.from || '-')}`
+                    : escapeHtml(i18n(item.reason || '需要手动处理'))}</span></span>
+                ${item.authId ? '<span class="md-rebind__state material-icons-outlined" aria-hidden="true">radio_button_unchecked</span>' : ''}
+            </li>`;
+
+        const content = `<div class="md-rebind">
+            <div class="md-rebind__summary">
+                <div class="md-rebind__stat md-rebind__stat--go"><b>${todo.length}</b><span>${i18n('可以转到本机')}</span></div>
+                <div class="md-rebind__stat"><b>${manual.length}</b><span>${i18n('需要手动处理')}</span></div>
+            </div>
+            ${todo.length ? `<div class="md-rebind__title">${i18n('将转移到本机')}</div><ul class="md-rebind__list">${todo.map(row).join('')}</ul>` : ''}
+            ${manual.length ? `<div class="md-rebind__title">${i18n('需要手动处理')}</div><ul class="md-rebind__list">${manual.map(item => row(item, -1)).join('')}</ul>
+                <p class="md-rebind__note">${i18n('这些插件请在列表里点「解绑」自己选要转移哪一条授权。')}</p>` : ''}
+            ${todo.length ? `<p class="md-rebind__note">${i18n('转移后，这些授权在原服务器上会失效。')}</p>` : ''}
+            <div class="md-rebind__bar" aria-hidden="true"><i></i></div>
+            <div class="md-rebind__actions">
+                <button type="button" class="md-rebind__btn md-rebind__btn--ghost" data-rebind-cancel>${i18n(todo.length ? '取消' : '关闭')}</button>
+                ${todo.length ? `<button type="button" class="md-rebind__btn md-rebind__btn--primary" data-rebind-go>${i18n('全部转到本机')} (${todo.length})</button>` : ''}
+            </div>
+        </div>`;
+
+        const mobile = mobileAdminEnabled();
+        rebindLayer = layer.open({
+            type: 1,
+            title: `<span class="material-icons-outlined" style="font-size:18px;vertical-align:-3px">sync_lock</span> ${i18n('一键授权至本机')}`,
+            area: mobile ? ['100%', 'auto'] : '520px',
+            offset: mobile ? 'b' : 'auto',
+            skin: mobile ? 'admin-mobile-layer-popup admin-mobile-layer-popup--sheet md-rebind-layer' : 'md-rebind-layer',
+            shadeClose: false,
+            maxmin: false,
+            resize: false,
+            move: !mobile ? undefined : false,
+            content: content,
+            success: (layero, index) => {
+                const $root = layero.find('.md-rebind');
+                let running = false;
+                let changed = false;
+                $root.on('click', '[data-rebind-cancel]', () => {
+                    if (running) return;
+                    layer.close(index);
+                });
+                $root.on('click', '[data-rebind-go]', async function () {
+                    if (running) return;
+                    running = true;
+                    const $go = $(this).prop('disabled', true);
+                    $root.find('[data-rebind-cancel]').prop('disabled', true);
+                    $root.addClass('is-running');
+                    let ok = 0;
+                    for (let i = 0; i < todo.length; i++) {
+                        if (!controllerActive) return;
+                        const item = todo[i];
+                        const $item = $root.find(`[data-rebind-index="${i}"]`);
+                        $item.addClass('is-busy').find('.md-rebind__state').text('progress_activity');
+                        const result = await new Promise(resolve => util.post({
+                            url: item.kind === 'level' ? '/admin/api/app/bindLevel' : '/admin/api/app/unbind',
+                            data: {auth_id: item.authId},
+                            loader: false,
+                            done: () => resolve({ok: true}),
+                            error: res => resolve({ok: false, msg: res?.msg}),
+                            fail: () => resolve({ok: false, msg: i18n('网络错误')})
+                        }));
+                        $item.removeClass('is-busy').addClass(result.ok ? 'is-done' : 'is-fail')
+                            .find('.md-rebind__state').text(result.ok ? 'check_circle' : 'error');
+                        if (!result.ok) $item.find('.md-rebind__sub').text(storePlainText(result.msg || i18n('转移失败')));
+                        if (result.ok) { ok++; changed = true; }
+                        $root.find('.md-rebind__bar i').css('width', `${Math.round((i + 1) / todo.length * 100)}%`);
+                    }
+                    running = false;
+                    $go.remove();
+                    $root.find('[data-rebind-cancel]').prop('disabled', false).text(i18n('完成'))
+                        .off('click').on('click', () => {
+                            layer.close(index);
+                            //转了专业版/企业版要刷新整页：顶部的开通/绑定入口与插件列表都跟着变
+                            if (changed && todo.some(item => item.kind === 'level')) window.location.reload();
+                            else if (changed) table.refresh();
+                        }).trigger('focus');
+                    ok === todo.length
+                        ? message.success(`${i18n('已全部转到本机')}：${ok}`)
+                        : message.warning(`${i18n('部分授权转移失败')}：${ok}/${todo.length}`);
+                });
+                $root.find(todo.length ? '[data-rebind-go]' : '[data-rebind-cancel]').trigger('focus');
+            },
+            end: () => {
+                rebindLayer = null;
+            }
+        });
+    }
+
     function _BindPro() {
         component.popup({
             submit: (data, _index) => {
@@ -1076,6 +1267,11 @@
 
             storeAuthenticated = true;
             hideAuthGate();
+
+            const $RebindAll = $(`.rebind-all`);
+            configureRebindAllCta($RebindAll);
+            $(`.store-toolbar`).show();
+            $RebindAll.show().off(namespace).on('click' + namespace, () => _RebindAll());
 
             if (res?.data?.developer == 0) {
                 $(`a[href="/admin/store/developer"]`).remove();
@@ -1457,7 +1653,8 @@
         controllerTimers.clear();
         //安装途中切页的话，遮罩会连同它的计时器留在新页面上，这里一并收掉
         tkProgress.closeAll();
-        $('.update-pro, .bind-pro').off(namespace);
+        $('.update-pro, .bind-pro, .rebind-all').off(namespace);
+        if (rebindLayer !== null) layer.close(rebindLayer);
         $('.admin-store-auth-open').off(namespace).off('click.mdStoreAuthGate');
         $('.admin-store-service-retry').off('click.mdStoreServiceRetry');
         $(document).off('pjax:beforeReplace' + namespace);

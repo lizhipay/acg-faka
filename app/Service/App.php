@@ -135,6 +135,12 @@ interface App
     public function unbind(int $authId): array;
 
     /**
+     * 一键授权至本机的计划：哪些授权能直接转到本机、哪些要手动选（#1144）
+     * @return array
+     */
+    public function rebindPlan(): array;
+
+    /**
      * @param array $data
      * @return array
      */

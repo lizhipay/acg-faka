@@ -820,6 +820,7 @@ class Store extends Manage
     public function data(): array
     {
         \App\Util\Schema::ensureSharedCurrency();
+        \App\Util\Schema::ensureSharedFactoryBase();
         $map = array_intersect_key($_POST, array_flip([
             'search-name',
             'search-domain',
@@ -834,7 +835,7 @@ class Store extends Manage
         $get->setPaginate($page, $limit);
         // Explicit columns make app_key impossible to serialize into either the
         // desktop table or the mobile snapshot, regardless of request filters.
-        $get->setColumn('id', 'type', 'name', 'domain', 'app_id', 'create_time', 'balance', 'currency', 'currency_rate');
+        $get->setColumn('id', 'type', 'name', 'domain', 'app_id', 'create_time', 'balance', 'currency', 'currency_rate', 'factory_base');
         $get->setWhere($map);
         $data = $this->query->get($get);
         return $this->json(data: $data);
@@ -889,8 +890,9 @@ class Store extends Manage
     public function save(): array
     {
         \App\Util\Schema::ensureSharedCurrency();
+        \App\Util\Schema::ensureSharedFactoryBase();
         $raw = $_POST;
-        $allowed = ['id', 'type', 'domain', 'app_id', 'app_key', 'currency', 'currency_rate'];
+        $allowed = ['id', 'type', 'domain', 'app_id', 'app_key', 'currency', 'currency_rate', 'factory_base'];
         foreach (array_keys($raw) as $field) {
             if (!is_string($field) || !in_array($field, $allowed, true)) {
                 throw new JSONException('共享店铺保存请求包含未授权字段');
@@ -913,6 +915,8 @@ class Store extends Manage
 
         $currency = $this->sharedCurrency($raw['currency'] ?? $existing?->currency);
         $currencyRate = $this->sharedCurrencyRate($raw['currency_rate'] ?? $existing?->currency_rate);
+        //新接入的店铺默认按账号拿货价；老店铺保持原来的选择，没传就不改
+        $factoryBase = $this->binaryFlag($raw['factory_base'] ?? ($existing ? (int)($existing->factory_base ?? 0) : 1), '成本价基准');
         //选了无法按站点汇率自动换算的货币组合，必须现在就把结算汇率补上——
         //否则拉商品/估价时才报错，页面上会显得莫名其妙
         if (\App\Util\SharedCurrency::resolveFactor($currency, $currencyRate, \App\Util\Currency::code(), \App\Util\Currency::rate()) === null) {
@@ -965,6 +969,7 @@ class Store extends Manage
         $store->balance = $identity['balance'];
         $store->currency = $currency;
         $store->currency_rate = $currencyRate;
+        $store->factory_base = $factoryBase;
         if (!$existing) {
             $store->create_time = Date::current();
         }
@@ -1139,6 +1144,7 @@ class Store extends Manage
         $sharedSync = $this->binaryFlag($map['shared_sync'] ?? 0, '远端信息同步');
         $sharedAmountSync = $this->binaryFlag($map['shared_amount_sync'] ?? 0, '远端价格同步');
         $sharedConfigSync = $this->binaryFlag($map['shared_config_sync'] ?? 0, '远端配置同步');
+        $sharedLeaveMessageSync = $this->binaryFlag($map['shared_leave_message_sync'] ?? 0, '远端发货留言同步');
         $resumeImport = $this->binaryFlag($map['resume_import'] ?? 0, '断点续传') === 1;
 
         $shared = Shared::query()->find($storeId);
@@ -1147,6 +1153,8 @@ class Store extends Manage
             throw new JSONException("未找到该店铺");
         }
 
+        \App\Util\Schema::ensureCommoditySharedLeaveMessage();
+        \App\Util\Schema::ensureSharedFactoryBase();
         $date = Date::current();
         $count = count($itemCodes);
         $success = 0;
@@ -1193,6 +1201,10 @@ class Store extends Manage
                 $commodity->shared_sync = $sharedSync;
                 $commodity->shared_amount_sync = $sharedAmountSync;
                 $commodity->shared_config_sync = $sharedConfigSync;
+                $commodity->shared_leave_message_sync = $sharedLeaveMessageSync;
+                if ($sharedLeaveMessageSync === 1) {
+                    $commodity->leave_message = $this->shared->remoteLeaveMessage($remote);
+                }
 
                 if ($commodity->seckill_status == 1) {
                     $commodity->seckill_start_time = $item['seckill_start_time'];
@@ -1215,13 +1227,29 @@ class Store extends Manage
                 $commodity->minimum = $item['minimum'];
                 $commodity->stock = $item['stock'];
 
+                $_config = Ini::toArray((string)$item['config']);
+                //没配置参数的商品成本只能落在 factory_price 这一列（种类/SKU 商品的成本在 config 的 category_cost / sku_cost，
+                //首次同步时写入）。按拿货价加价时它也是基准，所以在算价之前取。
+                $cost = empty($_config['category']) ? $this->shared->remoteCost($shared, $commodity, $remote) : null;
+
+                //该按拿货价加价却查不到：这个商品接入失败并说明原因，不拿上游售价顶替
+                $factory = null;
+                if ($template && $this->shared->usesFactoryBase($shared, $template)) {
+                    $factory = $this->shared->factoryQuote($shared, $remote, $_config, $cost);
+                    if ($factory === null) {
+                        throw new JSONException('查不到这个商品的账号拿货价，无法按成本价基准加价。可以换一个加价模板，或在共享店铺关闭「成本价基准用账号拿货价」');
+                    }
+                }
+
                 //自动加价
                 $config = $template
                     ? $this->shared->AdjustmentTemplate(
                         $template,
                         (string)$item['config'],
                         (string)$item['price'],
-                        (string)$item['user_price']
+                        (string)$item['user_price'],
+                        '',
+                        $factory
                     )
                     : $this->shared->AdjustmentPrice(
                         (string)$item['config'],
@@ -1230,8 +1258,6 @@ class Store extends Manage
                         $premiumType,
                         $premium
                     );
-
-                $_config = Ini::toArray((string)$item['config']);
 
                 if (!empty($_config['sku_cost'])) {
                     unset($config['config']['sku_cost']);
@@ -1243,11 +1269,7 @@ class Store extends Manage
 
                 $commodity->config = Ini::toConfig($config['config']);
                 $commodity->price = $config['price'];
-                //没配置参数的商品成本只能落在这一列（种类/SKU 商品的成本在 config 的 category_cost / sku_cost，
-                //首次同步时写入）。以前这里固定写 0、同步时也从来不写，这类商品的成本就永远是 0。
-                $commodity->factory_price = empty($_config['category'])
-                    ? ($this->shared->remoteCost($shared, $commodity, $remote) ?? 0)
-                    : 0;
+                $commodity->factory_price = $cost ?? 0;
                 $commodity->user_price = $config['user_price'];
                 //模板可以顺带把各会员等级的价格一次配好，这是普通加价做不到的
                 if (($config['level_price'] ?? '') !== '') {
@@ -1346,7 +1368,9 @@ class Store extends Manage
             foreach ($list as $e) {
                 try {
                     $state = $this->shared->syncRemoteItem($e->id);
-                    if ($state) {
+                    if ($state && $this->shared->priceSkipped()) {
+                        \Kernel\Util\Log::inst()->write(strip_tags($e->name) . " -> 价格未更新：查不到账号拿货价", $logName);
+                    } elseif ($state) {
                         \Kernel\Util\Log::inst()->write(strip_tags($e->name) . " -> 同步成功", $logName);
                     } else {
                         \Kernel\Util\Log::inst()->write(strip_tags($e->name) . " -> 同步失败", $logName);
