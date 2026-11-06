@@ -221,6 +221,11 @@ try {
     } elseif ($e instanceof \Kernel\Exception\ViewException) {
         header("Content-type: text/html; charset=utf-8");
         exit(feedback($e->getFile() . "<br>" . $e->getMessage(), 500));
+    } elseif ($e instanceof \Illuminate\Database\QueryException) {
+        //QueryException 的消息里带着整条 SQL 和全部绑定值（联系方式、查单密码、IP……），会原样落进错误日志。
+        //只留驱动给的错误原因（SQLSTATE + 哪一列出错），够排查，不带用户数据。
+        $reason = $e->getPrevious() ? $e->getPrevious()->getMessage() : "SQLSTATE[" . $e->getCode() . "]";
+        exit(feedback($e->getFile() . ":" . $e->getLine() . "<br>" . $reason, 500));
     } else {
         exit(feedback($e->getFile() . ":" . $e->getLine() . "<br>" . $e->getMessage(), 500));
     }
