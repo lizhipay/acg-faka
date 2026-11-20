@@ -31,7 +31,8 @@
 
  # ③ 敏感后缀：日志、数据库、备份、编辑器交换文件。
  #    app/Plugin/*/runtime.log 和 version/*/update.sql 全靠这条兜住。
- RewriteRule \.(log|sql|sqlite|db|db-wal|db-shm|bak|old|save|orig|swp|swo|tmp|ini|lock|key|pem|crt|cer|der|p12|pfx|p8|keystore|jks|asc|gpg|ppk|env|secret)$ - [NC,R=404,L]
+ #    末尾的 (\.[0-9]+)? 连带拦住滚动出来的 runtime.log.1 这类带数字后缀的副本。
+ RewriteRule \.(log|sql|sqlite|db|db-wal|db-shm|bak|old|save|orig|swp|swo|tmp|ini|lock|key|pem|crt|cer|der|p12|pfx|p8|keystore|jks|asc|gpg|ppk|env|secret)(\.[0-9]+)?$ - [NC,R=404,L]
 
  # ④ 备份副本与依赖清单：index.php~、composer.json、package-lock.json
  RewriteRule (~|composer\.(json|lock)|package(-lock)?\.json)$ - [NC,R=404,L]

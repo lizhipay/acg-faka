@@ -353,7 +353,19 @@ if (!function_exists("getHookNum")) {
 if (!function_exists("debug")) {
     function debug(string $message): void
     {
-        $path = BASE_PATH . '/runtime.log';
+        //放在 runtime/ 下：以前写在站点根目录的 runtime.log，滚动出来的 runtime.log.1 不以 .log 结尾，
+        //伪静态的敏感后缀规则拦不住，会被当静态文件直接下载。runtime/ 整个目录本来就被拦。
+        $directory = BASE_PATH . '/runtime/log';
+        if (!is_dir($directory)) {
+            @mkdir($directory, 0755, true);
+        }
+        $path = $directory . '/debug.log';
+        //旧位置的残留挪进来，不留在站点根目录
+        foreach (['/runtime.log' => '/debug.legacy.log', '/runtime.log.1' => '/debug.legacy.log.1'] as $legacy => $target) {
+            if (is_file(BASE_PATH . $legacy) && !is_link(BASE_PATH . $legacy)) {
+                @rename(BASE_PATH . $legacy, $directory . $target);
+            }
+        }
         //滚动：每个 500 都会追加这里，无上限会被免登录高频请求打满磁盘。超过 20MB 就滚动一份(只留最近一份历史)。
         if (@filesize($path) > 20 * 1024 * 1024) {
             @rename($path, $path . '.1');

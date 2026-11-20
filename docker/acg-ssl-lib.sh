@@ -87,7 +87,7 @@ server {
 
     location ~ ^/(config|kernel|runtime|vendor|encryption|tests)(/|\$) { return 404; }
     location ~ /\\.(?!well-known) { return 404; }
-    location ~* \\.(log|sql|sqlite|db|db-wal|db-shm|bak|old|save|orig|swp|swo|tmp|ini|lock)\$ { return 404; }
+    location ~* \\.(log|sql|sqlite|db|db-wal|db-shm|bak|old|save|orig|swp|swo|tmp|ini|lock)(\\.[0-9]+)?\$ { return 404; }
     location ~* (~|composer\\.(json|lock)|package(-lock)?\\.json)\$ { return 404; }
 
     location ~* \\.(?:css|js|mjs|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|eot|mp4|webm|mp3|ogg)\$ {

@@ -79,7 +79,7 @@ docker run -d --name faka -p 80:80 -v acg_data:/data --restart unless-stopped gh
    location ~* ^/(runtime|kernel|config|vendor)/                { return 404; }
    location ~  (^|/)(runtime|\.acgcache)(/|$)                   { return 404; }
    location ~  /\.(?!well-known)                                { return 404; }
-   location ~* \.(log|sql|sqlite|db|db-wal|db-shm|bak|old|save|orig|swp|swo|tmp|ini|lock|key|pem|crt|cer|der|p12|pfx|p8|keystore|jks|asc|gpg|ppk|env|secret)$  { return 404; }
+   location ~* \.(log|sql|sqlite|db|db-wal|db-shm|bak|old|save|orig|swp|swo|tmp|ini|lock|key|pem|crt|cer|der|p12|pfx|p8|keystore|jks|asc|gpg|ppk|env|secret)(\.[0-9]+)?$  { return 404; }
    location ~* (~|composer\.(json|lock)|package(-lock)?\.json)$ { return 404; }
    location / {
        try_files $uri $uri/ /index.php?s=$uri&$args;
