@@ -116,15 +116,23 @@ xz: Failed to enable the sandbox
 
 ## 已知限制
 
-- **默认 PHP 8.2**（Debian bookworm，仍在支持期）。需要贴合旧线上环境时可以降版本：
+- **默认 PHP 8.2**（PHP 官方镜像的 Debian trixie 底座，仍在支持期）。需要贴合旧线上环境时可以降版本：
 
   ```bash
-  docker compose build --build-arg PHP_VERSION=8.0 app
+  docker compose build --build-arg PHP_VERSION=8.0 --build-arg ALLOW_UNPATCHED_PHP=1 --build-arg ALLOW_UNPATCHED_NGINX=1 app
   ```
 
   ⚠ 但 **PHP 8.0 / 8.1 已停止安全维护**，它们的 Debian bullseye 底座也整体进了归档 ——
   构建时会自动改用 `archive.debian.org`，代价是镜像里的系统包（**包括 nginx、openssl**）
   拿不到任何新的安全更新。挂公网的站点不建议这么用。
+
+- **构建期安全闸门**：PHP 或 nginx 低于已修补版本时构建直接失败（`docker/php-cve-gate.sh`、
+  `docker/nginx-cve-gate.sh`），不会推出带已知漏洞的镜像。系统包的安全更新在 Dockerfile
+  第 4 步单独一层，CI 每次发布都会重跑这一层；本机构建想拿最新安全更新：
+
+  ```bash
+  docker compose build --build-arg SECURITY_REFRESH=$(date +%s) app
+  ```
 
 - **MySQL 5.7 官方只发 amd64 镜像**。ARM 机器（Apple Silicon / Ampere / Graviton）
   会通过 qemu 模拟运行 —— 能跑，但导入数据那一步明显偏慢。想要原生性能就把

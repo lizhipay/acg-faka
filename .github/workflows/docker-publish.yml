@@ -28,6 +28,10 @@ on:
         description: '基础镜像 PHP 未含安全修补时仍发布（套临时缓解，仅限官方修补版出来之前）'
         type: boolean
         default: false
+      allow_unpatched_nginx:
+        description: 'Debian 的 nginx 未含安全修补时仍发布（仅限 Debian 修补版出来之前）'
+        type: boolean
+        default: false
 
 jobs:
   # 只算标签名和 labels，不碰 Docker Hub 用户名：job output 里带 secret 会被 Actions 整个丢掉。
@@ -157,9 +161,12 @@ jobs:
           context: .
           platforms: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
-          # tag 推送时 inputs 为空 → 0：未修补的 PHP 一律构建失败
+          # tag 推送时 inputs 为空 → 0：未修补的 PHP / nginx 一律构建失败。
+          # SECURITY_REFRESH 每次运行都不同：让 Dockerfile 第 4 步（系统包安全更新）绕过构建缓存。
           build-args: |
             ALLOW_UNPATCHED_PHP=${{ inputs.allow_unpatched_php && '1' || '0' }}
+            ALLOW_UNPATCHED_NGINX=${{ inputs.allow_unpatched_nginx && '1' || '0' }}
+            SECURITY_REFRESH=${{ github.run_id }}-${{ github.run_attempt }}
           outputs: type=image,name=${{ steps.plat.outputs.image }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=${{ steps.plat.outputs.pair }}
           cache-to: type=gha,mode=max,scope=${{ steps.plat.outputs.pair }}

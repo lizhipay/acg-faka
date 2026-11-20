@@ -7,11 +7,11 @@
 # （docker/php-rebuild.sh），对应版本没有补丁时构建失败。
 #
 # 为什么不是 8.0：PHP 8.0 已于 2023-11 停止安全维护，且它的 Debian bullseye 底座
-# 已整体进入归档 —— 连 nginx、openssl 这些系统包都不再有安全更新。8.2 用的是
-# bookworm，仍在支持期。composer.json 要求 >=8.0，本程序在 8.2 上实测可正常安装运行。
+# 已整体进入归档 —— 连 nginx、openssl 这些系统包都不再有安全更新。8.2 的官方镜像
+# 底座是 trixie，仍在支持期。composer.json 要求 >=8.0，本程序在 8.2 上实测可正常安装运行。
 #
 # 确实需要贴合旧线上环境时：
-#   docker build --build-arg PHP_VERSION=8.0 --build-arg ALLOW_UNPATCHED_PHP=1 -t acg-faka .
+#   docker build --build-arg PHP_VERSION=8.0 --build-arg ALLOW_UNPATCHED_PHP=1 --build-arg ALLOW_UNPATCHED_NGINX=1 -t acg-faka .
 # 下面的 apt 段会自动处理 bullseye 的归档源。8.0 没有 CVE-2026-109618/109619 的
 # 官方修补，不显式放行会被 docker/php-cve-gate.sh 拦下。
 ARG PHP_VERSION=8.2
@@ -25,7 +25,7 @@ RUN set -eux; \
     # 只有把 PHP_VERSION 降到 8.0 / 8.1 时才会走到这里：它们的基础镜像是 Debian
     # bullseye，已整体进归档，deb.debian.org 上的包全是 404、Release 也过了有效期。
     # 指到 archive.debian.org 并关掉有效期校验才装得上 —— 代价是这些系统包（含 nginx）
-    # 不再有安全更新。默认的 8.2 是 bookworm，走正常源，不受影响。
+    # 不再有安全更新。默认的 8.2 是 trixie，走正常源，不受影响。
     if . /etc/os-release && [ "$VERSION_CODENAME" = "bullseye" ]; then \
         echo 'deb http://archive.debian.org/debian bullseye main' > /etc/apt/sources.list; \
         rm -f /etc/apt/sources.list.d/*.list; \
@@ -124,6 +124,24 @@ COPY docker/acg-ssl-renew.sh  /usr/local/bin/acg-ssl-renew
 ARG ALLOW_UNPATCHED_PHP=0
 COPY docker/php-cve-gate.sh /usr/local/bin/acg-php-cve-gate
 RUN sh /usr/local/bin/acg-php-cve-gate
+
+# 4) 系统包安全更新。上面装 nginx 的那层只要基础镜像没变，CI 就直接用构建缓存，
+#    Debian 之后发的安全修补（例如 2026-11-18 的 nginx）永远进不来。SECURITY_REFRESH
+#    每次 CI 构建都不同，只让这一层重跑；放在 PHP 重编之后，不会连带重编 PHP。
+#    本机构建要强制刷新：--build-arg SECURITY_REFRESH=$(date +%s)
+#    --force-confold：nginx 包升级时保留上面 COPY 进去的 nginx.conf。
+ARG SECURITY_REFRESH=
+ARG ALLOW_UNPATCHED_NGINX=0
+COPY docker/nginx-cve-gate.sh /usr/local/bin/acg-nginx-cve-gate
+RUN set -eux; \
+    echo "[acg-faka] security refresh: ${SECURITY_REFRESH:-local}"; \
+    apt-get update; \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y --no-install-recommends \
+        -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold; \
+    # mariadb-server 升级时可能重建默认数据目录；数据一律在 /data，与第 1 步一样清掉
+    rm -rf /var/lib/apt/lists/* /var/lib/mysql; \
+    sh /usr/local/bin/acg-nginx-cve-gate; \
+    nginx -t -c /etc/nginx/nginx.conf
 
 COPY . ${ACG_HOME}
 
