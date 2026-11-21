@@ -79,6 +79,10 @@ class Bill extends Model
             if ($type == self::TYPE_ADD && $total) {
                 $user->recharge = $user->recharge + $amount;
             }
+
+            if ($type == self::TYPE_SUB && $total) {
+                $user->recharge = max(0, $user->recharge - $amount);
+            }
         } else {
             $user->coin = $type == 0 ? $user->coin - $amount : $user->coin + $amount;
 
@@ -88,6 +92,10 @@ class Bill extends Model
 
             if ($type == self::TYPE_ADD && $total) {
                 $user->total_coin = $user->total_coin + $amount;
+            }
+
+            if ($type == self::TYPE_SUB && $total) {
+                $user->total_coin = max(0, $user->total_coin - $amount);
             }
         }
 
